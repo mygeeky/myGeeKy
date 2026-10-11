@@ -247,14 +247,14 @@ class MyGeekyConfig:
                                                # empty and the last search is this old; 0 = only on Refresh click
     gui_theme: str = "midnight"               # "frosted" | "midnight" | "aurora" -- switchable live via the panel's swatch buttons
     gui_live_rotate_seconds: float = 4.5      # how often the Live tab's spotlight card auto-advances
-    gui_opacity: float = 1.0                  # whole-window opacity (0.0-1.0); the settings panel exposes this
+    gui_opacity: float = 1.0                  # whole-window opacity (0.6-1.0); the settings panel exposes this
                                                # as "Transparency" (0% = opaque, 100% = fully transparent), i.e.
                                                # the inverse of this value
 
     # Bumped when a default changes in a way existing configs should pick up
     # (see _migrate). Every saved config carries every key, so a new default
     # alone never reaches people who already ran myGeeKy.
-    config_version: int = 3
+    config_version: int = 4
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -327,6 +327,10 @@ def _migrate(values: dict[str, Any], version: int) -> dict[str, Any]:
         # 0.14: the panel grew from a short strip; keep any height someone chose themselves
         if values.get("gui_panel_height_fraction") == 0.25:
             values["gui_panel_height_fraction"] = 0.6
+    if version < 4:
+        # 0.21.3: the panel is never more than 40% see-through (gui.app.MIN_OPACITY)
+        if isinstance(values.get("gui_opacity"), (int, float)) and values["gui_opacity"] < 0.6:
+            values["gui_opacity"] = 0.6
     values["config_version"] = MyGeekyConfig.config_version
     return values
 

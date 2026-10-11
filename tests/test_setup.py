@@ -136,6 +136,24 @@ def test_panel_height_grows_from_the_old_default_and_stays_within_limits(tmp_pat
     assert logic.set_panel_height(cfg, 0.99) == 0.9 and load_config().gui_panel_height_fraction == 0.9
 
 
+def test_a_nearly_invisible_panel_comes_back_to_the_most_allowed_transparency(tmp_path):
+    pytest.importorskip("PySide6")
+    import mygeeky.config as config_module
+    from mygeeky.gui import app as logic
+    from mygeeky.gui.qt_panel import MyGeekyPanel
+    raw = MyGeekyConfig().to_dict()
+    raw.update(config_version=3, gui_opacity=0.05)                         # almost invisible: comes back
+    config_module.CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    config_module.CONFIG_FILE.write_text(json.dumps(raw), encoding="utf-8")
+    assert load_config().gui_opacity == logic.MIN_OPACITY == 0.6
+    raw.update(gui_opacity=0.8)                                            # one within the new range: stays
+    config_module.CONFIG_FILE.write_text(json.dumps(raw), encoding="utf-8")
+    assert load_config().gui_opacity == 0.8
+    # the slider's 100% is 40% see-through, and the two directions agree
+    assert MyGeekyPanel._slider_to_opacity(0) == 1.0 and abs(MyGeekyPanel._slider_to_opacity(100) - 0.6) < 1e-9
+    assert all(MyGeekyPanel._opacity_to_slider(MyGeekyPanel._slider_to_opacity(v)) == v for v in range(101))
+
+
 def test_dragging_the_grip_and_the_slider_change_the_height_within_limits(monkeypatch):
     pytest.importorskip("PySide6")
     import os

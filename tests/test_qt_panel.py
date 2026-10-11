@@ -161,6 +161,49 @@ def test_panel_fits_its_screen_expanded_and_folds_to_a_small_tab(qapp, monkeypat
         panel.deleteLater()
 
 
+def test_dragging_transparency_redraws_a_few_times_and_saves_once(qapp, monkeypatch):
+    import time
+    from mygeeky.config import MyGeekyConfig
+    from mygeeky.gui import app as logic
+    from mygeeky.gui.qt_panel import MyGeekyPanel
+    monkeypatch.setattr(logic, "get_contributions", lambda cfg: [])
+    monkeypatch.setattr(logic, "get_suggestions", lambda cfg: {"followback": [], "domain_highlights": []})
+    monkeypatch.setattr(logic, "get_activity", lambda cfg, force=False: {"events": []})
+    monkeypatch.setattr(logic, "get_model_history", lambda: [])
+    monkeypatch.setattr(logic, "get_friend_stats", lambda cfg: {
+        "total_friends": 0, "new_this_week": 0, "follow_back_rate": None, "total_labeled": 0})
+    saved = []
+    monkeypatch.setattr(logic, "set_opacity", lambda cfg, op: saved.append(op) or True)
+
+    panel = MyGeekyPanel(MyGeekyConfig(gui_opacity=1.0))
+    applied = []
+    real = panel.setWindowOpacity
+    panel.setWindowOpacity = lambda op: (applied.append(op), real(op))
+    sl = panel.opacity_slider
+    try:
+        sl.setSliderDown(True)                          # a drag: a value for nearly every pixel
+        for v in range(0, 101):
+            sl.setValue(v)
+        end = time.time() + 0.2
+        while time.time() < end:
+            qapp.processEvents()
+        assert 1 <= len(applied) <= 8 and saved == []   # a few redraws, nothing saved mid-drag
+        sl.setSliderDown(False)                         # letting go: the last value, saved once
+        assert applied[-1] == pytest.approx(logic.MIN_OPACITY) and saved == [pytest.approx(logic.MIN_OPACITY)]
+
+        sl.setValue(50)                                 # a key or the wheel: saved too
+        end = time.time() + 0.2
+        while time.time() < end:
+            qapp.processEvents()
+        assert saved[-1] == pytest.approx(0.8)
+    finally:
+        panel.ticker.stop()
+        panel._activity_timer.stop()
+        for w in list(panel._workers):
+            w.wait(2000)
+        panel.deleteLater()
+
+
 def test_model_tab_renders_history_and_weights(qapp, monkeypatch):
     from mygeeky.config import MyGeekyConfig
     from mygeeky.gui import app as logic

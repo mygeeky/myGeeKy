@@ -78,7 +78,7 @@ def test_always_a_few_ai_headlines_and_no_duplicates():
 
 
 def test_refresh_survives_a_broken_feed(monkeypatch):
-    cfg = MyGeekyConfig(headlines_categories=["science", "tech"])
+    cfg = MyGeekyConfig(headlines_categories=["science", "tech"], headlines_days=3650)   # the fixed-date feed never ages out
 
     def fake_fetch(feed, session):
         if feed[0] == "nature":

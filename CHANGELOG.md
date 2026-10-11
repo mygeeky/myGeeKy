@@ -3,6 +3,13 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.21.3 (2026-10-11): a panel that never fades away, and a smooth Transparency slider
+
+- **The panel never fades away.** The Transparency slider still goes from 0% to 100%, but 100% now means 40% see-through instead of invisible. A panel set more see-through than that comes back to 40% on its own.
+- **The Transparency slider no longer makes the panel lag.** Dragging it sent a change for nearly every pixel the mouse moved, and each one made the system redraw the whole see-through window (about 600 redraws in a few seconds). It now redraws at most about 30 times a second (about 11 times fewer), while the % number still follows your mouse.
+- **Transparency set with the keyboard or mouse wheel is kept.** Only letting go of a drag used to save it, so a change made with the arrow keys or the wheel was lost on restart.
+- **Posts you've seen are easier to read.** In Activity (and the few seen cards kept at the end of other tabs) they now show at 80% instead of 55%: still quieter than new ones, but no longer faint.
+
 ## 0.21.2 (2026-10-11): a new look, and Signals on the phone (app 1.4.0)
 
 - **A new look: find friends · collaborate · away from noise.**

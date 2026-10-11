@@ -288,7 +288,7 @@ def _mark_fresh(card: QWidget, item: dict[str, Any], theme: dict[str, Any]) -> Q
             card._fresh_dot = _FreshDot(card, theme["accent"])
     elif state == "seen":
         effect = QGraphicsOpacityEffect(card)
-        effect.setOpacity(0.55)
+        effect.setOpacity(0.8)               # quieter than new, still easy to read
         card.setGraphicsEffect(effect)
     return card
 
@@ -4230,7 +4230,7 @@ class MyGeekyPanel(QWidget):
         layout.addLayout(opacity_row)
 
         # The slider reads as "Transparency": 0 = no transparency (fully
-        # opaque) .. 100 = full transparency (invisible). That's the inverse
+        # opaque) .. 100 = the most allowed (logic.MIN_OPACITY, never invisible). That's the inverse
         # of Qt's own windowOpacity (1.0 = opaque, 0.0 = invisible), so the
         # slider's own range is always a plain 0-100 regardless of the
         # opacity bounds in app.py -- see _slider_to_opacity/_opacity_to_slider.
@@ -4239,6 +4239,12 @@ class MyGeekyPanel(QWidget):
         self.opacity_slider.setCursor(Qt.PointingHandCursor)
         self.opacity_slider.setValue(self._opacity_to_slider(self.cfg.gui_opacity))
         self.opacity_slider.valueChanged.connect(self._on_opacity_preview)
+        # a drag sends a value for nearly every pixel, and each opacity change makes the system
+        # redraw the whole see-through window: apply the latest one at most ~30 times a second
+        self._opacity_timer = QTimer(self)
+        self._opacity_timer.setSingleShot(True)
+        self._opacity_timer.setInterval(33)
+        self._opacity_timer.timeout.connect(self._apply_opacity_preview)
         self.opacity_slider.sliderReleased.connect(self._on_opacity_committed)
         layout.addWidget(self.opacity_slider)
 
@@ -4434,11 +4440,11 @@ class MyGeekyPanel(QWidget):
 
     @staticmethod
     def _slider_to_opacity(value: int) -> float:
-        return 1.0 - (value / 100.0)
+        return 1.0 - (value / 100.0) * (1.0 - logic.MIN_OPACITY)
 
     @staticmethod
     def _opacity_to_slider(opacity: float) -> int:
-        return int(round((1.0 - opacity) * 100))
+        return max(0, min(100, int(round((1.0 - opacity) / (1.0 - logic.MIN_OPACITY) * 100))))
 
     # ------------------------------------------------------------------ panel height
     def _on_height_preview(self, value: int) -> None:
@@ -4467,13 +4473,21 @@ class MyGeekyPanel(QWidget):
             logic.set_panel_height(self.cfg, fraction)
 
     def _on_opacity_preview(self, value: int) -> None:
-        """Applied live while dragging -- only persisted on release
-        (_on_opacity_committed) so we're not hitting disk on every tick."""
-        self.setWindowOpacity(self._slider_to_opacity(value))
+        """Shown live, at most ~30 times a second; a drag is saved once, on release."""
         self.opacity_value_label.setText(f"{value}%")
+        if not self._opacity_timer.isActive():
+            self._opacity_timer.start()
+
+    def _apply_opacity_preview(self) -> None:
+        opacity = self._slider_to_opacity(self.opacity_slider.value())
+        if abs(self.windowOpacity() - opacity) > 0.004:
+            self.setWindowOpacity(opacity)
+        if not self.opacity_slider.isSliderDown():       # keys and the wheel never "release": save now
+            logic.set_opacity(self.cfg, opacity)
 
     def _on_opacity_committed(self) -> None:
-        logic.set_opacity(self.cfg, self._slider_to_opacity(self.opacity_slider.value()))
+        self._opacity_timer.stop()
+        self._apply_opacity_preview()
 
     def _build_model_tab(self) -> QScrollArea:
         page = QWidget()
@@ -4770,7 +4784,7 @@ class MyGeekyPanel(QWidget):
         self.folded_widget.setVisible(folded)
         self.setMinimumSize(0, 0)
         self.setGeometry(self._docked_geometry(folded, screen))
-        self.setWindowOpacity(self.cfg.gui_folded_opacity if folded else self.cfg.gui_opacity)
+        self.setWindowOpacity(self.cfg.gui_folded_opacity if folded else max(self.cfg.gui_opacity, logic.MIN_OPACITY))
 
     # The panel has no drag handle: it always belongs docked to its edge (and on
     # top: see topmost.py; the same check puts it back in front). But

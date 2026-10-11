@@ -143,7 +143,7 @@ def set_theme(cfg: MyGeekyConfig, theme: str) -> bool:
     return True
 
 
-MIN_OPACITY = 0.0
+MIN_OPACITY = 0.6           # the Transparency slider's 100% is 40% see-through: the panel never fades away
 MAX_OPACITY = 1.0
 
 
