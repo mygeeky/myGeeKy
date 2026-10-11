@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/gui/assets/icon_256.png" width="132" alt="myGeeKy icon: two geeks hugging inside a heart">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/gui/assets/icon_256.png" width="140" alt="The myGeeKy badge: a growing tree above the name, and two hands shaking below">
 </p>
 
 <h1 align="center">myGeeKy</h1>
 
-<h3 align="center">Your corner of GitHub, for research.</h3>
+<h3 align="center">Find friends · collaborate · away from noise.</h3>
 
 <p align="center">
-  The <b>people</b>, <b>projects</b>, <b>papers</b> and <b>pulse</b> of your field,<br>
+  Your corner of GitHub, for research: the <b>people</b>, <b>projects</b>, <b>papers</b> and <b>pulse</b> of your field,<br>
   found from your CV, repos, ORCID and Google Scholar, in one small glass panel on your screen.
 </p>
 
@@ -41,10 +41,24 @@
 </p>
 <p align="center"><sub><em>Real screenshots, real data: people likely to follow you back · what myGeeKy knows about you · research rising in your field.</em></sub></p>
 
-> **Why this exists:** I don't have Facebook. I wanted a real circle in my field: people I can genuinely learn
-> from (and who might learn something from me), projects where my work would be welcome, and a feel for where
-> the field is moving. GitHub has all of that, but scattered and buried under famous accounts. myGeeKy gathers
-> it in one place, and **never acts for you**.
+<table>
+<tr>
+<td width="38%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/character.jpg" width="300" alt="A geek in a hoodie working on a laptop against a brick wall, a myGeeKy sticker on the lid: find friends, collaborate, away from noise">
+</td>
+<td width="62%" valign="middle">
+
+**Why this exists:** I don't have Facebook. I wanted a real circle in my field: people I can genuinely learn
+from (and who might learn something from me), projects where my work would be welcome, and a feel for where
+the field is moving. GitHub has all of that, but scattered and buried under famous accounts. myGeeKy gathers
+it in one place, **away from the noise**, and **never acts for you**.
+
+**Find friends** who work on what you work on. **Collaborate** on projects that welcome you. Do it **away from
+noise**: no feed to scroll, no likes, no posting, nothing that follows or stars for you.
+
+</td>
+</tr>
+</table>
 
 <br>
 
