@@ -77,6 +77,11 @@ def shareable_token(cfg: MyGeekyConfig) -> tuple[str | None, str]:
     token = auth.get_token(cfg.github_username)
     if not token:
         return None, "No GitHub token on this computer: the phone will ask you to sign in."
+    from .github_login import refresh_record
+    if refresh_record(cfg.github_username):
+        # an 8-hour "Sign in with GitHub" token: it renews itself here, and the phone can't
+        # share that (each renewal replaces it), so the phone signs in by itself
+        return None, "Your sign-in here renews itself every few hours, so the phone signs in with GitHub by itself."
     verdict = token_check.check("read", token, cfg.github_username)
     if not verdict["ok"]:
         return None, ("Your token here can do more than read, so it stays on this computer; "

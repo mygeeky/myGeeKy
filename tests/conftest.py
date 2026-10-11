@@ -71,11 +71,20 @@ def _no_github_achievements_fetch(monkeypatch):
     monkeypatch.setattr(ach.requests, "get", offline)
 
 
+
+_EXIT_STATUS = {"code": 0}
+
+
 def pytest_sessionfinish(session, exitstatus):
+    _EXIT_STATUS["code"] = int(exitstatus)
+
+
+def pytest_unconfigure(config):
     """Panels made by tests start background work (fetches) that can outlive the tests.
     Qt aborts a process that exits with a QThread still running ("QThread: Destroyed
     while thread is still running"), turning a green run red. Do what the app does
-    when it quits (gui/app.py): give the work a moment, then leave without destroying it."""
+    when it quits (gui/app.py): give the work a moment, then leave without destroying
+    it. This is pytest's last hook, so the summary (and any failures) is already printed."""
     worker_module = sys.modules.get("mygeeky.gui.qt_panel")
     if worker_module is None:
         return
@@ -83,4 +92,4 @@ def pytest_sessionfinish(session, exitstatus):
         import os
         sys.stdout.flush()
         sys.stderr.flush()
-        os._exit(int(exitstatus))
+        os._exit(_EXIT_STATUS["code"])

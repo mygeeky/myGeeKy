@@ -851,6 +851,22 @@ hardware, reliably making the window opaque instead, so it isn't wired up.
 On Linux, real transparency depends on your compositor/window manager the
 same way it does for any Qt app.*
 
+## Always something new
+
+myGeeKy remembers what you've already seen, so each tab keeps feeling fresh:
+
+- **Seen** means a card was mostly on screen for about a second and a half while the panel was open, or you clicked it. Scrolling quickly past doesn't count.
+- **New cards** carry a small dot, and each tab's planet shows how many new things wait there.
+- **Seen things make room for new ones** when you next open the panel or switch tabs. Never while you're reading: nothing jumps under your mouse.
+- **People and repos** you've seen rest for a week, then may come back. A person you clicked never comes back.
+- **Market rows** you've seen move down for three days.
+- **News, headlines, papers and models** are read once. A few already-read ones stay at the end, dimmed, so a tab you've finished isn't empty.
+- **The Activity feed** is a timeline: nothing moves, and what you've seen is dimmed.
+- **Something seen three times and never clicked** rests for a month.
+- **When a tab runs low on new things,** myGeeKy looks for more on GitHub in the background: people at most every 6 hours, repos every 12. What it finds waits for your next visit to that tab.
+
+What you've seen is kept in `seen.json` and syncs to your other computers with the rest of your data. Every rest period is a setting (see the table below).
+
 ## All parameters (adjustable, or leave at the defaults)
 
 ```bash
@@ -924,7 +940,14 @@ mygeeky config reset
 | `gui_panel_height_fraction` | panel height as a fraction of the screen height | `0.25` |
 | `gui_activity_refresh_minutes` | minimum minutes between automatic activity-feed refreshes | `5` |
 | `gui_activity_limit` | how many recent activity events to show | `30` |
-| `gui_suggestions_auto_refresh_hours` | once the follow-back list is empty, search again by itself if the last search is at least this old (`0` = only on Refresh) | `6` |
+| `gui_suggestions_auto_refresh_hours` | when the follow-back list is empty or running low on people you haven't seen, search again by itself if the last search is at least this old (`0` = only on Refresh) | `6` |
+| `fresh_people_days` | a person you've seen (scrolled past, not clicked) may come back after this many days | `7` |
+| `fresh_repos_days` | the same for repos to contribute to | `7` |
+| `fresh_market_days` | a Market row you've seen moves down for this many days | `3` |
+| `fresh_ignored_after` | seen this many times and never clicked... | `3` |
+| `fresh_ignored_days` | ...then it rests this many days instead | `30` |
+| `fresh_people_topup_hours` | look for more people in the background at most this often | `6` |
+| `fresh_repos_topup_hours` | look for more repos in the background at most this often | `12` |
 | `gui_theme` | glass style (`"midnight"`/`"frosted"`/`"aurora"`) | `"midnight"` |
 | `gui_opacity` | whole-window transparency, adjustable via the ⚙ settings panel | `1.0` |
 

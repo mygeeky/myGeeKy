@@ -22,6 +22,7 @@ from PySide6.QtCore import (
     QUrl,
     QEasingCurve,
     QEvent,
+    QObject,
     QParallelAnimationGroup,
     QPoint,
     QPointF,
@@ -61,6 +62,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QRadioButton,
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLayout,
@@ -73,6 +75,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .. import freshness
 from . import app as logic
 from .app import THEME_NAMES, THEMES
 from ..config import AVATAR_CACHE_DIR, MyGeekyConfig
@@ -239,8 +242,76 @@ def _clear_layout(layout) -> None:
         item = layout.takeAt(0)
         widget = item.widget()
         if widget is not None:
+            widget.setProperty("fresh_key", None)      # on its way out: no longer counted or tracked
+            widget.setProperty("fresh_state", None)
             widget.hide()  # deleteLater only runs on a later event-loop turn
             widget.deleteLater()
+
+
+# --------------------------------------------------------------------------- freshness (see freshness.py)
+SEEN_AFTER_MS = 1500        # a card this long mostly on screen counts as seen
+SEEN_FRACTION = 0.6         # "mostly": this much of it (or a screenful of a tall one)
+SEEN_TICK_MS = 500
+
+
+class _FreshDot(QObject):
+    """A small 'new' dot kept in a card's top-right corner (it goes once you've seen the card)."""
+
+    def __init__(self, card: QWidget, color: str) -> None:
+        super().__init__(card)
+        self.dot = QLabel(card)
+        self.dot.setFixedSize(8, 8)
+        self.dot.setStyleSheet(f"background:{color}; border-radius:4px;")
+        self.dot.setToolTip("New since you last looked")
+        self.dot.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        card.installEventFilter(self)
+        self._place(card)
+
+    def eventFilter(self, obj, event) -> bool:  # noqa: N802
+        if event.type() in (QEvent.Resize, QEvent.Show):
+            self._place(obj)
+        return False
+
+    def _place(self, card: QWidget) -> None:
+        self.dot.move(max(0, card.width() - 14), 6)
+        self.dot.raise_()
+
+
+def _mark_fresh(card: QWidget, item: dict[str, Any], theme: dict[str, Any]) -> QWidget:
+    """Label a card for the freshness tracker: new ones get a dot and are watched; ones
+    you've already seen (shown at the end, or dimmed in a timeline) are dimmed."""
+    state, key = item.get("_fresh"), item.get("_key")
+    if state in ("new", "again") and key:
+        card.setProperty("fresh_key", key)
+        card.setProperty("fresh_state", state)
+        if state == "new":
+            card._fresh_dot = _FreshDot(card, theme["accent"])
+    elif state == "seen":
+        effect = QGraphicsOpacityEffect(card)
+        effect.setOpacity(0.55)
+        card.setGraphicsEffect(effect)
+    return card
+
+
+def _caught_up(theme: dict[str, Any], text: str) -> QLabel:
+    note = QLabel("✔ " + text)
+    note.setWordWrap(True)
+    note.setStyleSheet(f"color:{theme['good']}; font-size:10.5px; background:transparent; margin:2px 0 4px 0;")
+    return note
+
+
+SEEN_EARLIER_MAX = 4        # a read-once list you've finished still shows this many, dimmed
+
+
+def _activity_key(group: dict[str, Any]) -> str:
+    """A person's activity counts as new again as soon as they do something new."""
+    return f"activity:{str(group.get('actor', '')).lower()}:{group.get('latest', '')}"
+
+
+def _with_seen_earlier(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """New and returning ones, then only a few already-seen ones."""
+    fresh = [i for i in items if i.get("_fresh") != "seen"]
+    return fresh + [i for i in items if i.get("_fresh") == "seen"][:SEEN_EARLIER_MAX]
 
 
 class _Worker(QThread):
@@ -1369,6 +1440,7 @@ class PlanetButton(QPushButton):
         self._grow = 0.0
         self._hover = False
         self._dot = False
+        self._count = 0                  # new things in this tab (see freshness.py)
         self._selected = False
         self._bg = QColor("#1c1c2c")
         self._icons: dict[str, QSvgRenderer] = {}
@@ -1403,6 +1475,11 @@ class PlanetButton(QPushButton):
     def set_dot(self, on: bool) -> None:
         self._dot = on
         self.update()
+
+    def set_count(self, n: int) -> None:
+        if n != self._count:
+            self._count = n
+            self.update()
 
     def set_planet_bg(self, color: QColor) -> None:
         self._bg = color
@@ -1448,7 +1525,20 @@ class PlanetButton(QPushButton):
         side = r * 1.05
         icon_color = QColor("#0d0d16") if g > 0.5 else self._color
         self._icon(icon_color).render(painter, QRectF(c.x() - side / 2, c.y() - side / 2, side, side))
-        if self._dot and g < 0.5:                         # something new here (e.g. a new badge)
+        if self._count > 0 and g < 0.5:                   # how many new things wait in this tab
+            text = "9+" if self._count > 9 else str(self._count)
+            font = painter.font()
+            font.setPixelSize(9)
+            font.setBold(True)
+            painter.setFont(font)
+            w = max(13.0, painter.fontMetrics().horizontalAdvance(text) + 6.0)
+            bubble = QRectF(c.x() + r * 0.45, c.y() - r - 3, w, 13)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(self._color)
+            painter.drawRoundedRect(bubble, 6.5, 6.5)
+            painter.setPen(QColor("#0d0d16"))
+            painter.drawText(bubble, Qt.AlignCenter, text)
+        elif self._dot and g < 0.5:                       # something new here (e.g. a new badge)
             painter.setPen(Qt.NoPen)
             painter.setBrush(QColor("#f0f0f5"))
             painter.drawEllipse(QPointF(c.x() + r * 0.8, c.y() - r * 0.8), 3.5, 3.5)
@@ -3097,6 +3187,12 @@ class MyGeekyPanel(QWidget):
         super().__init__()
         self.cfg = cfg
         self.active_tab = "live"
+        # freshness (what you've seen): ready before any tab renders
+        self._seen_dwell: dict[str, int] = {}
+        self._seen_done: set[str] = set()
+        self._seen_pending: set[str] = set()
+        self._fresh_dirty: set[str] = set()
+        self._fresh_waiting: dict[str, Any] = {}      # background results held while you read that tab
         self._workers: list[_Worker] = []
         self.avatar_loader = AvatarLoader()
         self._last_activity_events: list[dict[str, Any]] = []
@@ -3142,18 +3238,13 @@ class MyGeekyPanel(QWidget):
         from ..achievements import log_open_today
         log_open_today()                      # a day of use, for the Regular badge
         self._badges: dict[str, Any] = {}
-        self._refresh_badges()
-        self._load_github_achievements()
-        self._load_live_stats()
-        self._load_suggestions()
-        self._load_contributions()
-        self._refresh_activity(force=False)
-        self._load_model_history()
-        self._load_market()
-        self._load_research()
-        self._style_market_switch()
-        self._load_news()
-        self._refresh_signals(force=False)
+        # each tab fills itself from saved data; one that fails must not stop the panel from
+        # opening -- it's saved as a crash report (offered a few seconds later) and the rest opens
+        for load in (self._refresh_badges, self._load_github_achievements, self._load_live_stats,
+                     self._load_suggestions, self._load_contributions, lambda: self._refresh_activity(force=False),
+                     self._load_model_history, self._load_market, self._load_research, self._style_market_switch,
+                     self._load_news, lambda: self._refresh_signals(force=False)):
+            self._load_safely(load)
         self.ticker.start(int(self.cfg.gui_live_rotate_seconds * 1000))
 
         self._activity_timer = QTimer(self)
@@ -3198,6 +3289,7 @@ class MyGeekyPanel(QWidget):
         self._sugg_timer.timeout.connect(self._maybe_auto_refresh_suggestions)
         self._sugg_timer.start(10 * 60_000)
         QTimer.singleShot(5_000, self._maybe_auto_refresh_suggestions)
+        self._start_seen_tracker()
 
     # ------------------------------------------------------------------ UI construction
     def _build_ui(self) -> None:
@@ -3557,8 +3649,8 @@ class MyGeekyPanel(QWidget):
             head.setStyleSheet(f"color:{theme['text']}; font-size:10px; font-weight:700; letter-spacing:0.5px; "
                                "margin-top:6px; background:transparent;")
             self.models_area.addWidget(head)
-            for m in group:
-                self.models_area.addWidget(ModelRow(m, theme, self._opener("model", m)))
+            for m in _with_seen_earlier(freshness.arrange(self.cfg, "model", group, keep_seen=True)):
+                self.models_area.addWidget(_mark_fresh(ModelRow(m, theme, self._opener("model", m)), m, theme))
 
     def _build_research_view(self) -> QScrollArea:
         page = QWidget()
@@ -3837,15 +3929,20 @@ class MyGeekyPanel(QWidget):
         layout.addWidget(self.token_label)
         row = QHBoxLayout()
         row.setSpacing(6)
-        renew = QPushButton("Renew on GitHub ↗")
+        self.renew_token_btn = renew = QPushButton("Renew on GitHub ↗")
         renew.setCursor(Qt.PointingHandCursor)
         from ..tokens import SETTINGS_URL
         renew.clicked.connect(lambda: logic.open_link(SETTINGS_URL))
         self.paste_token_btn = QPushButton("Paste new token")
         self.paste_token_btn.setCursor(Qt.PointingHandCursor)
         self.paste_token_btn.clicked.connect(self._on_paste_token)
+        self.signin_again_btn = QPushButton("Sign in again")      # for a Sign-in-with-GitHub token
+        self.signin_again_btn.setCursor(Qt.PointingHandCursor)
+        self.signin_again_btn.clicked.connect(self._open_setup_window)
+        self.signin_again_btn.hide()
         row.addWidget(renew)
         row.addWidget(self.paste_token_btn)
+        row.addWidget(self.signin_again_btn)
         row.addStretch(1)
         layout.addLayout(row)
         return banner
@@ -3858,10 +3955,23 @@ class MyGeekyPanel(QWidget):
         if not self._token_warnings:
             self.token_banner.setVisible(False)
             return
-        lines = [w["message"].split(" Renew it")[0].split(" Make a new")[0] for w in self._token_warnings]
-        lines.append("On GitHub, open the token and click 'Regenerate token', then paste it here.")
+        signin = any(w.get("signin") or w.get("renews") for w in self._token_warnings)
+        lines = [w["message"].split(" Renew it")[0].split(" Make a new")[0].split(" Sign in again")[0]
+                 .split(" needs you")[0] for w in self._token_warnings]
+        lines.append("Sign in with GitHub again: from then on myGeeKy keeps it working by itself." if signin else
+                     "On GitHub, open the token and click 'Regenerate token', then paste it here.")
+        self.renew_token_btn.setVisible(not signin)
+        self.paste_token_btn.setVisible(not signin)
+        self.signin_again_btn.setVisible(signin)
         self.token_label.setText("\n".join(("⏳ " + ln) if i < len(lines) - 1 else ln for i, ln in enumerate(lines)))
         self.token_banner.setVisible(True)
+
+    def _open_setup_window(self) -> None:
+        """The setup window, where Sign in with GitHub is one click."""
+        from .desktop import launch_command
+        from .. import winproc
+        python = launch_command()[0]
+        winproc.popen([python, "-m", "mygeeky.gui.setup_wizard"], close_fds=True, cwd=str(Path.home()))
 
     def _on_paste_token(self) -> None:
         from PySide6.QtWidgets import QInputDialog, QLineEdit
@@ -4712,6 +4822,8 @@ class MyGeekyPanel(QWidget):
     def unfold(self) -> None:
         self._dock(folded=False)
         self.hearts.hide()
+        # opening the panel: show what's new since last time
+        QTimer.singleShot(0, lambda: self._refresh_fresh_tab(self.active_tab))
 
     def closeEvent(self, event) -> None:  # noqa: N802 -- Qt's own naming convention
         self.hearts.close()  # a separate top-level window; it would outlive the panel
@@ -4760,9 +4872,155 @@ class MyGeekyPanel(QWidget):
     def _load_suggestions(self) -> None:
         self._render_suggestions(logic.get_suggestions(self.cfg))
 
+    @staticmethod
+    def _load_safely(load: Callable[[], Any]) -> None:
+        try:
+            load()
+        except Exception as exc:
+            try:
+                from .. import crashreport
+                from ..config import LOG_DIR
+                crashreport.write(LOG_DIR, f"panel start-up ({getattr(load, '__name__', 'a tab')})", exc)
+            except Exception:
+                pass
+
+    # ------------------------------------------------------------------ freshness: what you've seen
+    # A card that was mostly on screen for a moment, while the panel was open, counts as seen.
+    # Seen ones make room for new ones -- but only when you open the panel or switch tabs,
+    # never while you're reading (nothing jumps under the mouse).
+    FRESH_TABS = ("suggestions", "repos", "market", "news", "activity")
+
+    def _start_seen_tracker(self) -> None:
+        tick = QTimer(self)
+        tick.timeout.connect(self._track_seen)
+        tick.start(SEEN_TICK_MS)
+        flush = QTimer(self)
+        flush.timeout.connect(self._flush_seen)
+        flush.start(5_000)
+        self._seen_timers = (tick, flush)
+        repos = QTimer(self)
+        repos.timeout.connect(self._maybe_top_up_repos)
+        repos.start(30 * 60_000)
+        QTimer.singleShot(90_000, self._maybe_top_up_repos)
+        self._repos_topup_timer = repos
+
+    def _reading(self, tab: str) -> bool:
+        """Is this tab on screen right now (so it mustn't change under you)?"""
+        return self.panel_frame.isVisible() and self.isVisible() and self.active_tab == tab
+
+    def _track_seen(self) -> None:
+        if not (self.panel_frame.isVisible() and self.isVisible()):
+            self._seen_dwell.clear()
+            return
+        page = self.content_stack.currentWidget()
+        if page is None:
+            return
+        on_screen = set()
+        for card in page.findChildren(QFrame):
+            key = card.property("fresh_key")
+            if not key or key in self._seen_done or not card.isVisible():
+                continue
+            area = card.width() * card.height()
+            seen = card.visibleRegion().boundingRect()
+            if area <= 0 or not (seen.width() * seen.height() >= SEEN_FRACTION * area or seen.height() >= 220):
+                continue
+            on_screen.add(key)
+            self._seen_dwell[key] = self._seen_dwell.get(key, 0) + SEEN_TICK_MS
+            if self._seen_dwell[key] >= SEEN_AFTER_MS:
+                self._seen_done.add(key)
+                self._seen_pending.add(key)
+                self._fresh_dirty.add(self.active_tab)
+                dot = getattr(card, "_fresh_dot", None)
+                if dot is not None:
+                    dot.dot.hide()
+        for key in list(self._seen_dwell):            # scrolled away before the moment was up
+            if key not in on_screen:
+                del self._seen_dwell[key]
+        if on_screen & self._seen_done:
+            self._update_fresh_counts()
+
+    def _flush_seen(self) -> None:
+        if self._seen_pending:
+            keys, self._seen_pending = sorted(self._seen_pending), set()
+            logic.mark_seen(keys)
+
+    def _mark_clicked(self, item: dict[str, Any]) -> None:
+        key = item.get("_key")
+        if key:
+            self._seen_done.add(key)
+            logic.mark_seen([key], clicked=True)
+            self._fresh_dirty.add(self.active_tab)
+
+    def _update_fresh_counts(self) -> None:
+        """The number on each planet: new things in that tab you haven't seen yet."""
+        for tab in self.FRESH_TABS:
+            btn = self.tab_buttons.get(tab)
+            page = self.content_stack.widget(self._tab_order.index(tab)) if tab in self._tab_order else None
+            if btn is None or page is None:
+                continue
+            # cards on their way out lost their key in _clear_layout; a card on another tab still counts
+            n = len({card.property("fresh_key") for card in page.findChildren(QFrame)
+                     if card.property("fresh_state") == "new" and card.property("fresh_key") not in self._seen_done})
+            btn.set_count(n)
+            btn.setToolTip(f"{TABS[tab][1]}: {n} new" if n else TABS[tab][1])
+
+    def _refresh_fresh_tab(self, tab: str) -> None:
+        """Opening the panel or a tab: let what you've seen make room, and show what
+        arrived in the background meanwhile."""
+        waiting = self._fresh_waiting.pop(tab, None)
+        if tab not in self._fresh_dirty and waiting is None:
+            return
+        self._fresh_dirty.discard(tab)
+        self._flush_seen()
+        if tab == "suggestions":
+            self._render_suggestions(waiting if isinstance(waiting, dict) else logic.get_suggestions(self.cfg))
+        elif tab == "repos":
+            self._render_contributions(logic.get_contributions(self.cfg))
+        elif tab == "market":
+            self._load_market()
+            self._load_research()
+            self._render_models(logic.get_hf_models(self.cfg))
+        elif tab == "news":
+            self._render_news(logic.get_news(self.cfg))
+            self._render_headlines(logic.get_headlines(self.cfg))
+        elif tab == "activity":
+            self._refresh_activity(force=False)
+
     def _maybe_auto_refresh_suggestions(self) -> None:
-        if not self._sugg_running and logic.suggestions_auto_refresh_due(self.cfg):
-            self._on_refresh_suggestions()
+        if self._sugg_running or not logic.suggestions_auto_refresh_due(self.cfg):
+            return
+        if not getattr(self, "_last_suggestions", None):
+            self._on_refresh_suggestions()          # nothing to show yet: search where you can see it
+            return
+        # running low on new faces: look for more quietly, and show them when you next open People
+        self._sugg_running = True
+        self._run_async(lambda: logic.refresh_suggestions(self.cfg), self._on_quiet_suggestions)
+
+    def _on_quiet_suggestions(self, data: Any) -> None:
+        self._sugg_running = False
+        if not isinstance(data, dict) or (data.get("error") and "followback" not in data):
+            return
+        fresh = logic.get_suggestions(self.cfg)      # arranged: what's new first
+        if self._reading("suggestions"):
+            self._fresh_waiting["suggestions"] = fresh
+            self.tab_buttons["suggestions"].set_count(fresh.get("new", 0))
+        else:
+            self._render_suggestions(fresh)
+
+    def _maybe_top_up_repos(self) -> None:
+        if self._contrib_running or not logic.contributions_top_up_due(self.cfg):
+            return
+        self._contrib_running = True
+        self._run_async(lambda: logic.refresh_contributions(self.cfg), self._on_quiet_contributions)
+
+    def _on_quiet_contributions(self, data: Any) -> None:
+        self._contrib_running = False
+        if isinstance(data, dict) and data.get("error"):
+            return
+        if self._reading("repos"):
+            self._fresh_waiting["repos"] = True
+        else:
+            self._render_contributions(logic.get_contributions(self.cfg))
 
     def _on_refresh_suggestions(self) -> None:
         if self._sugg_running:
@@ -4797,6 +5055,7 @@ class MyGeekyPanel(QWidget):
         self._set_card_list(self.domain_area, domain, "domain_fit", theme)
         self._last_suggestions = followback
         self._update_live_ticker()
+        self._update_fresh_counts()
 
     def _set_card_list(self, layout, items: list[dict[str, Any]], score_key: str, theme: dict[str, Any]) -> None:
         _clear_layout(layout)
@@ -4806,10 +5065,12 @@ class MyGeekyPanel(QWidget):
             layout.addWidget(empty)
             return
         for item in items:
-            layout.addWidget(SuggestionCard(item, score_key, theme, self._on_suggestion_clicked, self.avatar_loader))
+            layout.addWidget(_mark_fresh(SuggestionCard(item, score_key, theme, self._on_suggestion_clicked,
+                                                        self.avatar_loader), item, theme))
 
     def _on_suggestion_clicked(self, item: dict[str, Any]) -> None:
         logic.record_click(self.cfg, "person", item)
+        self._mark_clicked(item)
         self._open_github(item.get("profile_url", ""))
         logic.mark_suggestion_seen(item.get("username", ""))
         # re-render on the next event-loop turn: the clicked card is still
@@ -4820,6 +5081,7 @@ class MyGeekyPanel(QWidget):
         """open_profile, plus: this click is an interest signal (and counts toward badges)."""
         def open_and_learn(url: str) -> bool:
             logic.record_click(self.cfg, kind, item)
+            self._mark_clicked(item)
             QTimer.singleShot(0, self._refresh_badges)
             return logic.open_link(url)
         return open_and_learn
@@ -5101,9 +5363,14 @@ class MyGeekyPanel(QWidget):
             self.repos_area.addWidget(empty)
             return
         mentions = logic.news_mentions([i.get("full_name", "") for i in items])
+        if items and not any(i.get("_fresh") == "new" for i in items):
+            self.repos_area.addWidget(_caught_up(theme, "You've seen these. myGeeKy looks for more repos in the "
+                                                        "background; seen ones come back after a while."))
         for item in items:
             item = {**item, "news": mentions.get(item.get("full_name", ""))}
-            self.repos_area.addWidget(RepoCard(item, theme, self._opener("repo", item), self.avatar_loader))
+            self.repos_area.addWidget(_mark_fresh(RepoCard(item, theme, self._opener("repo", item), self.avatar_loader),
+                                                  item, theme))
+        self._update_fresh_counts()
 
     # ------------------------------------------------------------------ activity
     def _refresh_activity(self, force: bool) -> None:
@@ -5119,11 +5386,13 @@ class MyGeekyPanel(QWidget):
             empty.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.activity_area.addWidget(empty)
         else:
-            for group in logic.group_activity(events):
+            groups = freshness.arrange(self.cfg, "activity", logic.group_activity(events), key=_activity_key)
+            for group in groups:
                 card = ActivityGroup(group, theme, self._open_github, self.avatar_loader,
                                      expanded=group["actor"].lower() in self._expanded_actors)
                 card.toggled.connect(self._on_activity_group_toggled)
-                self.activity_area.addWidget(card)
+                self.activity_area.addWidget(_mark_fresh(card, group, theme))
+            self._update_fresh_counts()
         fetched_at = (data or {}).get("fetched_at")
         if fetched_at:
             self.activity_updated_label.setText("updated " + _time_ago(fetched_at))
@@ -5280,6 +5549,9 @@ class MyGeekyPanel(QWidget):
             msg.setWordWrap(True)
             msg.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.headlines_area.addWidget(msg)
+        items = _with_seen_earlier(freshness.arrange(self.cfg, "headline", items, keep_seen=True))
+        if items and not any(i.get("_fresh") == "new" for i in items):
+            self.headlines_area.addWidget(_caught_up(theme, "You're all caught up. New headlines arrive every few hours."))
         mine = [x for x in items if not x.get("explore")]
         wide = [x for x in items if x.get("explore")]
         for label, group in (("FOR YOUR WORK", mine), ("\U0001f30d THE BIG PICTURE", wide)):
@@ -5290,7 +5562,9 @@ class MyGeekyPanel(QWidget):
                                "margin-top:6px; background:transparent;")
             self.headlines_area.addWidget(head)
             for item in group:
-                self.headlines_area.addWidget(HeadlineRow(item, theme, self._opener("headline", item)))
+                self.headlines_area.addWidget(_mark_fresh(HeadlineRow(item, theme, self._opener("headline", item)),
+                                                          item, theme))
+        self._update_fresh_counts()
 
     def _maybe_refresh_news(self) -> None:
         if logic.news_refresh_due(self.cfg):
@@ -5320,8 +5594,10 @@ class MyGeekyPanel(QWidget):
             msg.setWordWrap(True)
             msg.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.news_area.addWidget(msg)
+        items = _with_seen_earlier(freshness.arrange(self.cfg, "news", items, keep_seen=True))
         for item in items:
-            self.news_area.addWidget(NewsCard(item, theme, self._opener("news", item)))
+            self.news_area.addWidget(_mark_fresh(NewsCard(item, theme, self._opener("news", item)), item, theme))
+        self._update_fresh_counts()
         updated = data.get("updated_at")
         if not self._news_running:
             self.news_updated_label.setText("updated " + _time_ago(updated) if updated else "")
@@ -5377,12 +5653,12 @@ class MyGeekyPanel(QWidget):
             self.research_area.addWidget(msg)
         if data.get("rising"):
             header("\U0001f525 RISING IN YOUR FIELD")
-            for p in data["rising"]:
-                self.research_area.addWidget(self._research_card(p, theme, "rising"))
+            for p in _with_seen_earlier(freshness.arrange(self.cfg, "paper", data["rising"], keep_seen=True)):
+                self.research_area.addWidget(_mark_fresh(self._research_card(p, theme, "rising"), p, theme))
         if data.get("tools"):
             header("\U0001f6e0\ufe0f TOOLS WITH PAPERS")
-            for p in data["tools"]:
-                self.research_area.addWidget(self._research_card(p, theme, "tool"))
+            for p in _with_seen_earlier(freshness.arrange(self.cfg, "paper", data["tools"], keep_seen=True)):
+                self.research_area.addWidget(_mark_fresh(self._research_card(p, theme, "tool"), p, theme))
         if data.get("people"):
             header("\U0001f469\u200d\U0001f52c PEOPLE BEHIND THE TRENDS")
             for person in data["people"]:
@@ -5426,10 +5702,12 @@ class MyGeekyPanel(QWidget):
             msg.setWordWrap(True)
             msg.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.market_area.addWidget(msg)
+        rows = freshness.arrange(self.cfg, "market", rows)            # seen ones move down for a while
         mentions = logic.news_mentions([r.get("repo", "") for r in rows])
         for row in rows:
             row = {**row, "news": mentions.get(row.get("repo", ""))}
-            self.market_area.addWidget(MarketRow(row, theme, self._opener("repo", row), self.avatar_loader))
+            self.market_area.addWidget(_mark_fresh(MarketRow(row, theme, self._opener("repo", row), self.avatar_loader),
+                                                   row, theme))
         self._render_producthunt(data, theme)
         collecting = rows and all(r.get("stars_week") is None for r in rows)
         self.market_hint.setText(
@@ -5441,6 +5719,7 @@ class MyGeekyPanel(QWidget):
             self.market_updated_label.setText("updated " + _time_ago(updated) if updated else "")
         self.market_hint.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
         self.market_updated_label.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+        self._update_fresh_counts()
 
     def _render_producthunt(self, data: dict[str, Any], theme: dict[str, Any]) -> None:
         posts = data.get("producthunt") or []
@@ -5638,7 +5917,11 @@ class MyGeekyPanel(QWidget):
 
     # ------------------------------------------------------------------ tabs
     def _switch_tab(self, name: str) -> None:
+        previous = getattr(self, "active_tab", None)
         self.active_tab = name
+        if previous and previous != name:
+            self._fresh_dirty.add(previous)           # what you saw there makes room next time
+        QTimer.singleShot(0, lambda: self._refresh_fresh_tab(name))
         self.content_stack.setCurrentIndex(self._tab_order.index(name))
         self._update_tab_styles()
         if name == "badges":

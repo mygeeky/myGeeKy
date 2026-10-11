@@ -17,7 +17,8 @@ import stat
 from pathlib import Path
 
 # every keyring entry myGeeKy writes, all keyed by your GitHub username
-KEYRING_SERVICES = ("mygeeky-github-token", "mygeeky-beacon-token", "mygeeky-producthunt-token", "mygeeky-signals-key")
+KEYRING_SERVICES = ("mygeeky-github-token", "mygeeky-github-refresh", "mygeeky-beacon-token",
+                    "mygeeky-producthunt-token", "mygeeky-signals-key")
 
 
 def erase_tokens(username: str) -> int:

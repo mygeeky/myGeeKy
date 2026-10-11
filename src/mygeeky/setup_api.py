@@ -176,9 +176,9 @@ def github_login_finish(req: dict[str, Any]) -> dict[str, Any]:
     from . import github_login as gl
     from .config import load_config, save_config
     try:
-        token = gl.poll(str(req.get("device_code") or ""), int(req.get("interval") or 5),
-                        int(req.get("expires_in") or 900))
-        login = gl.who(token)
+        grant = gl.poll_grant(str(req.get("device_code") or ""), int(req.get("interval") or 5),
+                              int(req.get("expires_in") or 900))
+        login = gl.who(grant["access_token"])
     except gl.LoginError as exc:
         return {"ok": False, "error": str(exc)}
     cfg = load_config()
@@ -188,7 +188,7 @@ def github_login_finish(req: dict[str, Any]) -> dict[str, Any]:
     if not cfg.github_username:
         cfg.github_username = login
         save_config(cfg)
-    gl.store(token, login)
+    gl.store(grant, login)                  # with its refresh token: it renews itself
     return {"ok": True, "login": login, "expiry": _expiry_note("read")}
 
 

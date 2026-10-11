@@ -4,6 +4,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { type Grant, renewGrant } from './github-login';
 
 export type Settings = {
   username: string;
@@ -22,6 +23,8 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 const SETTINGS_KEY = 'mygeeky.settings';
 const TOKEN_KEY = 'mygeeky_read_token';
+const SIGNIN_KEY = 'mygeeky_signin_refresh';      // the refresh token of a "Sign in with GitHub" (secure store)
+const RENEW_BEFORE_MS = 10 * 60 * 1000;
 
 export async function loadSettings(): Promise<Settings | null> {
   const raw = await AsyncStorage.getItem(SETTINGS_KEY);
@@ -53,10 +56,72 @@ export async function setToken(token: string | null): Promise<void> {
   if (Platform.OS === 'web') {
     if (token) globalThis.localStorage?.setItem(TOKEN_KEY, token);
     else globalThis.localStorage?.removeItem(TOKEN_KEY);
-    return;
-  }
-  if (token) await SecureStore.setItemAsync(TOKEN_KEY, token);
+  } else if (token) await SecureStore.setItemAsync(TOKEN_KEY, token);
   else await SecureStore.deleteItemAsync(TOKEN_KEY);
+  if (!token) await saveSignin(null);              // signing out forgets the refresh token too
+}
+
+// ---- 8-hour sign-in tokens that renew themselves
+type SigninRecord = { refresh: string; expiresAt: number; refreshExpiresAt: number };
+
+async function readSecure(key: string): Promise<string | null> {
+  if (Platform.OS === 'web') return globalThis.localStorage?.getItem(key) ?? null;
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch {
+    await SecureStore.deleteItemAsync(key).catch(() => undefined);
+    return null;
+  }
+}
+
+async function writeSecure(key: string, value: string | null): Promise<void> {
+  if (Platform.OS === 'web') {
+    if (value) globalThis.localStorage?.setItem(key, value);
+    else globalThis.localStorage?.removeItem(key);
+  } else if (value) await SecureStore.setItemAsync(key, value);
+  else await SecureStore.deleteItemAsync(key).catch(() => undefined);
+}
+
+/** Keep the refresh token of a fresh sign-in (none: a token that doesn't expire). */
+export async function saveSignin(grant: Grant | null): Promise<void> {
+  if (!grant?.refresh) return writeSecure(SIGNIN_KEY, null);
+  const now = Date.now();
+  const record: SigninRecord = {
+    refresh: grant.refresh, expiresAt: now + (grant.expiresIn ?? 8 * 3600) * 1000,
+    refreshExpiresAt: now + (grant.refreshExpiresIn ?? 182 * 86400) * 1000,
+  };
+  await writeSecure(SIGNIN_KEY, JSON.stringify(record));
+}
+
+let renewing: Promise<string | null> | null = null;   // one renewal at a time, however many screens load
+
+/** The token to call GitHub with: renewed first when an 8-hour sign-in is about to end. */
+export async function freshToken(fallback: string | null): Promise<string | null> {
+  const raw = await readSecure(SIGNIN_KEY);
+  if (!raw) return fallback;
+  let record: SigninRecord;
+  try {
+    record = JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+  if (record.expiresAt - Date.now() > RENEW_BEFORE_MS) return (await getToken()) ?? fallback;
+  if (!renewing) {
+    renewing = (async () => {
+      const got = await renewGrant(record.refresh);
+      if (got === 'refused') {
+        await writeSecure(SIGNIN_KEY, null);          // the sign-in ended: You -> Sign in with GitHub
+        return null;
+      }
+      if (!got) return null;                           // offline: try again next time
+      await setToken(got.token);
+      await saveSignin(got);
+      return got.token;
+    })().finally(() => {
+      renewing = null;
+    });
+  }
+  return (await renewing) ?? (await getToken()) ?? fallback;
 }
 
 // ---- cached results: { at: ISO time, data }

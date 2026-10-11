@@ -78,3 +78,18 @@ def test_auth_status_shows_expiry(monkeypatch):
         {"name": "read", "state": "ok", "expires_at": (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()})])
     out = CliRunner().invoke(cli.main, ["auth", "status"]).output
     assert "Token 1 (read-only) expires in" in out and "Regenerate token" in out
+
+
+def test_a_sign_in_that_renews_itself_never_nags_and_an_old_one_says_sign_in_again():
+    from datetime import datetime, timedelta, timezone
+    now = datetime(2026, 10, 11, 12, tzinfo=timezone.utc)
+    later = (now + timedelta(days=150)).timestamp()
+    ok = tokens.describe({"name": "read", "state": "ok", "expires_at": (now + timedelta(hours=1)).isoformat(),
+                          "renews": True, "renews_until": later}, now=now)
+    assert not ok["warn"] and "renews itself" in ok["message"]
+    soon = tokens.describe({"name": "read", "state": "ok", "renews": True,
+                            "renews_until": (now + timedelta(days=3)).timestamp()}, now=now)
+    assert soon["warn"] and "sign in again" in soon["message"]
+    old = tokens.describe({"name": "read", "state": "ok", "expires_at": (now + timedelta(hours=8)).isoformat(),
+                           "signin": True}, now=now)
+    assert old["warn"] and "Sign in again" in old["message"] and "Renew it" not in old["message"]

@@ -2,7 +2,8 @@
 import * as Clipboard from 'expo-clipboard';
 import { useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text } from 'react-native';
-import { startLogin, waitForLogin, whoAmI } from '../lib/github-login';
+import { startLogin, waitForGrant, whoAmI } from '../lib/github-login';
+import { saveSignin } from '../lib/storage';
 import { C } from '../lib/theme';
 
 export function SignInButton({ onSignedIn, signedInAs }: {
@@ -22,9 +23,10 @@ export function SignInButton({ onSignedIn, signedInAs }: {
       await Clipboard.setStringAsync(flow.userCode);
       setNote('The code is copied. Paste it on the GitHub page, tap Continue, then Authorize. Come back here after.');
       await Linking.openURL(flow.uri);
-      const token = await waitForLogin(flow, () => false);
-      const login = await whoAmI(token);
-      await onSignedIn(login, token);
+      const grant = await waitForGrant(flow, () => false);
+      const login = await whoAmI(grant.token);
+      await saveSignin(grant);                       // its refresh token keeps it working past 8 hours
+      await onSignedIn(login, grant.token);
       setNote('');
     } catch (e) {
       setNote(e instanceof Error ? e.message : "The sign-in didn't finish. Try again.");

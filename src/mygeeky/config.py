@@ -53,6 +53,7 @@ LOG_DIR = DATA_DIR / "logs"
 AVATAR_CACHE_DIR = DATA_DIR / "avatar_cache"
 MY_BEACON_FILE = DATA_DIR / "beacon.json"          # what you publish to <you>/mygeeky-beacon
 BEACON_CACHE_FILE = DATA_DIR / "beacons_cache.json"  # everyone else's beacons, last read
+SEEN_FILE = DATA_DIR / "seen.json"                    # what you've already seen in the panel (synced)
 
 
 @dataclass
@@ -228,6 +229,14 @@ class MyGeekyConfig:
     gui_activity_limit: int = 30              # how many recent activity events to show
     gui_activity_match_people: int = 12       # also show activity of this many top suggestions (matched to your
                                                # CV/ORCID/repos); one API call each per refresh, 0 = followed only
+    # freshness: seen things make room for new ones (see freshness.py)
+    fresh_people_days: float = 7.0         # a person you've seen (not clicked) may come back after this
+    fresh_repos_days: float = 7.0          # the same for repos to contribute to
+    fresh_market_days: float = 3.0         # a Market row you've seen moves down for this long
+    fresh_ignored_after: int = 3           # seen this many times and never clicked...
+    fresh_ignored_days: float = 30.0       # ...then it rests this long instead
+    fresh_people_topup_hours: float = 6.0  # search GitHub for more people at most this often, in the background
+    fresh_repos_topup_hours: float = 12.0  # the same for repos
     gui_suggestions_auto_refresh_hours: float = 6.0  # panel searches again by itself once the follow-back list is
                                                # empty and the last search is this old; 0 = only on Refresh click
     gui_theme: str = "midnight"               # "frosted" | "midnight" | "aurora" -- switchable live via the panel's swatch buttons

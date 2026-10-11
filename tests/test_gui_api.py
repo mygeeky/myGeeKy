@@ -7,7 +7,7 @@ importorskip so the rest of the suite still runs without the 'gui' extra
 installed.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -108,15 +108,22 @@ def test_get_suggestions_reads_local_log_only(monkeypatch, tmp_path):
     assert [r["username"] for r in data["domain_highlights"]] == ["expert"]
 
 
-def test_get_contributions_returns_latest_run_only(monkeypatch, tmp_path):
+def test_get_contributions_shows_the_newest_run_first_then_older_unseen_ones(monkeypatch, tmp_path):
     _isolate_state(monkeypatch, tmp_path)
     cfg = MyGeekyConfig(github_username="me", contribute_max_returned=2)
+    now = datetime.now(timezone.utc)
+    older, newer = (now - timedelta(days=10)).isoformat(), (now - timedelta(days=1)).isoformat()
+    ancient = (now - timedelta(days=200)).isoformat()
 
+    from mygeeky import freshness
     from mygeeky.storage import log_contributions
-    log_contributions([{"full_name": "old/repo", "timestamp": "2026-01-01T00:00:00+00:00"}])
-    log_contributions([{"full_name": f"new/r{i}", "timestamp": "2026-02-01T00:00:00+00:00"} for i in range(3)])
+    log_contributions([{"full_name": "stale/repo", "timestamp": ancient}])                # too old to come back
+    log_contributions([{"full_name": "old/repo", "timestamp": older}])
+    log_contributions([{"full_name": f"new/r{i}", "timestamp": newer} for i in range(3)])
 
-    assert [r["full_name"] for r in logic.get_contributions(cfg)] == ["new/r0", "new/r1"]
+    assert [r["full_name"] for r in logic.get_contributions(cfg)] == ["new/r0", "new/r1"]    # best first
+    freshness.mark_seen(["repo:new/r0", "repo:new/r1"])                                     # scrolled past
+    assert [r["full_name"] for r in logic.get_contributions(cfg)] == ["new/r2", "old/repo"]
 
 
 def test_get_contributions_empty_without_log(monkeypatch, tmp_path):
@@ -258,26 +265,34 @@ def test_folded_tab_is_small():
 def test_get_suggestions_backfills_from_older_runs_when_newest_are_hidden(monkeypatch, tmp_path):
     _isolate_state(monkeypatch, tmp_path)
     from mygeeky.storage import add_excluded, log_suggestions
-    log_suggestions([{"username": u, "score": 0.5, "list": "followback"} for u in ("old1", "old2", "Bob")])
-    log_suggestions([{"username": u, "score": 0.5, "list": "followback"} for u in ("new1", "new2", "Bob")])
+    now = datetime.now(timezone.utc)
+    first, second = (now - timedelta(days=3)).isoformat(), (now - timedelta(days=1)).isoformat()
+    log_suggestions([{"username": u, "score": 0.5, "list": "followback", "timestamp": first}
+                     for u in ("old1", "old2", "Bob")])
+    log_suggestions([{"username": u, "score": 0.5, "list": "followback", "timestamp": second}
+                     for u in ("new1", "new2", "Bob")])
     add_excluded(["new1", "new2"])
 
     cfg = MyGeekyConfig(github_username="me", max_suggestions_returned=2)
     names = [r["username"] for r in logic.get_suggestions(cfg)["followback"]]
-    assert names == ["old2", "Bob"]  # newest-first fill, Bob only once
+    assert names == ["Bob", "old1"]  # the newest run first, then older runs best-first; Bob only once
 
 
 def test_suggestions_auto_refresh_due(monkeypatch, tmp_path):
     _isolate_state(monkeypatch, tmp_path)
     from mygeeky.storage import add_excluded, log_suggestions
-    t0 = datetime(2026, 10, 1, 12, tzinfo=timezone.utc)
-    log_suggestions([{"username": "a", "score": 0.5, "list": "followback", "timestamp": t0.isoformat()}])
-    cfg = MyGeekyConfig(github_username="me", gui_suggestions_auto_refresh_hours=6)
-    later = datetime(2026, 10, 1, 20, tzinfo=timezone.utc)
+    t0 = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(hours=8)
+    log_suggestions([{"username": u, "score": 0.5, "list": "followback", "timestamp": t0.isoformat()}
+                     for u in ("a", "b", "c", "d")])
+    cfg = MyGeekyConfig(github_username="me", gui_suggestions_auto_refresh_hours=6, max_suggestions_returned=4)
+    later = t0 + timedelta(hours=8)
 
-    assert logic.suggestions_auto_refresh_due(cfg, now=later) is False  # list not empty
+    assert logic.suggestions_auto_refresh_due(cfg, now=later) is False  # plenty of new faces
+    add_excluded(["b", "c", "d"])                                         # 1 new of 4: running low...
+    assert logic.suggestions_auto_refresh_due(cfg, now=t0 + timedelta(hours=3)) is False   # ...but searched lately
+    assert logic.suggestions_auto_refresh_due(cfg, now=later) is True                       # top up
     add_excluded(["a"])
-    assert logic.suggestions_auto_refresh_due(cfg, now=datetime(2026, 10, 1, 15, tzinfo=timezone.utc)) is False
+    assert logic.suggestions_auto_refresh_due(cfg, now=t0 + timedelta(hours=3)) is False
     assert logic.suggestions_auto_refresh_due(cfg, now=later) is True
     cfg.gui_suggestions_auto_refresh_hours = 0
     assert logic.suggestions_auto_refresh_due(cfg, now=later) is False

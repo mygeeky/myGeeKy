@@ -78,7 +78,20 @@ def get_token(username: str) -> str | None:
     except Exception:
         # Some headless/CI environments have no keyring backend at all.
         token = None
+    if token:
+        token = _renewed(username) or token
     return token or _gh_cli_token()
+
+
+def _renewed(username: str) -> str | None:
+    """A "Sign in with GitHub" token lives 8 hours: renew it shortly before it ends."""
+    try:
+        from . import github_login
+        if github_login.needs_renewal(github_login.refresh_record(username)):
+            return github_login.renew(username)
+    except Exception:
+        pass
+    return None
 
 
 def token_source(username: str) -> str:
@@ -140,6 +153,8 @@ def prompt_and_store_token(username: str, show_guide: bool = True) -> None:
 
 
 def delete_token(username: str) -> bool:
+    from .github_login import forget_refresh
+    forget_refresh(username)
     try:
         keyring.delete_password(SERVICE_NAME, username)
         return True

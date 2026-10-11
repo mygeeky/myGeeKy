@@ -142,6 +142,45 @@ def log_contributions(records: Iterable[dict[str, Any]]) -> None:
         append_jsonl(CONTRIBUTE_LOG, r)
 
 
+POOL_DAYS = 90      # older suggestions are too stale to bring back
+
+
+def _pool(records: list[dict[str, Any]], key: str, exclude: Iterable[str] = ()) -> list[dict[str, Any]]:
+    """Each one once (its newest record): newest run first; within a run, the order it
+    was saved in (runs are saved best first -- no need to know what a score looks like)."""
+    from datetime import timedelta, timezone
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=POOL_DAYS)).isoformat()
+    skip, picked = {e.lower() for e in exclude}, []
+    for index in range(len(records) - 1, -1, -1):  # newest record of each one
+        r = records[index]
+        name = str(r.get(key) or "").lower()
+        if not name or name in skip:
+            continue
+        stamp = str(r.get("timestamp") or "")
+        if stamp and stamp < cutoff:
+            continue
+        skip.add(name)
+        picked.append((index, r))
+    runs: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for index, r in picked:
+        runs.setdefault(str(r.get("timestamp") or ""), []).append((index, r))
+    ordered = []
+    for stamp in sorted(runs, reverse=True):
+        ordered += [r for _, r in sorted(runs[stamp], key=lambda pair: pair[0])]
+    return ordered
+
+
+def suggestion_pool(list_type: str, exclude: Iterable[str] = ()) -> list[dict[str, Any]]:
+    """Everyone suggested lately who isn't excluded: what the People tab can rotate through."""
+    records = [r for r in read_jsonl(SUGGESTIONS_LOG) if r.get("list") == list_type]
+    return _pool(records, "username", exclude)
+
+
+def contribution_pool() -> list[dict[str, Any]]:
+    """Every repo suggested lately (newest run first): what the Repos tab can rotate through."""
+    return _pool(read_jsonl(CONTRIBUTE_LOG), "full_name")
+
+
 def last_contributions(limit: int = 10) -> list[dict[str, Any]]:
     """The most recent `mygeeky contribute` run's results, best first."""
     records = read_jsonl(CONTRIBUTE_LOG)

@@ -30,14 +30,34 @@ export async function startLogin(): Promise<Flow> {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** What GitHub hands back. Since 2026-08-14 a new OAuth app's tokens last 8 hours and come
+ *  with a refresh token (6 months, renewed at every use) that keeps the sign-in working. */
+export type Grant = { token: string; refresh?: string; expiresIn?: number; refreshExpiresIn?: number };
+
+type TokenAnswer = {
+  access_token?: string; refresh_token?: string; expires_in?: number; refresh_token_expires_in?: number;
+  error?: string; interval?: number; error_description?: string;
+};
+
+const grantOf = (d: TokenAnswer): Grant => ({
+  token: d.access_token as string, refresh: d.refresh_token,
+  expiresIn: d.expires_in ? Number(d.expires_in) : undefined,
+  refreshExpiresIn: d.refresh_token_expires_in ? Number(d.refresh_token_expires_in) : undefined,
+});
+
 /** Waits until you authorize on github.com; resolves to the token. */
 export async function waitForLogin(flow: Flow, cancelled: () => boolean): Promise<string> {
+  return (await waitForGrant(flow, cancelled)).token;
+}
+
+/** The same, with the refresh token GitHub may send along. */
+export async function waitForGrant(flow: Flow, cancelled: () => boolean): Promise<Grant> {
   const deadline = Date.now() + flow.expiresIn * 1000;
   let wait = Math.max(flow.interval, 1);
   while (Date.now() < deadline) {
     await sleep(wait * 1000);
     if (cancelled()) throw new Error('Sign-in cancelled.');
-    let d: { access_token?: string; error?: string; interval?: number; error_description?: string };
+    let d: TokenAnswer;
     try {
       d = await post('https://github.com/login/oauth/access_token', {
         client_id: CLIENT_ID, device_code: flow.deviceCode, grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
@@ -45,7 +65,7 @@ export async function waitForLogin(flow: Flow, cancelled: () => boolean): Promis
     } catch {
       continue;                                       // a network hiccup: try again
     }
-    if (d.access_token) return d.access_token;
+    if (d.access_token) return grantOf(d);
     if (d.error === 'authorization_pending') continue;
     if (d.error === 'slow_down') {
       wait = Number(d.interval) || wait + 5;
@@ -56,6 +76,21 @@ export async function waitForLogin(flow: Flow, cancelled: () => boolean): Promis
     throw new Error(d.error_description || d.error || 'GitHub sign-in failed.');
   }
   throw new Error('The code expired. Tap Sign in again.');
+}
+
+/** A new token pair from a refresh token. A device-flow sign-in needs no app secret to do this.
+ *  'refused': the refresh token is expired or was replaced (sign in again); null: offline. */
+export async function renewGrant(refresh: string): Promise<Grant | 'refused' | null> {
+  let d: TokenAnswer;
+  try {
+    d = await post('https://github.com/login/oauth/access_token', {
+      client_id: CLIENT_ID, grant_type: 'refresh_token', refresh_token: refresh,
+    });
+  } catch {
+    return null;
+  }
+  if (d.access_token) return grantOf(d);
+  return d.error === 'bad_refresh_token' || d.error === 'invalid_grant' ? 'refused' : null;
 }
 
 export async function whoAmI(token: string): Promise<string> {

@@ -391,8 +391,8 @@ def _github_sign_in(cfg) -> bool:
         click.echo("  3. Click Authorize myGeeKy. It can only read public data.\n")
         click.launch(flow["verification_uri"])
         click.echo("Waiting for you on github.com…")
-        token = gl.poll(flow["device_code"], flow["interval"], flow["expires_in"])
-        login = gl.who(token)
+        grant = gl.poll_grant(flow["device_code"], flow["interval"], flow["expires_in"])
+        login = gl.who(grant["access_token"])
     except gl.LoginError as exc:
         click.secho(str(exc), fg="red")
         return False
@@ -403,7 +403,7 @@ def _github_sign_in(cfg) -> bool:
     if not cfg.github_username:
         cfg.github_username = login
         save_config(cfg)
-    gl.store(token, login)
+    gl.store(grant, login)                  # with its refresh token: it renews itself
     click.secho(f"Signed in as {login}.", fg="green")
     return True
 

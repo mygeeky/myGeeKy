@@ -3,6 +3,33 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.21.0 (2026-10-11): always something new, and sign-ins that keep working
+
+- **myGeeKy remembers what you've seen.** A card counts as seen when it was mostly on screen for about a second and a half (or you clicked it).
+  - What you've seen makes room for what you haven't, when you next open the panel or switch tabs. Never while you're reading.
+- **Each tab has its own rule:**
+  - **People and repos** rest for 7 days, then may come back. Clicked people never come back.
+  - **Market rows** move down for 3 days.
+  - **News, headlines, papers and models** are read once. A few stay at the end, dimmed.
+  - **Activity** keeps its order and dims what you've seen.
+  - Anything seen 3 times and never clicked rests for 30 days.
+- **People and Repos rotate through everything suggested lately** (the last 90 days), not just the last search.
+- **New things keep coming:** when a tab runs low on unseen items, myGeeKy searches GitHub again in the background (people at most every 6 hours, repos every 12). Results wait for your next visit to that tab.
+- **You can see what's new:** a dot on new cards, a count on each tab's planet ("People: 4 new"), and an "all caught up" note when you've seen everything.
+- **Settings:** `fresh_people_days`, `fresh_repos_days`, `fresh_market_days`, `fresh_ignored_after`, `fresh_ignored_days`, `fresh_people_topup_hours`, `fresh_repos_topup_hours`.
+- **Tests:** the test run no longer aborts at exit when a test's panel still has a download running.
+
+### Sign in with GitHub keeps working
+- **GitHub now gives myGeeKy's sign-in tokens an 8-hour life.** It became the default for new OAuth apps on 14 August 2026. Before this release, a sign-in quietly stopped working after 8 hours, on the desktop and on the phone.
+- **myGeeKy now renews the token by itself:**
+  - It keeps GitHub's refresh token in the system's secure store (keyring / phone secure store) and renews shortly before the 8 hours are up.
+  - No app secret is needed for a device-flow sign-in; this was checked against GitHub.
+  - On the desktop, the panel and the weekly run can't renew at the same moment. Each renewal replaces the refresh token, so two at once would sign you out.
+- **`mygeeky auth status`** says "renews itself automatically" for such tokens. It warns only if you haven't used myGeeKy for nearly 6 months.
+- **An 8-hour token from an older version** now says "sign in again" instead of "renew it on GitHub's token page". The panel's banner offers **Sign in again**, which opens the setup window.
+- **Connect your phone** no longer passes along a sign-in token that renews itself (it would stop working on one of the two); the phone signs in by itself.
+- **Logout and uninstall** remove the refresh token too.
+
 ## 0.20.0 (2026-10-10): first-class on macOS, and uv support
 
 ### uv

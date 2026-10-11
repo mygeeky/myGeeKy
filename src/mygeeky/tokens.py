@@ -74,6 +74,16 @@ def describe(entry: dict[str, Any], now: datetime | None = None) -> dict[str, An
     now = now or datetime.now(timezone.utc)
     label, renew = TOKENS[entry["name"]]
     out = {**entry, "label": label, "renew": renew, "days_left": None, "warn": False}
+    if entry.get("renews"):                       # Sign in with GitHub: 8-hour tokens, renewed by myGeeKy
+        until = datetime.fromtimestamp(float(entry["renews_until"]), timezone.utc)
+        days = (until - now).total_seconds() / 86400
+        out["days_left"] = int(days)
+        if days <= WARN_DAYS:
+            out.update(warn=True, message=f"{label} (Sign in with GitHub) needs you to sign in again by "
+                                          f"{until.strftime('%d %B %Y').lstrip('0')}: run `mygeeky auth login`.")
+        else:
+            out["message"] = f"{label} (Sign in with GitHub) renews itself automatically."
+        return out
     if entry["state"] == "expired":
         out.update(warn=True, message=f"{label} has expired or was revoked. Make a new one and run `{renew}`.")
     elif entry["state"] == "unreachable":
@@ -85,11 +95,15 @@ def describe(entry: dict[str, Any], now: datetime | None = None) -> dict[str, An
         days = (exp - now).total_seconds() / 86400
         out["days_left"] = int(days)
         when = exp.strftime("%d %B %Y").lstrip("0")
+        signin = entry.get("signin")              # a sign-in token from before renewal existed: sign in again
         if days < 0:
-            out.update(warn=True, message=f"{label} expired on {when}. Make a new one and run `{renew}`.")
+            out.update(warn=True, message=(f"{label} expired on {when}. Sign in again: `{renew}`." if signin
+                                           else f"{label} expired on {when}. Make a new one and run `{renew}`."))
         elif days <= WARN_DAYS:
             left = "today" if days < 1 else f"in {int(days)} day{'s' if int(days) != 1 else ''}"
-            out.update(warn=True, message=f"{label} expires {left} ({when}). Renew it, then run `{renew}`.")
+            out.update(warn=True, message=(
+                f"{label} expires {left} ({when}). Sign in again with `{renew}`: myGeeKy now keeps a sign-in "
+                "working by itself." if signin else f"{label} expires {left} ({when}). Renew it, then run `{renew}`."))
         else:
             out["message"] = f"{label} expires on {when} ({int(days)} days left)."
     return out
@@ -112,7 +126,19 @@ def status(cfg: MyGeekyConfig, force: bool = False, max_age_hours: float = 24.0)
                 write_json(TOKEN_CHECK_FILE, cache)
             except OSError:
                 pass
-    return [describe({"name": name, **cache["tokens"][name]}) for name in TOKENS if name in cache["tokens"]]
+    from .github_login import refresh_record
+    record = refresh_record(cfg.github_username) if cfg.github_username else None
+    out = []
+    for name in TOKENS:
+        if name not in cache["tokens"]:
+            continue
+        entry = {"name": name, **cache["tokens"][name]}
+        if name == "read" and record:
+            entry.update(renews=True, renews_until=record.get("refresh_expires_at", 0))
+        elif name == "read" and stored.get("read", "").startswith(("gho_", "ghu_")):
+            entry["signin"] = True
+        out.append(describe(entry))
+    return out
 
 
 def warnings(cfg: MyGeekyConfig) -> list[dict[str, Any]]:

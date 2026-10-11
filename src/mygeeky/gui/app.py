@@ -276,22 +276,47 @@ def _hidden_usernames() -> set[str]:
 
 
 def get_suggestions(cfg: MyGeekyConfig) -> dict[str, Any]:
+    """Who to show: people you haven't seen first, from everyone suggested lately
+    (see freshness.py: someone you've seen rests a while, then may come back)."""
+    from .. import freshness
+    from ..storage import suggestion_pool
     hidden = _hidden_usernames()
-    return {
-        "followback": last_suggestions(cfg.max_suggestions_returned, list_type="followback", exclude=hidden),
-        "domain_highlights": last_suggestions(cfg.domain_highlight_count, list_type="domain", exclude=hidden),
-    }
+    try:
+        seen = freshness.load()
+        followback = freshness.arrange(cfg, "person", suggestion_pool("followback", hidden),
+                                       cfg.max_suggestions_returned, data=seen)
+        domain = freshness.arrange(cfg, "person", suggestion_pool("domain", hidden),
+                                   cfg.domain_highlight_count, data=seen)
+    except Exception as exc:     # never let "what's new" stop the panel: plain lists, and a report
+        _report_freshness_error(exc)
+        followback = last_suggestions(cfg.max_suggestions_returned, list_type="followback", exclude=hidden)
+        domain = last_suggestions(cfg.domain_highlight_count, list_type="domain", exclude=hidden)
+    return {"followback": followback, "domain_highlights": domain,
+            "new": freshness.count_new(followback) + freshness.count_new(domain)}
+
+
+def _report_freshness_error(exc: Exception) -> None:
+    try:
+        from .. import crashreport
+        from ..config import LOG_DIR
+        crashreport.write(LOG_DIR, "what's new (freshness)", exc)
+    except Exception:
+        pass
 
 
 def suggestions_auto_refresh_due(cfg: MyGeekyConfig, now: datetime | None = None) -> bool:
     """True when the panel should start a suggestion search by itself: the
     follow-back list is empty and the last search is older than
     `gui_suggestions_auto_refresh_hours` (0 turns this off)."""
+    from .. import freshness
     hours = cfg.gui_suggestions_auto_refresh_hours
     if not cfg.github_username or hours <= 0:
         return False
-    if get_suggestions(cfg)["followback"]:
+    shown = get_suggestions(cfg)["followback"]
+    if shown and not freshness.running_low(shown, cfg.max_suggestions_returned):
         return False
+    if shown:                                   # running low on new faces: top up, but gently
+        hours = max(hours, cfg.fresh_people_topup_hours)
     last = last_suggestion_time()
     if last is None:
         return True
@@ -386,9 +411,48 @@ def refresh_suggestions(cfg: MyGeekyConfig) -> dict[str, Any]:
 
 
 def get_contributions(cfg: MyGeekyConfig) -> list[dict[str, Any]]:
-    from .. import papers
-    rows = last_contributions(cfg.contribute_max_returned)
+    """Repos to show: ones you haven't seen first, from every repo suggested lately."""
+    from .. import freshness, papers
+    from ..storage import contribution_pool
+    try:
+        rows = freshness.arrange(cfg, "repo", contribution_pool(), cfg.contribute_max_returned)
+    except Exception as exc:     # never let "what's new" stop the panel
+        _report_freshness_error(exc)
+        rows = last_contributions(cfg.contribute_max_returned)
     return [{**r, "paper": r.get("paper") or papers.cached_paper(r.get("full_name", ""))} for r in rows]
+
+
+def contributions_top_up_due(cfg: MyGeekyConfig, now: datetime | None = None) -> bool:
+    """The Repos tab is running low on repos you haven't seen and the last search is
+    old enough: look for more in the background."""
+    from .. import freshness
+    from ..storage import read_jsonl
+    from ..config import CONTRIBUTE_LOG
+    if not cfg.github_username or cfg.fresh_repos_topup_hours <= 0:
+        return False
+    shown = get_contributions(cfg)
+    if shown and not freshness.running_low(shown, cfg.contribute_max_returned):
+        return False
+    records = read_jsonl(CONTRIBUTE_LOG)
+    last = records[-1].get("timestamp") if records else None
+    if not last:
+        return True
+    try:
+        then = datetime.fromisoformat(str(last).replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    if then.tzinfo is None:
+        then = then.replace(tzinfo=timezone.utc)
+    return ((now or datetime.now(timezone.utc)) - then).total_seconds() >= cfg.fresh_repos_topup_hours * 3600
+
+
+def mark_seen(keys: list[str], clicked: bool = False) -> None:
+    """The panel saw these cards (or you clicked one). Never raises."""
+    try:
+        from .. import freshness
+        freshness.mark_seen(keys, clicked=clicked)
+    except Exception:
+        pass
 
 
 def get_trends(cfg: MyGeekyConfig) -> dict[str, Any]:
