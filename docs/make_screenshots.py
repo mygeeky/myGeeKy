@@ -83,7 +83,8 @@ def render() -> dict[str, Path]:
             app.processEvents()
             time.sleep(0.03)
 
-    cfg = dataclasses.replace(load_config(), gui_hearts_enabled=False, gui_panel_height_fraction=0.62)
+    cfg = dataclasses.replace(load_config(), gui_hearts_enabled=False, gui_panel_height_fraction=0.62,
+                              gui_theme="midnight")              # the pictures always show the dark theme
     panel = MyGeekyPanel(cfg)
     panel.setAttribute(Qt.WA_DontShowOnScreen, True)
     panel.show()
@@ -144,12 +145,12 @@ def hero(shots: dict[str, Path]) -> None:
     H = h + pad * 2
     bg = Image.new("RGBA", (W, H))
     d = ImageDraw.Draw(bg)
-    for y in range(H):   # deep violet -> midnight
+    for y in range(H):   # the website's charcoal (#141416), a touch lighter at the top
         k = y / H
-        d.line([(0, y), (W, y)], fill=(int(40 - 22 * k), int(22 - 4 * k), int(70 - 38 * k), 255))
+        d.line([(0, y), (W, y)], fill=(int(30 - 10 * k), int(30 - 10 * k), int(33 - 11 * k), 255))
     glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     gd = ImageDraw.Draw(glow)
-    for cx, color in ((0.2, (255, 111, 216, 90)), (0.8, (127, 216, 255, 80))):
+    for cx, color in ((0.2, (255, 111, 216, 40)), (0.8, (127, 216, 255, 34))):
         gd.ellipse([W * cx - 500, H * 0.5 - 420, W * cx + 500, H * 0.5 + 420], fill=color)
     bg.alpha_composite(glow.filter(ImageFilter.GaussianBlur(160)))
     x = pad
