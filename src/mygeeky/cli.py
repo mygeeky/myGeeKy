@@ -70,7 +70,7 @@ def _client_for(cfg: MyGeekyConfig) -> GitHubClient:
 @click.group()
 @click.version_option(__version__, prog_name="mygeeky")
 def main() -> None:
-    """myGeeKy - find fellow GitHub geeks who match you and are likely to follow back.
+    """myGeeKy - find friends, collaborate, away from noise: your corner of GitHub, for research.
 
     myGeeKy only ever suggests people. It never follows anyone for you.
     """

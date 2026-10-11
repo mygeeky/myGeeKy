@@ -204,3 +204,34 @@ def test_one_tab_failing_never_stops_the_panel_from_opening(monkeypatch):
         assert reports and "_load_contributions" in reports[0].read_text(encoding="utf-8")   # and you're told
     finally:
         _close(panel)
+
+
+def test_the_token_warning_goes_away_by_itself_after_you_sign_in_elsewhere(monkeypatch):
+    """It used to stay until the panel was restarted."""
+    import time
+    import pytest
+    pytest.importorskip("PySide6")
+    from mygeeky.gui import app as logic
+    warning = [{"name": "read", "message": "Token 1 (read-only) expires today.", "signin": True, "warn": True}]
+    current = {"warnings": warning}
+    app, panel = _quiet_panel(monkeypatch, MyGeekyConfig(github_username="me"))
+    monkeypatch.setattr(logic, "get_token_warnings", lambda cfg: current["warnings"])
+    try:
+        panel.show()
+        panel._on_token_warnings(warning)
+        assert panel.token_banner.isVisible()
+        current["warnings"] = []                       # you signed in again in the setup window
+        panel._tokens_checked_at = time.monotonic() - 120
+        panel.fold()
+        panel.unfold()                                 # you open the panel
+        end = time.time() + 5
+        while panel.token_banner.isVisible() and time.time() < end:
+            app.processEvents()
+            time.sleep(0.02)
+        assert not panel.token_banner.isVisible()
+        panel._on_token_warnings(warning)              # and it never re-checks more than once a minute
+        before = panel._tokens_checked_at
+        panel.unfold()
+        assert panel._tokens_checked_at == before
+    finally:
+        _close(panel)

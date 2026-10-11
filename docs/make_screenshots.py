@@ -65,6 +65,11 @@ def render() -> dict[str, Path]:
     logic.get_update_info = lambda cfg: {"show": False}
     logic.get_token_warnings = lambda cfg: []
     logic.save_config = lambda c: None
+    import mygeeky.config as config_mod
+    config_mod.save_config = lambda c: None          # the pictures must never change your settings...
+    from mygeeky import freshness
+    freshness.save = lambda data: None               # ...or mark your cards as seen
+    logic.mark_seen = lambda keys, clicked=False: None
     logic.get_signals = example_signals
     logic.is_admin = lambda cfg: False      # the maker's private tab stays out of public pictures
     logic.sync_enabled = lambda cfg: False

@@ -10,7 +10,8 @@ import { Image, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshContr
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Orbit, orbitHeight } from '../components/orbit';
 import { PersonCard } from '../components/person-card';
-import { Card, Empty, open, Segments } from '../components/ui';
+import { SignalsView } from '../components/signals-view';
+import { Empty, open, Segments } from '../components/ui';
 import { BadgesPart, ModelPart, MorePart } from '../components/you-parts';
 import { timeAgo, useApp, useFeed } from '../lib/app-state';
 import { fetchHeadlines } from '../lib/headlines';
@@ -168,10 +169,7 @@ export default function Home() {
               {youPart === 'model' ? <ModelPart /> : youPart === 'badges' ? <BadgesPart /> : <MorePart />}
             </View>
           ) : sel === 'signals' ? (
-            <Card>
-              <Text style={st.title}>Signals are on the desktop panel for now</Text>
-              <Text style={[st.sub, { marginTop: 6 }]}>Private thank-yous and collab invites between myGeeKy users. They are coming to the phone.</Text>
-            </Card>
+            <SignalsView />
           ) : rows.length ? rows.map((r, i) => (
             <RowView key={r.id} r={r} color={section.color} isOpen={openId === r.id || (openId === 'first' && i === 0)}
                      onPick={() => {

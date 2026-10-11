@@ -128,7 +128,7 @@ export function MorePart() {
     ['From computer', Object.keys(settings.interests ?? {}).length
       ? `${Object.keys(settings.interests).length} interests, ${settings.field?.length ?? 0} research topics, ${settings.desktopBadges?.length ?? 0} badges`
       : 'nothing yet: scan the code above', Object.keys(settings.interests ?? {}).length > 0],
-    ['Signals', 'on the desktop panel for now', false],
+    ['Signals', 'on the 📡 Signals planet', true],
     ['App version', Constants.expoConfig?.version ?? '', true],
   ];
   return (
@@ -165,8 +165,8 @@ export function MorePart() {
 
       <Section>📡 SIGNALS</Section>
       <Card>
-        <Text style={st.body}>Private thank-yous and collab invites between myGeeKy users live on the desktop panel
-          for now. They are coming to the phone.</Text>
+        <Text style={st.body}>Private thank-yous and collab invites between myGeeKy users. Open the 📡 Signals planet
+          to turn them on for this phone: it gets its own key, kept only here.</Text>
       </Card>
 
       <Section>🔒 PRIVACY</Section>

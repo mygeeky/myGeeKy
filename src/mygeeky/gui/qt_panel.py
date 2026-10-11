@@ -3948,7 +3948,15 @@ class MyGeekyPanel(QWidget):
         return banner
 
     def _check_tokens(self) -> None:
+        self._tokens_checked_at = time.monotonic()
         self._run_async(lambda: logic.get_token_warnings(self.cfg), self._on_token_warnings)
+
+    def _recheck_tokens_if_warning(self) -> None:
+        """You may have just signed in or pasted a new token elsewhere (the setup window, a
+        terminal): while the warning shows, look again when you open the panel, so it goes
+        away by itself instead of only after a restart. At most once a minute."""
+        if self.token_banner.isVisible() and time.monotonic() - getattr(self, "_tokens_checked_at", 0) > 60:
+            self._check_tokens()
 
     def _on_token_warnings(self, warnings: Any) -> None:
         self._token_warnings = warnings if isinstance(warnings, list) else []
@@ -4822,6 +4830,7 @@ class MyGeekyPanel(QWidget):
     def unfold(self) -> None:
         self._dock(folded=False)
         self.hearts.hide()
+        self._recheck_tokens_if_warning()
         # opening the panel: show what's new since last time
         QTimer.singleShot(0, lambda: self._refresh_fresh_tab(self.active_tab))
 

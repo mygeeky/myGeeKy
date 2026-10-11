@@ -39,7 +39,7 @@ export default function Setup() {
         <ScrollView contentContainerStyle={st.wrap} keyboardShouldPersistTaps="handled">
           <Image source={require('../../assets/icon.png')} style={st.logo} />
           <Text style={st.brand}>myGeeKy</Text>
-          <Text style={st.lead}>{"What's new in your field: research, AI news and models, picked for your own work."}</Text>
+          <Text style={st.lead}>{'Find friends, collaborate, away from noise. Research, news and models, picked for your own work.'}</Text>
 
           <Pressable style={({ pressed }) => [st.scan, pressed && { opacity: 0.85 }]} onPress={() => router.push('/scan')}>
             <Text style={st.scanTitle}>📷  Scan from your computer</Text>

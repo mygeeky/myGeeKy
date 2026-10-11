@@ -3,6 +3,21 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.21.2 (2026-10-11): a new look, and Signals on the phone (app 1.4.0)
+
+- **A new look: find friends · collaborate · away from noise.**
+  - **A new icon:** a round badge: the name inside a glowing ring of two arms hugging. It's used in the panel, the Windows installer, the Linux menu, the website, the README and the phone app (including Android's adaptive and themed icons).
+  - **A character:** the geek in a hoodie, working quietly against a brick wall. It introduces the README's "Why this exists", a new Why section on the website, and the poster.
+  - **The phrase** "find friends, collaborate, away from noise" now leads the README, the website (title, headline, link previews), the poster, the setup window's welcome, the phone's first screen, the command-line help, the Linux menu entry and the PyPI description.
+  - The screenshots were retaken with the new icon.
+- **Signals on the phone (app 1.4.0).** Read the signals people send you and send your own (🙏 📚 ⭐ 👀 🤝) from the 📡 Signals planet.
+  - **Its own key:** the phone creates a key that never leaves it, kept in the phone's secure store, and adds its public half to your beacon next to your computers' keys. Signals sent to you from then on open on the phone too.
+  - **Its own token:** it writes with its own Signals token (one per device), and keeps everything your computers put in the beacon (their keys, your status, your interests, the signals they sent). It refuses rather than push a computer's key out when the beacon already holds 4 devices.
+  - **The same encryption and rules as the desktop.** A test runs the phone's real code against the desktop's Python, both ways: phone to computer, computer to phone, and both keeping each other's keys and signals.
+  - **On the desktop for now:** mute, block, taking a signal back, and changing your status. Signals sent before the phone joined open only on your computers.
+
+- **The token warning goes away by itself.** After you sign in again (or paste a new token) in the setup window or a terminal, an open panel kept showing "Token 1 expires…" until it was restarted. Now, while that warning shows, the panel checks again whenever you open it (at most once a minute).
+
 ## 0.21.1 (2026-10-11): myGeeKy's housekeeping no longer counts as your activity
 
 - **No more green squares from myGeeKy.** Sync and Signals commits used to carry your own git email, so GitHub counted myGeeKy's housekeeping as your activity: green squares and "contributions", even on days you didn't work.

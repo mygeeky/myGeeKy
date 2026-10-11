@@ -161,23 +161,35 @@ def main() -> None:
     im = background()
     M = 230                                  # side margin
 
-    # ---- header
-    icon = Image.open(ROOT / "src/mygeeky/gui/assets/icon.png").convert("RGBA").resize((470, 470), Image.LANCZOS)
-    glow = Image.new("RGBA", (900, 900), (0, 0, 0, 0))
-    ImageDraw.Draw(glow).ellipse([150, 150, 750, 750], fill=(*PINK, 120))
-    im.alpha_composite(glow.filter(ImageFilter.GaussianBlur(90)), (W // 2 - 450, 10))
-    im.alpha_composite(icon, (W // 2 - 235, 225))
-    y = 740
-    gradient_text(im, "myGeeKy", (W // 2, y), font(330, "black"), center=True)
-    y += 470
-    text(im, "What's new in your field?", (W // 2, y), font(178, "bold"), center=True)
-    y += 225
-    gradient_text(im, "Come and see. It's all here.", (W // 2, y), font(150, "bold"), center=True)
-    y += 245
-    for line in wrap("Research, AI news, models and the people in your field, picked for your own work, in "
-                     "one small panel on your screen.", font(84), W - 2 * M - 300):
-        text(im, line, (W // 2, y), font(84), MUTED, center=True)
-        y += 112
+    # ---- header: the character on the left; the name and the promise on the right
+    top = 200
+    art = Image.open(OUT / "character-full.jpg").convert("RGBA")
+    art = art.crop((90, 470, art.width - 90, art.height - 40))          # its own title is on the right instead
+    art_w = 1480
+    art = art.resize((art_w, round(art.height * art_w / art.width)), Image.LANCZOS)
+    rounded = Image.new("L", art.size, 0)
+    ImageDraw.Draw(rounded).rounded_rectangle([0, 0, art.width - 1, art.height - 1], 70, fill=255)
+    art.putalpha(rounded)
+    im.alpha_composite(art, (M - 40, top))
+
+    rx = M - 40 + art_w + 120                                            # the right column
+    icon = Image.open(ROOT / "src/mygeeky/gui/assets/icon.png").convert("RGBA").resize((330, 330), Image.LANCZOS)
+    glow = Image.new("RGBA", (700, 700), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse([120, 120, 580, 580], fill=(*PINK, 90))
+    im.alpha_composite(glow.filter(ImageFilter.GaussianBlur(70)), (rx - 185, top - 170))
+    im.alpha_composite(icon, (rx, top + 10))
+    y = top + 390
+    gradient_text(im, "myGeeKy", (rx, y), font(250, "black"))
+    y += 360
+    for line in ("Find friends.", "Collaborate.", "Away from noise."):
+        text(im, line, (rx, y), font(150, "black"), TEXT)
+        y += 185
+    y += 30
+    for line in wrap("The people, papers and projects of your field, picked from your own work, in one quiet panel "
+                     "on your screen.", font(66), W - M - rx):
+        text(im, line, (rx, y), font(66), MUTED)
+        y += 90
+    y = max(y, top + art.height) + 80
 
     # ---- the panel, three views
     y_shots = y + 730

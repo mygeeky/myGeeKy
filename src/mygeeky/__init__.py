@@ -1,10 +1,10 @@
-"""myGeeKy - find fellow GitHub geeks who are likely to follow you back.
+"""myGeeKy - find friends, collaborate, away from noise: your corner of GitHub, for research.
 
 myGeeKy never follows anyone automatically. It only ever suggests; you
 decide who to follow, by hand, on github.com.
 """
 
-__version__ = "0.21.1"
+__version__ = "0.21.2"
 
 
 def use_system_certificates() -> None:

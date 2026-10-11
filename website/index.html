@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>myGeeKy · your corner of GitHub, for research</title>
-<meta name="description" content="myGeeKy turns your CV, repos, ORCID and Google Scholar papers into your GitHub circle: people to follow, projects to contribute to, rising papers and tools, and news from your field. Free and open source.">
+<title>myGeeKy · find friends, collaborate, away from noise</title>
+<meta name="description" content="Find friends, collaborate, away from noise. myGeeKy turns your CV, repos, ORCID and Google Scholar papers into your GitHub circle: people to follow, projects to contribute to, rising papers and tools, and news from your field. Free and open source.">
 <meta property="og:title" content="myGeeKy">
-<meta property="og:description" content="Your corner of GitHub, for research: the people, projects, papers and pulse of your field.">
+<meta property="og:description" content="Find friends, collaborate, away from noise: your corner of GitHub, for research.">
 <meta property="og:image" content="https://mygeeky.org/img/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -84,6 +84,16 @@
   .g { background: var(--grad); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
        color: transparent; animation: shimmer 8s linear infinite; }
   .rotator { display: inline-block; min-width: 4.6ch; text-align: left; }
+  .kicker { font-size: clamp(16px, 1.8vw, 19px); font-weight: 700; color: var(--muted); margin: 0 0 12px; letter-spacing: .01em; }
+  .why { display: grid; grid-template-columns: minmax(220px, 380px) 1fr; gap: 40px; align-items: center;
+         max-width: 1000px; margin: 0 auto; }
+  .why img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 22px; box-shadow: 0 24px 60px rgba(0,0,0,.45); }
+  .why h2 { margin-top: 0; }
+  .why .three { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
+  .why .three li { padding: 8px 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--card);
+                   font-weight: 700; font-size: 14.5px; }
+  @media (max-width: 760px) { .why { grid-template-columns: 1fr; text-align: center; } .why img { max-width: 320px; margin: 0 auto; }
+                              .why .three { justify-content: center; } }
   .lead { font-size: clamp(17px, 2vw, 20.5px); color: var(--muted); max-width: 740px; margin: 0 auto 32px; }
   .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .pip { margin: 22px auto 0; display: inline-flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px;
@@ -296,9 +306,10 @@
 
 <header class="hero">
   <div class="wrap">
-    <img class="logo" src="img/icon_256.png" alt="myGeeKy icon: two geeks hugging inside a heart">
-    <div class="pill">✨ <b>New in {{VERSION}}</b><span class="long"> · see what myGeeKy knows about you · send ideas with 💡</span></div>
-    <h1>Your corner of GitHub,<br>for <span class="g rotator" id="rot">research</span>.</h1>
+    <img class="logo" src="img/icon_256.png" alt="The myGeeKy badge: the name inside a ring of two arms hugging">
+    <div class="pill">✨ <b>New in {{VERSION}}</b><span class="long"> · Signals on your phone · always something new in every tab</span></div>
+    <p class="kicker">Your corner of GitHub, for <span class="g rotator" id="rot">research</span>.</p>
+    <h1>Find friends, collaborate,<br><span class="g">away from noise.</span></h1>
     <p class="lead">myGeeKy reads your CV, your repos and your ORCID &amp; Google Scholar papers, then shows you the
       <b>people</b>, <b>projects</b>, <b>papers</b> and <b>pulse</b> of your field, in one small glass panel on the edge of
       your screen. It only suggests. It never acts for you.</p>
@@ -322,6 +333,22 @@
     </div>
   </div>
 </header>
+
+<section id="why">
+  <div class="wrap why reveal">
+    <img src="img/character.jpg" alt="A geek in a hoodie working on a laptop against a brick wall, a myGeeKy sticker on the lid" width="600" height="600" loading="lazy">
+    <div>
+      <h2>Find friends, collaborate, away from noise.</h2>
+      <p class="lead" style="margin:0;text-align:left">I don't have Facebook. I wanted a real circle in my field: people I can learn from
+        (and who might learn from me), projects where my work would be welcome, and a feel for where the field is moving.
+        GitHub has all of that, but scattered and buried under famous accounts. myGeeKy gathers it in one quiet place,
+        and never acts for you.</p>
+      <ul class="three">
+        <li>🤝 Find friends</li><li>🛠️ Collaborate</li><li>🔕 Away from noise</li>
+      </ul>
+    </div>
+  </div>
+</section>
 
 <section id="inside">
   <div class="wrap center reveal">

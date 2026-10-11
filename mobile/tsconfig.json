@@ -8,5 +8,10 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "crosscheck",
+    ".crosscheck",
+    "node_modules"
   ]
 }

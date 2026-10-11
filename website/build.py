@@ -30,6 +30,7 @@ IMAGES = {
     "video-thumbnail.png": ROOT / "docs/video-thumbnail.png",
     "icon_64.png": ROOT / "src/mygeeky/gui/assets/icon_64.png",
     "icon_256.png": ROOT / "src/mygeeky/gui/assets/icon_256.png",
+    "character.jpg": ROOT / "docs/character.jpg",
     "og.png": ROOT / "launch/producthunt/gallery-1-hero.png",   # link-preview image
 }
 
