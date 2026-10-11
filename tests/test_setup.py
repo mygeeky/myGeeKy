@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -88,6 +89,7 @@ def test_setup_api_relays_a_clear_error_and_details(monkeypatch, capsys):
     assert json.loads(capsys.readouterr().out)["error"] == "Sync needs Git."   # our own message, unchanged
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="the Windows installer installs Git and puts it on PATH")
 def test_installer_sync_page_installs_git_when_you_choose_sync(monkeypatch):
     pytest.importorskip("PySide6")
     import os
@@ -95,7 +97,6 @@ def test_installer_sync_page_installs_git_when_you_choose_sync(monkeypatch):
     from PySide6.QtWidgets import QApplication
     QApplication.instance() or QApplication([])
     from mygeeky.gui import setup_wizard as sw
-    monkeypatch.setattr(sw, "WINDOWS", True)        # installing Git for you is the Windows installer's job
     w = sw.SetupWizard()
     w.state = {"github_username": "me", "git": False, "gh": False, "sync_repo": "", "sync_initialized": False}
     page = w.page(w.pageIds()[4])
