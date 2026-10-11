@@ -50,6 +50,26 @@ jobs:
           assert ok and after & macos.CAN_JOIN_ALL_SPACES and after & macos.FULL_SCREEN_AUXILIARY
           print("visible:", w.isVisible())
           EOF
+      - name: The real panel starts on the macOS screen, runs, and quits cleanly
+        run: |
+          python - <<'EOF'
+          import sys
+          from PySide6.QtCore import QTimer
+          from PySide6.QtWidgets import QApplication
+          app = QApplication(sys.argv)          # app.main() uses this one
+          def check():
+              from mygeeky.gui import macos
+              from mygeeky.gui.qt_panel import MyGeekyPanel
+              panels = [w for w in QApplication.topLevelWidgets() if isinstance(w, MyGeekyPanel)]
+              assert panels and panels[0].isVisible(), "the panel isn't showing"
+              print("panel visible; collection behaviour:", macos.collection_behavior(panels[0]),
+                    "| menu bar name:", macos.bundle_name())
+              QApplication.quit()
+          QTimer.singleShot(8000, check)
+          from mygeeky.gui import app as gui_app
+          gui_app.main()
+          print("main() returned: the panel started and quit cleanly")
+          EOF
 
   install:
     runs-on: macos-latest

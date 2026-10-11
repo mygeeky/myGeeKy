@@ -137,3 +137,14 @@ def test_on_a_mac_the_panel_starts_through_the_app(home, monkeypatch):
     desktop.launch_detached(home / "logs" / "panel.log")
     assert seen["cmd"][:3] == ["/usr/bin/open", "-a", str(desktop.app_bundle_path())]
     assert "--stdout" in seen["cmd"] and "--stderr" in seen["cmd"]
+
+
+def test_the_space_behaviour_never_mixes_rival_flags():
+    # what Qt gives a Tool window on macOS (seen in CI: MoveToActiveSpace), plus full-screen rivals
+    for current in (0, macos.MOVE_TO_ACTIVE_SPACE, macos.MOVE_TO_ACTIVE_SPACE | macos.FULL_SCREEN_PRIMARY,
+                    macos.FULL_SCREEN_NONE | (1 << 2), macos.CAN_JOIN_ALL_SPACES):
+        new = macos.all_spaces_behavior(current)
+        assert new & macos.CAN_JOIN_ALL_SPACES and new & macos.FULL_SCREEN_AUXILIARY
+        assert not new & macos.MOVE_TO_ACTIVE_SPACE                      # AppKit: "cannot be both"
+        assert not new & (macos.FULL_SCREEN_PRIMARY | macos.FULL_SCREEN_NONE)
+        assert new & (1 << 2) == current & (1 << 2)                      # unrelated flags are kept

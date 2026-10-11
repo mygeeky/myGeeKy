@@ -4,8 +4,10 @@ The menu bar shows the name of the running program's bundle. myGeeKy runs
 inside Python, so without this the menu bar says "Python". Changing the
 bundle's name before Qt starts makes it say "myGeeKy". It is done through the
 Objective-C runtime with ctypes (standard library only, no PyObjC), and only
-when the bundle's info dictionary can be changed, because an Objective-C
-exception would end the program.
+when the bundle's info dictionary can be changed: an Objective-C exception
+can't be caught from Python and ends the program. For the same reason the
+window's Space behaviour is computed so it can never be a combination AppKit
+rejects (see all_spaces_behavior).
 
 Everything here does nothing on other systems.
 """
@@ -58,7 +60,19 @@ def bundle_name() -> str | None:
 
 
 CAN_JOIN_ALL_SPACES = 1 << 0          # NSWindowCollectionBehaviorCanJoinAllSpaces
+MOVE_TO_ACTIVE_SPACE = 1 << 1         # ...MoveToActiveSpace (Qt sets it on Tool windows)
+FULL_SCREEN_PRIMARY = 1 << 7
 FULL_SCREEN_AUXILIARY = 1 << 8        # ...FullScreenAuxiliary: may sit next to a full-screen app
+FULL_SCREEN_NONE = 1 << 9
+
+
+def all_spaces_behavior(current: int) -> int:
+    """`current` changed to join every Space and sit beside full-screen apps. Each group
+    of these flags allows only one choice: AppKit raises an Objective-C exception for a
+    mix (e.g. CanJoinAllSpaces with the MoveToActiveSpace Qt gives Tool windows), which
+    Python can't catch and which ends the program. So the rivals are cleared first."""
+    current &= ~(MOVE_TO_ACTIVE_SPACE | FULL_SCREEN_PRIMARY | FULL_SCREEN_NONE)
+    return current | CAN_JOIN_ALL_SPACES | FULL_SCREEN_AUXILIARY
 
 
 def _ns_window(widget):
@@ -85,10 +99,10 @@ def keep_on_all_spaces(widget) -> bool:
         if not can:
             return False
         current = _send(lib, window, "collectionBehavior", restype=ctypes.c_ulong)
-        _send(lib, window, "setCollectionBehavior:", current | CAN_JOIN_ALL_SPACES | FULL_SCREEN_AUXILIARY,
+        _send(lib, window, "setCollectionBehavior:", all_spaces_behavior(current),
               argtypes=[ctypes.c_ulong], restype=None)
         return True
-    except Exception:
+    except Exception:   # Python errors only: an Objective-C exception can't be caught, hence all_spaces_behavior
         return False
 
 
