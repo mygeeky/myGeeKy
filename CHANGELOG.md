@@ -3,6 +3,14 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.21.1 (2026-10-11): myGeeKy's housekeeping no longer counts as your activity
+
+- **No more green squares from myGeeKy.** Sync and Signals commits used to carry your own git email, so GitHub counted myGeeKy's housekeeping as your activity: green squares and "contributions", even on days you didn't work.
+  - myGeeKy's commits are now signed **myGeeKy <housekeeping@mygeeky.invalid>**.
+  - GitHub counts a commit only when its email is linked to your account, and a `.invalid` address never can be.
+  - Your own work counts exactly as before.
+- Squares already recorded stay; see the release notes for how to remove them if you want.
+
 ## 0.21.0 (2026-10-11): always something new, and sign-ins that keep working
 
 - **myGeeKy remembers what you've seen.** A card counts as seen when it was mostly on screen for about a second and a half (or you clicked it).

@@ -27,7 +27,7 @@ from pathlib import Path
 
 from . import winproc
 from .files import write_text_atomic
-from .config import CONFIG_FILE, DATA_DIR, MODEL_FILE, SYNCED_CONFIG_FILE, ensure_dirs
+from .config import COMMIT_EMAIL, COMMIT_NAME, CONFIG_FILE, DATA_DIR, MODEL_FILE, SYNCED_CONFIG_FILE, ensure_dirs
 
 GITIGNORE = """\
 # myGeeKy sync: never commit these
@@ -113,6 +113,9 @@ def _git(*args: str, cwd: Path | None = None, check: bool = True) -> subprocess.
     cmd += ["-c", "http.lowSpeedLimit=1000", "-c", "http.lowSpeedTime=60"]
     cmd += list(args)
     env = dict(os.environ)
+    # myGeeKy's commits are signed as myGeeKy, not you: they must never count as your activity
+    env.update(GIT_AUTHOR_NAME=COMMIT_NAME, GIT_AUTHOR_EMAIL=COMMIT_EMAIL,
+               GIT_COMMITTER_NAME=COMMIT_NAME, GIT_COMMITTER_EMAIL=COMMIT_EMAIL)
     if not _interactive:
         # background syncs never wait on a password prompt nobody can see; only the
         # `sync init` the user runs themselves may open Git's sign-in window

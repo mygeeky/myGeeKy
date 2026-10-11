@@ -449,7 +449,9 @@ class BeaconWriter:
     def write(self, path: str, text: str, message: str) -> None:
         url = self._url(path)
         current = self.session.get(url, timeout=30)
-        body: dict[str, Any] = {"message": message,
+        from .config import COMMIT_EMAIL, COMMIT_NAME
+        me = {"name": COMMIT_NAME, "email": COMMIT_EMAIL}      # never counted as your activity
+        body: dict[str, Any] = {"message": message, "author": me, "committer": me,
                                 "content": base64.b64encode(text.encode("utf-8")).decode("ascii")}
         if current.status_code == 200:
             body["sha"] = current.json().get("sha")

@@ -176,3 +176,36 @@ def test_the_cron_line_survives_spaces_and_replaces_an_old_line(monkeypatch):
     assert old not in written["tab"] and line in written["tab"] and "MAILTO=me" in written["tab"]
     scheduler.remove()
     assert scheduler.CRON_MARK not in written["tab"] and "MAILTO=me" in written["tab"]
+
+
+# ---------------------------------------------------------------- myGeeKy's commits are never your activity
+def test_sync_commits_are_signed_as_mygeeky_not_you(monkeypatch):
+    from mygeeky.config import COMMIT_EMAIL, COMMIT_NAME
+    seen = {}
+
+    def fake_run(cmd, **kw):
+        seen.update(kw)
+        return type("P", (), {"returncode": 0, "stdout": "", "stderr": ""})()
+    monkeypatch.setattr(sync.winproc, "run", fake_run)
+    sync._git("commit", "-m", "x", check=False)
+    env = seen["env"]
+    assert env["GIT_AUTHOR_EMAIL"] == env["GIT_COMMITTER_EMAIL"] == COMMIT_EMAIL
+    assert env["GIT_AUTHOR_NAME"] == COMMIT_NAME and COMMIT_EMAIL.endswith(".invalid")   # can never be linked
+
+
+def test_signals_commits_are_signed_as_mygeeky_not_you(monkeypatch):
+    from mygeeky import beacon
+    from mygeeky.config import COMMIT_EMAIL
+    sent = {}
+
+    class R:
+        def __init__(self, code):
+            self.status_code = code
+
+        def json(self):
+            return {}
+    w = beacon.BeaconWriter("tok", "me")
+    monkeypatch.setattr(w.session, "get", lambda url, **kw: R(404))
+    monkeypatch.setattr(w.session, "put", lambda url, json=None, **kw: sent.update(json) or R(201))
+    w.write("beacon.json", "{}", "Update myGeeKy beacon")
+    assert sent["author"]["email"] == sent["committer"]["email"] == COMMIT_EMAIL

@@ -46,12 +46,12 @@
   },
   {
     "status": "PASS",
-    "observed": "git gave up after 60 s",
+    "observed": "git gave up after 61 s",
     "fix": "",
     "id": "G1",
     "area": "Sync (git)",
     "title": "The sync server stops answering (stalled network, proxy, captive portal)",
-    "seconds": 60.6
+    "seconds": 60.8
   },
   {
     "status": "PASS",
@@ -64,7 +64,7 @@
   },
   {
     "status": "PASS",
-    "observed": "no waiting inside a request (longest 0 s); the next request says: \"GitHub limit reached: myGeeKy will try again after 01:57. Signing in (a token) raises the limit a lot.\"",
+    "observed": "no waiting inside a request (longest 0 s); the next request says: \"GitHub limit reached: myGeeKy will try again after 02:11. Signing in (a token) raises the limit a lot.\"",
     "fix": "",
     "id": "N1",
     "area": "Network",
@@ -73,7 +73,7 @@
   },
   {
     "status": "PASS",
-    "observed": "raised RateLimited: GitHub asked to slow down: myGeeKy will try again after 00:59.",
+    "observed": "raised RateLimited: GitHub asked to slow down: myGeeKy will try again after 01:13.",
     "fix": "",
     "id": "N2",
     "area": "Network",
@@ -87,7 +87,7 @@
     "id": "N7",
     "area": "Network",
     "title": "Work network that inspects HTTPS (Zscaler/Netskope style)",
-    "seconds": 0.3
+    "seconds": 0.2
   },
   {
     "status": "PASS",
@@ -105,7 +105,7 @@
     "id": "Q9",
     "area": "Panel (Qt)",
     "title": "Quitting while background work is still running, 10 times",
-    "seconds": 39.2
+    "seconds": 38.8
   },
   {
     "status": "PASS",
@@ -114,7 +114,7 @@
     "id": "Q9b",
     "area": "Panel (Qt)",
     "title": "Quitting while a download is stuck (it would take 40 s)",
-    "seconds": 7.4
+    "seconds": 7.3
   },
   {
     "status": "PASS",
@@ -150,11 +150,11 @@
     "id": "D6",
     "area": "Panel (Qt)",
     "title": "Starting myGeeKy while it's already running",
-    "seconds": 5.4
+    "seconds": 5.3
   },
   {
     "status": "PASS",
-    "observed": "0 9 * * 1 mkdir -p 'C:\\Users\\ALSAMM~1\\AppData\\Local\\Temp\\mygeeky-probe-kv2nv4jd\\data\\logs' && '/home/probe user/my apps/venv/bin/python' -m mygeeky pipeline >> 'C:\\Users\\ALSAMM~1\\AppData\\Local\\Temp\\mygeeky-probe-kv2nv4jd\\data\\logs\\weekly.log' 2>&1",
+    "observed": "0 9 * * 1 mkdir -p 'C:\\Users\\ALSAMM~1\\AppData\\Local\\Temp\\mygeeky-probe-iy3vzexz\\data\\logs' && '/home/probe user/my apps/venv/bin/python' -m mygeeky pipeline >> 'C:\\Users\\ALSAMM~1\\AppData\\Local\\Temp\\mygeeky-probe-iy3vzexz\\data\\logs\\weekly.log' 2>&1",
     "fix": "",
     "id": "S1",
     "area": "Weekly run",
@@ -199,7 +199,7 @@
   },
   {
     "status": "PASS",
-    "observed": "0.2% CPU (of one core) and 309 MB memory while idle",
+    "observed": "0.3% CPU (of one core) and 309 MB memory while idle",
     "fix": "",
     "id": "R1",
     "area": "Running panel",

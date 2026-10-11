@@ -53,6 +53,12 @@ LOG_DIR = DATA_DIR / "logs"
 AVATAR_CACHE_DIR = DATA_DIR / "avatar_cache"
 MY_BEACON_FILE = DATA_DIR / "beacon.json"          # what you publish to <you>/mygeeky-beacon
 BEACON_CACHE_FILE = DATA_DIR / "beacons_cache.json"  # everyone else's beacons, last read
+# Who myGeeKy's own commits (sync, Signals) are signed by. GitHub counts a commit as
+# YOUR activity only when its author email is linked to your account; .invalid is a
+# reserved domain that can never be, so myGeeKy's housekeeping never shows up as you
+# being active (green squares, "contributions in the last year").
+COMMIT_NAME = "myGeeKy"
+COMMIT_EMAIL = "housekeeping@mygeeky.invalid"
 SEEN_FILE = DATA_DIR / "seen.json"                    # what you've already seen in the panel (synced)
 
 
