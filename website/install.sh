@@ -1,13 +1,18 @@
 #!/bin/sh
-# myGeeKy for Linux (and macOS): one line, then a setup window.
+# myGeeKy for Linux and macOS: one line, then a setup window.
 #
 #   curl -fsSL https://mygeeky.org/install.sh | sh
 #
 # It installs myGeeKy into its own folder (~/.local/share/mygeeky-app), so it never
-# clashes with your system Python, conda, or the "externally managed" rule on new
-# Ubuntu and Debian; puts the `mygeeky` command in ~/.local/bin; adds myGeeKy to
-# your applications menu; then asks whether to set up in a window or right here in
-# the terminal. No sudo, nothing outside your home folder. Running it again updates.
+# clashes with your system Python, conda, Homebrew, or the "externally managed" rule
+# on new Ubuntu and Debian; puts the `mygeeky` command in ~/.local/bin; adds myGeeKy
+# to your applications menu (on a Mac: ~/Applications/myGeeKy.app, in Launchpad and
+# Spotlight); then asks whether to set up in a window or right here in the terminal.
+# No sudo, nothing outside your home folder. Running it again updates.
+#
+# Python: any 3.9 or newer. On a Mac that's Homebrew's (brew install python), the
+# python.org one, or macOS's own /usr/bin/python3 once Apple's Command Line Tools
+# are installed (xcode-select --install).
 #
 # `pip install mygeeky` still works exactly as before, if you prefer it.
 # Uninstall: myGeeKy's ⚙ -> Uninstall..., or `mygeeky uninstall`.
@@ -31,14 +36,24 @@ fail() { printf '%s✗ %s%s\n' "$R" "$*" "$N" >&2; exit 1; }
 printf '\n%smyGeeKy%s: the people, projects, papers and pulse of your field.\n\n' "$B" "$N"
 
 # 1. Python 3.9 or newer
+OS=$(uname -s)
 PY=""
 for c in python3.13 python3.12 python3.11 python3.10 python3.9 python3; do
+  # macOS: without the Command Line Tools, /usr/bin/python3 is only a stub that opens an
+  # "install developer tools" dialog. Don't trigger it: skip it and look further.
+  if [ "$OS" = "Darwin" ] && [ "$(command -v "$c" 2>/dev/null)" = "/usr/bin/python3" ] &&
+     ! xcode-select -p >/dev/null 2>&1; then
+    continue
+  fi
   if command -v "$c" >/dev/null 2>&1 &&
      "$c" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' 2>/dev/null; then
     PY=$(command -v "$c"); break
   fi
 done
-[ -n "$PY" ] || fail "myGeeKy needs Python 3.9 or newer. Install it (Ubuntu/Debian: sudo apt install python3 python3-venv), then run this again."
+if [ -z "$PY" ]; then
+  [ "$OS" = "Darwin" ] && fail "myGeeKy needs Python 3.9 or newer. Install it with Homebrew (brew install python, see https://brew.sh) or from https://www.python.org/downloads/macos/, or run: xcode-select --install  (macOS's own Python). Then run this again."
+  fail "myGeeKy needs Python 3.9 or newer. Install it (Ubuntu/Debian: sudo apt install python3 python3-venv), then run this again."
+fi
 ok "Python: $PY ($("$PY" -c 'import platform; print(platform.python_version())'))"
 
 # 2. myGeeKy's own environment
@@ -65,18 +80,27 @@ ln -sf "$APP_DIR/venv/bin/mygeeky" "$BIN_DIR/mygeeky"
 ok "The mygeeky command: $BIN_DIR/mygeeky"
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
-  *) say "Note: $BIN_DIR isn't on your PATH yet. Open a new terminal (or log out and in) to use plain \`mygeeky\`." ;;
+  *) if [ "$OS" = "Darwin" ]; then
+       say "Note: $BIN_DIR isn't on your PATH. To use plain \`mygeeky\` in a terminal, run once:"
+       say "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zprofile   (then open a new terminal)"
+     else
+       say "Note: $BIN_DIR isn't on your PATH yet. Open a new terminal (or log out and in) to use plain \`mygeeky\`."
+     fi ;;
 esac
-if [ "$(uname -s)" = "Linux" ]; then
+if [ "$OS" = "Linux" ]; then
   "$VPY" -m mygeeky desktop install >/dev/null 2>&1 && ok "Added myGeeKy to your applications menu" ||
     say "Couldn't add the menu entry (you can still start it with: mygeeky gui)"
+elif [ "$OS" = "Darwin" ]; then
+  "$VPY" -m mygeeky desktop install >/dev/null 2>&1 &&
+    ok "Added myGeeKy to your Applications (~/Applications/myGeeKy.app): find it in Launchpad or Spotlight" ||
+    say "Couldn't add myGeeKy to Applications (you can still start it with: mygeeky gui)"
 fi
 
 [ "${MYGEEKY_NO_LAUNCH:-}" = 1 ] && { ok "Done (setup skipped: MYGEEKY_NO_LAUNCH=1)."; exit 0; }
 
 # 5. set up: in a window, or here in the terminal
 can_window=0
-if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] || [ "$(uname -s)" = "Darwin" ]; then
+if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] || [ "$OS" = "Darwin" ]; then
   err=$("$VPY" -c 'import sys
 from PySide6.QtWidgets import QApplication
 QApplication(sys.argv)' 2>&1) && can_window=1 || {

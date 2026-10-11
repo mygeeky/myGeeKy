@@ -2934,6 +2934,7 @@ class HeartsOverlay(QWidget):
     def __init__(self) -> None:
         super().__init__(None, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
                          | Qt.WindowTransparentForInput | Qt.WindowDoesNotAcceptFocus)
+        self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)    # macOS: don't vanish with another app active
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self.setAttribute(Qt.WA_ShowWithoutActivating, True)
@@ -3112,6 +3113,8 @@ class MyGeekyPanel(QWidget):
         if ICON_WINDOW.exists():
             self.setWindowIcon(QIcon(str(ICON_WINDOW)))
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        # macOS hides Tool windows whenever another app is active; the panel must stay at the edge
+        self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         # Blanket transparent default for every descendant widget -- QScrollArea's

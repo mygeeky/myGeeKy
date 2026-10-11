@@ -2,7 +2,8 @@
 
 The check is one read-only request to PyPI's public JSON API, at most once a
 day (cached in UPDATE_CHECK_FILE), sending nothing about you. Updating is a
-`pip install --upgrade mygeeky` for the very Python myGeeKy runs on. A
+`pip install --upgrade mygeeky` for the very Python myGeeKy runs on (`uv tool
+upgrade mygeeky` for one installed with uv). A
 developer (editable) install is never touched -- that's `git pull`.
 
 Turn it off with `mygeeky config set check_for_updates false`.
@@ -14,6 +15,7 @@ import json
 import re
 import subprocess
 import sys
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -90,7 +92,18 @@ def is_editable() -> bool:
         return False
 
 
+def is_uv_tool() -> bool:
+    """Installed with `uv tool install` (uv leaves a receipt in the tool's environment)."""
+    return (Path(sys.prefix) / "uv-receipt.toml").exists()
+
+
 def upgrade_command() -> list[str]:
+    from .gui.bootstrap import _has_pip, find_uv
+    uv = find_uv()
+    if uv and is_uv_tool():
+        return [uv, "tool", "upgrade", "mygeeky"]        # keeps what it was installed --with (Qt)
+    if uv and not _has_pip():                          # a `uv venv`: no pip in it
+        return [uv, "pip", "install", "--python", sys.executable, "--upgrade", "mygeeky"]
     return [sys.executable, "-m", "pip", "install", "--upgrade", "--disable-pip-version-check", "mygeeky"]
 
 
@@ -104,10 +117,10 @@ def run_upgrade() -> tuple[bool, str]:
         r = winproc.run(upgrade_command(), capture_output=True, text=True, timeout=900,
                            creationflags=flags, encoding="utf-8", errors="replace")
     except (OSError, subprocess.SubprocessError) as exc:
-        return False, f"Couldn't run pip: {exc}"
+        return False, f"Couldn't run the updater: {exc}"
     if r.returncode != 0:
         tail = (r.stderr or r.stdout).strip().splitlines()[-3:]
-        return False, "pip couldn't update myGeeKy:\n" + "\n".join(tail)
+        return False, "Couldn't update myGeeKy:\n" + "\n".join(tail)
     installed = installed_version()
     return True, f"Updated to myGeeKy {installed}." if installed else "Updated."
 

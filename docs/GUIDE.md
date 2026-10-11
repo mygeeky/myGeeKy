@@ -234,6 +234,60 @@ If you ran an older version you may have seen
 It was harmless (Qt asking the desktop for its dark/light preference, which some
 desktops don't offer) and is no longer printed.
 
+## macOS
+
+**Install.** The one-line installer works the same as on Linux:
+
+```bash
+curl -fsSL https://mygeeky.org/install.sh | sh
+```
+
+It needs Python 3.9 or newer, from any of these:
+- **Homebrew:** `brew install python` (see [brew.sh](https://brew.sh));
+- **python.org:** the installer from python.org;
+- **macOS's own** `/usr/bin/python3`, once Apple's Command Line Tools are installed (`xcode-select --install`). Without them, that `python3` is only a stub that offers to install them, so the installer skips it.
+
+myGeeKy gets its own environment in `~/.local/share/mygeeky-app`, so Homebrew's "externally managed" rule never gets in the way.
+
+The installer adds **`~/Applications/myGeeKy.app`**, which shows up in Launchpad and Spotlight and can be kept in the Dock. The `mygeeky` command goes in `~/.local/bin`; if that isn't on your PATH, the installer prints the one line to add to `~/.zprofile`.
+
+**Or with uv:**
+
+```bash
+uv tool install mygeeky --with PySide6-Essentials
+mygeeky setup            # the setup window
+mygeeky gui              # the panel (and myGeeKy.app in ~/Applications)
+```
+
+`--with PySide6-Essentials` brings Qt along. Without it, the first `mygeeky gui` installs Qt with uv, because a uv environment has no pip. The panel's **Update** button runs `uv tool upgrade mygeeky`, which keeps Qt.
+
+**The app, login and the weekly run:**
+
+```bash
+mygeeky desktop install               # (re)create ~/Applications/myGeeKy.app
+mygeeky desktop install --autostart   # also open it when you log in
+mygeeky desktop remove                # remove the app and the login item
+mygeeky schedule install --yes        # refresh suggestions every Monday at 09:00
+```
+
+**What gets created:**
+- **Login item:** `~/Library/LaunchAgents/org.mygeeky.panel.login.plist`, which opens myGeeKy.app.
+- **Weekly run:** `org.mygeeky.weekly.plist` in the same folder.
+
+Both are launchd agents, not cron jobs: cron is deprecated on macOS, and launchd runs a Monday that was missed while the Mac slept as soon as it wakes. Newer macOS shows a "Background Items Added" notice the first time; you can see and switch them off in **System Settings → General → Login Items**.
+
+**Your tokens** are kept in the macOS **Keychain** (in Keychain Access they're named `mygeeky-github-token`, and `mygeeky-beacon-token` if you use Signals), never in a file. To paste one in a terminal, use **⌘V**.
+
+**The panel** docks to the edge of the screen inside the space the menu bar and the Dock leave free, and stays visible when you switch to another app. The menu bar shows **myGeeKy**, not Python.
+
+**Uninstall:** ⚙ → **Uninstall…** in the panel, or `mygeeky uninstall`. It removes:
+- myGeeKy.app;
+- the login item;
+- the weekly run;
+- the install folder and the package.
+
+Your data and Keychain entries stay, so a reinstall picks up where you left off, unless you choose to erase them too.
+
 ## Use it from any computer (`mygeeky sync`)
 
 Your myGeeKy data can live in a **private** GitHub repo, so the model keeps
@@ -582,7 +636,9 @@ pip install mygeeky
 ```
 
 That's all: PDF CVs work out of the box, and the panel's GUI library (Qt) is
-set up automatically the first time you run `mygeeky gui`. (`pip install
+set up automatically the first time you run `mygeeky gui`. With uv instead:
+`uv tool install mygeeky --with PySide6-Essentials` (see [macOS](#macos); it works
+the same on Linux). (`pip install
 "mygeeky[gui,pdf]"` still works too; the extras just aren't needed any more.)
 
 On Windows you can use `MyGeeKySetup.exe` instead (see the top of this page).
@@ -689,7 +745,7 @@ allowed to touch your OS's task scheduler:
 
 ```bash
 mygeeky schedule show          # print the exact command/cron line for your OS (does nothing)
-mygeeky schedule install --yes # actually register it (Windows Task Scheduler / cron)
+mygeeky schedule install --yes # actually register it (Windows Task Scheduler / launchd on a Mac / cron)
 mygeeky schedule remove        # undo it
 ```
 

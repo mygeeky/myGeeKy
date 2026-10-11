@@ -1,0 +1,158 @@
+name: macOS install
+
+# myGeeKy on a Mac: the tests (including the macOS-only ones: the menu-bar name,
+# Apple's own checks of the app bundle and its icon), the one-line installer with
+# Homebrew's Python and with macOS's own /usr/bin/python3, the weekly launchd agent
+# and the login item, uninstalling, and `uv tool install` (with Qt, and without it,
+# where `mygeeky gui` must install Qt with uv because a uv environment has no pip).
+
+on:
+  push:
+    branches: [main]
+    paths: ["website/install.sh", "src/mygeeky/**", "tests/**", "pyproject.toml",
+            ".github/workflows/macos-install.yml"]
+  pull_request:          # so a change is checked on a real Mac before it reaches main
+    paths: ["website/install.sh", "src/mygeeky/**", "tests/**", "pyproject.toml",
+            ".github/workflows/macos-install.yml"]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install myGeeKy, Qt and pytest
+        run: python -m pip install -q -e . pytest "PySide6-Essentials>=6.5"
+      - name: The test suite (the macOS-only tests run here)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q -rs
+      - name: On the real macOS screen, a panel-like window stays visible and follows every Space
+        run: |
+          python - <<'EOF'
+          import sys
+          from mygeeky.gui import macos
+          print("menu bar name set:", macos.set_app_name(), macos.bundle_name())
+          from PySide6.QtCore import Qt, QTimer
+          from PySide6.QtWidgets import QApplication, QWidget
+          app = QApplication(sys.argv)
+          print("Qt platform:", app.platformName())
+          w = QWidget(None, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+          w.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
+          w.resize(200, 300); w.show(); app.processEvents()
+          before = macos.collection_behavior(w)
+          ok = macos.keep_on_all_spaces(w)
+          after = macos.collection_behavior(w)
+          print(f"collection behaviour {before} -> {after} (set: {ok})")
+          assert ok and after & macos.CAN_JOIN_ALL_SPACES and after & macos.FULL_SCREEN_AUXILIARY
+          print("visible:", w.isVisible())
+          EOF
+      - name: The real panel starts on the macOS screen, runs, and quits cleanly
+        run: |
+          python - <<'EOF'
+          import sys
+          from PySide6.QtCore import QTimer
+          from PySide6.QtWidgets import QApplication
+          app = QApplication(sys.argv)          # app.main() uses this one
+          def check():
+              from mygeeky.gui import macos
+              from mygeeky.gui.qt_panel import MyGeekyPanel
+              panels = [w for w in QApplication.topLevelWidgets() if isinstance(w, MyGeekyPanel)]
+              assert panels and panels[0].isVisible(), "the panel isn't showing"
+              print("panel visible; collection behaviour:", macos.collection_behavior(panels[0]),
+                    "| menu bar name:", macos.bundle_name())
+              QApplication.quit()
+          QTimer.singleShot(8000, check)
+          from mygeeky.gui import app as gui_app
+          gui_app.main()
+          print("main() returned: the panel started and quit cleanly")
+          EOF
+
+  install:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [homebrew, system]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build this version's wheel
+        run: pipx run build --wheel --outdir dist .
+
+      - name: Pick the Python the installer will find
+        run: |
+          if [ "${{ matrix.python }}" = homebrew ]; then
+            echo "PATH=$(brew --prefix)/bin:$PATH" >> "$GITHUB_ENV"
+          else
+            echo "PATH=/usr/bin:/bin:/usr/sbin:/sbin" >> "$GITHUB_ENV"     # only macOS's own python3
+          fi
+
+      - name: Install with the one-liner
+        run: |
+          command -v python3 && python3 --version
+          MYGEEKY_SPEC="$(ls "$PWD"/dist/mygeeky-*.whl)" MYGEEKY_NO_LAUNCH=1 sh website/install.sh
+
+      - name: The command, Qt and the app in ~/Applications
+        run: |
+          ~/.local/bin/mygeeky --version
+          VPY=~/.local/share/mygeeky-app/venv/bin/python
+          QT_QPA_PLATFORM=offscreen "$VPY" -c "import sys; from PySide6.QtWidgets import QApplication; QApplication(sys.argv); print('PySide6 imports and starts')"
+          APP=~/Applications/myGeeKy.app
+          plutil -lint "$APP/Contents/Info.plist"
+          plutil -p "$APP/Contents/Info.plist" | grep -E 'CFBundleName|CFBundleExecutable|CFBundleIconFile'
+          test -x "$APP/Contents/MacOS/myGeeKy" && cat "$APP/Contents/MacOS/myGeeKy"
+          grep -q "mygeeky-app/venv/bin/python" "$APP/Contents/MacOS/myGeeKy"
+          iconutil -c iconset "$APP/Contents/Resources/myGeeKy.icns" -o /tmp/myGeeKy.iconset && ls /tmp/myGeeKy.iconset
+          "$VPY" -c "from mygeeky.gui import macos; print('menu bar name set:', macos.set_app_name(), macos.bundle_name())"
+
+      - name: Login item and the weekly run (launchd)
+        run: |
+          ~/.local/bin/mygeeky desktop install --autostart
+          plutil -lint ~/Library/LaunchAgents/org.mygeeky.panel.login.plist
+          ~/.local/bin/mygeeky schedule install --yes
+          plutil -lint ~/Library/LaunchAgents/org.mygeeky.weekly.plist
+          plutil -p ~/Library/LaunchAgents/org.mygeeky.weekly.plist
+          launchctl print "gui/$(id -u)/org.mygeeky.weekly" | head -20 || echo "(launchd has no GUI session on this runner; the plist loads at login)"
+          ! crontab -l 2>/dev/null | grep -q "mygeeky pipeline" && echo "no cron line"
+          ~/.local/bin/mygeeky schedule remove
+          test ! -e ~/Library/LaunchAgents/org.mygeeky.weekly.plist && echo "weekly agent gone"
+
+      - name: Running it again updates in place
+        run: MYGEEKY_SPEC="$(ls "$PWD"/dist/mygeeky-*.whl)" MYGEEKY_NO_LAUNCH=1 sh website/install.sh
+
+      - name: Uninstalling leaves nothing behind
+        run: |
+          ~/.local/share/mygeeky-app/venv/bin/python -c "import sys; from mygeeky.gui.setup_wizard import uninstall; print('\n'.join(uninstall(sys.executable)))"
+          test ! -e ~/.local/share/mygeeky-app && echo "folder gone"
+          test ! -e ~/.local/bin/mygeeky && echo "command gone"
+          test ! -e ~/Applications/myGeeKy.app && echo "app gone"
+          test ! -e ~/Library/LaunchAgents/org.mygeeky.panel.login.plist && echo "login item gone"
+
+  uv:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: uv, and this version's wheel
+        run: |
+          brew install uv
+          uv --version
+          uv build --wheel --out-dir dist .
+      - name: uv tool install, with Qt
+        run: |
+          uv tool install "$(ls dist/mygeeky-*.whl)" --with PySide6-Essentials
+          ~/.local/bin/mygeeky --version
+          TOOL_PY="$(uv tool dir)/mygeeky/bin/python"
+          QT_QPA_PLATFORM=offscreen "$TOOL_PY" -c "import sys; from PySide6.QtWidgets import QApplication; QApplication(sys.argv); print('PySide6 imports and starts')"
+          "$TOOL_PY" -c "from mygeeky import updates; c = updates.upgrade_command(); print(c); assert c[1:3] == ['tool', 'upgrade']"
+      - name: uv tool install without Qt, then Qt installed with uv (no pip in a uv environment)
+        run: |
+          uv tool uninstall mygeeky
+          uv tool install "$(ls dist/mygeeky-*.whl)"
+          TOOL_PY="$(uv tool dir)/mygeeky/bin/python"
+          ! "$TOOL_PY" -c "import pip" 2>/dev/null && echo "no pip here, as expected"
+          "$TOOL_PY" -m mygeeky.gui.bootstrap
+          QT_QPA_PLATFORM=offscreen "$TOOL_PY" -c "import sys; from PySide6.QtWidgets import QApplication; QApplication(sys.argv); print('Qt installed with uv and starts')"

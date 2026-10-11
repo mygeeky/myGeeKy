@@ -29,12 +29,13 @@ def test_menu_entry_with_icon_and_optional_autostart(linux_home):
     assert len(desktop.remove_menu_entry()) == 4 and not desktop.entry_path().exists()
 
 
-def test_not_on_other_systems(monkeypatch):
-    monkeypatch.setattr(sys, "platform", "darwin")
-    assert desktop.install_menu_entry() == []
+def test_nothing_to_do_on_windows(monkeypatch):
+    monkeypatch.setattr(sys, "platform", "win32")             # the installer makes the Start-menu entry
+    assert desktop.install_menu_entry() == [] and desktop.remove_menu_entry() == []
 
 
 def test_launch_detached_frees_the_terminal(monkeypatch, tmp_path):
+    monkeypatch.setattr(desktop, "is_mac", lambda: False)     # a Mac starts it through the app (test_macos)
     seen = {}
     monkeypatch.setattr(desktop.subprocess, "Popen", lambda cmd, **kw: seen.update(cmd=cmd, **kw))
     desktop.launch_detached(tmp_path / "logs" / "panel.log")

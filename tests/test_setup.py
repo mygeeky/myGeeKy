@@ -1,4 +1,6 @@
 import json
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -87,6 +89,7 @@ def test_setup_api_relays_a_clear_error_and_details(monkeypatch, capsys):
     assert json.loads(capsys.readouterr().out)["error"] == "Sync needs Git."   # our own message, unchanged
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="the Windows installer installs Git and puts it on PATH")
 def test_installer_sync_page_installs_git_when_you_choose_sync(monkeypatch):
     pytest.importorskip("PySide6")
     import os
@@ -179,7 +182,7 @@ def test_setup_overview_shows_what_matters(monkeypatch):
     monkeypatch.setattr(tokens, "status", lambda cfg: [{"name": "read", "message": "Token 1 (read-only) expires soon.", "state": "ok"}])
     monkeypatch.setattr(logic.auth, "get_beacon_token", lambda user: "tok")
     cfg = MyGeekyConfig(github_username="me", beacon_enabled=True, sync_repo="me/mygeeky-data", orcid_id="0000-0002-1825-0097",
-                        cv_path=r"C:\cv\me.pdf", keywords=["gwas"])
+                        cv_path=str(Path.home() / "cv" / "me.pdf"), keywords=["gwas"])
     info = logic.setup_overview(cfg)
     assert info["signals"] and info["beacon_token"] and info["sync"] == "me/mygeeky-data"
     assert info["cv"] == "me.pdf" and info["keywords"] == ["gwas"] and info["tokens"][0]["name"] == "read"
