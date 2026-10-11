@@ -99,6 +99,12 @@ def describe() -> str:
             "Run that in an elevated PowerShell/cmd yourself, or re-run this command with\n"
             "`mygeeky schedule install --yes` to have myGeeKy run it for you."
         )
+    if system == "Darwin":
+        return (
+            "launchd (runs every Monday at 09:00, or as soon as the Mac wakes if it was asleep):\n\n"
+            f"  a LaunchAgent at {launch_agent_path()}\n\n"
+            "Re-run this command with `mygeeky schedule install --yes` to have myGeeKy create and load it."
+        )
     return (
         "cron (runs every Monday at 09:00) -- add this line via `crontab -e`:\n\n"
         f"  {cron_line()}\n\n"
@@ -107,11 +113,83 @@ def describe() -> str:
     )
 
 
+# --------------------------------------------------------------------------- macOS: launchd
+LAUNCH_AGENT_ID = "org.mygeeky.weekly"
+
+
+def launch_agent_path() -> Path:
+    return Path.home() / "Library" / "LaunchAgents" / f"{LAUNCH_AGENT_ID}.plist"
+
+
+def launch_agent_plist() -> bytes:
+    """cron is deprecated on macOS and needs Full Disk Access to touch some folders;
+    launchd is the native way, and it runs a missed time when the Mac wakes up."""
+    import plistlib
+    from .config import LOG_DIR
+    python, _ = _python_and_module()
+    return plistlib.dumps({
+        "Label": LAUNCH_AGENT_ID,
+        "ProgramArguments": [python, "-m", "mygeeky", "pipeline"],
+        "StartCalendarInterval": {"Weekday": 1, "Hour": 9, "Minute": 0},      # Monday 09:00
+        "StandardOutPath": str(LOG_DIR / "weekly.log"),
+        "StandardErrorPath": str(LOG_DIR / "weekly.log"),
+        "ProcessType": "Background",
+        "LowPriorityIO": True,
+    })
+
+
+def _launchctl(*args: str) -> subprocess.CompletedProcess:
+    return winproc.run(["launchctl", *args], capture_output=True, text=True)
+
+
+def _remove_cron_line() -> bool:
+    """An older myGeeKy put a cron line on Macs too: take it out (True if there was one)."""
+    result = subprocess.run("crontab -l", shell=True, capture_output=True, text=True)
+    existing = result.stdout if result.returncode == 0 else ""
+    if CRON_MARK not in existing:
+        return False
+    new_crontab = "\n".join(l for l in existing.splitlines() if CRON_MARK not in l) + "\n"
+    return subprocess.run("crontab -", shell=True, input=new_crontab, capture_output=True, text=True).returncode == 0
+
+
+def install_mac() -> str:
+    import os
+    from .config import LOG_DIR
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    path = launch_agent_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    domain = f"gui/{os.getuid()}"
+    _launchctl("bootout", domain, str(path))             # reload a changed one
+    path.write_bytes(launch_agent_plist())
+    loaded = _launchctl("bootstrap", domain, str(path))
+    if loaded.returncode != 0:                           # older macOS, or no GUI session
+        loaded = _launchctl("load", "-w", str(path))
+    note = " (also removed the old cron line)" if _remove_cron_line() else ""
+    if loaded.returncode != 0:
+        return (f"Wrote {path}, but launchd didn't load it yet ({(loaded.stderr or loaded.stdout).strip()}). "
+                f"It loads at your next login{note}.")
+    return (f"Added a launchd agent ({path}). myGeeKy will run `mygeeky pipeline` every Monday at 09:00, "
+            f"or as soon as your Mac wakes if it was asleep then{note}.")
+
+
+def remove_mac() -> str:
+    import os
+    path = launch_agent_path()
+    had_cron = _remove_cron_line()
+    if not path.exists():
+        return "Removed myGeeKy's old cron entry." if had_cron else "No weekly run was set up -- nothing to do."
+    _launchctl("bootout", f"gui/{os.getuid()}", str(path))
+    path.unlink()
+    return "Removed myGeeKy's weekly run (launchd agent)."
+
+
 def install(confirmed: bool) -> str:
     if not confirmed:
         return describe() + "\n\n(Nothing was installed -- pass --yes to actually install it.)"
 
     system = platform.system()
+    if system == "Darwin":
+        return install_mac()
     if system == "Windows":
         cmd = windows_command()
         result = winproc.run(cmd, shell=True, capture_output=True, text=True)
@@ -141,6 +219,8 @@ def remove() -> str:
         if result.returncode != 0:
             return f"Could not remove scheduled task (maybe it wasn't installed):\n{result.stderr or result.stdout}"
         return f"Scheduled task '{TASK_NAME}' removed."
+    if system == "Darwin":
+        return remove_mac()
 
     result = subprocess.run("crontab -l", shell=True, capture_output=True, text=True)
     existing = result.stdout if result.returncode == 0 else ""

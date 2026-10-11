@@ -94,6 +94,15 @@ def token_source(username: str) -> str:
     return "none"
 
 
+def paste_hint() -> str:
+    """How to paste into this terminal."""
+    if sys.platform == "darwin":
+        return "⌘V or right-click → Paste"
+    if sys.platform.startswith("linux"):
+        return "Ctrl+Shift+V or right-click → Paste"
+    return "right-click or Ctrl+V"
+
+
 def prompt_and_store_token(username: str, show_guide: bool = True) -> None:
     """Interactively prompt for a token (hidden input) and store it in the OS keyring."""
     if show_guide:
@@ -104,13 +113,11 @@ def prompt_and_store_token(username: str, show_guide: bool = True) -> None:
             "  -> Expiration: pick a long one (90 days or a year); myGeeKy reminds you before it ends.\n\n"
             "It's stored only in your system keyring, never in a file or a log.\n"
         )
-    paste_key = "Ctrl+Shift+V or right-click → Paste" if sys.platform.startswith("linux") else "right-click or Ctrl+V"
-    print(f"Paste it below ({paste_key}). The text stays hidden while you type, then press Enter.")
+    print(f"Paste it below ({paste_hint()}). The text stays hidden while you type, then press Enter.")
     token = getpass.getpass("GitHub token: ").strip()
     if not token:
         raise ValueError("Nothing was pasted, so no token was stored. "
-                         f"(In a Linux terminal, paste with Ctrl+Shift+V.)" if sys.platform.startswith("linux")
-                         else "Nothing was pasted, so no token was stored.")
+                         f"(In this terminal, paste with {paste_hint().split(' or ')[0]}.)")
     if not token.startswith(("github_pat_", "ghp_", "gho_", "ghu_")):
         raise ValueError(f"That doesn't look like a GitHub token (they start with github_pat_ or ghp_; got "
                          f"{len(token)} characters starting '{token[:4]}…'). Copy it again from GitHub and paste.")

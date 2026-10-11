@@ -111,8 +111,9 @@ curl -fsSL https://mygeeky.org/install.sh | sh
 ```
 
 It installs myGeeKy in its own folder (no sudo, no clash with conda or your system Python), adds it to your
-applications menu, then asks: set up in a **window** (the same as Windows: Next → Next → Finish, with
-**Sign in with GitHub**) or right there in the **terminal**. Run it again to update.
+applications menu (on a Mac: **Applications**, so it's in Launchpad and Spotlight), then asks: set up in a
+**window** (the same as Windows: Next → Next → Finish, with **Sign in with GitHub**) or right there in the
+**terminal**. Run it again to update. More for Macs [below](#-on-a-mac).
 
 ### 🐍 Or with pip, anywhere
 
@@ -141,6 +142,21 @@ mygeeky trends        # 🔬 papers and tools gaining traction
 mygeeky news          # 🗞️ news about your interests
 mygeeky beacon init   # 🙏 join Signals (optional)
 ```
+
+## 🍎 On a Mac
+
+- **One line:** `curl -fsSL https://mygeeky.org/install.sh | sh`. It uses Homebrew's Python (`brew install python`),
+  the python.org one, or macOS's own (after `xcode-select --install`), and puts **myGeeKy.app** in
+  `~/Applications`: open it from Launchpad, Spotlight or the Dock.
+- **With uv:** `uv tool install mygeeky --with PySide6-Essentials`, then `mygeeky setup`. Update with
+  `uv tool upgrade mygeeky` (the panel's **Update** button does that for you).
+- **Your tokens** live in the macOS **Keychain** (look for "mygeeky" in Keychain Access), never in a file.
+- **At login and every Monday:** tick them at the end of setup, or run `mygeeky desktop install --autostart`
+  and `mygeeky schedule install --yes`. Both are small launchd agents in `~/Library/LaunchAgents`.
+- **Uninstall:** ⚙ → **Uninstall…** in the panel, or `mygeeky uninstall`. It removes the app, the login item,
+  the weekly run and the package. Your data stays unless you choose to erase it too.
+
+More in the [guide](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#macos).
 
 ## 🔑 Two tokens, two jobs
 

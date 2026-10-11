@@ -16,6 +16,7 @@ Only the standard library is imported here.
 from __future__ import annotations
 
 import os
+import shutil
 import site
 import subprocess
 import sys
@@ -76,21 +77,66 @@ def paths_fit(install_dir: str | None = None) -> bool:
     return len(install_dir or _pip_install_dir()) + 1 + DEEPEST_QT_FILE <= WINDOWS_MAX_PATH
 
 
+UV_HINT = "uv tool install mygeeky --with PySide6-Essentials"
+
+
+def _has_pip() -> bool:
+    import importlib.util
+    importlib.invalidate_caches()
+    return importlib.util.find_spec("pip") is not None
+
+
+def find_uv() -> str | None:
+    """uv, also where it lives when an app launched from the Dock/Finder has a bare PATH."""
+    found = shutil.which("uv")
+    if found:
+        return found
+    for candidate in (Path.home() / ".local" / "bin" / "uv", Path.home() / ".cargo" / "bin" / "uv",
+                      Path("/opt/homebrew/bin/uv"), Path("/usr/local/bin/uv")):
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None
+
+
+def _run(cmd: list[str]) -> bool:
+    if sys.stdout is None:                      # no console of our own: don't flash one for the installer
+        from .. import winproc
+        return winproc.run(cmd).returncode == 0
+    return subprocess.run(cmd).returncode == 0  # in a terminal: let it show its progress there
+
+
+def installer_command(log=print) -> list[str] | None:
+    """How to install a package into this Python: its pip; or uv, for environments
+    made by `uv tool install` / `uv venv`, which have no pip; or pip bootstrapped
+    with ensurepip. None when none of them is available."""
+    if _has_pip():
+        return [sys.executable, "-m", "pip", "install", "--disable-pip-version-check"]
+    uv = find_uv()
+    if uv:
+        log("This Python has no pip (a uv environment), so Qt is installed with uv.")
+        return [uv, "pip", "install", "--python", sys.executable]
+    log("This Python has no pip; setting it up first (ensurepip)...")
+    from .. import winproc
+    if winproc.run([sys.executable, "-m", "ensurepip", "--upgrade"], capture_output=True).returncode == 0 \
+            and _has_pip():
+        return [sys.executable, "-m", "pip", "install", "--disable-pip-version-check"]
+    return None
+
+
 def install_qt(log=print) -> bool:
-    """pip-install Qt into this Python, or into the private folder when the
+    """Install Qt into this Python, or into the private folder when the
     normal location's paths would be too long. True when it worked."""
-    cmd = [sys.executable, "-m", "pip", "install", "--disable-pip-version-check", QT_REQUIREMENT]
+    cmd = installer_command(log)
+    if cmd is None:
+        return False
+    cmd = cmd + [QT_REQUIREMENT]
     if not paths_fit():
         target = private_qt_dir()
         target.mkdir(parents=True, exist_ok=True)
         cmd += ["--target", str(target), "--upgrade"]
         log(f"This Python's package folder is too deep for Qt, so it goes into {target} instead.")
     log("Installing Qt for the myGeeKy panel (about 80 MB, one time only)...")
-    if sys.stdout is None:                      # no console of our own: don't flash one for pip
-        from .. import winproc
-        ok = winproc.run(cmd).returncode == 0
-    else:                                       # in a terminal: let pip show its progress there
-        ok = subprocess.run(cmd).returncode == 0
+    ok = _run(cmd)
     if ok:
         # make a fresh install importable in this same process
         import importlib
@@ -112,7 +158,9 @@ def ensure_qt(interactive: bool | None = None) -> None:
     if not install_qt():
         raise SystemExit(
             "Couldn't install Qt for the panel. Check your internet connection and try again, or run:\n"
-            f'  "{sys.executable}" -m pip install "{QT_REQUIREMENT}" --target "{private_qt_dir()}"')
+            f'  "{sys.executable}" -m pip install "{QT_REQUIREMENT}" --target "{private_qt_dir()}"\n'
+            "If you installed myGeeKy with uv, install it with Qt included instead:\n"
+            f"  {UV_HINT}")
 
 
 def setup_main() -> None:

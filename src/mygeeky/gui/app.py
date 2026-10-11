@@ -1042,8 +1042,12 @@ def _main() -> None:
     except Exception:
         pass
 
+    from .macos import set_app_name
+    set_app_name()                           # macOS: the menu bar says myGeeKy, not Python
     app = QApplication.instance() or QApplication([])
     app.setApplicationName("mygeeky")
+    if sys.platform == "darwin":
+        app.setApplicationDisplayName("myGeeKy")   # elsewhere Qt would add it to every window title
     if sys.platform.startswith("linux"):
         app.setDesktopFileName("mygeeky")    # the dock/taskbar uses the menu entry's icon
     if ICON_WINDOW.exists():
@@ -1056,6 +1060,8 @@ def _main() -> None:
     cfg = load_config()
     panel = MyGeekyPanel(cfg)
     panel.show()
+    from .macos import keep_on_all_spaces
+    keep_on_all_spaces(panel)                # macOS: stay at the edge on every Space, beside full-screen apps
     _watch_crashes(panel, cfg.github_username)
     _say_if_settings_recovered(panel)
     _listen_for_second_start(panel)

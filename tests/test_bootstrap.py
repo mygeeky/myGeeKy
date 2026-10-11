@@ -74,3 +74,56 @@ def test_path_tip_never_interrupts_scripts_or_version(monkeypatch):
     entry.offer_path_fix()
     entry.offer_path_fix()          # asked once, then remembered
     assert len(asked) == 1
+
+
+class _Done:
+    returncode = 0
+
+
+def test_a_uv_environment_without_pip_installs_qt_with_uv(monkeypatch):
+    monkeypatch.setattr(bootstrap, "_has_pip", lambda: False)
+    monkeypatch.setattr(bootstrap, "find_uv", lambda: "/Users/me/.local/bin/uv")
+    monkeypatch.setattr(bootstrap, "paths_fit", lambda install_dir=None: True)
+    monkeypatch.setattr(bootstrap, "qt_available", lambda: True)
+    calls = []
+    monkeypatch.setattr(bootstrap.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or _Done())
+    assert bootstrap.install_qt(log=lambda m: None)
+    assert calls == [["/Users/me/.local/bin/uv", "pip", "install", "--python", sys.executable, bootstrap.QT_REQUIREMENT]]
+
+
+def test_without_pip_or_uv_pip_is_set_up_with_ensurepip(monkeypatch):
+    has_pip = iter([False, True, True])
+    monkeypatch.setattr(bootstrap, "_has_pip", lambda: next(has_pip))
+    monkeypatch.setattr(bootstrap, "find_uv", lambda: None)
+    calls = []
+    monkeypatch.setattr(bootstrap.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or _Done())
+    cmd = bootstrap.installer_command(log=lambda m: None)
+    assert calls[0][:3] == [sys.executable, "-m", "ensurepip"]
+    assert cmd[:4] == [sys.executable, "-m", "pip", "install"]
+
+
+def test_with_no_way_to_install_the_message_suggests_uv_with_qt(monkeypatch):
+    monkeypatch.setattr(bootstrap, "_has_pip", lambda: False)
+    monkeypatch.setattr(bootstrap, "find_uv", lambda: None)
+
+    class Failed:
+        returncode = 1
+    monkeypatch.setattr(bootstrap.subprocess, "run", lambda cmd, **kw: Failed())
+    monkeypatch.setattr(bootstrap, "qt_available", lambda: False)
+    assert bootstrap.install_qt(log=lambda m: None) is False
+    try:
+        bootstrap.ensure_qt(interactive=False)
+    except SystemExit as exc:
+        assert "uv tool install mygeeky --with PySide6-Essentials" in str(exc)
+    else:
+        raise AssertionError("expected SystemExit")
+
+
+def test_uv_is_found_outside_path_too(monkeypatch, tmp_path):
+    monkeypatch.setattr(bootstrap.shutil, "which", lambda name: None)
+    monkeypatch.setattr(bootstrap.Path, "home", lambda: tmp_path)
+    uv = tmp_path / ".local" / "bin" / "uv"
+    uv.parent.mkdir(parents=True)
+    uv.write_text("#!/bin/sh\n")
+    uv.chmod(0o755)
+    assert bootstrap.find_uv() == str(uv)

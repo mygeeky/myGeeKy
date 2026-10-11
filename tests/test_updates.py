@@ -117,3 +117,16 @@ def test_banner_shows_hides_and_remembers_later(monkeypatch):
             w.wait(2000)
         panel.close()
         panel.deleteLater()
+
+
+def test_a_uv_tool_install_updates_with_uv_tool_upgrade(monkeypatch, tmp_path):
+    from mygeeky.gui import bootstrap
+    monkeypatch.setattr(updates.sys, "prefix", str(tmp_path))
+    (tmp_path / "uv-receipt.toml").write_text("[tool]\n")
+    monkeypatch.setattr(bootstrap, "find_uv", lambda: "/usr/local/bin/uv")
+    assert updates.upgrade_command() == ["/usr/local/bin/uv", "tool", "upgrade", "mygeeky"]
+    (tmp_path / "uv-receipt.toml").unlink()                     # a plain `uv venv`, no pip in it
+    monkeypatch.setattr(bootstrap, "_has_pip", lambda: False)
+    assert updates.upgrade_command()[:4] == ["/usr/local/bin/uv", "pip", "install", "--python"]
+    monkeypatch.setattr(bootstrap, "_has_pip", lambda: True)    # a normal Python keeps using pip
+    assert updates.upgrade_command()[1:4] == ["-m", "pip", "install"]

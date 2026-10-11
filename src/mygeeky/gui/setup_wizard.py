@@ -54,6 +54,7 @@ from .. import winproc  # noqa: E402
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 FROZEN = getattr(sys, "frozen", False)
 WINDOWS = sys.platform == "win32"     # elsewhere (Linux, macOS) setup runs inside myGeeKy's own Python
+MAC = sys.platform == "darwin"
 BUNDLE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
 ASSETS = BUNDLE_DIR / "assets" if FROZEN else Path(__file__).parent / "assets"
 READ_TOKEN_URL = "https://github.com/settings/personal-access-tokens/new"
@@ -437,6 +438,18 @@ def remove_install_script_folder() -> list[str]:
     return [f"Removed myGeeKy's own folder ({app_dir}) and the mygeeky command."]
 
 
+def uninstall_command(python: str) -> list[str]:
+    """pip for a normal Python; uv for one installed with `uv tool install` (or a uv venv, which has no pip)."""
+    from .bootstrap import find_uv
+    uv = find_uv()
+    prefix = Path(python).parent.parent        # not resolve(): a venv's python links to the base Python
+    if uv and (prefix / "uv-receipt.toml").exists():
+        return [uv, "tool", "uninstall", "mygeeky"]
+    if uv and winproc.run([python, "-c", "import pip"], capture_output=True).returncode != 0:
+        return [uv, "pip", "uninstall", "--python", python, "mygeeky"]
+    return [python, "-m", "pip", "uninstall", "-y", "mygeeky"]
+
+
 def uninstall(python: str, erase: bool = False) -> list[str]:
     """Remove shortcuts, the weekly task, the package and the Apps entry. Your
     data and tokens stay (a reinstall picks up where you left off) unless
@@ -457,16 +470,22 @@ def uninstall(python: str, erase: bool = False) -> list[str]:
     else:
         try:
             from . import desktop
-            desktop.remove_menu_entry()
+            removed = desktop.remove_menu_entry()     # macOS: ~/Applications/myGeeKy.app and the login agent
+            if sys.platform == "darwin" and removed:
+                notes.append("Removed myGeeKy from your Applications and from login.")
             from .. import scheduler
-            scheduler.remove()
+            scheduler.remove()                        # cron (Linux) or the launchd agent (macOS)
         except Exception:
             pass
-        notes += remove_install_script_folder()
+        folder_notes = remove_install_script_folder()
+        notes += folder_notes
+        if folder_notes:                              # its whole environment is gone, package included
+            python = ""
     try:
-        r = _run([python, "-m", "pip", "uninstall", "-y", "mygeeky"], timeout=300)
-        notes.append("Removed the myGeeKy package." if r.returncode == 0 else
-                     f"pip couldn't remove the package (details in {SETUP_LOG}).")
+        if python:
+            r = _run(uninstall_command(python), timeout=300)
+            notes.append("Removed the myGeeKy package." if r.returncode == 0 else
+                         f"Couldn't remove the package (details in {SETUP_LOG}).")
     except SetupError as exc:
         notes.append(str(exc))
     try:
@@ -604,6 +623,7 @@ class WelcomePage(Page):
                                 if WINDOWS else "  •  optionally keep your data in a private GitHub repo\n")
                              + "  •  optionally turn on Signals (👋 📚 🤝 👀)\n"
                              + ("  •  add myGeeKy to your Start menu\n\n" if WINDOWS
+                                else "  •  add myGeeKy to your Applications\n\n" if MAC
                                 else "  •  add myGeeKy to your applications menu\n\n")
                              + "myGeeKy only ever suggests. It never follows anyone for you."), 1)
         wrap = QWidget()
@@ -1213,12 +1233,14 @@ class FinishPage(Page):
     def __init__(self) -> None:
         super().__init__("Almost done", "Pick what you'd like, then click Finish.")
         self.start_menu = self.add(QCheckBox("Add myGeeKy to the Start menu" if WINDOWS
+                                             else "Add myGeeKy to Applications (Launchpad, Spotlight)" if MAC
                                              else "Add myGeeKy to the applications menu"))
         self.desktop = self.add(QCheckBox("Add a desktop shortcut"))
         self.desktop.setVisible(WINDOWS)
         self.startup = self.add(QCheckBox("Open the panel when I sign in to Windows" if WINDOWS
                                           else "Open the panel when I log in"))
         self.weekly = self.add(QCheckBox("Refresh suggestions every Monday at 09:00 (scheduled task)" if WINDOWS
+                                         else "Refresh suggestions every Monday at 09:00 (launchd)" if MAC
                                          else "Refresh suggestions every Monday at 09:00 (cron)"))
         self.launch = self.add(QCheckBox("Open the myGeeKy panel now"))
         for box in (self.start_menu, self.startup, self.launch):
@@ -1234,7 +1256,7 @@ class FinishPage(Page):
             self.startup.setChecked(paths["startup"].exists() or not self.w.state.get("configured"))
         else:
             from . import desktop
-            self.startup.setChecked(desktop.autostart_path().exists() or not self.w.state.get("configured"))
+            self.startup.setChecked(desktop.autostart_enabled() or not self.w.state.get("configured"))
         self.summary.setText("\n".join(n for n in self.w.notes if n))
 
     def job(self):
@@ -1332,15 +1354,16 @@ class SetupWizard(QWizard):
         return {"ok": True}
 
     def _apply_finish_elsewhere(self, choices: dict[str, bool]) -> dict[str, Any]:
-        """Linux and macOS: the applications menu (and login) entry, cron, and the panel."""
+        """Linux and macOS: the applications menu entry (macOS: ~/Applications/myGeeKy.app),
+        opening at login, the weekly run (cron / launchd), and the panel."""
         from . import desktop
         python = self.python or sys.executable
         problems = []
         try:
             if choices["start_menu"] or choices["startup"]:
-                desktop.install_menu_entry(autostart=choices["startup"])
-            elif desktop.autostart_path().exists():
-                desktop.autostart_path().unlink()
+                desktop.install_menu_entry(autostart=choices["startup"])   # macOS: ~/Applications/myGeeKy.app
+            else:
+                desktop.disable_autostart()
         except OSError as exc:
             problems.append(f"Couldn't add myGeeKy to the applications menu ({exc}).")
         if choices["weekly"]:
@@ -1351,9 +1374,14 @@ class SetupWizard(QWizard):
             return {"ok": False, "error": " ".join(problems) + " Untick it and click Finish again, or open "
                                           "myGeeKy any time with `mygeeky gui`."}
         if choices["launch"] or self.restart_panel:
-            winproc.popen([python, "-m", "mygeeky.gui.app"], cwd=str(Path.home()), close_fds=True,
-                          start_new_session=True, stdin=subprocess.DEVNULL,
-                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if sys.platform == "darwin" and desktop.app_bundle_path().exists():
+                # through the app, so it starts as myGeeKy (Dock, menu bar), not as "Python"
+                winproc.popen(["/usr/bin/open", "-a", str(desktop.app_bundle_path())], close_fds=True,
+                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                winproc.popen([python, "-m", "mygeeky.gui.app"], cwd=str(Path.home()), close_fds=True,
+                              start_new_session=True, stdin=subprocess.DEVNULL,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return {"ok": True}
 
 
@@ -1367,6 +1395,8 @@ def main(argv: list[str] | None = None) -> int:
             "errors": describe(FileNotFoundError(2, "x", "probe.txt")),
             "ssl": __import__("ssl").OPENSSL_VERSION}), encoding="utf-8")
         return 0
+    from .macos import set_app_name
+    set_app_name()                           # macOS: the menu bar says myGeeKy, not Python
     app = QApplication.instance() or QApplication([])
     app.setFont(QFont("Segoe UI", 10))
     if "--uninstall" in argv:            # Windows' Apps list: the step-by-step uninstall wizard

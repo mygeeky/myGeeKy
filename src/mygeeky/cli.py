@@ -1923,8 +1923,8 @@ def gui(foreground: bool) -> None:
     if _panel_running():
         click.echo("myGeeKy is already running (look for its icon on the edge of your screen).")
         return
-    if sys.platform.startswith("linux"):
-        for line in desktop.install_menu_entry():
+    if sys.platform.startswith("linux") or sys.platform == "darwin":
+        for line in desktop.install_menu_entry():      # the applications menu / ~/Applications/myGeeKy.app
             click.echo(line)
     desktop.launch_detached(LOG_DIR / "panel.log")
     click.echo("myGeeKy is running in the background: look for its icon on the edge of your screen. "
@@ -1948,7 +1948,7 @@ def _panel_running() -> bool:
 
 @main.group("desktop")
 def desktop_cmd() -> None:
-    """Linux: myGeeKy in your applications menu, and (optionally) at sign-in."""
+    """Linux and macOS: myGeeKy in your applications menu (on a Mac, ~/Applications/myGeeKy.app), and at sign-in."""
 
 
 @desktop_cmd.command("install")
@@ -1957,15 +1957,16 @@ def desktop_install(autostart: bool | None) -> None:
     """Add myGeeKy (with its icon) to your applications menu."""
     import sys
     from .gui import desktop
-    if not sys.platform.startswith("linux"):
-        raise click.ClickException("This is for Linux. On Windows, the installer adds the Start-menu entry.")
+    if not (sys.platform.startswith("linux") or sys.platform == "darwin"):
+        raise click.ClickException("This is for Linux and macOS. On Windows, the installer adds the Start-menu entry.")
     changed = desktop.install_menu_entry(autostart=autostart)
-    click.echo("\n".join(changed) or "Already in your applications menu.")
+    click.echo("\n".join(changed) or ("myGeeKy is already in your Applications." if sys.platform == "darwin"
+                                     else "Already in your applications menu."))
 
 
 @desktop_cmd.command("remove")
 def desktop_remove() -> None:
-    """Take myGeeKy out of the applications menu and sign-in."""
+    """Take myGeeKy out of the applications menu (on a Mac, ~/Applications) and sign-in."""
     from .gui import desktop
     removed = desktop.remove_menu_entry()
     click.echo(f"Removed {len(removed)} file(s)." if removed else "Nothing to remove.")
