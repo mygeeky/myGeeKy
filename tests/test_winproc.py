@@ -52,11 +52,11 @@ def test_an_old_weekly_task_is_switched_to_pythonw(monkeypatch):
 
     def run(cmd, **kw):
         calls.append(cmd)
-        out = 'Task To Run: "C:\Py\python.exe" -m mygeeky pipeline' if "/Query" in cmd else ""
+        out = r'Task To Run: "C:\Py\python.exe" -m mygeeky pipeline' if "/Query" in cmd else ""
         return subprocess.CompletedProcess(cmd, 0, out, "")
     monkeypatch.setattr(scheduler.winproc, "run", run)
     assert scheduler.make_windowless() and "/Create" in calls[-1]
     calls.clear()
     monkeypatch.setattr(scheduler.winproc, "run", lambda cmd, **kw: subprocess.CompletedProcess(
-        cmd, 0, 'Task To Run: "C:\Py\pythonw.exe" -m mygeeky pipeline', ""))
+        cmd, 0, r'Task To Run: "C:\Py\pythonw.exe" -m mygeeky pipeline', ""))
     assert not scheduler.make_windowless()                       # already windowless: left alone

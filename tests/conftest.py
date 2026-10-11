@@ -69,3 +69,18 @@ def _no_github_achievements_fetch(monkeypatch):
     def offline(*a, **kw):
         raise ach.requests.ConnectionError("tests are offline")
     monkeypatch.setattr(ach.requests, "get", offline)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Panels made by tests start background work (fetches) that can outlive the tests.
+    Qt aborts a process that exits with a QThread still running ("QThread: Destroyed
+    while thread is still running"), turning a green run red. Do what the app does
+    when it quits (gui/app.py): give the work a moment, then leave without destroying it."""
+    worker_module = sys.modules.get("mygeeky.gui.qt_panel")
+    if worker_module is None:
+        return
+    if worker_module._Worker.drain(15000):
+        import os
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(int(exitstatus))
