@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/gui/assets/icon_256.png?v=3" width="140" alt="The myGeeKy badge: the name inside a ring of two arms hugging">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/logo.png" width="140" alt="The myGeeKy badge: the name inside a ring of two arms hugging">
 </p>
 
 <h1 align="center">myGeeKy</h1>
