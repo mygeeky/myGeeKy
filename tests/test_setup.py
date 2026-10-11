@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -94,6 +95,7 @@ def test_installer_sync_page_installs_git_when_you_choose_sync(monkeypatch):
     from PySide6.QtWidgets import QApplication
     QApplication.instance() or QApplication([])
     from mygeeky.gui import setup_wizard as sw
+    monkeypatch.setattr(sw, "WINDOWS", True)        # installing Git for you is the Windows installer's job
     w = sw.SetupWizard()
     w.state = {"github_username": "me", "git": False, "gh": False, "sync_repo": "", "sync_initialized": False}
     page = w.page(w.pageIds()[4])
@@ -179,7 +181,7 @@ def test_setup_overview_shows_what_matters(monkeypatch):
     monkeypatch.setattr(tokens, "status", lambda cfg: [{"name": "read", "message": "Token 1 (read-only) expires soon.", "state": "ok"}])
     monkeypatch.setattr(logic.auth, "get_beacon_token", lambda user: "tok")
     cfg = MyGeekyConfig(github_username="me", beacon_enabled=True, sync_repo="me/mygeeky-data", orcid_id="0000-0002-1825-0097",
-                        cv_path=r"C:\cv\me.pdf", keywords=["gwas"])
+                        cv_path=str(Path.home() / "cv" / "me.pdf"), keywords=["gwas"])
     info = logic.setup_overview(cfg)
     assert info["signals"] and info["beacon_token"] and info["sync"] == "me/mygeeky-data"
     assert info["cv"] == "me.pdf" and info["keywords"] == ["gwas"] and info["tokens"][0]["name"] == "read"

@@ -37,7 +37,7 @@ def test_a_failed_sign_in_can_fall_back_to_pasting_with_retries(monkeypatch):
 def test_an_empty_paste_explains_how_to_paste(monkeypatch):
     monkeypatch.setattr(auth.getpass, "getpass", lambda prompt="": "")
     monkeypatch.setattr(auth.sys, "platform", "linux")
-    with pytest.raises(ValueError, match="Ctrl\+Shift\+V"):
+    with pytest.raises(ValueError, match=r"Ctrl\+Shift\+V"):
         auth.prompt_and_store_token("me", show_guide=False)
     monkeypatch.setattr(auth.getpass, "getpass", lambda prompt="": "^V")
     with pytest.raises(ValueError, match="doesn't look like a GitHub token"):

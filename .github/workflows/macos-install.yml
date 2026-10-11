@@ -120,7 +120,7 @@ jobs:
         run: |
           brew install uv
           uv --version
-          pipx run build --wheel --outdir dist .
+          uv build --wheel --out-dir dist .
       - name: uv tool install, with Qt
         run: |
           uv tool install "$(ls dist/mygeeky-*.whl)" --with PySide6-Essentials

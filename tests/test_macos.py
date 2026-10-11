@@ -128,3 +128,12 @@ def test_on_a_mac_the_bundle_passes_apples_own_checks(tmp_path, monkeypatch):
     assert subprocess.run(["iconutil", "-c", "iconset", str(app / "Contents" / "Resources" / "myGeeKy.icns"),
                            "-o", str(out)]).returncode == 0
     assert len(list(out.glob("*.png"))) >= 5
+
+
+def test_on_a_mac_the_panel_starts_through_the_app(home, monkeypatch):
+    desktop.build_app_bundle(desktop.app_bundle_path())
+    seen = {}
+    monkeypatch.setattr(desktop.subprocess, "Popen", lambda cmd, **kw: seen.update(cmd=cmd, **kw))
+    desktop.launch_detached(home / "logs" / "panel.log")
+    assert seen["cmd"][:3] == ["/usr/bin/open", "-a", str(desktop.app_bundle_path())]
+    assert "--stdout" in seen["cmd"] and "--stderr" in seen["cmd"]

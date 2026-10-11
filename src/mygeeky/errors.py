@@ -48,13 +48,15 @@ def describe(exc: BaseException) -> str:
     if type(exc).__module__.startswith("mygeeky.") and not isinstance(exc, OSError) and str(exc):
         return str(exc)   # our own errors (SyncError, BeaconError, ...) already say what to do
     if isinstance(exc, FileNotFoundError):
-        if exc.filename:
-            return f"A file myGeeKy needed wasn't found: {exc.filename}"
+        # a program that couldn't be started comes first: on macOS and Linux Python also puts
+        # its name in `filename`, which would make it read like a missing file
         program = failed_program(exc)
         if program:
             name = Path(program).stem.lower()
             hint = PROGRAM_HINTS.get(name, f"'{program}' isn't installed or isn't on PATH.")
             return f"Couldn't start {Path(program).name}: {hint}"
+        if exc.filename:
+            return f"A file myGeeKy needed wasn't found: {exc.filename}"
         return f"Something myGeeKy needed wasn't found ({exc})."
     if isinstance(exc, PermissionError):
         where = f": {exc.filename}" if exc.filename else ""
