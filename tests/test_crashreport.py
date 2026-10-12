@@ -94,6 +94,22 @@ def test_a_hard_crash_is_reported_on_the_next_start(tmp_path, hooks):
     assert len(list(tmp_path.glob("crash-*.txt"))) == 1
 
 
+def test_a_hard_crash_carries_what_qt_said_just_before_it(tmp_path, hooks):
+    # Qt (or the C library) prints its reason to stderr, then aborts: with no terminal, that line was lost
+    code = ("import os, sys; sys.path.insert(0, sys.argv[2]); from mygeeky import crashreport; "
+            "from pathlib import Path; log = Path(sys.argv[1]); crashreport.install(log, keep_stderr=True); "
+            "(log / 'qt.log').write_text('2026-10-12 09:00:00 QtCriticalMsg: QPainter::begin: no device'); "
+            "os.write(2, b'QThread: Destroyed while thread is still running'); os.abort()")
+    src = str(Path(crashreport.__file__).parents[1])
+    r = subprocess.run([sys.executable, "-c", code, str(tmp_path), src], capture_output=True)
+    assert r.returncode != 0
+    crashreport.install(tmp_path)                                  # the next start
+    [report] = crashreport.pending(tmp_path)
+    text = report.read_text(encoding="utf-8")
+    assert "QThread: Destroyed while thread is still running" in text      # the reason, kept
+    assert "Fatal Python error" in text and "QPainter::begin: no device" in text
+
+
 def test_the_crash_window_shows_the_cleaned_report_without_locking(tmp_path, monkeypatch):
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QApplication

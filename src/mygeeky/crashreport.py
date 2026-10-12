@@ -169,9 +169,10 @@ def offer_key(path: Path) -> str:
 _fatal_handle: Any = None
 
 
-def install(log_dir: Path, on_report=None) -> None:
+def install(log_dir: Path, on_report=None, keep_stderr: bool = False) -> None:
     """Catch errors everywhere in this process. `on_report(path)` is called (on
-    whatever thread failed) when a new report was saved."""
+    whatever thread failed) when a new report was saved. `keep_stderr` (the panel):
+    error output goes into fatal.log too, so a hard crash says why."""
     global _fatal_handle
     import faulthandler
     import threading
@@ -181,11 +182,13 @@ def install(log_dir: Path, on_report=None) -> None:
         # the last run died outright (no Python error to catch): turn it into a report first
         crash = fatal_crash(fatal.read_text(encoding="utf-8", errors="replace")) if fatal.exists() else ""
         if crash:
-            write(log_dir, "hard crash (the program closed)", text=crash.split("\n", 1)[-1])
+            write(log_dir, "hard crash (the program closed)", text=crash.split("\n", 1)[-1] + _qt_tail(log_dir))
         _fatal_handle = open(log_dir / FATAL_LOG, "a", encoding="utf-8")   # kept open for the process lifetime
         _fatal_handle.write(f"\n--- started {datetime.now(timezone.utc).isoformat()} · {environment()}\n")
         _fatal_handle.flush()
         faulthandler.enable(file=_fatal_handle, all_threads=True)
+        if keep_stderr:
+            _keep_last_words(_fatal_handle)
     except OSError:
         pass
 
@@ -216,6 +219,33 @@ def install(log_dir: Path, on_report=None) -> None:
 
     sys.excepthook = main_hook
     threading.excepthook = thread_hook
+
+
+def _keep_last_words(handle) -> None:
+    """Started from a menu or at sign-in there's no terminal, so what the C++ side prints
+    just before it aborts ("QThread: Destroyed while...", "free(): invalid pointer") was lost.
+    Send this process's error output (file descriptor 2) into fatal.log instead: a hard
+    crash then carries its reason. Left alone when a terminal is there to show it."""
+    import os
+    try:
+        if sys.stderr is not None and sys.stderr.isatty():
+            return
+    except (OSError, ValueError, AttributeError):
+        pass
+    try:
+        sys.stderr is not None and sys.stderr.flush()
+        os.dup2(handle.fileno(), 2)
+    except (OSError, ValueError, AttributeError):
+        pass
+
+
+def _qt_tail(log_dir: Path, lines: int = 12) -> str:
+    """Qt's last critical messages, for a hard-crash report."""
+    try:
+        text = (log_dir / "qt.log").read_text(encoding="utf-8", errors="replace").splitlines()[-lines:]
+    except OSError:
+        return ""
+    return ("\nQt's last messages:\n" + "\n".join(text) + "\n") if text else ""
 
 
 def qt_message_handler(log_dir: Path):

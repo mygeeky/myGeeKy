@@ -328,7 +328,7 @@ def test_signals_tab_renders_incoming_and_people_and_sends(qapp, monkeypatch):
     }
     monkeypatch.setattr(logic, "get_signals", lambda cfg, force=False: data)
     sent = []
-    monkeypatch.setattr(logic, "send_signal", lambda cfg, to, g: sent.append((to, g)) or {"ok": True})
+    monkeypatch.setattr(logic, "send_signal", lambda cfg, to, g, repo=None: sent.append((to, g, repo)) or {"ok": True})
 
     panel = MyGeekyPanel(MyGeekyConfig())
     try:
@@ -346,11 +346,16 @@ def test_signals_tab_renders_incoming_and_people_and_sends(qapp, monkeypatch):
         name = next(lbl for lbl in cards[2].findChildren(QLabel) if lbl.text() == "<b>bob</b>")
         from PySide6.QtCore import Qt
         assert name.textFormat() == Qt.PlainText            # beacon data is never rendered as HTML
-        cards[0].gesture_buttons["learn"].click()
+        cards[0].gesture_buttons["learn"].click()           # opens the send window, alice and 📚 chosen
+        win = panel._send_window
+        assert win.isVisible() and win.to == "alice" and win.gesture() == "learn" and "alice" in win.preview.text()
+        assert sent == []                                    # nothing goes until Send
+        win.send.click()
         for w in list(panel._workers):
             w.wait(2000)
         qapp.processEvents()
-        assert sent == [("alice", "learn")]
+        assert sent == [("alice", "learn", None)]
+        win.close()
         assert panel.ticker._items[0]["kind"] == "signal"   # signals lead the Live rotation
     finally:
         panel.ticker.stop()
@@ -509,3 +514,89 @@ def test_a_worker_stays_alive_until_its_thread_has_stopped():
     assert _Worker.drain(200) >= 1 and stuck.isRunning() and _t.time() - t0 < 1.5   # quit doesn't wait forever
     assert stuck.wait(5000) and not stuck.isRunning()
     app.processEvents()
+
+
+def test_signals_calls_ruler_and_invite_window(qapp, monkeypatch):
+    from mygeeky.config import MyGeekyConfig
+    from mygeeky.gui import app as logic
+    from mygeeky.gui.qt_panel import MyGeekyPanel
+    from PySide6.QtCore import Qt
+
+    from mygeeky.gui.signals_ui import CallCard, FieldCard, MyCallCard
+
+    for name, value in (("get_contributions", lambda cfg: []),
+                        ("get_suggestions", lambda cfg: {"followback": [], "domain_highlights": []}),
+                        ("get_activity", lambda cfg, force=False: {"events": []}),
+                        ("get_model_history", lambda: []),
+                        ("get_friend_stats", lambda cfg: {"total_friends": 0, "new_this_week": 0,
+                                                          "follow_back_rate": None, "total_labeled": 0})):
+        monkeypatch.setattr(logic, name, value)
+    call = {"id": "a1b2c3d4", "owner": "ada", "avatar_url": "", "repo": "finemap-lite", "full_name": "ada/finemap-lite",
+            "repo_url": "https://github.com/ada/finemap-lite", "note": "Port <b>SuSiE</b> to Snakemake.",
+            "skills": ["snakemake", "python"], "matched": ["snakemake"], "fit": 0.8, "explore": False,
+            "level_label": "experienced", "time_label": "a few weeks", "days_left": 40, "joined": False}
+    mine = {"id": "0f0f0f0f", "repo": "gwas-qc", "full_name": "me/gwas-qc", "note": "Review LD pruning, please.",
+            "skills": ["plink"], "level_label": "any level", "time_label": "a few hours", "days_left": 20,
+            "filled": False, "responders": [{"login": "omar", "avatar_url": "", "skills": ["plink"], "at": "x",
+                                             "profile_url": "https://github.com/omar"}]}
+    data = {"enabled": True, "can_send": True, "fetched_at": None, "error": None, "incoming": [],
+            "people": [{"login": "bob", "avatar_url": "", "profile_url": "https://github.com/bob", "status": "",
+                        "interests": ["gwas"], "shared": ["gwas"], "can_receive": True, "fit": 0.5,
+                        "signalled_you": False, "you_signalled": False}],
+            "calls": [call], "my_calls": [mine]}
+    monkeypatch.setattr(logic, "get_signals", lambda cfg, force=False: data)
+    joined, hidden, published = [], [], []
+    monkeypatch.setattr(logic, "join_call", lambda cfg, c: joined.append(c["id"]) or {"ok": True})
+    monkeypatch.setattr(logic, "hide_call", lambda owner, cid: hidden.append((owner, cid)))
+    monkeypatch.setattr(logic, "create_call", lambda cfg, **kw: published.append(kw) or {"ok": True})
+    monkeypatch.setattr(logic, "list_repos_for_call", lambda cfg, login=None: [
+        {"name": "gwas-qc", "full_name": "me/gwas-qc", "topics": ["gwas", "plink"], "language": "Python", "description": ""}])
+
+    panel = MyGeekyPanel(MyGeekyConfig(github_username="me"))
+    try:
+        for w in list(panel._workers):
+            w.wait(2000)
+        qapp.processEvents()
+        root = panel.signals_area.parentWidget()
+        field = root.findChildren(FieldCard)[0]
+        assert {i["label"] for i in field.map.items} == {"ada/finemap-lite", "bob"}
+        assert field.map.height() == field.map.FOLDED_HEIGHT                     # folded: a thin ruler
+        field.map.picked.emit("c:ada/a1b2c3d4")                                 # a dot opens its card
+        assert field.picked_area.count() == 1
+
+        card = next(c for c in root.findChildren(CallCard) if c.parent() is not field)
+        from PySide6.QtWidgets import QLabel
+        note = next(lbl for lbl in card.findChildren(QLabel) if "SuSiE" in lbl.text())
+        assert note.textFormat() == Qt.PlainText                                 # a call's note is plain text
+        card.join_btn.click()
+        for w in list(panel._workers):
+            w.wait(2000)
+        qapp.processEvents()
+        assert joined == ["a1b2c3d4"] and card.call["joined"] and card.leave_btn.isVisibleTo(card)
+        card.set_joined(False)
+        card.hide_btn.click()
+        assert hidden == [("ada", "a1b2c3d4")] and not card.isVisibleTo(root)
+        assert root.findChildren(MyCallCard)[0].call["responders"][0]["login"] == "omar"
+
+        field.invite_btn.click()                                                 # the invite window
+        for w in list(panel._workers):
+            w.wait(2000)
+        qapp.processEvents()
+        win = panel._invite_window
+        assert win.repo.currentData() == "gwas-qc" and set(win.payload()["skills"]) == {"gwas", "plink", "python"}
+        assert not win.publish.isEnabled()                                       # needs a sentence first
+        win.note.setPlainText("A second pair of eyes on the LD-pruning step.")
+        assert win.publish.isEnabled()
+        win.publish.click()
+        for w in list(panel._workers):
+            w.wait(2000)
+        qapp.processEvents()
+        assert published and published[0]["repo"] == "gwas-qc" and published[0]["days"] == 60
+        win.close()
+    finally:
+        panel.ticker.stop()
+        panel._activity_timer.stop()
+        panel._signals_timer.stop()
+        for w in list(panel._workers):
+            w.wait(2000)
+        panel.deleteLater()

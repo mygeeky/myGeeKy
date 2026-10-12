@@ -46,7 +46,7 @@ import base64
 import hashlib
 import json
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable, Iterable
 
 import requests
@@ -77,6 +77,7 @@ GESTURES: dict[str, tuple[str, str]] = {
     "used": ("⭐", "used your work"),                 # carries a repo: "used <repo> in their work"
     "watching": ("👀", "is following your work"),
     "collab": ("🤝", "would like to collaborate"),    # only ever shown when it's mutual
+    "join": ("🙋", "would like to help with your project"),   # an answer to one of your calls (carries its id)
 }
 REPO_GESTURES = {"used"}
 MUTUAL_ONLY = {"collab"}
@@ -195,6 +196,7 @@ def parse_beacon(raw: Any, owner: str, ttl_days: int, now: datetime | None = Non
         return out
     keys = raw.get("keys") if isinstance(raw.get("keys"), list) else []
     out["keys"] = [k for k in keys[:MAX_KEYS] if sc.valid_public_key(k)]
+    out["calls"] = calls_in(raw, now)
     sealed = raw.get("sealed") if isinstance(raw.get("sealed"), list) else []
     for s in sealed[:MAX_SEALED_READ]:
         if not isinstance(s, dict) or not isinstance(s.get("box"), str) or len(s["box"]) != sc.BOX_LEN:
@@ -234,13 +236,118 @@ def open_signals(parsed: dict[str, Any], me: str, private_key: str, ttl_days: in
             if not valid_repo(msg.get("repo")):
                 continue
             g["repo"] = msg["repo"]
+        if msg["type"] == "join":                       # an answer to one of your calls
+            if not valid_call_id(msg.get("call")):
+                continue
+            g["call"] = msg["call"]
+            g["skills"] = clean_interests(msg["skills"] if isinstance(msg.get("skills"), list) else [])[:MAX_JOIN_SKILLS]
         found.append(g)
     return found
 
 
+# --------------------------------------------------------------------------- calls for contributors
+# A call is a public invitation to help with one of the caller's own repos. It sits in their
+# beacon.json under "calls"; nobody is targeted: each reader's own myGeeKy decides whether it
+# fits them. Answering it ("I'm in") is a sealed "join" signal to the caller, carrying the call's
+# id and the reader's skills that matched. The published beacon is the one record of your calls,
+# so a call made on the phone and one made on a computer never overwrite each other.
+MAX_CALLS = 3                  # open calls per person
+MAX_CALL_SKILLS = 6
+MAX_JOIN_SKILLS = 3            # what an "I'm in" carries (it must fit in a sealed box)
+MAX_NOTE = 200
+CALL_DAYS = (30, 60, 90)
+CALL_LEVELS: dict[str, str] = {"first": "good first task", "any": "any level", "experienced": "experienced"}
+CALL_TIMES: dict[str, str] = {"afternoon": "an afternoon", "hours": "a few hours", "weeks": "a few weeks",
+                              "ongoing": "ongoing"}
+_CALL_ID_RE = re.compile(r"^[0-9a-f]{8}$")
+_REPO_NAME_RE = re.compile(r"^[A-Za-z0-9._-]{1,100}$")
+_LINK_RE = re.compile(r"(?i)(https?:|www\.|\b[\w-]+\.(?:com|org|net|io|ai|dev|app|xyz|ly|me|co|gg|link)\b|@\w)")
+_CONTROL_RE = re.compile(r"[\x00-\x1f\x7f​-‏‪-‮⁦-⁩]")
+
+
+def valid_call_id(value: Any) -> bool:
+    return isinstance(value, str) and bool(_CALL_ID_RE.match(value))
+
+
+def clean_note(value: Any) -> str | None:
+    """A call's sentence: plain text, one line, at most MAX_NOTE characters, no links or
+    @mentions (a call can't send anyone anywhere). None if it isn't usable."""
+    if not isinstance(value, str):
+        return None
+    text = " ".join(_CONTROL_RE.sub(" ", value).split())
+    if not 10 <= len(text) <= MAX_NOTE or _LINK_RE.search(text):
+        return None
+    return text
+
+
+def _date(value: Any) -> date | None:
+    if not isinstance(value, str) or len(value) != 10:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def parse_call(raw: Any, today: date) -> dict[str, Any] | None:
+    """One call from someone's beacon (untrusted), or None. Expired calls are dropped."""
+    if not isinstance(raw, dict):
+        return None
+    note = clean_note(raw.get("note"))
+    created, until = _date(raw.get("created")), _date(raw.get("until"))
+    skills = clean_interests(raw["skills"] if isinstance(raw.get("skills"), list) else [])[:MAX_CALL_SKILLS]
+    if (not valid_call_id(raw.get("id")) or not isinstance(raw.get("repo"), str)
+            or not _REPO_NAME_RE.match(raw["repo"]) or raw["repo"] in (".", "..") or note is None or not skills
+            or raw.get("level") not in CALL_LEVELS or raw.get("time") not in CALL_TIMES
+            or created is None or until is None or until < today or created > today + timedelta(days=1)
+            or (until - created).days > max(CALL_DAYS) + 1):
+        return None
+    return {"id": raw["id"], "repo": raw["repo"], "note": note, "skills": skills, "level": raw["level"],
+            "time": raw["time"], "created": created.isoformat(), "until": until.isoformat(),
+            "filled": raw.get("filled") is True}
+
+
+def calls_in(raw: Any, now: datetime | None = None) -> list[dict[str, Any]]:
+    """The valid, unexpired calls in a beacon (at most MAX_CALLS, newest first)."""
+    today = (now or _now()).date()
+    items = raw.get("calls") if isinstance(raw, dict) and isinstance(raw.get("calls"), list) else []
+    seen: set[str] = set()
+    out = []
+    for c in items[:20]:
+        call = parse_call(c, today)
+        if call and call["id"] not in seen:
+            seen.add(call["id"])
+            out.append(call)
+    return sorted(out, key=lambda c: c["created"], reverse=True)[:MAX_CALLS]
+
+
+def new_call(repo: str, note: str, skills: Iterable[str], level: str, time: str, days: int,
+             today: date | None = None) -> dict[str, Any]:
+    """A call ready to publish, or BeaconError saying what to fix."""
+    import secrets
+    today = today or _now().date()
+    if not isinstance(repo, str) or not _REPO_NAME_RE.match(repo) or repo in (".", ".."):
+        raise BeaconError("Pick one of your own repos.")
+    clean = clean_note(note)
+    if clean is None:
+        raise BeaconError(f"Say what you need in a sentence or two (10 to {MAX_NOTE} characters, no links).")
+    tags = clean_interests(skills)[:MAX_CALL_SKILLS]
+    if not tags:
+        raise BeaconError("Add at least one skill you need.")
+    if level not in CALL_LEVELS or time not in CALL_TIMES:
+        raise BeaconError("Choose a level and how much time it takes.")
+    if days not in CALL_DAYS:
+        raise BeaconError(f"A call stays open {', '.join(map(str, CALL_DAYS))} days.")
+    return {"id": secrets.token_hex(4), "repo": repo, "note": clean, "skills": tags, "level": level, "time": time,
+            "created": today.isoformat(), "until": (today + timedelta(days=days)).isoformat(), "filled": False}
+
+
 # --------------------------------------------------------------------------- your own beacon (local source of truth)
 def empty_beacon() -> dict[str, Any]:
-    return {"mygeeky_beacon": SCHEMA_VERSION, "sent": [], "withdrawn": [], "published_key": ""}
+    # my_calls: a copy of your published calls (the beacon itself is their record);
+    # hidden_calls: "owner/id" of calls you said aren't for you
+    return {"mygeeky_beacon": SCHEMA_VERSION, "sent": [], "withdrawn": [], "published_key": "",
+            "my_calls": [], "hidden_calls": []}
 
 
 def load_my_beacon() -> dict[str, Any]:
@@ -291,9 +398,12 @@ def _signal_text(msg: dict[str, Any]) -> bytes:
 
 
 def add_signal(beacon: dict[str, Any], me: str, to: str, gesture: str, repo: str | None,
-               cfg: MyGeekyConfig, recipient: dict[str, Any] | None, now: datetime | None = None) -> dict[str, Any]:
+               cfg: MyGeekyConfig, recipient: dict[str, Any] | None, now: datetime | None = None,
+               call: str | None = None, skills: Iterable[str] = ()) -> dict[str, Any]:
     """A new local beacon with the signal sealed for `recipient` (their parsed
-    beacon). Every courtesy rule is checked here, before anything is sent."""
+    beacon). Every courtesy rule is checked here, before anything is sent.
+    A "join" answers one of the recipient's open calls (`call`, its id) and
+    carries the `skills` of yours that matched it."""
     now = now or _now()
     if gesture not in GESTURES:
         raise BeaconError(f"Unknown signal '{gesture}'. Choose one of: {', '.join(GESTURES)}.")
@@ -316,35 +426,56 @@ def add_signal(beacon: dict[str, Any], me: str, to: str, gesture: str, repo: str
     if not recipient.get("keys"):
         raise BeaconError(f"{to} uses an older myGeeKy that can't receive private signals yet. "
                           "Nothing was sent; it will work once they update.")
+    if gesture == "join":
+        open_ids = {c["id"] for c in recipient.get("calls", []) if not c.get("filled")}
+        if not valid_call_id(call) or call not in open_ids:
+            raise BeaconError(f"That call from {to} isn't open any more. Nothing was sent.")
+        skills = clean_interests(skills)[:MAX_JOIN_SKILLS]
+    else:
+        call, skills = None, []
     beacon = prune(beacon, cfg.beacon_gesture_ttl_days, now)
-    for g in _sent_recently(beacon, cfg.beacon_repeat_days, now):
-        if g.get("to", "").lower() == to.lower() and g.get("type") == gesture and g.get("repo") == repo:
-            raise BeaconError(f"You already sent {to} this on {g['at'][:10]}. Once is enough: "
+    for g in _sent_recently(beacon, cfg.beacon_gesture_ttl_days if call else cfg.beacon_repeat_days, now):
+        if g.get("to", "").lower() == to.lower() and g.get("type") == gesture and g.get("repo") == repo \
+                and g.get("call") == call:
+            raise BeaconError(f"You already said you're in on {g['at'][:10]}." if call else
+                              f"You already sent {to} this on {g['at'][:10]}. Once is enough: "
                               f"it stays with them for {cfg.beacon_gesture_ttl_days} days.")
     if gestures_sent_today(beacon, now) >= cfg.beacon_daily_limit:
         raise BeaconError(f"That's {cfg.beacon_daily_limit} signals today. Try again tomorrow.")
     known = {g.get("to", "").lower() for g in beacon.get("sent", [])
              if (ts := _parse_time(g.get("at"))) and ts <= now - timedelta(days=7)}
     new_this_week = {g.get("to", "").lower() for g in _sent_recently(beacon, 7, now)} - known
-    if to.lower() not in known | new_this_week and len(new_this_week) >= cfg.beacon_weekly_new_people:
+    # answering someone's call is a reply they asked for, so it doesn't count as reaching out to someone new
+    if gesture != "join" and to.lower() not in known | new_this_week \
+            and len(new_this_week) >= cfg.beacon_weekly_new_people:
         raise BeaconError(f"You've signalled {cfg.beacon_weekly_new_people} new people this week. "
                           "Pace it: try again in a few days.")
-    msg = {"v": SCHEMA_VERSION, "from": me, "to": to, "type": gesture, "at": now.isoformat(timespec="seconds")}
+    msg: dict[str, Any] = {"v": SCHEMA_VERSION, "from": me, "to": to, "type": gesture,
+                           "at": now.isoformat(timespec="seconds")}
     if repo:
         msg["repo"] = repo
+    if call:
+        msg["call"] = call
+        msg["skills"] = list(skills)
+        while len(_signal_text(msg)) > sc.PAD_TO and msg["skills"]:   # always fits in a box
+            msg["skills"].pop()
     boxes = [sc.seal(k, _signal_text(msg)) for k in recipient["keys"][:MAX_KEYS]]
-    entry = {"to": to, "type": gesture, "at": msg["at"], "boxes": boxes}
+    entry: dict[str, Any] = {"to": to, "type": gesture, "at": msg["at"], "boxes": boxes}
     if repo:
         entry["repo"] = repo
+    if call:
+        entry["call"] = call
+        entry["skills"] = msg["skills"]
     return {**beacon, "sent": beacon.get("sent", []) + [entry]}
 
 
 def remove_signals(beacon: dict[str, Any], to: str, gesture: str | None = None,
-                   now: datetime | None = None) -> dict[str, Any]:
+                   now: datetime | None = None, call: str | None = None) -> dict[str, Any]:
     """Take signals back: their boxes leave the public file on the next publish
     (and are remembered as withdrawn, so another computer can't re-add them)."""
     now = now or _now()
-    match = lambda g: g.get("to", "").lower() == to.lower() and (gesture is None or g.get("type") == gesture)  # noqa: E731
+    match = lambda g: (g.get("to", "").lower() == to.lower() and (gesture is None or g.get("type") == gesture)  # noqa: E731
+                       and (call is None or g.get("call") == call))
     gone = [b for g in beacon.get("sent", []) if match(g) for b in g.get("boxes", [])]
     return {**beacon, "sent": [g for g in beacon.get("sent", []) if not match(g)],
             "withdrawn": beacon.get("withdrawn", []) + [{"id": _box_id(b), "at": now.isoformat()} for b in gone]}
@@ -355,9 +486,10 @@ def _box_id(box: str) -> str:
 
 
 def public_beacon(beacon: dict[str, Any], cfg: MyGeekyConfig, my_public_key: str,
-                  remote: dict[str, Any] | None = None) -> dict[str, Any]:
+                  remote: dict[str, Any] | None = None, calls: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """Exactly what gets published. `remote` is what's published now: keys
-    and sealed boxes added from your other computers are kept."""
+    and sealed boxes added from your other computers are kept, and so are your
+    calls (unless `calls` replaces them)."""
     now = _now()
     oldest = now - timedelta(days=cfg.beacon_gesture_ttl_days)
     remote = remote if isinstance(remote, dict) and remote.get("mygeeky_beacon") == SCHEMA_VERSION else {}
@@ -381,6 +513,7 @@ def public_beacon(beacon: dict[str, Any], cfg: MyGeekyConfig, my_public_key: str
         "quiet": bool(cfg.beacon_quiet),
         "interests": _interests(cfg) if cfg.beacon_share_interests else [],
         "sealed": sorted(sealed.values(), key=lambda s: s["at"]),
+        "calls": calls_in({"calls": calls if calls is not None else remote.get("calls") or []}, now),
     }
 
 
@@ -405,6 +538,11 @@ It also holds **sealed signals** (🙏 thanks, 📚 learned from your work, ⭐ 
 your work, 👀 following, 🤝 collaborate) this account sent to other myGeeKy
 users. Each one is encrypted so that **only its recipient can read it**:
 nobody else can tell who it's for or what it says. There's no free text.
+
+It may also hold up to three **calls for contributors**: a short, public
+invitation to help with one of this account's own repos (the skills wanted,
+one sentence, how long it stays open). myGeeKy users whose own work fits see
+it in their panel; an answer reaches this account as a sealed signal.
 
 It's written only by myGeeKy, with a token scoped to this one repository.
 """
@@ -549,6 +687,18 @@ def refresh(client: GitHubClient, cfg: MyGeekyConfig, force: bool = False,
             continue
         users[login] = {**meta, "raw": raw}
     cache = {"fetched_at": _now().isoformat(), "users": users}
+    # your own beacon, as published: your calls, wherever you made them (re-read only when it changed)
+    pushed = next((m["pushed_at"] for login, m in found.items() if login.lower() == me), None)
+    if pushed is not None:
+        prev_mine = load_cache()
+        if prev_mine.get("mine_pushed_at") == pushed and "mine" in prev_mine:
+            cache["mine"] = prev_mine["mine"]
+        else:
+            try:
+                cache["mine"] = fetch_beacon(client, cfg.github_username)
+            except Exception:
+                cache["mine"] = prev_mine.get("mine")
+        cache["mine_pushed_at"] = pushed
     save_cache(cache)
     return cache
 
@@ -606,34 +756,192 @@ def _received(cache: dict[str, Any], cfg: MyGeekyConfig, my_beacon: dict[str, An
 def inbox(cache: dict[str, Any], cfg: MyGeekyConfig, my_beacon: dict[str, Any],
           private_key: str | None = None) -> list[dict[str, Any]]:
     """Signals other people sent you, newest first, at most MAX_PER_SENDER per
-    person. `mutual` marks a collaboration you both chose."""
+    person. `mutual` marks a collaboration you both chose; `call`/`skills` mark
+    someone answering one of your calls."""
+    mine = {c["id"]: c for c in my_calls_published(cache, cfg)}
     out = []
     for user, signals in _received(cache, cfg, my_beacon, private_key):
         for g in sorted(signals, key=lambda g: g["at"], reverse=True)[:MAX_PER_SENDER]:
             mutual = g["type"] in MUTUAL_ONLY
+            text = MUTUAL_TEXT if mutual else gesture_text(g)
+            repo = g.get("repo", "")
+            if g["type"] == "join":
+                call = mine.get(g.get("call", ""))
+                repo = f"{cfg.github_username}/{call['repo']}" if call else ""
+                text = f"🙋 would like to help with {repo}" if call else "🙋 answered a call you've closed"
             out.append({
                 "from": user["owner"],
                 "avatar_url": user["avatar_url"],
                 "profile_url": f"https://github.com/{user['owner']}",
                 "type": g["type"],
                 "emoji": (LEGACY_GESTURES if g.get("legacy") else GESTURES)[g["type"]][0],
-                "text": MUTUAL_TEXT if mutual else gesture_text(g),
-                "repo": g.get("repo", ""),
+                "text": text,
+                "repo": repo,
+                "call": g.get("call", ""),
+                "skills": g.get("skills", []),
                 "at": g["at"],
                 "mutual": mutual,
             })
     return sorted(out, key=lambda r: r["at"], reverse=True)
 
 
+# --------------------------------------------------------------------------- calls: what you see, what you post
+def _days_left(until: str, today: date) -> int:
+    d = _date(until)
+    return (d - today).days if d else 0
+
+
+def my_calls_published(cache: dict[str, Any], cfg: MyGeekyConfig) -> list[dict[str, Any]]:
+    """Your calls as your beacon publishes them (from any of your devices)."""
+    mine = cache.get("mine")
+    if isinstance(mine, dict):
+        return calls_in(mine)
+    return calls_in({"calls": load_my_beacon().get("my_calls") or []})
+
+
+def my_calls(cache: dict[str, Any], cfg: MyGeekyConfig, incoming: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Your calls, each with who said they're in (and the skills of theirs that matched)."""
+    today = _now().date()
+    out = []
+    for c in my_calls_published(cache, cfg):
+        who = [{"login": i["from"], "avatar_url": i.get("avatar_url", ""), "skills": i.get("skills", []),
+                "at": i["at"], "profile_url": i.get("profile_url", "")}
+               for i in incoming if i.get("type") == "join" and i.get("call") == c["id"]]
+        out.append({**c, "full_name": f"{cfg.github_username}/{c['repo']}",
+                    "level_label": CALL_LEVELS[c["level"]], "time_label": CALL_TIMES[c["time"]],
+                    "days_left": _days_left(c["until"], today), "responders": who})
+    return out
+
+
+def call_text(call: dict[str, Any]) -> str:
+    """What the reader's model compares with their interests."""
+    return " ".join([*call["skills"], call["repo"].replace("-", " ").replace("_", " "), call["note"]])
+
+
+def calls_for_me(cache: dict[str, Any], cfg: MyGeekyConfig, my_beacon: dict[str, Any],
+                 weights: dict[str, float] | None = None, seed: int | None = None) -> list[dict[str, Any]]:
+    """Other people's open calls that fit you, best first, plus a few from outside
+    your usual work (🔭, `explore_share` of the list): the same 80/20 as every other
+    list. Nothing about you leaves this computer: the matching happens here."""
+    import random
+    from . import interests
+    weights = weights if weights is not None else interests.profile_terms(cfg)
+    hidden = {str(h).lower() for h in my_beacon.get("hidden_calls", [])}
+    joined = {(g.get("to", "").lower(), g.get("call")) for g in my_beacon.get("sent", []) if g.get("type") == "join"}
+    muted = {u.lower() for u in cfg.beacon_muted}
+    today = _now().date()
+    found = []
+    for user in _parsed_users(cache, cfg):
+        owner = user["owner"]
+        if owner.lower() in muted or user.get("quiet") or not user.get("keys"):
+            continue
+        for c in user.get("calls", []):
+            if c.get("filled") or f"{owner}/{c['id']}".lower() in hidden:
+                continue
+            score, _ = interests.match(call_text(c), weights)
+            matched = [s for s in c["skills"] if s in weights or interests.match(s, weights)[0] > 0]
+            fit = round(max(score, len(matched) / len(c["skills"]) * 0.9), 3) if matched else round(score * 0.5, 3)
+            found.append({**c, "owner": owner, "avatar_url": user.get("avatar_url", ""),
+                          "full_name": f"{owner}/{c['repo']}", "repo_url": f"https://github.com/{owner}/{c['repo']}",
+                          "matched": matched, "fit": fit, "level_label": CALL_LEVELS[c["level"]],
+                          "time_label": CALL_TIMES[c["time"]], "days_left": _days_left(c["until"], today),
+                          "joined": (owner.lower(), c["id"]) in joined})
+    found.sort(key=lambda c: c["fit"], reverse=True)
+    fits = [dict(c, explore=False) for c in found if c["fit"] >= 0.15 or c["joined"]]
+    rest = [c for c in found if c["fit"] < 0.15 and not c["joined"]]
+    k = 0 if cfg.explore_share <= 0 or not rest else max(1, round(len(fits) * cfg.explore_share))
+    rnd = random.Random(seed if seed is not None else today.toordinal())
+    return fits + [dict(c, explore=True) for c in rnd.sample(rest, min(k, len(rest)))]
+
+
+def _publish_calls(cfg: MyGeekyConfig, change: Callable[[list[dict[str, Any]]], list[dict[str, Any]]],
+                   writer: BeaconWriter | None = None) -> list[dict[str, Any]]:
+    """Read your published calls, change them, publish: everything else in your beacon stays."""
+    writer = writer or writer_for(cfg)
+    _, my_pub = my_keypair(cfg.github_username)
+    remote = writer.read()
+    calls = change(calls_in(remote or {}))
+    beacon = prune(load_my_beacon(), cfg.beacon_gesture_ttl_days)
+    writer.publish(public_beacon(beacon, cfg, my_pub, remote, calls=calls))
+    save_my_beacon({**beacon, "published_key": my_pub, "my_calls": calls})
+    cache = load_cache()
+    if isinstance(cache.get("mine"), dict) or cache.get("users"):
+        cache["mine"] = {**(cache.get("mine") or {}), "mygeeky_beacon": SCHEMA_VERSION, "calls": calls}
+        save_cache(cache)
+    return calls
+
+
+def create_call(cfg: MyGeekyConfig, repo: str, note: str, skills: Iterable[str], level: str, time: str,
+                days: int, writer: BeaconWriter | None = None) -> dict[str, Any]:
+    """Publish a call for one of your own repos (at most MAX_CALLS open at once)."""
+    call = new_call(repo, note, skills, level, time, days)
+
+    def add(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if len([c for c in current if not c.get("filled")]) >= MAX_CALLS:
+            raise BeaconError(f"You have {MAX_CALLS} open calls. Close or fill one first.")
+        if any(c["repo"].lower() == call["repo"].lower() and not c.get("filled") for c in current):
+            raise BeaconError(f"There's already an open call for {call['repo']}. Close it to post a new one.")
+        return [call] + current
+    _publish_calls(cfg, add, writer)
+    return call
+
+
+def close_call(cfg: MyGeekyConfig, call_id: str, filled: bool = False,
+               writer: BeaconWriter | None = None) -> None:
+    """Filled: it stays in your beacon, marked filled, so it stops showing to others.
+    Closed: it leaves your beacon."""
+    def change(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not any(c["id"] == call_id for c in current):
+            raise BeaconError("That call isn't in your beacon any more.")
+        if filled:
+            return [dict(c, filled=True) if c["id"] == call_id else c for c in current]
+        return [c for c in current if c["id"] != call_id]
+    _publish_calls(cfg, change, writer)
+
+
+def join_call(cfg: MyGeekyConfig, owner: str, call_id: str, skills: Iterable[str],
+              writer: BeaconWriter | None = None, cache: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Say you're in: a sealed signal to the call's owner with your matching skills."""
+    writer = writer or writer_for(cfg)
+    recipient = recipient_beacon(cache if cache is not None else load_cache(), cfg, owner)
+    beacon = add_signal(load_my_beacon(), cfg.github_username, owner, "join", None, cfg, recipient,
+                        call=call_id, skills=skills)
+    publish(cfg, beacon, writer)
+    return beacon
+
+
+def leave_call(cfg: MyGeekyConfig, owner: str, call_id: str, writer: BeaconWriter | None = None) -> int:
+    """Changed your mind: the "I'm in" leaves your beacon on this publish."""
+    before = load_my_beacon()
+    after = remove_signals(before, owner, "join", call=call_id)
+    removed = len(before["sent"]) - len(after["sent"])
+    if removed:
+        publish(cfg, after, writer)
+    return removed
+
+
+def hide_call(owner: str, call_id: str) -> None:
+    """Not for me: this call won't show again (on this computer)."""
+    beacon = load_my_beacon()
+    key = f"{owner}/{call_id}".lower()
+    hidden = [h for h in beacon.get("hidden_calls", []) if h != key][-200:] + [key]
+    save_my_beacon({**beacon, "hidden_calls": hidden})
+
+
 def people(cache: dict[str, Any], cfg: MyGeekyConfig, my_beacon: dict[str, Any],
-           my_terms: Iterable[str] | None = None, private_key: str | None = None) -> list[dict[str, Any]]:
-    """Fellow myGeeKy users, those sharing the most interests with you first."""
+           my_terms: Iterable[str] | None = None, private_key: str | None = None,
+           weights: dict[str, float] | None = None) -> list[dict[str, Any]]:
+    """Fellow myGeeKy users, those sharing the most interests with you first. `fit`
+    (0..1) is how close their interests are to your work (with `weights`, your profile)."""
+    from . import interests
     mine = set(clean_interests(my_terms if my_terms is not None else cfg.topics + cfg.keywords + cfg.languages))
     sent = _sent_to(my_beacon)
     muted = {u.lower() for u in cfg.beacon_muted}
     out = []
     for user, signals in _received(cache, cfg, my_beacon, private_key):
         shared = [i for i in user["interests"] if i in mine]
+        score = interests.match(" ; ".join(user["interests"]), weights)[0] if weights else 0.0
+        fit = round(max(score, min(1.0, len(shared) / 4)), 3)
         out.append({
             "login": user["owner"],
             "avatar_url": user["avatar_url"],
@@ -646,6 +954,7 @@ def people(cache: dict[str, Any], cfg: MyGeekyConfig, my_beacon: dict[str, Any],
             "can_receive": bool(user.get("keys")) and not user.get("quiet"),
             "quiet": user.get("quiet", False),
             "muted": user["owner"].lower() in muted,
+            "fit": fit,
         })
     return sorted(out, key=lambda p: (p["signalled_you"], len(p["shared"])), reverse=True)
 

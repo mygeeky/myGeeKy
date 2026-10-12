@@ -206,7 +206,8 @@ def test_public_beacon_reveals_nothing_about_who_was_signalled():
     alice = Person("alice")
     b = bc.add_signal(bc.empty_beacon(), "me", "alice", "thanks", None, cfg, alice.parsed())
     pub = bc.public_beacon(b, cfg, my_pub)
-    assert set(pub) == {"mygeeky_beacon", "keys", "status", "quiet", "interests", "sealed"}
+    assert set(pub) == {"mygeeky_beacon", "keys", "status", "quiet", "interests", "sealed", "calls"}
+    assert pub["calls"] == []                                                # no calls unless you post one
     text = json.dumps(pub)
     assert "alice" not in text and "thanks" not in text                     # who and what stay sealed
     assert pub["keys"] == [my_pub] and set(pub["interests"]) == {"gwas", "fine mapping"}

@@ -94,3 +94,53 @@ def test_phone_and_desktop_signals_work_both_ways_and_keep_each_other(harness, t
     again = bc.public_beacon(bc.empty_beacon(), alice_cfg, alice_desk_pub, remote=out["merged"])
     assert out["phonePub"] in again["keys"]
     assert [g["type"] for g in bc.open_signals(bc.parse_beacon(again, "alice", 90), "bob", bob_priv, 90)] == ["thanks"]
+
+
+def test_phone_and_desktop_agree_on_calls_and_im_in(harness, tmp_path):
+    from datetime import datetime, timedelta, timezone
+    today = datetime.now(timezone.utc).date()
+
+    def call(**kw):
+        c = {"id": "a1b2c3d4", "repo": "finemap-lite", "note": "Port the SuSiE step to Snakemake so it runs anywhere.",
+             "skills": ["snakemake", "fine-mapping", "python"], "level": "experienced", "time": "weeks",
+             "created": today.isoformat(), "until": (today + timedelta(days=60)).isoformat()}
+        c.update(kw)
+        return c
+
+    candidates = [call(), call(id="nothex!!"), call(repo="../evil"), call(note="see https://evil.example now please"),
+                  call(note="ping @someone about it, please"), call(note="short"), call(note="x" * 201),
+                  call(skills=[]), call(level="boss"), call(until=(today - timedelta(days=1)).isoformat()),
+                  call(until=(today + timedelta(days=400)).isoformat()), call(created="2026-13-45"),
+                  call(note="  Tabs\tand ‮spaces​ are   cleaned up. "), call(filled=True), "nope", None]
+    alice_priv, alice_pub = sc.new_keypair()          # Alice's phone
+    bob_priv, bob_pub = sc.new_keypair()
+    alice_cfg = MyGeekyConfig(github_username="alice", beacon_enabled=True)
+    alice_beacon = bc.public_beacon(bc.empty_beacon(), alice_cfg, sc.new_keypair()[1])   # her computer's key
+    bob_beacon = {**bc.public_beacon(bc.empty_beacon(), MyGeekyConfig(github_username="bob"), bob_pub), "calls": [call()]}
+
+    # Bob has a call open; Alice's phone reads it, makes a call of her own, and says she's in on Bob's
+    out = _node_with("core-side.ts", "calls", {"candidates": candidates, "aliceBeacon": alice_beacon, "alicePhonePub": alice_pub,
+                                               "alicePhonePriv": alice_priv, "bobBeacon": bob_beacon,
+                                               "bobJoined": bob_beacon}, tmp_path)
+    # 1. the same calls pass on both sides
+    assert out["verdicts"] == [len(bc.calls_in({"calls": [c]})) == 1 for c in candidates]
+    # 2. a call made on the phone is exactly what the desktop reads, and the desktop keeps it
+    assert bc.calls_in(out["withCall"]) == [out["made"]] and out["made"]["skills"] == ["plink", "gwas"]
+    assert out["made"]["note"] == "A second pair of eyes on LD pruning." and bc.valid_call_id(out["made"]["id"])
+    kept = bc.public_beacon(bc.empty_beacon(), alice_cfg, sc.new_keypair()[1], remote=out["withCall"])
+    assert [c["id"] for c in kept["calls"]] == [out["made"]["id"]]
+    assert out["tooMany"] and "already an open call" in out["tooMany"]
+    assert out["bobCalls"] == bc.calls_in(bob_beacon)
+    # 3. the phone's "I'm in" opens on Bob's desktop, naming the call, with the skills trimmed to fit a box
+    alice_with_join = {**alice_beacon, "sealed": [{"at": today.isoformat(), "box": b} for b in out["joinBoxes"]]}
+    got = bc.open_signals(bc.parse_beacon(alice_with_join, "alice", 90), "bob", bob_priv, 90)
+    assert got[0]["type"] == "join" and got[0]["call"] == "a1b2c3d4" and got[0]["skills"][:3] == ["snakemake", "python", "r"]
+    # 4. Bob's desktop "I'm in" to a call of Alice's opens on her phone
+    alice_parsed = bc.parse_beacon({**alice_beacon, "keys": [alice_pub], "calls": [call(id="0f0f0f0f")]}, "alice", 90)
+    bob_local = bc.add_signal(bc.empty_beacon(), "bob", "alice", "join", None, MyGeekyConfig(github_username="bob"),
+                              alice_parsed, call="0f0f0f0f", skills=["snakemake"])
+    bob_published = bc.public_beacon(bob_local, MyGeekyConfig(github_username="bob"), bob_pub)
+    res = _node_with("core-side.ts", "calls", {"candidates": [], "aliceBeacon": alice_beacon, "alicePhonePub": alice_pub,
+                                               "alicePhonePriv": alice_priv, "bobBeacon": bob_beacon,
+                                               "bobJoined": bob_published}, tmp_path)
+    assert [(g["type"], g.get("call"), g.get("skills")) for g in res["opened"]] == [("join", "0f0f0f0f", ["snakemake"])]

@@ -53,7 +53,7 @@ export function fromUtf8(bytes: Uint8Array): string | null {
 }
 
 const LABEL = utf8('mygeeky-signal-v2');
-const PAD_TO = 256;
+export const PAD_TO = 256;          // plaintext bytes in every box
 const NONCE = new Uint8Array(12);
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -144,4 +144,11 @@ export function openBox(privateB64: string, box: unknown): Uint8Array | null {
   } catch {
     return null;
   }
+}
+
+/** n random bytes as hex (a call's id). */
+export function randomHex(n: number): string {
+  const bytes = new Uint8Array(n);
+  getRandomValues(bytes);
+  return [...bytes].map((x) => x.toString(16).padStart(2, '0')).join('');
 }

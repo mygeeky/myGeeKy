@@ -254,27 +254,24 @@ SEEN_FRACTION = 0.6         # "mostly": this much of it (or a screenful of a tal
 SEEN_TICK_MS = 500
 
 
-class _FreshDot(QObject):
-    """A small 'new' dot kept in a card's top-right corner (it goes once you've seen the card)."""
+def _fresh_dot(card: QWidget, color: str) -> QLabel:
+    """A small 'new' dot in a card's top-right corner (it goes once you've seen the card).
+    A plain label owned by the card: no Python-made QObject and no event filter riding on
+    the card. That pattern crashed Linux ("free(): invalid pointer" in Shiboken while Qt
+    deleted a refreshed card's children). The seen-check keeps it in its corner."""
+    dot = QLabel(card)
+    dot.setObjectName("freshDot")
+    dot.setFixedSize(8, 8)
+    dot.setStyleSheet(f"background:{color}; border-radius:4px;")
+    dot.setToolTip("New since you last looked")
+    dot.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+    _place_dot(card, dot)
+    return dot
 
-    def __init__(self, card: QWidget, color: str) -> None:
-        super().__init__(card)
-        self.dot = QLabel(card)
-        self.dot.setFixedSize(8, 8)
-        self.dot.setStyleSheet(f"background:{color}; border-radius:4px;")
-        self.dot.setToolTip("New since you last looked")
-        self.dot.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        card.installEventFilter(self)
-        self._place(card)
 
-    def eventFilter(self, obj, event) -> bool:  # noqa: N802
-        if event.type() in (QEvent.Resize, QEvent.Show):
-            self._place(obj)
-        return False
-
-    def _place(self, card: QWidget) -> None:
-        self.dot.move(max(0, card.width() - 14), 6)
-        self.dot.raise_()
+def _place_dot(card: QWidget, dot: QLabel) -> None:
+    dot.move(max(0, card.width() - 14), 6)
+    dot.raise_()
 
 
 def _mark_fresh(card: QWidget, item: dict[str, Any], theme: dict[str, Any]) -> QWidget:
@@ -285,7 +282,7 @@ def _mark_fresh(card: QWidget, item: dict[str, Any], theme: dict[str, Any]) -> Q
         card.setProperty("fresh_key", key)
         card.setProperty("fresh_state", state)
         if state == "new":
-            card._fresh_dot = _FreshDot(card, theme["accent"])
+            _fresh_dot(card, theme["accent"])
     elif state == "seen":
         effect = QGraphicsOpacityEffect(card)
         effect.setOpacity(0.8)               # quieter than new, still easy to read
@@ -2327,7 +2324,7 @@ class SignalCard(QFrame):
 
         if "text" in item:  # an incoming signal
             line = f"{item['text']} · {_time_ago(item.get('at', ''))}"
-            if not item.get("mutual"):
+            if not item.get("mutual") and item.get("type") != "join":   # an answer to your call: reply as you like
                 line += " · no reply needed"
         else:               # a fellow user
             shared = item.get("shared") or []
@@ -3204,6 +3201,7 @@ class MyGeekyPanel(QWidget):
         self._sugg_running = False
         self._signals_running = False
         self._last_incoming: list[dict[str, Any]] = []
+        self._signals_data: dict[str, Any] = {}       # the last Signals data (people for the send window)
 
         self.setWindowTitle("myGeeKy")
         if ICON_WINDOW.exists():
@@ -4943,6 +4941,9 @@ class MyGeekyPanel(QWidget):
             key = card.property("fresh_key")
             if not key or key in self._seen_done or not card.isVisible():
                 continue
+            dot = card.findChild(QLabel, "freshDot", Qt.FindDirectChildrenOnly)
+            if dot is not None and dot.x() != max(0, card.width() - 14):
+                _place_dot(card, dot)                # the card was laid out (or resized) since
             area = card.width() * card.height()
             seen = card.visibleRegion().boundingRect()
             if area <= 0 or not (seen.width() * seen.height() >= SEEN_FRACTION * area or seen.height() >= 220):
@@ -4953,9 +4954,8 @@ class MyGeekyPanel(QWidget):
                 self._seen_done.add(key)
                 self._seen_pending.add(key)
                 self._fresh_dirty.add(self.active_tab)
-                dot = getattr(card, "_fresh_dot", None)
                 if dot is not None:
-                    dot.dot.hide()
+                    dot.hide()
         for key in list(self._seen_dwell):            # scrolled away before the moment was up
             if key not in on_screen:
                 del self._seen_dwell[key]
@@ -5445,7 +5445,9 @@ class MyGeekyPanel(QWidget):
         self._update_live_ticker()
 
     def _render_signals(self, data: dict[str, Any]) -> None:
+        from .signals_ui import CallCard, FieldCard, MyCallCard
         theme = THEMES[self._theme_name()]
+        self._signals_data = data
         _clear_layout(self.signals_area)
         muted = f"color:{theme['muted']}; font-size:10.5px; background:transparent;"
         self.signals_hint.setStyleSheet(muted)
@@ -5454,8 +5456,8 @@ class MyGeekyPanel(QWidget):
                                          "background:transparent; }")
         if not data.get("enabled"):
             self.signals_hint.setText(
-                "Send other myGeeKy users small private signals (🙏 📚 👀 🤝) and see theirs to you. "
-                "To join, run `mygeeky beacon init` in a terminal.")
+                "Send other myGeeKy users small private signals (🙏 📚 👀 🤝), see theirs to you, and invite "
+                "people whose skills fit to help with your projects. To join, run `mygeeky beacon init` in a terminal.")
             self.refresh_signals_btn.setEnabled(False)
             self.signals_quiet.setVisible(False)
             return
@@ -5464,61 +5466,199 @@ class MyGeekyPanel(QWidget):
         self.signals_quiet.blockSignals(True)
         self.signals_quiet.setChecked(bool(data.get("quiet")))
         self.signals_quiet.blockSignals(False)
-        self.signals_hint.setText("🙏 thanks · 📚 learned from you · 👀 following your work · 🤝 open to "
-                                  "collaborating (shown only if you both choose it). Signals are private: only "
-                                  "the person you send one to can read it, and no reply is ever expected.")
+        self.signals_hint.setText("🔒 Private: a signal can only be read by the person it's for, and no reply is "
+                                  "ever expected.")
         fetched = data.get("fetched_at")
         self.signals_updated_label.setText(data.get("error") or ("updated " + _time_ago(fetched) if fetched else ""))
-        on_send = self._on_send_signal if data.get("can_send") else None
+        on_send = (lambda card, login, gesture: self._open_send_signal(login, gesture)) if data.get("can_send") else None
+        avatar = lambda login, url, size: _avatar_widget(login, url, size, self.avatar_loader)  # noqa: E731
+        people = [x for x in data.get("people") or [] if not x.get("muted")]
+        calls = data.get("calls") or []
+        mine = data.get("my_calls") or []
 
-        def header(text: str) -> None:
-            lbl = QLabel(text)
+        # Your field: the folded radar, and the two actions
+        field = FieldCard(theme, self._open_invite, lambda: self._open_send_signal(), self.cfg.gui_signals_radar_open,
+                          self._on_radar_folded)
+        field.set_counts(len(people), len(calls))
+        field.map.set_items(
+            [{"id": f"c:{c['owner']}/{c['id']}", "login": c["owner"], "label": c["full_name"], "fit": c["fit"],
+              "call": True} for c in calls]
+            + [{"id": f"p:{x['login']}", "login": x["login"], "label": x["login"], "fit": x.get("fit", 0.0),
+                "call": False} for x in people])
+
+        def picked(dot_id: str) -> None:
+            _clear_layout(field.picked_area)
+            if dot_id.startswith("c:"):
+                call = next((c for c in calls if f"c:{c['owner']}/{c['id']}" == dot_id), None)
+                if call:
+                    field.picked_area.addWidget(self._call_card(call, theme, avatar))
+            elif dot_id.startswith("p:"):
+                who = next((x for x in people if f"p:{x['login']}" == dot_id), None)
+                if who:
+                    field.picked_area.addWidget(SignalCard(who, theme, self._open_github, on_send, self.avatar_loader))
+        field.map.picked.connect(picked)
+        field.invite_btn.setEnabled(bool(data.get("can_send")))
+        field.send_btn.setEnabled(bool(data.get("can_send")))
+        self.signals_area.addWidget(field)
+
+        def header(text: str, count: int | None = None) -> None:
+            lbl = QLabel(text + (f"  <span style='color:{theme['muted']}'>{count}</span>" if count else ""))
+            lbl.setTextFormat(Qt.RichText)
             lbl.setStyleSheet("font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
                               f"margin-top:6px; color:{theme['text']}; background:transparent;")
             self.signals_area.addWidget(lbl)
 
+        def empty(text: str) -> None:
+            lbl = QLabel(text)
+            lbl.setWordWrap(True)
+            lbl.setStyleSheet(muted)
+            self.signals_area.addWidget(lbl)
+
         incoming = data.get("incoming") or []
-        header("FOR YOU")
+        header("FOR YOU", len(incoming))
         if data.get("quiet"):
             held = data.get("held") or 0
-            empty = QLabel("You're not taking signals right now." +
-                           (f" {held} signal(s) are waiting for when you're back." if held else ""))
-            empty.setWordWrap(True)
-            empty.setStyleSheet(muted)
-            self.signals_area.addWidget(empty)
+            empty("You're not taking signals right now." +
+                  (f" {held} signal(s) are waiting for when you're back." if held else ""))
         elif not incoming:
-            empty = QLabel("Nothing yet. Signals here are small thank-yous: no reply is ever expected.")
-            empty.setWordWrap(True)
-            empty.setStyleSheet(muted)
-            self.signals_area.addWidget(empty)
+            empty("Nothing yet. Signals here are small thank-yous: no reply is ever expected.")
         for item in incoming:
+            if item.get("type") == "join" and item.get("skills"):
+                item = {**item, "text": f"{item['text']} · their skills: {', '.join(item['skills'])}"}
             self.signals_area.addWidget(SignalCard(item, theme, self._open_github, on_send, self.avatar_loader,
                                                    on_mute=self._on_mute_signals))
-        people = data.get("people") or []
-        header("FELLOW GEEKS ON MYGEEKY")
+
+        header("PROJECTS CALLING FOR YOU", len(calls))
+        if not calls:
+            empty("No calls fit your work right now. When someone invites contributors with your skills, "
+                  "it shows here.")
+        for call in calls:
+            self.signals_area.addWidget(self._call_card(call, theme, avatar))
+
+        header("YOUR CALLS", len(mine))
+        for call in mine:
+            self.signals_area.addWidget(MyCallCard(call, theme, avatar, self._on_close_call, self._open_github))
+        if not mine:
+            empty("Invite people whose skills fit to help with one of your repos: they say they're in, privately.")
+
+        header("PEOPLE ON SIGNALS", len(people))
         if not people:
-            empty = QLabel("No other beacons found yet.")
-            empty.setStyleSheet(muted)
-            self.signals_area.addWidget(empty)
+            empty("No other beacons found yet.")
         for item in people:
-            if item.get("muted"):
-                continue
             self.signals_area.addWidget(SignalCard(item, theme, self._open_github, on_send, self.avatar_loader))
 
-    def _on_send_signal(self, card: "SignalCard", login: str, gesture: str) -> None:
-        card.set_busy(True)
-        card.show_result("sending…")
+    def _call_card(self, call: dict[str, Any], theme: dict[str, Any], avatar) -> QWidget:
+        from .signals_ui import CallCard
+        return CallCard(call, theme, avatar, self._on_join_call, self._on_leave_call, self._on_hide_call,
+                        self._open_github)
+
+    def _on_radar_folded(self, unfolded: bool) -> None:
+        self.cfg.gui_signals_radar_open = unfolded
+        from ..config import save_config
+        save_config(self.cfg)
+
+    # ------------------------------------------------------------------ calls for contributors
+    def _on_join_call(self, card) -> None:
+        card.set_busy(True, "Sending…")
 
         def done(result: Any) -> None:
+            if not _alive(card):
+                return
             card.set_busy(False)
-            ok = isinstance(result, dict) and result.get("ok")
-            if ok:
-                card.show_result("sent privately ✓")
+            if isinstance(result, dict) and result.get("ok"):
+                card.set_joined(True)
             else:
-                error = (result or {}).get("error", "") if isinstance(result, dict) else ""
-                # courtesy limits explain themselves; show the first sentence, the rest on hover
-                card.show_result((error.split(". ")[0] or "Not sent")[:60], error)
-        self._run_async(lambda: logic.send_signal(self.cfg, login, gesture), done)
+                card.set_busy(False, (result or {}).get("error", "Not sent") if isinstance(result, dict) else "Not sent")
+        self._run_async(lambda: logic.join_call(self.cfg, card.call), done)
+
+    def _on_leave_call(self, card) -> None:
+        card.set_busy(True, "Taking it back…")
+
+        def done(result: Any) -> None:
+            if not _alive(card):
+                return
+            card.set_busy(False)
+            if isinstance(result, dict) and result.get("ok"):
+                card.set_joined(False)
+            else:
+                card.set_busy(False, (result or {}).get("error", "Couldn't take it back") if isinstance(result, dict)
+                              else "Couldn't take it back")
+        self._run_async(lambda: logic.leave_call(self.cfg, card.call["owner"], card.call["id"]), done)
+
+    def _on_hide_call(self, card) -> None:
+        logic.hide_call(card.call["owner"], card.call["id"])
+        card.hide()
+
+    def _on_close_call(self, card, filled: bool) -> None:
+        card.set_busy(True, "Marking it filled…" if filled else "Closing it…")
+
+        def done(result: Any) -> None:
+            if isinstance(result, dict) and result.get("ok"):
+                self._refresh_signals(force=False)
+            elif _alive(card):
+                card.set_busy(False, (result or {}).get("error", "Couldn't change it") if isinstance(result, dict)
+                              else "Couldn't change it")
+        self._run_async(lambda: logic.close_call(self.cfg, card.call["id"], filled), done)
+
+    def _open_invite(self) -> None:
+        from .signals_ui import InviteWindow
+        theme = THEMES[self._theme_name()]
+        open_calls = len([c for c in self._signals_data.get("my_calls") or [] if not c.get("filled")])
+        self._show_dialog("_invite_window", lambda: InviteWindow(self, theme, self._on_publish_call, open_calls))
+        win = self._invite_window
+
+        def got(repos: Any) -> None:
+            if _alive(win):
+                win.set_repos(repos if isinstance(repos, list) else [])
+        self._run_async(lambda: logic.list_repos_for_call(self.cfg), got)
+
+    def _on_publish_call(self, win, payload: dict[str, Any]) -> None:
+        win.set_busy(True, "Publishing in your beacon…")
+
+        def done(result: Any) -> None:
+            if not _alive(win):
+                return
+            if isinstance(result, dict) and result.get("ok"):
+                win.set_busy(True, "Published. From now on it reaches people whose skills fit.")
+                QTimer.singleShot(1400, lambda: _alive(win) and win.close())
+                self._refresh_signals(force=False)
+            else:
+                win.set_busy(False, (result or {}).get("error", "Not published") if isinstance(result, dict)
+                             else "Not published", error=True)
+        self._run_async(lambda: logic.create_call(self.cfg, **payload), done)
+
+    def _open_send_signal(self, to: str | None = None, gesture: str | None = None) -> None:
+        from .signals_ui import SendSignalWindow
+        theme = THEMES[self._theme_name()]
+        people = list(self._signals_data.get("people") or [])
+        if to and not any(x["login"] == to for x in people):      # e.g. someone who signalled you
+            people.append({"login": to, "can_receive": True, "fit": 0.0, "interests": [], "shared": []})
+        old = getattr(self, "_send_window", None)
+        if old is not None and _alive(old):
+            old.close()           # a new pick replaces the open one
+        self._show_dialog("_send_window", lambda: SendSignalWindow(self, theme, people, self._on_send_from_window,
+                                                                   self._load_their_repos, to, gesture))
+
+    def _load_their_repos(self, win, login: str) -> None:
+        def got(repos: Any) -> None:
+            if _alive(win):
+                win.set_repos(login, [r["full_name"] for r in repos] if isinstance(repos, list) else [])
+        self._run_async(lambda: logic.list_repos_for_call(self.cfg, login), got)
+
+    def _on_send_from_window(self, win, to: str, gesture: str, repo: str | None) -> None:
+        win.set_busy(True, "Sending…")
+
+        def done(result: Any) -> None:
+            if not _alive(win):
+                return
+            if isinstance(result, dict) and result.get("ok"):
+                win.set_busy(True, f"Sent privately to {to}. Only they can read it.")
+                QTimer.singleShot(1400, lambda: _alive(win) and win.close())
+                self._refresh_signals(force=False)
+            else:
+                win.set_busy(False, (result or {}).get("error", "Not sent") if isinstance(result, dict) else "Not sent",
+                             error=True)
+        self._run_async(lambda: logic.send_signal(self.cfg, to, gesture, repo), done)
 
     def _on_quiet_toggled(self, quiet: bool) -> None:
         self.signals_quiet.setEnabled(False)

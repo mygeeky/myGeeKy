@@ -86,6 +86,11 @@ noise**: no feed to scroll, no likes, no posting, nothing that follows or stars 
 "I used your tool"), sealed so **only the recipient can read them**. No reply is ever expected, and 🤝
 "let's collaborate" only shows up if you *both* choose it.
 
+🙋 **Finds you helpers.** Invite contributors to one of your repos: the skills you need and a sentence. Nobody is
+targeted. Each user's own myGeeKy decides whether your call fits *their* work, on their own device, and people
+who fit say "I'm in", privately, with the skills that matched. A thin "Your field" ruler (unfold it into a radar)
+shows everyone on Signals and every call, closer when they're closer to your work.
+
 🏅 **Rewards you for using it.** Badges under your name (Regular, Clicker, AI Fan, Analyst, Model Hunter, Networker…, in bronze, silver and gold), next to your GitHub achievements.
 
 🧠 **Learns what you're into.** Every click, follow, star and fork tunes it, and 🔭 20% of every list stays open for new territory.
@@ -203,7 +208,7 @@ myGeeKy reminds you a week before either one expires, and `mygeeky auth status` 
 </tr>
 <tr>
 <td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/activity.png" width="260" alt="Activity tab"><br><b>Activity</b><br><sub>One card per person: what they're building right now</sub></td>
-<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/signals.png" width="260" alt="Signals tab"><br><b>Signals</b><br><sub>Private 🙏 📚 👀 from fellow users; 🤝 only when you both choose it <i>(example people)</i></sub></td>
+<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/signals.png" width="260" alt="Signals tab"><br><b>Signals</b><br><sub>Your field, calls for contributors, and private 🙏 📚 👀 from fellow users <i>(example people)</i></sub></td>
 <td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/model.png" width="260" alt="Model tab"><br><b>Model</b><br><sub>What myGeeKy knows about you: your interest map, what teaches it, room to explore</sub></td>
 </tr>
 <tr>

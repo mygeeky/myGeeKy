@@ -1,3 +1,4 @@
+import pytest
 from datetime import datetime, timedelta, timezone
 
 from mygeeky import freshness
@@ -235,3 +236,25 @@ def test_the_token_warning_goes_away_by_itself_after_you_sign_in_elsewhere(monke
         assert panel._tokens_checked_at == before
     finally:
         _close(panel)
+
+
+def test_a_new_cards_dot_is_a_plain_label_so_deleting_cards_is_safe():
+    # Linux crash (free(): invalid pointer in Shiboken while Qt deleted a refreshed card's
+    # children): the dot was a Python-made QObject with an event filter riding on the card
+    pytest.importorskip("PySide6")
+    from PySide6.QtCore import QObject
+    from PySide6.QtWidgets import QApplication, QFrame, QLabel
+    qapp = QApplication.instance() or QApplication([])
+
+    from mygeeky.gui.app import THEMES
+    from mygeeky.gui.qt_panel import _mark_fresh
+
+    card = QFrame()
+    card.resize(300, 80)
+    _mark_fresh(card, {"_fresh": "new", "_key": "repo:x"}, THEMES["midnight"])
+    made_here = [o for o in card.findChildren(QObject) if type(o).__module__.startswith("mygeeky")]
+    assert made_here == []
+    dot = card.findChild(QLabel, "freshDot")
+    assert dot is not None and dot.x() == 300 - 14
+    card.deleteLater()
+    qapp.processEvents()

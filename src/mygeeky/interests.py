@@ -37,6 +37,7 @@ from .files import append_jsonl, read_jsonl, write_json
 # how much one action says about your interests
 KIND_WEIGHTS = {
     "fork": 2.5,
+    "join": 2.5,      # said "I'm in" to someone's call for contributors
     "follow": 2.0,
     "star": 1.5,
     "repo": 1.0,      # clicked a repo (Repos, Market)

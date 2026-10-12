@@ -866,26 +866,99 @@ def get_signals(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
     key = bc.private_key_or_none(cfg)
     mine = bc.load_my_beacon()
     incoming = bc.inbox(cache, cfg, mine, key)
+    from .. import interests
+    try:
+        weights = interests.profile_terms(cfg)      # local files only: your work never leaves this computer
+    except Exception:
+        weights = {}
     return {
         "enabled": True,
         "can_send": can_send,
         "quiet": cfg.beacon_quiet,
         "incoming": [] if cfg.beacon_quiet else incoming,
         "held": len(incoming) if cfg.beacon_quiet else 0,
-        "people": bc.people(cache, cfg, mine, private_key=key),
+        "people": bc.people(cache, cfg, mine, private_key=key, weights=weights),
+        "calls": bc.calls_for_me(cache, cfg, mine, weights=weights),
+        "my_calls": bc.my_calls(cache, cfg, incoming),
         "fetched_at": cache.get("fetched_at"),
         "error": error,
     }
 
 
-def send_signal(cfg: MyGeekyConfig, to: str, gesture: str) -> dict[str, Any]:
-    """Only ever called from a click on a gesture button."""
+def send_signal(cfg: MyGeekyConfig, to: str, gesture: str, repo: str | None = None) -> dict[str, Any]:
+    """Only ever called from a click on Send (or a gesture button)."""
     from .. import beacon as bc
     try:
-        bc.send(cfg, to, gesture)
+        bc.send(cfg, to, gesture, repo)
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
     return {"ok": True}
+
+
+# --------------------------------------------------------------------------- calls for contributors
+def _beacon_action(fn, *args, **kwargs) -> dict[str, Any]:
+    try:
+        result = fn(*args, **kwargs)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+    return {"ok": True, "result": result}
+
+
+def create_call(cfg: MyGeekyConfig, repo: str, note: str, skills: list[str], level: str, time: str,
+                days: int) -> dict[str, Any]:
+    """Only ever called from Publish in the invite window."""
+    from .. import beacon as bc
+    return _beacon_action(bc.create_call, cfg, repo, note, skills, level, time, days)
+
+
+def close_call(cfg: MyGeekyConfig, call_id: str, filled: bool) -> dict[str, Any]:
+    from .. import beacon as bc
+    return _beacon_action(bc.close_call, cfg, call_id, filled)
+
+
+def join_call(cfg: MyGeekyConfig, call: dict[str, Any]) -> dict[str, Any]:
+    """I'm in: a sealed signal to the caller, and your model learns from it like a fork."""
+    from .. import beacon as bc
+    from .. import interests
+    out = _beacon_action(bc.join_call, cfg, call["owner"], call["id"], call.get("matched") or [])
+    if out["ok"]:
+        try:
+            interests.record("join", text=call.get("note", ""), topics=call.get("skills") or [],
+                             source=call.get("full_name", ""), cfg=cfg)
+        except Exception:
+            pass
+    return out
+
+
+def leave_call(cfg: MyGeekyConfig, owner: str, call_id: str) -> dict[str, Any]:
+    from .. import beacon as bc
+    return _beacon_action(bc.leave_call, cfg, owner, call_id)
+
+
+def hide_call(owner: str, call_id: str) -> None:
+    from .. import beacon as bc
+    bc.hide_call(owner, call_id)
+
+
+def list_repos_for_call(cfg: MyGeekyConfig, login: str | None = None) -> list[dict[str, Any]]:
+    """Public repos (your own by default) for the invite and signal windows: name, topics,
+    language, newest first. Forks, archived repos and your beacon are left out."""
+    from .. import beacon as bc
+    login = login or cfg.github_username
+    if not login:
+        return []
+    try:
+        repos = _build_client(cfg).list_repos(login, max_pages=1)
+    except Exception:
+        return []
+    out = []
+    for r in repos:
+        if r.get("fork") or r.get("archived") or r.get("private") or r.get("name") == bc.BEACON_REPO:
+            continue
+        out.append({"name": r.get("name") or "", "full_name": r.get("full_name") or "",
+                    "topics": [t.replace("-", " ") for t in (r.get("topics") or [])][:8],
+                    "language": r.get("language") or "", "description": r.get("description") or ""})
+    return out
 
 
 def set_signals_quiet(cfg: MyGeekyConfig, quiet: bool) -> dict[str, Any]:
@@ -1055,7 +1128,7 @@ def main() -> None:
     use_system_certificates()
     # every error from here on (main thread, background threads, hard crashes) is
     # saved as a report; once the panel is up it offers to send it (see _main)
-    crashreport.install(LOG_DIR, on_report=lambda path: _CRASH_INBOX.append(path))
+    crashreport.install(LOG_DIR, on_report=lambda path: _CRASH_INBOX.append(path), keep_stderr=True)
     try:
         _main()
     except SystemExit:
@@ -1122,8 +1195,11 @@ def _main() -> None:
     from ..config import LOG_DIR
     qInstallMessageHandler(crashreport.qt_message_handler(LOG_DIR))
     cfg = load_config()
+    splash = _play_intro_once(cfg)
     panel = MyGeekyPanel(cfg)
     panel.show()
+    if splash is not None:
+        splash.finish()
     from .macos import keep_on_all_spaces
     keep_on_all_spaces(panel)                # macOS: stay at the edge on every Space, beside full-screen apps
     _watch_crashes(panel, cfg.github_username)
@@ -1137,6 +1213,22 @@ def _main() -> None:
     from .qt_panel import _Worker
     if _Worker.drain(5000):
         os._exit(0)
+
+
+def _play_intro_once(cfg: MyGeekyConfig):
+    """The first time the panel starts: the badge animates in the middle of the screen
+    while the panel is built. Never stops myGeeKy from starting."""
+    if cfg.gui_intro_shown:
+        return None
+    cfg.gui_intro_shown = True
+    save_config(cfg)                       # once, even if something below fails
+    try:
+        from .splash import make_splash
+        splash = make_splash()
+        splash.play()
+        return splash
+    except Exception:
+        return None
 
 
 def _instance_name() -> str:

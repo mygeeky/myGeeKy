@@ -52,7 +52,20 @@ def example_signals(cfg, force=False):
              "text": "⭐ used your-name/finemap-kit in their work", "repo": "", "at": ago(26), "mutual": False},
         ],
         "people": [{"login": p, "avatar_url": "", "profile_url": "", "status": s, "interests": i, "shared": i[:2],
-                    "signalled_you": True, "you_signalled": p == "ada-genomics", "can_receive": True} for p, s, i in people],
+                    "signalled_you": True, "you_signalled": p == "ada-genomics", "can_receive": True, "fit": f}
+                   for (p, s, i), f in zip(people, (0.84, 0.58, 0.41))],
+        "calls": [{"id": "a1b2c3d4", "owner": "ada-genomics", "avatar_url": "", "repo": "finemap-lite",
+                   "full_name": "ada-genomics/finemap-lite", "repo_url": "https://github.com/ada-genomics/finemap-lite",
+                   "note": "Port our SuSiE fine-mapping step to Snakemake so it runs on any cluster.",
+                   "skills": ["snakemake", "fine mapping", "python"], "matched": ["snakemake", "python"],
+                   "fit": 0.82, "explore": False, "level_label": "experienced", "time_label": "a few weeks",
+                   "days_left": 41, "joined": False}],
+        "my_calls": [{"id": "0f0f0f0f", "repo": "gwas-qc", "full_name": "your-name/gwas-qc",
+                      "note": "A second pair of eyes on the LD-pruning step before we publish.",
+                      "skills": ["plink", "gwas"], "level_label": "any level", "time_label": "a few hours",
+                      "days_left": 23, "filled": False,
+                      "responders": [{"login": "omar-plants", "avatar_url": "", "skills": ["plink"], "at": ago(3),
+                                      "profile_url": ""}]}],
     }
 
 
@@ -98,6 +111,16 @@ def render() -> dict[str, Path]:
         if mode:
             panel._set_market_mode(mode)
         pump(2.5)
+        if tab == "signals":          # start the picture at "Your field" (the panel is short)
+            from PySide6.QtWidgets import QScrollArea
+            from mygeeky.gui.signals_ui import FieldCard
+            field = panel.signals_area.parentWidget().findChildren(FieldCard)[0]
+            box = panel.signals_area.parentWidget()
+            while box is not None and not isinstance(box, QScrollArea):
+                box = box.parentWidget()
+            if box is not None:
+                box.verticalScrollBar().setValue(field.mapTo(box.widget(), field.rect().topLeft()).y() - 4)
+            pump(0.5)
         path = SHOTS / f"{fname}.png"
         panel.panel_frame.grab().save(str(path))
         out[fname] = path

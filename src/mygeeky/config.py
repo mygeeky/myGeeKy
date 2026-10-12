@@ -229,6 +229,8 @@ class MyGeekyConfig:
     gui_hearts_enabled: bool = True           # folded icon lets a few small hearts drift up now and then
     gui_hearts_interval_minutes: float = 3.0  # how often; they fade out in ~3 s, never while the panel is open
     gui_folded_opacity: float = 0.5           # folded icon's opacity; it turns fully opaque while hovered
+    gui_intro_shown: bool = False             # the opening animation plays once, the first time the panel starts
+    gui_signals_radar_open: bool = False      # Signals: "Your field" unfolded into the radar (else a thin ruler)
     gui_panel_height_fraction: float = 0.6    # share of the screen's height the open panel takes; adjust
                                                # it in ⚙ or by dragging the panel's bottom edge (35%-90%)
     gui_activity_refresh_minutes: int = 5     # min minutes between automatic activity-feed refreshes

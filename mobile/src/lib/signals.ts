@@ -9,19 +9,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { gh } from './github';
+import { match, todaySeed, type Weights } from './interests';
 import { fetchT } from './net';
 import { b64, newKeypair, publicOf, utf8 } from './signal-crypto';
 import {
-  BEACON_REPO, DAILY_LIMIT, DAY, decodeContent, GESTURES, isoNow, MAX_PER_SENDER, MAX_USERS, mergeIntoBeacon,
-  MUTUAL_TEXT, openSignals, type Parsed, type Person, parseBeacon, parseTime, type Received, REPEAT_DAYS, SCHEMA,
-  sealSignal, type Sent, TOPIC, TTL_DAYS,
+  addCall, BEACON_REPO, type Call, CALL_LEVELS, CALL_TIMES, callsIn, DAILY_LIMIT, DAY, decodeContent, GESTURES, isoNow,
+  MAX_PER_SENDER, MAX_USERS, mergeIntoBeacon, MUTUAL_TEXT, newCall, openSignals, type Parsed, type Person, parseBeacon,
+  parseTime, type Received, REPEAT_DAYS, SCHEMA, sealSignal, type Sent, TOPIC, TTL_DAYS,
   validLogin, validRepo, WEEKLY_NEW_PEOPLE,
 } from './signals-core';
 
-export { BEACON_REPO, GESTURES, MUTUAL_TEXT, type Parsed, type Person, type Received } from './signals-core';
+export {
+  BEACON_REPO, type Call, CALL_DAYS, CALL_LEVELS, CALL_TIMES, GESTURES, MAX_CALLS, MAX_CALL_SKILLS, MAX_NOTE, MUTUAL_TEXT,
+  type Parsed, type Person, type Received,
+} from './signals-core';
 const KEY_ITEM = 'mygeeky_signals_key';        // this phone's private key (secure store)
 const TOKEN_ITEM = 'mygeeky_signals_token';    // this phone's Signals token (secure store)
 const SENT_KEY = 'mygeeky.signals.sent';       // what this phone sent (for the courtesy limits)
+const HIDDEN_KEY = 'mygeeky.signals.hiddenCalls';  // "owner/id" of calls you said aren't for you
 const ME = { name: 'myGeeKy', email: 'housekeeping@mygeeky.invalid' };   // never counts as your activity
 
 // ---- this phone's secrets
@@ -93,31 +98,105 @@ async function loadSent(): Promise<Sent[]> {
   }
 }
 
-export async function inboxAndPeople(me: string, myInterests: string[], users: Parsed[]):
-    Promise<{ inbox: Received[]; people: Person[] }> {
+export type CallForMe = Call & { owner: string; avatar: string; fullName: string; matched: string[]; fit: number;
+  explore: boolean; joined: boolean; levelLabel: string; timeLabel: string; daysLeft: number };
+export type MyCall = Call & { fullName: string; levelLabel: string; timeLabel: string; daysLeft: number;
+  responders: { login: string; avatar: string; skills: string[]; at: string }[] };
+export type SignalsData = { inbox: Received[]; people: Person[]; calls: CallForMe[]; myCalls: MyCall[] };
+
+const daysLeft = (until: string) => Math.max(0, Math.round((Date.parse(`${until}T00:00:00Z`) - Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`)) / DAY));
+
+async function loadHidden(): Promise<string[]> {
+  try {
+    return JSON.parse((await AsyncStorage.getItem(HIDDEN_KEY)) ?? '[]');
+  } catch {
+    return [];
+  }
+}
+
+/** Your calls as your beacon publishes them (from any of your devices). Read-only. */
+export async function loadMyCalls(me: string, token: string | null): Promise<Call[]> {
+  try {
+    const file = await gh<{ content?: string }>(`/repos/${me}/${BEACON_REPO}/contents/beacon.json`, token);
+    return callsIn(decodeContent(file.content));
+  } catch {
+    return [];
+  }
+}
+
+/** Everything the 📡 planet shows. The matching happens here, on the phone: nothing about you is sent. */
+export async function signalsData(me: string, weights: Weights, users: Parsed[], mine: Call[], share = 0.2): Promise<SignalsData> {
   const key = await phoneKey();
   const sent = await loadSent();
+  const hidden = new Set((await loadHidden()).map((h) => h.toLowerCase()));
   const sentTo = new Set(sent.map((g) => g.to.toLowerCase()));
   const myCollab = new Set(sent.filter((g) => g.type === 'collab').map((g) => g.to.toLowerCase()));
-  const mine = new Set(myInterests.map((i) => i.toLowerCase()));
+  const joined = new Set(sent.filter((g) => g.type === 'join').map((g) => `${g.to.toLowerCase()}/${g.call}`));
+  const myTerms = new Set(Object.keys(weights));
+  const byId = new Map(mine.map((c) => [c.id, c]));
   const inbox: Received[] = [];
   const people: Person[] = [];
+  const found: CallForMe[] = [];
   for (const u of users) {
     const got = key ? openSignals(u, me, key.priv) : [];
     const visible = got.filter((g) => g.type !== 'collab' || myCollab.has(u.owner.toLowerCase()));
     for (const g of visible.sort((a, b) => b.at.localeCompare(a.at)).slice(0, MAX_PER_SENDER)) {
       const mutual = g.type === 'collab';
       const [emoji, verb] = GESTURES[g.type];
-      inbox.push({ from: u.owner, avatar: u.avatar, type: g.type, emoji, repo: g.repo ?? '', at: g.at, mutual,
-        text: mutual ? MUTUAL_TEXT : g.repo ? `${emoji} used ${g.repo} in their work` : `${emoji} ${verb}` });
+      let text = mutual ? MUTUAL_TEXT : g.repo ? `${emoji} used ${g.repo} in their work` : `${emoji} ${verb}`;
+      let repo = g.repo ?? '';
+      if (g.type === 'join') {
+        const call = byId.get(g.call ?? '');
+        repo = call ? `${me}/${call.repo}` : '';
+        text = call ? `🙋 would like to help with ${repo}` : "🙋 answered a call you've closed";
+      }
+      inbox.push({ from: u.owner, avatar: u.avatar, type: g.type, emoji, repo, at: g.at, mutual, text,
+        call: g.call, skills: g.skills });
     }
+    const shared = u.interests.filter((i) => myTerms.has(i));
+    const score = match(u.interests.join(' ; '), weights)[0];
     people.push({ login: u.owner, avatar: u.avatar, status: u.quiet ? '🔕 not taking signals right now' : u.status,
-      interests: u.interests, shared: u.interests.filter((i) => mine.has(i)), signalledYou: visible.length > 0,
+      interests: u.interests, shared, signalledYou: visible.length > 0, fit: Math.max(score, Math.min(1, shared.length / 4)),
       youSignalled: sentTo.has(u.owner.toLowerCase()), canReceive: u.keys.length > 0 && !u.quiet });
+    if (u.quiet || !u.keys.length) continue;
+    for (const c of u.calls) {
+      if (c.filled || hidden.has(`${u.owner}/${c.id}`.toLowerCase())) continue;
+      const [sc] = match([...c.skills, c.repo.replace(/[-_]/g, ' '), c.note].join(' '), weights);
+      const matched = c.skills.filter((sk) => myTerms.has(sk) || match(sk, weights)[0] > 0);
+      const fit = matched.length ? Math.max(sc, (matched.length / c.skills.length) * 0.9) : sc * 0.5;
+      found.push({ ...c, owner: u.owner, avatar: u.avatar, fullName: `${u.owner}/${c.repo}`, matched, fit, explore: false,
+        joined: joined.has(`${u.owner.toLowerCase()}/${c.id}`), levelLabel: CALL_LEVELS[c.level], timeLabel: CALL_TIMES[c.time],
+        daysLeft: daysLeft(c.until) });
+    }
   }
+  found.sort((a, b) => b.fit - a.fit);
+  const fits = found.filter((c) => c.fit >= 0.15 || c.joined);
+  const rest = found.filter((c) => c.fit < 0.15 && !c.joined);
+  const k = share <= 0 || !rest.length ? 0 : Math.max(1, Math.round(fits.length * share));
+  const seed = todaySeed();
+  const picks = rest.map((c, i) => ({ c, r: ((seed * 9301 + i * 49297) % 233280) / 233280 }))
+    .sort((a, b) => a.r - b.r).slice(0, k).map(({ c }) => ({ ...c, explore: true }));
   inbox.sort((a, b) => b.at.localeCompare(a.at));
-  people.sort((a, b) => Number(b.signalledYou) - Number(a.signalledYou) || b.shared.length - a.shared.length);
-  return { inbox, people };
+  people.sort((a, b) => Number(b.signalledYou) - Number(a.signalledYou) || b.fit - a.fit);
+  const myCalls: MyCall[] = mine.map((c) => ({ ...c, fullName: `${me}/${c.repo}`, levelLabel: CALL_LEVELS[c.level],
+    timeLabel: CALL_TIMES[c.time], daysLeft: daysLeft(c.until),
+    responders: inbox.filter((i) => i.type === 'join' && i.call === c.id)
+      .map((i) => ({ login: i.from, avatar: i.avatar, skills: i.skills ?? [], at: i.at })) }));
+  return { inbox, people, calls: [...fits, ...picks], myCalls };
+}
+
+/** Public repos (yours by default) for the invite and signal sheets: forks, archived and your beacon left out. */
+export async function listRepos(login: string, token: string | null):
+    Promise<{ name: string; fullName: string; topics: string[]; language: string }[]> {
+  try {
+    const repos = await gh<{ name: string; full_name: string; fork: boolean; archived: boolean; private: boolean;
+      topics?: string[]; language?: string | null }[]>(`/users/${login}/repos?per_page=100&sort=updated&type=owner`, token);
+    return repos.filter((r) => !r.fork && !r.archived && !r.private && r.name !== BEACON_REPO)
+      .map((r) => ({ name: r.name, fullName: r.full_name, topics: (r.topics ?? []).map((t) => t.replace(/-/g, ' ')).slice(0, 8),
+        language: r.language ?? '' }));
+  } catch {
+    return [];
+  }
 }
 
 // ---- writing YOUR beacon (with this phone's Signals token)
@@ -144,14 +223,18 @@ async function writeMine(me: string, token: string, beacon: Record<string, unkno
   return r.status;
 }
 
-/** Read, add, write; once more if one of your computers wrote in between. */
-async function publish(me: string, newBoxes: string[], message: string): Promise<void> {
+/** Read, add, write; once more if one of your computers wrote in between. `changeCalls`
+ *  edits your published calls (it sees what's published right now). */
+async function publish(me: string, newBoxes: string[], message: string,
+                       opts: { changeCalls?: (current: Call[]) => Call[]; removeBoxes?: string[] } = {}): Promise<void> {
   const token = await signalsToken();
   const key = await phoneKey();
   if (!token || !key) throw new Error('Set up Signals on this phone first.');
   for (let attempt = 0; attempt < 2; attempt++) {
     const { raw, sha } = await readMine(me, token);
-    const status = await writeMine(me, token, mergeIntoBeacon(raw, key.pub, newBoxes), sha, message);
+    const calls = opts.changeCalls ? opts.changeCalls(callsIn(raw)) : undefined;
+    const status = await writeMine(me, token, mergeIntoBeacon(raw, key.pub, newBoxes, Date.now(),
+      { calls, removeBoxes: opts.removeBoxes }), sha, message);
     if (status === 200 || status === 201) return;
     if (status === 401 || status === 403) throw new Error(`This Signals token can't write to ${me}/${BEACON_REPO}. ` +
       'It needs Contents: Read and write on that repo.');
@@ -204,4 +287,56 @@ export async function send(me: string, to: Parsed, gesture: string, repo?: strin
   const boxes = sealSignal(me, to.owner, to.keys, gesture, repo, at);
   await publish(me, boxes, 'Update myGeeKy beacon');
   await AsyncStorage.setItem(SENT_KEY, JSON.stringify([...sent, { to: to.owner, type: gesture, at, ...(gesture === 'used' ? { repo } : {}) }]));
+}
+
+
+// ---- calls for contributors
+/** Publish a call for one of your own repos (at most MAX_CALLS open at once). */
+export async function createCall(me: string, input: { repo: string; note: string; skills: string[]; level: string;
+  time: string; days: number }): Promise<Call> {
+  const call = newCall(input.repo, input.note, input.skills, input.level, input.time, input.days);
+  await publish(me, [], 'Update myGeeKy beacon', { changeCalls: (current) => addCall(current, call) });
+  return call;
+}
+
+/** Filled: it stays, marked filled, so it stops showing to others. Closed: it leaves your beacon. */
+export async function closeCall(me: string, id: string, filled: boolean): Promise<void> {
+  await publish(me, [], 'Update myGeeKy beacon', { changeCalls: (current) => {
+    if (!current.some((c) => c.id === id)) throw new Error("That call isn't in your beacon any more.");
+    return filled ? current.map((c) => (c.id === id ? { ...c, filled: true } : c)) : current.filter((c) => c.id !== id);
+  } });
+}
+
+/** I'm in: a sealed signal to the call's owner with the skills of yours that matched. */
+export async function joinCall(me: string, to: Parsed, callId: string, skills: string[]): Promise<void> {
+  const call = to.calls.find((c) => c.id === callId && !c.filled);
+  if (!call) throw new Error(`That call from ${to.owner} isn't open any more. Nothing was sent.`);
+  if (!to.keys.length || to.quiet) throw new Error(`${to.owner} can't receive signals right now.`);
+  const now = Date.now();
+  const sent = await loadSent();
+  if (sent.some((g) => g.type === 'join' && g.call === callId && g.to.toLowerCase() === to.owner.toLowerCase())) {
+    throw new Error("You already said you're in.");
+  }
+  const day = new Date(now).toISOString().slice(0, 10);
+  if (sent.filter((g) => g.at.slice(0, 10) === day).length >= DAILY_LIMIT) throw new Error(`That's ${DAILY_LIMIT} signals today. Try again tomorrow.`);
+  const at = isoNow();
+  const boxes = sealSignal(me, to.owner, to.keys, 'join', undefined, at, callId, skills);
+  await publish(me, boxes, 'Update myGeeKy beacon');
+  await AsyncStorage.setItem(SENT_KEY, JSON.stringify([...sent, { to: to.owner, type: 'join', at, call: callId, boxes }]));
+}
+
+/** Changed your mind: the "I'm in" this phone sent leaves your beacon. */
+export async function leaveCall(me: string, owner: string, callId: string): Promise<void> {
+  const sent = await loadSent();
+  const mine = sent.filter((g) => g.type === 'join' && g.call === callId && g.to.toLowerCase() === owner.toLowerCase());
+  const boxes = mine.flatMap((g) => g.boxes ?? []);
+  if (!boxes.length) throw new Error('It was sent from another device: take it back there.');
+  await publish(me, [], 'Update myGeeKy beacon', { removeBoxes: boxes });
+  await AsyncStorage.setItem(SENT_KEY, JSON.stringify(sent.filter((g) => !mine.includes(g))));
+}
+
+/** Not for me: this call won't show again on this phone. */
+export async function hideCall(owner: string, callId: string): Promise<void> {
+  const hidden = await loadHidden();
+  await AsyncStorage.setItem(HIDDEN_KEY, JSON.stringify([...hidden.filter((h) => h !== `${owner}/${callId}`), `${owner}/${callId}`].slice(-200)));
 }

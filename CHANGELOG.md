@@ -3,6 +3,29 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.21.4 (2026-10-12): calls for contributors, a new Signals planet, and a Linux crash fixed (phone app 1.5.0)
+
+- **Fixed a crash on Linux.** After running for hours, the panel could close by itself ("free(): invalid pointer" while a tab refreshed). The small "new" dot on new cards was a Python-made Qt object hooked onto its card; when Qt deleted a refreshed card, freeing that dot could corrupt memory. Linux's allocator caught it and stopped the program; Windows and macOS never noticed. The dot is now a plain label owned by the card, and a test keeps it that way.
+- **Crash reports say why.** Started from a menu or at sign-in there's no terminal, so the last line Qt or the system printed before a hard crash was lost. It now goes into the crash log, and a hard-crash report also includes Qt's last critical messages.
+
+- **Calls for contributors.** Invite people whose skills fit to help with one of your repos, on the computer or the phone.
+  - **Posting a call:** pick one of your own public repos, the skills you need (up to 6, filled in from its topics), one or two sentences (no links), a level, the time it takes, and how long it stays open (30, 60 or 90 days). At most 3 open calls, one per repo.
+  - **Where it lives:** in the beacon you already have, so there's no new repo or token. Mark a call filled or close it; it also ends on its own.
+  - **Who sees it:** nobody is targeted. Each reader's own myGeeKy scores every call against their work, on their own computer or phone. Calls that fit show under "Projects calling for you", and the usual 20% go to 🔭 new territory outside their work.
+  - **"I'm in":** a sealed signal only you can read, with their name and the skills of theirs that matched. It counts like a fork in their interest model, so their suggestions lean toward that area. "Changed my mind" takes it back, and "Not for me" hides a call.
+  - **Your calls:** each one lists who said they're in, with their matching skills.
+- **A new Signals planet.**
+  - **"Your field":** a thin ruler at the top with everyone on Signals and every call that fits you. Further right is closer to your work; calls sit above the line and people below. Unfold it into a radar with you in the middle, and tap a dot to open its card.
+  - **Two buttons under it:** "Invite to a project" and "Send a signal". The signal window lets you pick a person (best fit first, or search by name or topic), a signal, and for ⭐ which of their repos, and shows exactly what they'll see before you send.
+  - **Below it:** For you, Projects calling for you, Your calls, and People on Signals. The long explanation is now one line.
+- **The phone and the computer agree.** A test runs the phone's real code against the desktop's: which calls count, a call made on the phone, and "I'm in" in both directions.
+
+- **An opening animation.** The badge's arms spin in out of nothing, then G, ee and K pop in, and m and y land last with a flash.
+  - **On the computer:** it plays in the middle of the screen the first time myGeeKy starts, while the panel is being built.
+  - **On the phone:** it plays each time the app opens (tap to skip). The phone used to open on a plain white screen, because its start-up screen was never set; it's now the app's own dark background, which hands straight over to the animation.
+  - **For the web:** an animated SVG of the same thing (`docs/loader.svg`).
+  - All three use the same pictures and the same timeline.
+
 ## 0.21.3 (2026-10-11): a panel that never fades away, and a smooth Transparency slider
 
 - **The panel never fades away.** The Transparency slider still goes from 0% to 100%, but 100% now means 40% see-through instead of invisible. A panel set more see-through than that comes back to 40% on its own.

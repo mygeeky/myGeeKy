@@ -2,7 +2,7 @@
   "expo": {
     "name": "myGeeKy",
     "slug": "alsamman",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -37,7 +37,20 @@
           "recordAudioAndroid": false
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#12121c",
+          "image": "./assets/splash-blank.png",
+          "imageWidth": 1,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#12121c",
+            "image": "./assets/splash-blank.png"
+          }
+        }
+      ]
     ],
     "scheme": "mygeeky",
     "backgroundColor": "#12121c",
