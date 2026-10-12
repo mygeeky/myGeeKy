@@ -682,7 +682,8 @@ the full details are saved for you to send:
 - **`mygeeky` command and panel:** the error says where it saved its report
   (an `error-<date>.txt` in myGeeKy's `logs` folder).
 
-Please attach that file when you [open an issue](https://github.com/mygeeky/myGeeKy/issues).
+Please attach that file when you [open an issue](https://github.com/mygeeky/myGeeKy/issues)
+(or email it to [support@mygeeky.org](mailto:support@mygeeky.org)).
 
 If you don't have Python, or only have the Microsoft Store Python, the
 installer sets up a regular Python 3.12 just for you: with winget when your PC
@@ -710,9 +711,12 @@ mygeeky run       # get your first batch of suggestions
 `mygeeky init` asks a short set of questions — all optional, all editable
 later:
 
-- Your GitHub username (the only required answer)
+- Your GitHub username (optional: leave it blank if you have no GitHub account)
 - Your CV (a file path, pasted text, or skip)
-- Your ORCID iD and your Google Scholar profile URL (each optional)
+- Your ORCID iD (type `signin` to sign in with ORCID in your browser) and your Google Scholar profile URL (each optional)
+
+Any one of the username, the ORCID iD or a few topics is enough. Without GitHub, News, Research, AI models and
+Launches work for your field; People, Repos, Activity and Signals show what adding GitHub would unlock.
 - Languages / topics / keywords / locations you're looking for
 - Optional extra candidate sources: well-known accounts in your field, relevant repos
 - Follower-count range, `max_following`, minimum repo count, how many suggestions per run

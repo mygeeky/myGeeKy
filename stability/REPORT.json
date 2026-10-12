@@ -15,7 +15,7 @@
     "id": "D1b",
     "area": "Data files",
     "title": "Killed in the middle of saving config.json, 40 times",
-    "seconds": 12.1
+    "seconds": 12.2
   },
   {
     "status": "PASS",
@@ -51,7 +51,7 @@
     "id": "G1",
     "area": "Sync (git)",
     "title": "The sync server stops answering (stalled network, proxy, captive portal)",
-    "seconds": 60.8
+    "seconds": 60.7
   },
   {
     "status": "PASS",
@@ -64,7 +64,7 @@
   },
   {
     "status": "PASS",
-    "observed": "no waiting inside a request (longest 0 s); the next request says: \"GitHub limit reached: myGeeKy will try again after 03:10. Signing in (a token) raises the limit a lot.\"",
+    "observed": "no waiting inside a request (longest 0 s); the next request says: \"GitHub limit reached: myGeeKy will try again after 17:58. Signing in (a token) raises the limit a lot.\"",
     "fix": "",
     "id": "N1",
     "area": "Network",
@@ -73,7 +73,7 @@
   },
   {
     "status": "PASS",
-    "observed": "raised RateLimited: GitHub asked to slow down: myGeeKy will try again after 02:12.",
+    "observed": "raised RateLimited: GitHub asked to slow down: myGeeKy will try again after 17:00.",
     "fix": "",
     "id": "N2",
     "area": "Network",
@@ -87,7 +87,7 @@
     "id": "N7",
     "area": "Network",
     "title": "Work network that inspects HTTPS (Zscaler/Netskope style)",
-    "seconds": 0.2
+    "seconds": 0.3
   },
   {
     "status": "PASS",
@@ -105,7 +105,7 @@
     "id": "Q9",
     "area": "Panel (Qt)",
     "title": "Quitting while background work is still running, 10 times",
-    "seconds": 39.1
+    "seconds": 40.2
   },
   {
     "status": "PASS",
@@ -123,7 +123,7 @@
     "id": "Q10",
     "area": "Panel (Qt)",
     "title": "Avatar pictures built off the UI thread (QPixmap in a worker)",
-    "seconds": 5.1
+    "seconds": 5.3
   },
   {
     "status": "PASS",
@@ -132,7 +132,7 @@
     "id": "P3",
     "area": "Panel (Qt)",
     "title": "A bug inside the panel (an error in a button or timer)",
-    "seconds": 3.5
+    "seconds": 3.7
   },
   {
     "status": "PASS",
@@ -141,7 +141,7 @@
     "id": "P3b",
     "area": "Panel (Qt)",
     "title": "A hard crash (the process dies, no Python error)",
-    "seconds": 0.4
+    "seconds": 0.5
   },
   {
     "status": "PASS",
@@ -150,11 +150,11 @@
     "id": "D6",
     "area": "Panel (Qt)",
     "title": "Starting myGeeKy while it's already running",
-    "seconds": 5.4
+    "seconds": 5.7
   },
   {
     "status": "PASS",
-    "observed": "0 9 * * 1 mkdir -p 'C:\\Users\\ALSAMM~1\\AppData\\Local\\Temp\\mygeeky-probe-sdc_awf0\\data\\logs' && '/home/probe user/my apps/venv/bin/python' -m mygeeky pipeline >> 'C:\\Users\\ALSAMM~1\\AppData\\Local\\Temp\\mygeeky-probe-sdc_awf0\\data\\logs\\weekly.log' 2>&1",
+    "observed": "0 9 * * 1 mkdir -p 'C:\\Users\\ALSAMM~1\\AppData\\Local\\Temp\\mygeeky-probe-pjn6iox7\\data\\logs' && '/home/probe user/my apps/venv/bin/python' -m mygeeky pipeline >> 'C:\\Users\\ALSAMM~1\\AppData\\Local\\Temp\\mygeeky-probe-pjn6iox7\\data\\logs\\weekly.log' 2>&1",
     "fix": "",
     "id": "S1",
     "area": "Weekly run",
@@ -168,7 +168,7 @@
     "id": "S2",
     "area": "Weekly run",
     "title": "The PC is asleep or off at the weekly time (Windows)",
-    "seconds": 2.2
+    "seconds": 2.5
   },
   {
     "status": "PASS",
@@ -199,7 +199,7 @@
   },
   {
     "status": "PASS",
-    "observed": "0.2% CPU (of one core) and 286 MB memory while idle",
+    "observed": "0.1% CPU (of one core) and 215 MB memory while idle",
     "fix": "",
     "id": "R1",
     "area": "Running panel",

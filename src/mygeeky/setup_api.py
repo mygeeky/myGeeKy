@@ -47,13 +47,14 @@ def _split(value: Any) -> list[str]:
 
 
 def status(req: dict[str, Any]) -> dict[str, Any]:
-    from . import auth, sync
-    from .config import CONFIG_FILE, load_config
+    from . import auth, orcid_login, sync
+    from .config import CONFIG_FILE, load_config, profile_ready
     cfg = load_config()
     user = cfg.github_username
     return {
         "version": __version__,
-        "configured": CONFIG_FILE.exists() and bool(user),
+        "configured": CONFIG_FILE.exists() and profile_ready(cfg),
+        "orcid_signin": orcid_login.available(),
         "github_username": user,
         "cv_path": cfg.cv_path,
         "orcid_id": cfg.orcid_id,
@@ -76,9 +77,11 @@ def save_profile(req: dict[str, Any]) -> dict[str, Any]:
     from .config import CV_TEXT_FILE, load_config, save_config
     from .text_utils import load_cv_text
     cfg = load_config()
-    username = str(req.get("github_username") or "").strip()
-    if not username:
-        return {"ok": False, "error": "Your GitHub username is required."}
+    username = str(req.get("github_username") or "").strip().lstrip("@")
+    has_field = any(str(req.get(k) or "").strip() for k in ("orcid_id", "topics", "keywords", "cv_path"))
+    if not username and not has_field:
+        return {"ok": False, "error": "Add your GitHub username, sign in with ORCID, or give a few topics: "
+                                      "any one of them is enough to start."}
     cfg.github_username = username
     notes = []
     cv_path = str(req.get("cv_path") or "").strip()
@@ -92,9 +95,13 @@ def save_profile(req: dict[str, Any]) -> dict[str, Any]:
         cfg.cv_path = cv_path
         notes.append(f"Read your CV ({len(text)} characters).")
     orcid = str(req.get("orcid_id") or "").strip()
+    from .orcid_login import checksum_ok
     cfg.orcid_id = scholar.normalize_orcid(orcid) if orcid else ""
     if orcid and not cfg.orcid_id:
         return {"ok": False, "error": "That doesn't look like an ORCID iD (e.g. 0000-0002-1825-0097)."}
+    if cfg.orcid_id and not checksum_ok(cfg.orcid_id):
+        return {"ok": False, "error": f"{cfg.orcid_id} isn't a valid ORCID iD: a digit is probably mistyped. "
+                                      "Check it on orcid.org, or sign in with ORCID instead."}
     gs = str(req.get("scholar_id") or "").strip()
     cfg.scholar_id = scholar.normalize_scholar_id(gs) if gs else ""
     if gs and not cfg.scholar_id:
@@ -190,6 +197,20 @@ def github_login_finish(req: dict[str, Any]) -> dict[str, Any]:
         save_config(cfg)
     gl.store(grant, login)                  # with its refresh token: it renews itself
     return {"ok": True, "login": login, "expiry": _expiry_note("read")}
+
+
+def orcid_login(req: dict[str, Any]) -> dict[str, Any]:
+    """Sign in with ORCID in the browser; keep the confirmed iD (the token is used once, never kept)."""
+    from . import orcid_login as ol
+    from .config import load_config, save_config
+    try:
+        me = ol.sign_in()
+    except ol.OrcidLoginError as exc:
+        return {"ok": False, "error": str(exc)}
+    cfg = load_config()
+    cfg.orcid_id = me["orcid"]
+    save_config(cfg)
+    return {"ok": True, "orcid": me["orcid"], "name": me["name"]}
 
 
 def token_report(req: dict[str, Any]) -> dict[str, Any]:
@@ -289,6 +310,7 @@ ACTIONS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "store_token": store_token,
     "github_login_start": github_login_start,
     "github_login_finish": github_login_finish,
+    "orcid_login": orcid_login,
     "token_report": token_report,
     "sync_init": sync_init,
     "beacon_init": beacon_init,

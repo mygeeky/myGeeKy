@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Signing in to myGeeKy</title>
+<style>
+  :root { --bg: #f7f7fb; --text: #1d1d2b; --muted: #5d5d73; --accent: #7a5cff; --orcid: #a6ce39; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #12121c; --text: #ececf4; --muted: #a4a4bb; --accent: #a993ff; } }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 420px; padding: 24px 16px; text-align: center; }
+  .badge { width: 44px; height: 44px; border-radius: 50%; background: var(--orcid); color: #fff; font-weight: 800;
+           display: inline-grid; place-items: center; font-size: 18px; }
+  h1 { font-size: 22px; margin: 14px 0 6px; }
+  p { color: var(--muted); margin: 6px 0; }
+  a.button { display: inline-block; margin-top: 16px; padding: 12px 20px; border-radius: 12px; background: var(--accent);
+             color: #fff; text-decoration: none; font-weight: 700; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="badge">iD</div>
+  <h1 id="title">Taking you back to myGeeKy…</h1>
+  <p id="text">ORCID signed you in. This page only passes that on to the myGeeKy app; nothing is kept here.</p>
+  <a class="button" id="again" href="#" hidden>Open myGeeKy</a>
+</main>
+<script>
+// ORCID sends people back here (an https page it knows), with a short-lived token that can only say who
+// they are. This page hands it to the myGeeKy that asked: the phone app (mygeeky://) or myGeeKy on this
+// computer (http://127.0.0.1:<port>). It forwards nowhere else, and stores and sends nothing itself.
+(function () {
+  var raw = (location.hash || "").replace(/^#/, "") || (location.search || "").replace(/^\?/, "");
+  var got = new URLSearchParams(raw);
+  history.replaceState(null, "", location.pathname);        // the token leaves the address bar and history
+  var state = got.get("state") || "";
+  var keep = new URLSearchParams();
+  ["access_token", "state", "error", "error_description"].forEach(function (k) {
+    if (got.get(k)) keep.set(k, got.get(k));
+  });
+  var target = "";
+  var desk = /^d(\d{4,5})-[\w-]{10,64}$/.exec(state);
+  if (desk && +desk[1] >= 1024 && +desk[1] <= 65535) target = "http://127.0.0.1:" + desk[1] + "/orcid?" + keep;
+  else if (/^p-[\w-]{10,64}$/.test(state)) target = "mygeeky://orcid?" + keep;
+
+  var title = document.getElementById("title"), text = document.getElementById("text");
+  var again = document.getElementById("again");
+  if (!target) {
+    title.textContent = "Nothing to do here";
+    text.textContent = "This page finishes a \"Sign in with ORCID\" started in myGeeKy. Start it again from the app.";
+    return;
+  }
+  if (got.get("error")) {
+    title.textContent = "Not signed in";
+    text.textContent = got.get("error") === "access_denied" ? "You cancelled the sign-in on ORCID." :
+                       (got.get("error_description") || "ORCID didn't sign you in.");
+  }
+  again.href = target;
+  again.hidden = false;
+  location.replace(target);
+})();
+</script>
+</body>
+</html>

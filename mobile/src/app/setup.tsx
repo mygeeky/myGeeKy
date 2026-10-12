@@ -3,14 +3,16 @@ import { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../lib/app-state';
-import { SignInButton } from '../components/signin';
+import { OrcidSignInButton, SignInButton } from '../components/signin';
+import { orcidChecksumOk } from '../lib/orcid-login';
 import { DEFAULT_SETTINGS } from '../lib/storage';
 import { C } from '../lib/theme';
 
 const split = (v: string) => v.split(',').map((x) => x.trim()).filter(Boolean);
 
-// Who you are: only your GitHub username is required. Your ORCID and keywords
-// make every list much better. The token is optional (and stays on this phone).
+// Who you are: any one of your GitHub username, your ORCID or a few keywords is enough.
+// Without GitHub, News, Research, AI models and Launches all work; the GitHub planets
+// say what adding it would unlock. The token is optional (and stays on this phone).
 export default function Setup() {
   const { settings, save } = useApp();
   const [username, setUsername] = useState(settings?.username ?? '');
@@ -20,12 +22,17 @@ export default function Setup() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [signedIn, setSignedIn] = useState('');
+  const [orcidName, setOrcidName] = useState('');
 
   const submit = async () => {
     const u = username.trim().replace(/^@/, '');
-    if (!/^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/.test(u)) return setError('That isn\'t a GitHub username.');
+    if (u && !/^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/.test(u)) return setError('That isn\'t a GitHub username.');
     const o = orcid.trim().replace(/^https?:\/\/orcid\.org\//, '');
     if (o && !/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(o)) return setError('An ORCID looks like 0000-0002-1825-0097.');
+    if (o && !orcidChecksumOk(o)) return setError(`${o} isn't a valid ORCID iD: a digit is probably mistyped.`);
+    if (!u && !o && !split(keywords).length) {
+      return setError('Sign in with ORCID or GitHub, or give a few keywords: any one is enough to start.');
+    }
     setBusy(true);
     setError('');
     await save({ ...(settings ?? DEFAULT_SETTINGS), username: u, orcid: o, keywords: split(keywords) }, token.trim() || undefined);
@@ -52,13 +59,18 @@ export default function Setup() {
             setUsername(login);
             setSignedIn(login);
           }} />
+          <OrcidSignInButton signedInAs={orcidName} onSignedIn={(me) => {
+            setOrcid(me.orcid);
+            setOrcidName(me.name || me.orcid);
+          }} />
+          <Text style={st.hint}>No GitHub account? ORCID is enough: News, Papers, AI models and Launches all work without it.</Text>
           <Text style={st.or}>or fill it in</Text>
 
-          <Text style={st.label}>GitHub username</Text>
+          <Text style={st.label}>GitHub username <Text style={st.opt}>(optional)</Text></Text>
           <TextInput style={st.input} value={username} onChangeText={setUsername} autoCapitalize="none"
                      autoCorrect={false} placeholder="e.g. octocat" placeholderTextColor={C.muted} />
 
-          <Text style={st.label}>ORCID <Text style={st.opt}>(optional, but it finds your research field)</Text></Text>
+          <Text style={st.label}>ORCID <Text style={st.opt}>(it finds your research field)</Text></Text>
           <TextInput style={st.input} value={orcid} onChangeText={setOrcid} autoCapitalize="none"
                      placeholder="0000-0002-1825-0097" placeholderTextColor={C.muted} />
 

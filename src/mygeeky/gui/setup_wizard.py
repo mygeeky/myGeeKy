@@ -747,8 +747,9 @@ class InstallPage(Page):
 
 class ProfilePage(Page):
     def __init__(self) -> None:
-        super().__init__("About you", "myGeeKy matches people by your field, not just your languages. "
-                                      "Only the username is required.")
+        super().__init__("About you", "myGeeKy learns your field from any of these. One is enough: your GitHub "
+                                      "username, your ORCID, or a few topics. No GitHub account? Sign in with "
+                                      "ORCID: News, Research, AI models and Launches all work without GitHub.")
         form = QFormLayout()
         form.setSpacing(8)
         self.username = QLineEdit()
@@ -763,16 +764,31 @@ class ProfilePage(Page):
         cv_wrap = QWidget()
         cv_wrap.setLayout(cv_row)
         self.orcid = QLineEdit()
-        self.orcid.setPlaceholderText("optional, e.g. 0000-0002-1825-0097")
+        self.orcid.setPlaceholderText("e.g. 0000-0002-1825-0097")
+        self.orcid_btn = QPushButton("iD  Sign in with ORCID")
+        self.orcid_btn.setObjectName("orcid")
+        self.orcid_btn.setStyleSheet("QPushButton#orcid { background:#a6ce39; color:#1d2b0a; font-weight:700; "
+                                     "border:none; border-radius:8px; padding:6px 12px; }"
+                                     "QPushButton#orcid:disabled { background:#d9e8b0; color:#6b7a4a; }")
+        self.orcid_btn.setToolTip("Opens orcid.org in your browser. myGeeKy only receives your ORCID iD and name.")
+        self.orcid_btn.clicked.connect(self._orcid_sign_in)
+        orcid_row = QHBoxLayout()
+        orcid_row.setContentsMargins(0, 0, 0, 0)
+        orcid_row.addWidget(self.orcid, 1)
+        orcid_row.addWidget(self.orcid_btn)
+        orcid_wrap = QWidget()
+        orcid_wrap.setLayout(orcid_row)
+        self.orcid_note = _label("", "muted")
         self.scholar = QLineEdit()
         self.scholar.setPlaceholderText("optional: your Google Scholar profile URL")
         self.languages = QLineEdit()
         self.languages.setPlaceholderText("e.g. Python, R")
         self.topics = QLineEdit()
         self.topics.setPlaceholderText("e.g. gwas, single-cell, llm")
+        form.addRow("ORCID iD", orcid_wrap)
+        form.addRow("", self.orcid_note)
         form.addRow("GitHub username", self.username)
         form.addRow("CV", cv_wrap)
-        form.addRow("ORCID iD", self.orcid)
         form.addRow("Google Scholar", self.scholar)
         form.addRow("Languages", self.languages)
         form.addRow("Topics", self.topics)
@@ -780,7 +796,27 @@ class ProfilePage(Page):
         box.setLayout(form)
         self.add(box)
         self.finish_layout()
-        self.registerField("username*", self.username)
+        self.registerField("username", self.username)
+
+    # ---- Sign in with ORCID
+    def _orcid_sign_in(self) -> None:
+        self.orcid_btn.setEnabled(False)
+        self.orcid_note.setText("Your browser opened orcid.org. Sign in there, then come back here\u2026")
+        python = self.w.python
+        self._orcid_worker = Worker(lambda wk: api(python, "orcid_login", timeout=330))
+        self._orcid_worker.done.connect(self._orcid_done)
+        self._orcid_worker.start()
+
+    def _orcid_done(self, result: Any) -> None:
+        result = result if isinstance(result, dict) else {}
+        self.orcid_btn.setEnabled(True)
+        if not result.get("ok"):
+            self.orcid_note.setText(result.get("error") or "The sign-in didn't finish. Try again, or type your iD.")
+            return
+        self.orcid.setText(result["orcid"])
+        name = result.get("name") or ""
+        self.orcid_note.setText(f"\u2713 Signed in with ORCID{' as ' + name if name else ''}. Click Next.")
+        self.orcid_btn.setText("\u2713 Signed in")
 
     def _browse(self) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "Your CV", str(Path.home()), "CV (*.pdf *.txt *.md)")
@@ -790,6 +826,7 @@ class ProfilePage(Page):
     def initializePage(self) -> None:  # noqa: N802
         super().initializePage()
         s = self.w.state
+        self.orcid_btn.setVisible(bool(s.get("orcid_signin")))
         if not self.username.text():
             self.username.setText(s.get("github_username", ""))
             self.cv.setText(s.get("cv_path", ""))
@@ -867,13 +904,23 @@ class TokenPage(Page):
         self.keep.setVisible(has)
         self.keep.setText(f"Keep the token I already have, from your {source.split(' (')[0]}")
         (self.keep if has else self.paste).setChecked(True)
+        if not self.w.state.get("github_username"):
+            self.say("No GitHub account yet? Click Next to skip this: myGeeKy works without it, and you can "
+                     "add GitHub later from the panel's 🔓 cards.")
 
     def job(self):
         if self.keep.isChecked():
             return None
         token = self.token.text().strip()
+        if not token and not self.w.state.get("github_username"):
+            return None                     # no GitHub yet: fine, the GitHub parts wait
         python = self.w.python
         return lambda wk: api(python, "store_token", {"token": token})
+
+    def nextId(self) -> int:  # noqa: N802
+        if not self.w.state.get("github_username"):
+            return self.w.finish_id         # Sync and Signals run on GitHub: nothing to set up yet
+        return super().nextId()
 
     # ---- Sign in with GitHub
     def _sign_in(self) -> None:
@@ -1283,9 +1330,9 @@ class SetupWizard(QWizard):
         self.state: dict[str, Any] = {}
         self.notes: list[str] = []
         self.restart_panel = False
-        for page in (WelcomePage(), InstallPage(), ProfilePage(), TokenPage(), SyncPage(), SignalsPage(),
-                     FinishPage()):
+        for page in (WelcomePage(), InstallPage(), ProfilePage(), TokenPage(), SyncPage(), SignalsPage()):
             self.addPage(page)
+        self.finish_id = self.addPage(FinishPage())
         self.resize(700, 620)
 
     # ---- environment

@@ -222,7 +222,8 @@ class MyGeekyConfig:
     # viewer over the same data the CLI produces; it never runs a full
     # candidate search on its own (see gui/app.py) and never follows anyone --
     # every profile link is opened in your browser only when you click it.
-    gui_dock_side: str = "right"          # "right" or "left"
+    gui_dock_side: str = "right"          # "right" | "left" | "bottom-right" | "bottom-left" (bottom: opens rising to the middle)
+    gui_layer: str = "front"              # "front" (always on top) | "normal" | "behind" (under other windows while folded)
     gui_expanded_width: int = 380
     gui_folded_width: int = 76                # folded, the panel is just the app icon on the screen edge
     gui_folded_height: int = 76
@@ -263,6 +264,12 @@ class MyGeekyConfig:
 
 
 DEFAULTS = MyGeekyConfig()
+
+
+def profile_ready(cfg: MyGeekyConfig) -> bool:
+    """Enough to know your field: a GitHub username, an ORCID iD, topics, keywords or a CV.
+    GitHub is optional: without it, the GitHub parts (People, Activity, Signals...) wait."""
+    return bool(cfg.github_username or cfg.orcid_id or cfg.topics or cfg.keywords or cfg.cv_path)
 
 
 def ensure_dirs() -> None:

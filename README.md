@@ -306,6 +306,15 @@ and your browser opens a ready-to-send issue in
 [myGeeKy-ideas](https://github.com/mygeeky/myGeeKy-ideas). Click **Submit** to send it. Nothing is sent
 until you do, and no token passes through myGeeKy. Issues there are public, so leave out tokens and private data.
 
+**Rather write privately, or no GitHub account?** Email **[support@mygeeky.org](mailto:support@mygeeky.org)**.
+
+## 🎓 No GitHub account? Start with ORCID
+
+GitHub is optional. In setup, on the computer or the phone, **Sign in with ORCID** (or type your ORCID iD, or a few
+keywords): News, Research, AI models and Launches work straight away for your field. People, Repos, Activity and Signals
+live on GitHub, so they show what adding GitHub would unlock, with a one-click way to add it whenever you like.
+Signing in with ORCID only confirms your iD: myGeeKy never sees your ORCID password and keeps no ORCID token.
+
 **If myGeeKy hits an error**, it saves a crash report on your computer and offers to send it. You see exactly
 what's in it (tokens, emails, your name and folders already removed), and **Report on GitHub** opens a prefilled
 issue that you submit yourself. Nothing is ever sent automatically. How myGeeKy is checked for stability before

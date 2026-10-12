@@ -34,7 +34,7 @@ def test_main_reads_stdin_and_never_dumps_tracebacks(monkeypatch, capsys):
     monkeypatch.setattr("sys.stdin", io.StringIO('{"github_username": ""}'))
     assert setup_api.main(["save_profile"]) == 1
     out = json.loads(capsys.readouterr().out)
-    assert out == {"ok": False, "error": "Your GitHub username is required."}
+    assert out["ok"] is False and "any one of them is enough" in out["error"]     # nothing at all: say what's needed
     assert setup_api.main(["rm-rf"]) == 2
 
 

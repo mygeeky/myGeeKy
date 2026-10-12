@@ -27,6 +27,7 @@ const KEY_ITEM = 'mygeeky_signals_key';        // this phone's private key (secu
 const TOKEN_ITEM = 'mygeeky_signals_token';    // this phone's Signals token (secure store)
 const SENT_KEY = 'mygeeky.signals.sent';       // what this phone sent (for the courtesy limits)
 const HIDDEN_KEY = 'mygeeky.signals.hiddenCalls';  // "owner/id" of calls you said aren't for you
+const BLOCKED_KEY = 'mygeeky.signals.blocked';     // people you blocked: nothing of theirs shows on this phone
 const ME = { name: 'myGeeKy', email: 'housekeeping@mygeeky.invalid' };   // never counts as your activity
 
 // ---- this phone's secrets
@@ -102,17 +103,34 @@ export type CallForMe = Call & { owner: string; avatar: string; fullName: string
   explore: boolean; joined: boolean; levelLabel: string; timeLabel: string; daysLeft: number };
 export type MyCall = Call & { fullName: string; levelLabel: string; timeLabel: string; daysLeft: number;
   responders: { login: string; avatar: string; skills: string[]; at: string }[] };
-export type SignalsData = { inbox: Received[]; people: Person[]; calls: CallForMe[]; myCalls: MyCall[] };
+export type SignalsData = { inbox: Received[]; people: Person[]; calls: CallForMe[]; myCalls: MyCall[]; blocked: string[] };
 
 const daysLeft = (until: string) => Math.max(0, Math.round((Date.parse(`${until}T00:00:00Z`) - Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`)) / DAY));
 
-async function loadHidden(): Promise<string[]> {
+async function loadList(key: string): Promise<string[]> {
   try {
-    return JSON.parse((await AsyncStorage.getItem(HIDDEN_KEY)) ?? '[]');
+    const v = JSON.parse((await AsyncStorage.getItem(key)) ?? '[]');
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
   } catch {
     return [];
   }
 }
+const loadHidden = () => loadList(HIDDEN_KEY);
+export const loadBlocked = () => loadList(BLOCKED_KEY);
+
+/** Block someone: their signals, calls and dot leave this phone. */
+export async function blockPerson(login: string): Promise<void> {
+  const rest = (await loadBlocked()).filter((b) => b.toLowerCase() !== login.toLowerCase());
+  await AsyncStorage.setItem(BLOCKED_KEY, JSON.stringify([...rest, login].slice(-500)));
+}
+
+export async function unblockPerson(login: string): Promise<void> {
+  const rest = (await loadBlocked()).filter((b) => b.toLowerCase() !== login.toLowerCase());
+  await AsyncStorage.setItem(BLOCKED_KEY, JSON.stringify(rest));
+}
+
+/** Everything someone posts on Signals lives in their GitHub beacon, so abuse is reported to GitHub. */
+export const reportUrl = (login: string) => `https://github.com/contact/report-abuse?report=${encodeURIComponent(login)}`;
 
 /** Your calls as your beacon publishes them (from any of your devices). Read-only. */
 export async function loadMyCalls(me: string, token: string | null): Promise<Call[]> {
@@ -129,6 +147,8 @@ export async function signalsData(me: string, weights: Weights, users: Parsed[],
   const key = await phoneKey();
   const sent = await loadSent();
   const hidden = new Set((await loadHidden()).map((h) => h.toLowerCase()));
+  const blocked = await loadBlocked();
+  const isBlocked = new Set(blocked.map((b) => b.toLowerCase()));
   const sentTo = new Set(sent.map((g) => g.to.toLowerCase()));
   const myCollab = new Set(sent.filter((g) => g.type === 'collab').map((g) => g.to.toLowerCase()));
   const joined = new Set(sent.filter((g) => g.type === 'join').map((g) => `${g.to.toLowerCase()}/${g.call}`));
@@ -138,6 +158,7 @@ export async function signalsData(me: string, weights: Weights, users: Parsed[],
   const people: Person[] = [];
   const found: CallForMe[] = [];
   for (const u of users) {
+    if (isBlocked.has(u.owner.toLowerCase())) continue;
     const got = key ? openSignals(u, me, key.priv) : [];
     const visible = got.filter((g) => g.type !== 'collab' || myCollab.has(u.owner.toLowerCase()));
     for (const g of visible.sort((a, b) => b.at.localeCompare(a.at)).slice(0, MAX_PER_SENDER)) {
@@ -182,7 +203,7 @@ export async function signalsData(me: string, weights: Weights, users: Parsed[],
     timeLabel: CALL_TIMES[c.time], daysLeft: daysLeft(c.until),
     responders: inbox.filter((i) => i.type === 'join' && i.call === c.id)
       .map((i) => ({ login: i.from, avatar: i.avatar, skills: i.skills ?? [], at: i.at })) }));
-  return { inbox, people, calls: [...fits, ...picks], myCalls };
+  return { inbox, people, calls: [...fits, ...picks], myCalls, blocked };
 }
 
 /** Public repos (yours by default) for the invite and signal sheets: forks, archived and your beacon left out. */

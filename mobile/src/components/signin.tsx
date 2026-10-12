@@ -3,6 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text } from 'react-native';
 import { startLogin, waitForGrant, whoAmI } from '../lib/github-login';
+import { type OrcidMe, orcidSignInAvailable, signInWithOrcid } from '../lib/orcid-login';
 import { saveSignin } from '../lib/storage';
 import { C } from '../lib/theme';
 
@@ -47,7 +48,42 @@ export function SignInButton({ onSignedIn, signedInAs }: {
   );
 }
 
+// "Sign in with ORCID": opens orcid.org, comes back with your confirmed iD and name.
+export function OrcidSignInButton({ onSignedIn, signedInAs }: {
+  onSignedIn: (me: OrcidMe) => void; signedInAs?: string;
+}) {
+  const [note, setNote] = useState('');
+  const busy = useRef(false);
+  if (!orcidSignInAvailable()) return null;
+
+  const go = async () => {
+    if (busy.current) return;
+    busy.current = true;
+    setNote('Sign in on the ORCID page, then come back here.');
+    try {
+      onSignedIn(await signInWithOrcid());
+      setNote('');
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "The sign-in didn't finish. Try again.");
+    } finally {
+      busy.current = false;
+    }
+  };
+
+  return (
+    <>
+      <Pressable style={({ pressed }) => [st.orcid, pressed && { opacity: 0.85 }]} onPress={go} disabled={!!signedInAs}
+                 accessibilityLabel="Sign in with ORCID">
+        <Text style={st.orcidText}>{signedInAs ? `✓ ORCID: ${signedInAs}` : 'iD   Sign in with ORCID'}</Text>
+      </Pressable>
+      {note ? <Text style={st.hint}>{note}</Text> : null}
+    </>
+  );
+}
+
 const st = StyleSheet.create({
+  orcid: { backgroundColor: '#a6ce39', borderRadius: 14, paddingVertical: 14, marginTop: 10, alignItems: 'center' },
+  orcidText: { color: '#1d2b0a', fontSize: 16, fontWeight: '800' },
   gh: { backgroundColor: '#24292f', borderRadius: 14, paddingVertical: 14, marginTop: 12, alignItems: 'center',
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
   ghText: { color: '#fff', fontSize: 16, fontWeight: '800' },

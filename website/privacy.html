@@ -53,7 +53,7 @@
 
 <main class="wrap">
   <h1>Privacy <span>policy</span></h1>
-  <p class="meta">Effective 9 October 2026 · applies to the myGeeKy desktop panel, command line, installer and phone app, and to this website</p>
+  <p class="meta">Effective 12 October 2026 · applies to the myGeeKy desktop panel, command line, installer and phone app, and to this website</p>
 
   <div class="tldr">
     <strong>In short</strong>
@@ -74,9 +74,9 @@
   <h2>What myGeeKy reads, and where it keeps it</h2>
   <div class="table"><table>
     <tr><th>What</th><th>Why</th><th>Where it stays</th></tr>
-    <tr><td>Your GitHub username</td><td>To find your followers, repos and the people and projects in your field</td><td>On your device</td></tr>
+    <tr><td>Your GitHub username (optional)</td><td>To find your followers, repos and the people and projects in your field. myGeeKy also works without a GitHub account, from your ORCID iD or keywords</td><td>On your device</td></tr>
     <tr><td>Your CV (only if you point myGeeKy to it)</td><td>To learn your research interests. The text is extracted and analysed on your computer</td><td>On your computer. It is never uploaded anywhere, except to your own private sync repository if you turn sync on</td></tr>
-    <tr><td>Your ORCID iD and Google Scholar profile (only if you give them)</td><td>To find your research field and rising papers</td><td>On your device</td></tr>
+    <tr><td>Your ORCID iD and Google Scholar profile (only if you give them)</td><td>To find your research field and rising papers. With <em>Sign in with ORCID</em>, also the name on your ORCID record, to show who signed in</td><td>On your device</td></tr>
     <tr><td>Keywords you add, and what you click in myGeeKy</td><td>To rank news, papers, people and repos for you. Clicks are recorded as interest terms and as the <em>kind</em> of thing opened (for badges), never as titles or links</td><td>On your device</td></tr>
     <tr><td>Your GitHub tokens</td><td>To read GitHub's public data with a higher rate limit, and (only if you set up Signals) to update your own beacon repository</td><td>Your system's credential store (Windows Credential Manager, macOS Keychain, Linux Secret Service; on the phone, Android Keystore / iOS Keychain)</td></tr>
   </table></div>
@@ -93,12 +93,21 @@
     <li>You can revoke a token, or <em>Sign in with GitHub</em>, at any time in your GitHub settings.</li>
   </ul>
 
+  <h2>Sign in with ORCID</h2>
+  <ul>
+    <li><strong>It only confirms your ORCID iD.</strong> ORCID shows its own sign-in page; myGeeKy never sees your ORCID password.
+      It asks for the <code>openid</code> permission only: who you are, nothing to read or change in your record.</li>
+    <li>ORCID returns a token that expires after 10 minutes. myGeeKy uses it once, to ask ORCID for your iD and name, and does not keep it.</li>
+    <li>ORCID sends you back to <a href="orcid/">mygeeky.org/orcid/</a>, a static page that passes the answer straight to the app
+      (on a computer, to myGeeKy on that same computer). It stores nothing and sends nothing anywhere else.</li>
+  </ul>
+
   <h2>Who myGeeKy talks to</h2>
   <p>myGeeKy fetches public information directly from these services. They see an ordinary request from your computer or
     phone (your IP address and what was asked for), under their own privacy policies:</p>
   <ul>
     <li><strong>GitHub</strong>: profiles, repositories, followers, public activity, and your own beacon and sync repositories</li>
-    <li><strong>OpenAlex</strong> and <strong>ORCID</strong>: research topics and papers; <strong>Google Scholar</strong>: your public profile, if you give one</li>
+    <li><strong>OpenAlex</strong> and <strong>ORCID</strong>: research topics and papers, and <em>Sign in with ORCID</em> if you use it; <strong>Google Scholar</strong>: your public profile, if you give one</li>
     <li><strong>arXiv</strong>, <strong>bioRxiv</strong>, <strong>Hacker News</strong> and public news feeds (AI labs, journals, the tech press): headlines</li>
     <li><strong>Hugging Face</strong>, <strong>Product Hunt</strong> and <strong>pypistats</strong>: trending models, launches and download counts</li>
     <li><strong>PyPI</strong>: once a day, to see whether a newer myGeeKy exists</li>
@@ -108,6 +117,8 @@
   <h2>What you choose to make public</h2>
   <ul>
     <li><strong>Signals</strong> (optional). Your <code>mygeeky-beacon</code> repository is public. It holds your public encryption keys, your status, whether you are in quiet mode, your interest tags (you can turn this off), and the signals you sent. Each signal is encrypted so that <strong>only its recipient can read it</strong>, including who sent it. Signals expire after 90 days. Each of your devices (computers and, if you turn it on there, your phone) has its <strong>own</strong> key: the private half never leaves that device, and a phone uses its own Signals token, kept in the phone's secure store.</li>
+    <li><strong>Calls for contributors</strong> (optional, part of Signals). A call you post goes into your public beacon: the name of one of your own public repositories, the short note you wrote, the skills you asked for, the level and time it takes, and when it closes (at most 90 days). Anyone can read it. Whether a call fits someone is worked out on <em>their</em> device, from their own interests; no one is sent your call or picked for it. When someone answers <em>I'm in</em>, their answer is sealed like any signal: only you can read who they are and which of their skills matched.</li>
+    <li><strong>Blocking and reporting.</strong> You can block anyone on Signals: their signals, calls and dot stop showing, and the list stays on your device. <em>Report</em> opens GitHub's own abuse form, because everything a person posts on Signals lives in their GitHub beacon.</li>
     <li><strong>Sync</strong> (optional). Your settings, CV text, scholarly profile and history go to a <strong>private</strong> repository in your own GitHub account, so your other computers see the same. myGeeKy never makes it public.</li>
     <li><strong>The 💡 idea lamp</strong>. It opens a prefilled issue on GitHub in the public <a href="https://github.com/mygeeky/myGeeKy-ideas">myGeeKy-ideas</a> repository. Nothing is sent until you submit it yourself, and you can edit it first.</li>
     <li><strong>Crash reports</strong>. If myGeeKy hits an error, it saves a report <strong>on your computer</strong> (in its logs folder) and offers to send it. The window shows exactly what the report contains, with your tokens, email addresses, name, GitHub login and folder paths already removed. <em>Report on GitHub</em> opens a prefilled public issue in the <a href="https://github.com/mygeeky/myGeeKy/issues">myGeeKy</a> repository, which you submit yourself. If you don't, nothing leaves your computer.</li>
@@ -134,12 +145,13 @@
     public in the <a href="https://github.com/mygeeky/myGeeKy/commits/main/website/privacy.html">repository</a>.</p>
 
   <h2>Questions</h2>
-  <p>Ask in the <a href="https://github.com/mygeeky/myGeeKy/issues">myGeeKy issues</a>, or with the 💡 lamp in the
-    panel.</p>
+  <p>Email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>, ask in the
+    <a href="https://github.com/mygeeky/myGeeKy/issues">myGeeKy issues</a>, or use the 💡 lamp in the panel.
+    The same address takes requests about your data and reports of abuse.</p>
 </main>
 
 <footer>
-  <div class="wrap">© myGeeKy · MIT License · <a href="./">mygeeky.org</a> · <a href="./#code-signing">Code signing policy</a> · version {{VERSION}}</div>
+  <div class="wrap">© myGeeKy · MIT License · <a href="./">mygeeky.org</a> · <a href="./#code-signing">Code signing policy</a> · <a href="mailto:support@mygeeky.org">support@mygeeky.org</a> · version {{VERSION}}</div>
 </footer>
 </body>
 </html>

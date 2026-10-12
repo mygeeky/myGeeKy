@@ -13,5 +13,6 @@ export default function Index() {
       </View>
     );
   }
-  return <Redirect href={settings?.username ? '/home' : '/setup'} />;
+  const known = settings && (settings.username || settings.orcid || settings.keywords.length);
+  return <Redirect href={known ? '/home' : '/setup'} />;
 }

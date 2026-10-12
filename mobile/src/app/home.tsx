@@ -3,9 +3,9 @@
 // slim dock; scrolling back to the top, or "Spin the rings", brings it back.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, StyleSheet, Text,
+import { Image, Linking, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, StyleSheet, Text,
          useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Orbit, orbitHeight } from '../components/orbit';
@@ -38,6 +38,32 @@ const EMPTY: Partial<Record<SectionId, string>> = {
   models: 'No trending models yet. Pull down to load them.',
   launches: 'No launches yet. Pull down to load them.',
 };
+
+// The planets that live on GitHub, and what adding GitHub would show there (myGeeKy without GitHub).
+const NEEDS_GITHUB: Partial<Record<SectionId, string>> = {
+  live: 'What the people you follow are building, and who to meet, as it happens.',
+  activity: 'What people in your field are building, as it happens.',
+  people: "Researchers in your field share their code on GitHub. myGeeKy finds the ones you'd enjoy following. " +
+          'Until then, Papers shows the research rising in your field.',
+  signals: 'Thank the people whose code you use, and invite collaborators, without words.',
+};
+
+function GitHubCard({ why }: { why: string }) {
+  return (
+    <View style={st.ghCard}>
+      <Text style={st.ghTitle}>🔓 Add GitHub to see this</Text>
+      <Text style={st.ghWhy}>{why}</Text>
+      <View style={st.ghRow}>
+        <Pressable onPress={() => router.push('/setup')} style={st.ghAdd} accessibilityLabel="Add GitHub">
+          <Text style={st.ghAddText}>Add GitHub</Text>
+        </Pressable>
+        <Pressable onPress={() => Linking.openURL('https://github.com/signup')}>
+          <Text style={st.ghNew}>No account? Create one, free</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
 
 function RowView({ r, color, isOpen, onPick }: { r: Row; color: string; isOpen: boolean; onPick: () => void }) {
   const [card, setCard] = useState(false);          // an activity's person, unfolded on demand
@@ -81,8 +107,9 @@ export default function Home() {
   const user = settings?.username ?? '';
   const keywords = [...(settings?.keywords ?? []), ...(settings?.topics ?? [])];
 
-  const live = useFeed('live', 0.25, () => fetchLive(user, token));
-  const people = useFeed('people', 12, (p) => fetchPeople(user, token, p.weights));
+  const live = useFeed('live', 0.25, () => user ? fetchLive(user, token) : Promise.resolve({ events: [], following: 0 }));
+  const people = useFeed('people', 12, (p) => user ? fetchPeople(user, token, p.weights)
+    : Promise.resolve({ followBack: [], field: [] }));
   const headlines = useFeed('headlines', 3, (p) => fetchHeadlines(p.weights));
   const research = useFeed('research', 12, (p) => fetchResearch(p));
   const repos = useFeed('market-repos', 24, (p) => fetchRepos(p.weights, token));
@@ -95,7 +122,8 @@ export default function Home() {
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
   const params = useLocalSearchParams<{ sel?: string; fold?: string; open?: string; part?: string }>();
-  const [sel, setSel] = useState<SectionId>(params.sel && params.sel in SECTIONS ? params.sel as SectionId : 'live');
+  const [sel, setSel] = useState<SectionId>(params.sel && params.sel in SECTIONS ? params.sel as SectionId
+    : user ? 'live' : 'papers');                          // without GitHub, start where your field is
   const [collapsed, setCollapsed] = useState(params.fold === '1');
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' ? params.part : 'model');
@@ -168,6 +196,8 @@ export default function Home() {
             <View style={{ marginHorizontal: -4 }}>
               {youPart === 'model' ? <ModelPart /> : youPart === 'badges' ? <BadgesPart /> : <MorePart />}
             </View>
+          ) : !user && NEEDS_GITHUB[sel] ? (
+            <GitHubCard why={NEEDS_GITHUB[sel] as string} />
           ) : sel === 'signals' ? (
             <SignalsView />
           ) : rows.length ? rows.map((r, i) => (
@@ -219,6 +249,14 @@ export default function Home() {
 }
 
 const st = StyleSheet.create({
+  ghCard: { borderWidth: 1, borderStyle: 'dashed', borderColor: C.violet, borderRadius: 16, padding: 16, marginTop: 8,
+            backgroundColor: 'rgba(122,92,255,0.08)' },
+  ghTitle: { color: C.text, fontSize: 16, fontWeight: '800' },
+  ghWhy: { color: C.muted, fontSize: 14, lineHeight: 20, marginTop: 6 },
+  ghRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginTop: 12 },
+  ghAdd: { backgroundColor: '#24292f', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 },
+  ghAddText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  ghNew: { color: C.cyan, fontSize: 13 },
   safe: { flex: 1, backgroundColor: '#0d0d16' },
   panel: { flex: 1, backgroundColor: '#14141f', borderBottomLeftRadius: 26, borderBottomRightRadius: 26,
            borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.10)', paddingTop: 12, overflow: 'hidden' },

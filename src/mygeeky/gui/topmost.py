@@ -22,6 +22,7 @@ import sys
 GWL_EXSTYLE = -20
 WS_EX_TOPMOST = 0x0008
 HWND_TOPMOST = -1
+HWND_BOTTOM = 1
 SWP_NOSIZE, SWP_NOMOVE, SWP_NOACTIVATE, SWP_NOOWNERZORDER = 0x0001, 0x0002, 0x0010, 0x0200
 GA_ROOT = 2
 MONITOR_DEFAULTTONEAREST = 2
@@ -113,4 +114,17 @@ def keep_on_top(hwnd: int, ignore: set[int] | None = None) -> bool:
         u.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER)
         return True
     except Exception:   # never let a z-order nicety break the panel
+        return False
+
+
+def send_to_back(hwnd: int) -> bool:
+    """Put the window under every other window (above the desktop), without
+    activating it: "Keep behind". Returns False outside Windows."""
+    if sys.platform != "win32" or not hwnd:
+        return False
+    try:
+        u = _api()
+        u.SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER)
+        return True
+    except Exception:
         return False

@@ -2,7 +2,7 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SignInButton } from './signin';
 import { Card, Empty, open, s, Section } from './ui';
 import { useApp } from '../lib/app-state';
@@ -177,6 +177,9 @@ export function MorePart() {
 
       <Pressable onPress={() => open('https://mygeeky.org')}>
         <Text style={[st.link, { marginTop: 18 }]}>myGeeKy for your computer ↗</Text>
+      </Pressable>
+      <Pressable onPress={() => Linking.openURL('mailto:support@mygeeky.org')}>
+        <Text style={st.link}>Questions or problems? support@mygeeky.org</Text>
       </Pressable>
       <Pressable onPress={reset}><Text style={[st.link, { color: C.red, marginTop: 14 }]}>Start over</Text></Pressable>
     </>

@@ -141,3 +141,20 @@ def test_two_errors_in_the_same_instant_are_two_reports(tmp_path, monkeypatch):
     a = crashreport.write(tmp_path, "panel", _exc())
     b = crashreport.write(tmp_path, "background task (x)", _exc())
     assert a != b and a.read_text(encoding="utf-8").startswith("where: panel")
+
+
+def test_a_long_hard_crash_keeps_its_cause_and_the_crashed_thread():
+    # issue #5: a fatal dump with many threads lost its first lines ("Fatal Python error") to the trimming
+    site = "~\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\mygeeky"
+    thread = "".join(f'  File "{site}\\{f}", line {n} in {fn}\n' for f, n, fn in [
+        ("github_client.py", 117, "_get"), ("github_client.py", 193, "list_user_events"),
+        ("activity.py", 137, "get_matched_activity"), ("gui\\app.py", 558, "get_activity"),
+        ("gui\\qt_panel.py", 5400, "<lambda>"), ("gui\\qt_panel.py", 348, "run")])
+    report = ("where: hard crash (the program closed)\nmyGeeKy 0.21.4 · Python 3.12\n\n"
+              "Fatal Python error: Aborted\n\n"
+              + "".join(f"Thread 0x{i:08x} (most recent call first):\n{thread}\n" for i in range(30))
+              + f'Current thread 0x000089c0 (most recent call first):\n  File "{site}\\gui\\app.py", line 1215 in _main\n')
+    url = crashreport.issue_url(report)
+    body = parse_qs(urlparse(url).query)["body"][0]
+    assert "Fatal Python error: Aborted" in body and "Current thread" in body and "…" in body
+    assert len(url) <= crashreport.MAX_URL

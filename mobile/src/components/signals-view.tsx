@@ -4,11 +4,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { quickProfile, timeAgo, useApp } from '../lib/app-state';
 import {
-  type CallForMe, closeCall, createCall, GESTURES, hideCall, isSetUp, joinCall, leaveCall, loadBeacons, loadMyCalls,
-  type MyCall, type Parsed, type Person, send, setUp, type SignalsData, signalsData, turnOff,
+  blockPerson, type CallForMe, closeCall, createCall, GESTURES, hideCall, isSetUp, joinCall, leaveCall, loadBeacons,
+  loadMyCalls, type MyCall, type Parsed, type Person, reportUrl, send, setUp, type SignalsData, signalsData, turnOff,
+  unblockPerson,
 } from '../lib/signals';
 import { C } from '../lib/theme';
 import { type Dot, FieldMap } from './field-map';
@@ -18,7 +19,7 @@ import { Card, Empty, open, Section } from './ui';
 const TOKEN_PAGE = 'https://github.com/settings/personal-access-tokens/new';
 const RADAR_KEY = 'mygeeky.signals.radar';
 const QUICK = ['thanks', 'learn', 'watching', 'collab'];
-const EMPTY: SignalsData = { inbox: [], people: [], calls: [], myCalls: [] };
+const EMPTY: SignalsData = { inbox: [], people: [], calls: [], myCalls: [], blocked: [] };
 
 export function SignalsView() {
   const { settings, token, profile, save } = useApp();
@@ -94,6 +95,22 @@ export function SignalsView() {
     await hideCall(c.owner, c.id);
     setData((d) => ({ ...d, calls: d.calls.filter((x) => !(x.owner === c.owner && x.id === c.id)) }));
   };
+  // Block or report: offered on everything someone else put here (a signal, a call, a person)
+  const flag = (login: string) => Alert.alert(login, 'Block them on this phone, or report them to GitHub, where their beacon lives.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Report to GitHub', onPress: () => { Linking.openURL(reportUrl(login)).catch(() => undefined); } },
+    { text: `Block ${login}`, style: 'destructive', onPress: async () => {
+      await blockPerson(login);
+      setPicked(null);
+      await load();
+      setNote(`Blocked ${login}: their signals and calls won't show on this phone.`);
+    } },
+  ]);
+  const unblock = async (login: string) => {
+    await unblockPerson(login);
+    await load();
+    setNote(`Unblocked ${login}.`);
+  };
   const close = (c: MyCall, filled: boolean) => run(`mine:${c.id}`, () => closeCall(me, c.id, filled),
     filled ? 'Marked as filled. It stops showing to others.' : 'Closed. It left your beacon.');
   const publishCall = async (input: CallInput) => {
@@ -115,10 +132,11 @@ export function SignalsView() {
   const pickedPerson = data.people.find((p) => `p:${p.login}` === picked);
   const callCard = (c: CallForMe) => (
     <CallCardView key={`${c.owner}/${c.id}`} c={c} busy={busy === `join:${c.owner}/${c.id}`}
-                  onJoin={() => join(c)} onLeave={() => leave(c)} onHide={() => hide(c)} />
+                  onJoin={() => join(c)} onLeave={() => leave(c)} onHide={() => hide(c)} onFlag={() => flag(c.owner)} />
   );
   const personCard = (p: Person) => (
-    <PersonCard key={p.login} p={p} onGesture={(g) => setSheet({ kind: 'send', to: p.login, gesture: g })} />
+    <PersonCard key={p.login} p={p} onGesture={(g) => setSheet({ kind: 'send', to: p.login, gesture: g })}
+                onFlag={() => flag(p.login)} />
   );
 
   return (
@@ -161,6 +179,7 @@ export function SignalsView() {
               {g.type === 'join' && g.skills?.length ? <Text style={[st.small, { color: C.green }]}>✓ {g.skills.join('  ✓ ')}</Text> : null}
               <Text style={st.tiny}>{timeAgo(g.at)}{g.mutual || g.type === 'join' ? '' : ' · no reply needed'}</Text>
             </View>
+            <FlagButton login={g.from} onPress={() => flag(g.from)} />
           </View>
         </Card>
       )) : <Empty>{loading ? 'Loading…' : 'Nothing yet. When someone sends you a signal, it shows here.'}</Empty>}
@@ -175,6 +194,20 @@ export function SignalsView() {
 
       <Section>PEOPLE ON SIGNALS {data.people.length ? data.people.length : ''}</Section>
       {data.people.length ? data.people.map(personCard) : <Empty>{loading ? 'Loading…' : 'Nobody else on Signals found yet.'}</Empty>}
+
+      {data.blocked.length ? (
+        <>
+          <Section>BLOCKED {data.blocked.length}</Section>
+          {data.blocked.map((login) => (
+            <Card key={login}>
+              <View style={st.row}>
+                <Text style={[st.name, { flex: 1 }]}>{login}</Text>
+                <Btn label="Unblock" onPress={() => unblock(login)} />
+              </View>
+            </Card>
+          ))}
+        </>
+      ) : null}
 
       <Pressable onPress={async () => { await turnOff(); setReady(false); }} style={{ marginTop: 18 }}>
         <Text style={[st.tiny, { textAlign: 'center' }]}>Turn off Signals on this phone</Text>
@@ -192,8 +225,16 @@ export function SignalsView() {
   );
 }
 
-function CallCardView({ c, busy, onJoin, onLeave, onHide }: {
-  c: CallForMe; busy: boolean; onJoin: () => void; onLeave: () => void; onHide: () => void;
+function FlagButton({ login, onPress }: { login: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={10} accessibilityLabel={`Block or report ${login}`}>
+      <Ionicons name="flag-outline" size={15} color={C.muted} />
+    </Pressable>
+  );
+}
+
+function CallCardView({ c, busy, onJoin, onLeave, onHide, onFlag }: {
+  c: CallForMe; busy: boolean; onJoin: () => void; onLeave: () => void; onHide: () => void; onFlag: () => void;
 }) {
   return (
     <Card>
@@ -204,6 +245,7 @@ function CallCardView({ c, busy, onJoin, onLeave, onHide }: {
           <Text style={st.tiny}>{c.levelLabel} · {c.timeLabel} · {c.daysLeft} days left</Text>
         </View>
         <Text style={st.fit}>{Math.round(c.fit * 100)}%</Text>
+        <FlagButton login={c.owner} onPress={onFlag} />
       </View>
       <Text style={st.body}>{c.note}</Text>
       <Text style={st.small}>{c.skills.map((s) => (c.matched.includes(s) ? `✓ ${s}` : s)).join('  ·  ')}</Text>
@@ -252,7 +294,7 @@ function MyCallView({ c, busy, onClose }: { c: MyCall; busy: boolean; onClose: (
   );
 }
 
-function PersonCard({ p, onGesture }: { p: Person; onGesture: (g: string) => void }) {
+function PersonCard({ p, onGesture, onFlag }: { p: Person; onGesture: (g: string) => void; onFlag: () => void }) {
   return (
     <Card>
       <View style={st.row}>
@@ -266,6 +308,7 @@ function PersonCard({ p, onGesture }: { p: Person; onGesture: (g: string) => voi
         <Pressable onPress={() => open(`https://github.com/${p.login}`, 'person')} hitSlop={8}>
           <Ionicons name="open-outline" size={16} color={C.muted} />
         </Pressable>
+        <FlagButton login={p.login} onPress={onFlag} />
       </View>
       {p.canReceive ? (
         <View style={st.btns}>

@@ -179,7 +179,10 @@ def init() -> None:
 
     click.echo("Let's set myGeeKy up. Press Enter to accept any default shown in [brackets].\n")
 
-    cfg.github_username = click.prompt("Your GitHub username", default=cfg.github_username or None)
+    click.echo("No GitHub account? Leave the username blank: News, Research, AI models and Launches\n"
+               "work without it, from your ORCID or a few topics. You can add GitHub any time.")
+    cfg.github_username = click.prompt("Your GitHub username", default=cfg.github_username or "",
+                                       show_default=bool(cfg.github_username)).strip().lstrip("@")
 
     click.echo(
         "\nYour CV helps myGeeKy match you by skills/interests, not just repo languages."
@@ -209,10 +212,24 @@ def init() -> None:
     cv_orcid = scholar.find_orcid_in_text(_load_cv_text())
     click.echo("\nYour ORCID iD lets myGeeKy read your publications (ORCID + OpenAlex) to match\n"
                "you by research topic too. Blank to skip.")
-    orcid = click.prompt("ORCID iD", default=cfg.orcid_id or cv_orcid or "", show_default=True)
+    from . import orcid_login
+    signin = " (or type 'signin' to sign in with ORCID in your browser)" if orcid_login.available() else ""
+    orcid = click.prompt(f"ORCID iD{signin}", default=cfg.orcid_id or cv_orcid or "", show_default=True)
+    if signin and orcid.strip().lower() in ("signin", "sign in", "login"):
+        click.echo("Your browser opens orcid.org: sign in there, then come back here...")
+        try:
+            me = orcid_login.sign_in()
+            orcid = me["orcid"]
+            click.echo(f"Signed in with ORCID: {me['name'] or orcid} ({orcid}).")
+        except orcid_login.OrcidLoginError as exc:
+            click.echo(f"{exc} -- skipped.")
+            orcid = ""
     cfg.orcid_id = scholar.normalize_orcid(orcid)
     if orcid.strip() and not cfg.orcid_id:
         click.echo("That doesn't look like an ORCID iD -- skipped (set later with `mygeeky config set orcid_id ...`).")
+    elif cfg.orcid_id and not orcid_login.checksum_ok(cfg.orcid_id):
+        click.echo(f"{cfg.orcid_id} isn't a valid ORCID iD (a digit is probably mistyped) -- skipped.")
+        cfg.orcid_id = ""
 
     click.echo("\nYour Google Scholar profile adds your research interests and paper titles.\n"
                "Paste its URL (or just the user id). Blank to skip.")
@@ -238,29 +255,39 @@ def init() -> None:
     cfg.keywords = [s.strip() for s in keywords.split(",") if s.strip()]
     cfg.locations = [s.strip() for s in locations.split(",") if s.strip()]
 
-    click.echo(
-        "\nOptional extra candidate sources (beyond a plain GitHub search) -- these tend to\n"
-        "surface much better matches: people who starred repos like yours, followers of a\n"
-        "few well-known people in your field, etc. Blank to skip."
-    )
-    seed_accounts = click.prompt("Well-known GitHub accounts in your field (comma-separated usernames)",
-                                  default=", ".join(cfg.seed_accounts) or "", show_default=False)
-    seed_repos = click.prompt("Relevant repos, owner/name form (comma-separated)",
-                               default=", ".join(cfg.seed_repos) or "", show_default=False)
-    cfg.seed_accounts = [s.strip() for s in seed_accounts.split(",") if s.strip()]
-    cfg.seed_repos = [s.strip() for s in seed_repos.split(",") if s.strip()]
+    if cfg.github_username:                 # how People finds GitHub accounts: only with GitHub
+        click.echo(
+            "\nOptional extra candidate sources (beyond a plain GitHub search) -- these tend to\n"
+            "surface much better matches: people who starred repos like yours, followers of a\n"
+            "few well-known people in your field, etc. Blank to skip."
+        )
+        seed_accounts = click.prompt("Well-known GitHub accounts in your field (comma-separated usernames)",
+                                      default=", ".join(cfg.seed_accounts) or "", show_default=False)
+        seed_repos = click.prompt("Relevant repos, owner/name form (comma-separated)",
+                                   default=", ".join(cfg.seed_repos) or "", show_default=False)
+        cfg.seed_accounts = [s.strip() for s in seed_accounts.split(",") if s.strip()]
+        cfg.seed_repos = [s.strip() for s in seed_repos.split(",") if s.strip()]
 
-    cfg.min_followers = click.prompt("Minimum followers", default=cfg.min_followers, type=int)
-    cfg.max_followers = click.prompt("Maximum followers (avoid huge celebrity accounts)",
-                                      default=cfg.max_followers, type=int)
-    cfg.max_following = click.prompt(
-        "Maximum accounts a candidate may be following (higher = allow more growth-hack-looking accounts)",
-        default=cfg.max_following, type=int)
-    cfg.min_public_repos = click.prompt("Minimum public repos", default=cfg.min_public_repos, type=int)
-    cfg.max_suggestions_returned = click.prompt("Max suggestions per run", default=cfg.max_suggestions_returned, type=int)
+        cfg.min_followers = click.prompt("Minimum followers", default=cfg.min_followers, type=int)
+        cfg.max_followers = click.prompt("Maximum followers (avoid huge celebrity accounts)",
+                                          default=cfg.max_followers, type=int)
+        cfg.max_following = click.prompt(
+            "Maximum accounts a candidate may be following (higher = allow more growth-hack-looking accounts)",
+            default=cfg.max_following, type=int)
+        cfg.min_public_repos = click.prompt("Minimum public repos", default=cfg.min_public_repos, type=int)
+        cfg.max_suggestions_returned = click.prompt("Max suggestions per run", default=cfg.max_suggestions_returned, type=int)
 
     save_config(cfg)
     click.echo(f"\nSaved config to your myGeeKy config directory.\n{config_summary(cfg)}\n")
+
+    if not cfg.github_username:
+        click.echo(
+            "All set, without GitHub. Try:\n"
+            "  mygeeky gui              # the panel: news, research and AI models for your field\n"
+            "  mygeeky trends           # what's rising in your field, and who is behind it\n"
+            "Add GitHub later (run `mygeeky init` again) to unlock People, Repos, Activity and Signals.\n"
+        )
+        return
 
     if auth.get_token(cfg.github_username):
         click.echo("A GitHub token is already stored for this username.")

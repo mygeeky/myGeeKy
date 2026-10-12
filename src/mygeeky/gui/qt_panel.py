@@ -35,6 +35,7 @@ from PySide6.QtCore import (
     QVariantAnimation,
     Signal,
 )
+import shiboken6
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtGui import (
     QDesktopServices,
@@ -78,11 +79,13 @@ from PySide6.QtWidgets import (
 from .. import freshness
 from . import app as logic
 from .app import THEME_NAMES, THEMES
+from .window_ui import SIDE_LABELS, LayerSwitch, ScreenPicker
 from ..config import AVATAR_CACHE_DIR, MyGeekyConfig
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 SYNC_EVERY_MS = 15 * 60 * 1000   # how often the panel syncs your data between computers
 DOCK_GUARD_MS = 3000   # how often the panel checks it is still docked where it belongs
+DOCK_ANIM_MS = 280     # a bottom-corner panel rising to the middle as it opens (and sinking as it folds)
 ICON_WINDOW = ASSETS_DIR / "icon_64.png"
 ICON_HEADER = ASSETS_DIR / "icon_32.png"
 ICON_FOLDED = ASSETS_DIR / "icon_128.png"   # drawn at ~58px: start large so it downscales crisply
@@ -298,6 +301,15 @@ def _caught_up(theme: dict[str, Any], text: str) -> QLabel:
 
 
 SEEN_EARLIER_MAX = 4        # a read-once list you've finished still shows this many, dimmed
+
+# What each GitHub-only part gives you, said on its "add GitHub" card (myGeeKy without a GitHub username)
+GITHUB_UNLOCKS = {
+    "people": "Researchers in your field share their code on GitHub. myGeeKy finds the ones you'd enjoy "
+              "following, and who'd likely follow you back. Until then, 📈 Market → Research shows who is publishing in your field.",
+    "repos": "Repos in your field where your skills would be welcome, with open starter issues.",
+    "activity": "What people in your field are building, as it happens.",
+    "signals": "Thank the people whose code you use, and invite collaborators, without words.",
+}
 
 
 def _activity_key(group: dict[str, Any]) -> str:
@@ -1769,7 +1781,7 @@ class ProfileView(QFrame):
         self._anim = QPropertyAnimation(self, b"maximumHeight", self)
         self._anim.setEasingCurve(QEasingCurve.OutCubic)
         self._anim.finished.connect(self._settled)
-        QTimer.singleShot(0, lambda: self._grow_to(self._content_height()))
+        QTimer.singleShot(0, self, lambda: self._grow_to(self._content_height()))
         panel._run_async(lambda: self._fetch(login), self._show)
 
     # ---- unfolding
@@ -1856,7 +1868,7 @@ class ProfileView(QFrame):
             top.addWidget(self._muted(card["error"]), 1)
             top.addWidget(self._close_btn())
             self.lay.addLayout(top)
-            QTimer.singleShot(0, lambda: self._grow_to(self._content_height()))
+            QTimer.singleShot(0, self, lambda: self._grow_to(self._content_height()))
             return
         pic = QLabel()
         pix = QPixmap()
@@ -1919,8 +1931,8 @@ class ProfileView(QFrame):
         self.lay.addSpacing(2)
         self.lay.addWidget(go)
         # unfold to the full card (twice: word-wrapped labels only know their height once styled)
-        QTimer.singleShot(0, lambda: self._grow_to(self._content_height(), 420))
-        QTimer.singleShot(140, lambda: self._grow_to(self._content_height(), 280))
+        QTimer.singleShot(0, self, lambda: self._grow_to(self._content_height(), 420))
+        QTimer.singleShot(140, self, lambda: self._grow_to(self._content_height(), 280))
 
     def _close_btn(self) -> QPushButton:
         b = QPushButton("\u00d7")
@@ -1947,8 +1959,11 @@ class IdeaDialog(QDialog):
         lay.setSpacing(8)
         intro = QLabel("Ideas, problems and questions go to myGeeKy's maker as a GitHub issue. Your browser opens "
                        "it ready to send. Click <b>Submit</b> there, with your GitHub account. It's public, so "
-                       "don't include tokens or private data.")
+                       "don't include tokens or private data.<br>No GitHub account, or rather private? Email "
+                       "<a href='mailto:support@mygeeky.org'>support@mygeeky.org</a>.")
         intro.setWordWrap(True)
+        intro.setTextFormat(Qt.RichText)
+        intro.setOpenExternalLinks(True)
         lay.addWidget(intro)
         kinds = QHBoxLayout()
         self.kind_buttons: dict[str, QRadioButton] = {}
@@ -3039,7 +3054,7 @@ class HeartsOverlay(QWidget):
         """Release `count` hearts from the top of `icon_rect` (global coords),
         drifting away from the screen edge the panel is docked to."""
         import random
-        inward = -1.0 if dock_side != "left" else 1.0
+        inward = 1.0 if dock_side.endswith("left") else -1.0
         x = icon_rect.center().x() - self.W // 2 + int(inward * 18)
         self.move(x, icon_rect.top() - self.H + icon_rect.height() // 3)
         for i in range(count):
@@ -3200,13 +3215,17 @@ class MyGeekyPanel(QWidget):
         self._news_running = False
         self._sugg_running = False
         self._signals_running = False
+        self._activity_running = False
         self._last_incoming: list[dict[str, Any]] = []
         self._signals_data: dict[str, Any] = {}       # the last Signals data (people for the send window)
 
         self.setWindowTitle("myGeeKy")
         if ICON_WINDOW.exists():
             self.setWindowIcon(QIcon(str(ICON_WINDOW)))
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        flags = Qt.FramelessWindowHint | Qt.Tool
+        if logic.layer(cfg) == "front":
+            flags |= Qt.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
         # macOS hides Tool windows whenever another app is active; the panel must stay at the edge
         self.setAttribute(Qt.WA_MacAlwaysShowToolWindow, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -3304,6 +3323,8 @@ class MyGeekyPanel(QWidget):
         self.folded_widget.setCursor(Qt.PointingHandCursor)
         self.folded_widget.setMinimumSize(1, 1)
         self.folded_widget.clicked.connect(self.unfold)
+        self.folded_widget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.folded_widget.customContextMenuRequested.connect(self._folded_menu)
         self.folded_widget.installEventFilter(self)  # hover -> fully opaque
         outer.addWidget(self.folded_widget)
 
@@ -4272,6 +4293,41 @@ class MyGeekyPanel(QWidget):
         self.hearts_check.toggled.connect(self._on_hearts_toggled)
         layout.addWidget(self.hearts_check)
 
+        # Window: how the panel stacks with other windows, and where it lives on the screen
+        self.layer_label = QLabel("Stay")
+        self.layer_label.setStyleSheet("font-size:11px; font-weight:600; background:transparent;")
+        layout.addWidget(self.layer_label)
+        self.layer_switch = LayerSwitch(logic.layer(self.cfg))
+        self.layer_switch.changed.connect(self._on_layer_changed)
+        layout.addWidget(self.layer_switch)
+
+        self.place_label = QLabel("Place on screen")
+        self.place_label.setStyleSheet("font-size:11px; font-weight:600; background:transparent;")
+        layout.addWidget(self.place_label)
+        place_row = QHBoxLayout()
+        place_row.setSpacing(10)
+        self.screen_picker = ScreenPicker(logic.dock_side(self.cfg))
+        self.screen_picker.picked.connect(self._on_side_picked)
+        self.screen_picker.hovered.connect(self._on_side_hovered)
+        place_row.addWidget(self.screen_picker)
+        place_col = QVBoxLayout()
+        place_col.setSpacing(6)
+        self.place_name = QLabel("")
+        self.place_hint = QLabel("")
+        self.place_hint.setWordWrap(True)
+        place_col.addWidget(self.place_name)
+        place_col.addWidget(self.place_hint)
+        place_col.addStretch(1)
+        self.off_screen_btn = QPushButton("Off screen")
+        self.off_screen_btn.setCursor(Qt.PointingHandCursor)
+        self.off_screen_btn.setToolTip("Hide myGeeKy for now. It keeps up to date quietly; "
+                                       "open myGeeKy again to bring it back.")
+        self.off_screen_btn.clicked.connect(self._go_off_screen)
+        place_col.addWidget(self.off_screen_btn)
+        place_row.addLayout(place_col, 1)
+        layout.addLayout(place_row)
+        self._show_place(logic.dock_side(self.cfg))
+
         # Your setup: what decides how myGeeKy works for you, at a glance
         self.setup_label = QLabel("")
         self.setup_label.setTextFormat(Qt.RichText)
@@ -4307,6 +4363,102 @@ class MyGeekyPanel(QWidget):
         layout.addLayout(bottom)
 
         return panel
+
+    # ------------------------------------------------------------------ ⚙ → Window
+    def _show_place(self, side: str) -> None:
+        name, hint = SIDE_LABELS.get(side, SIDE_LABELS["right"])
+        self.place_name.setText(name)
+        self.place_hint.setText(hint[:1].upper() + hint[1:] + ".")
+
+    def _on_side_hovered(self, side: str) -> None:
+        self._show_place(side or logic.dock_side(self.cfg))
+
+    def _on_side_picked(self, side: str) -> None:
+        if side == logic.dock_side(self.cfg):
+            return
+        logic.set_dock_side(self.cfg, side)
+        self.screen_picker.set_side(side)
+        self._show_place(side)
+        self._dock(self.folded_widget.isVisible())       # moves now; the settings stay open
+
+    def _on_layer_changed(self, value: str) -> None:
+        if value == logic.layer(self.cfg):
+            return
+        logic.set_layer(self.cfg, value)
+        self.layer_switch.set_value(value)
+        self._apply_layer()
+
+    def _apply_layer(self) -> None:
+        """In front: the always-on-top flag (and the guard keeps it there). Normal and
+        Behind: an ordinary window. Behind also sends the folded icon under the
+        others; opened, the panel comes forward so you can use it."""
+        want_top = logic.layer(self.cfg) == "front"
+        if bool(self.windowFlags() & Qt.WindowStaysOnTopHint) != want_top:
+            visible = self.isVisible()
+            self.setWindowFlag(Qt.WindowStaysOnTopHint, want_top)    # Qt hides a window whose flags change
+            if visible:
+                self.show()
+        if self.folded_widget.isVisible():
+            self._settle_folded()
+        else:
+            self.raise_()
+
+    def _settle_folded(self) -> None:
+        """Folded and set to Behind: under every other window."""
+        if logic.layer(self.cfg) != "behind" or not self.isVisible():
+            return
+        from . import topmost
+        if not topmost.send_to_back(int(self.winId())):
+            self.lower()
+
+    def _go_off_screen(self) -> None:
+        where = ("the Start menu or the desktop icon" if sys.platform == "win32"
+                 else "Launchpad or the Applications folder" if sys.platform == "darwin"
+                 else "your apps menu, or `mygeeky gui`")
+        box = QMessageBox(QMessageBox.Question, "myGeeKy",
+                          f"Hide myGeeKy for now?\n\nIt keeps up to date quietly. To bring it back, "
+                          f"open myGeeKy again from {where}.", parent=self)
+        box.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        hide = box.addButton("Hide", QMessageBox.AcceptRole)
+        box.addButton("Cancel", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is hide:
+            self.settings_panel.hide()
+            self.hearts.hide()
+            self.hide()
+
+    def _folded_menu(self, pos) -> None:
+        """Right-click on the folded icon: the same choices as ⚙ → Window."""
+        from PySide6.QtGui import QAction, QActionGroup
+        from PySide6.QtWidgets import QMenu
+        theme = THEMES[self._theme_name()]
+        menu = QMenu(self)
+        menu.setStyleSheet(
+            f"QMenu {{ background:#1d1d2a; color:#f0f0f5; border:1px solid rgba(255,255,255,40); border-radius:8px; "
+            f"padding:5px; font-size:12px; }}"
+            f"QMenu::item {{ padding:5px 22px 5px 22px; border-radius:5px; }}"
+            f"QMenu::item:selected {{ background:{theme['accent']}; color:#15151f; }}"
+            f"QMenu::section {{ color:rgba(240,240,245,140); font-size:10.5px; font-weight:700; padding:6px 10px 2px; }}"
+            f"QMenu::separator {{ height:1px; background:rgba(255,255,255,30); margin:5px 8px; }}")
+        menu.addAction("Open myGeeKy", self.unfold)
+        menu.addSection("Stay")
+        layers = QActionGroup(menu)
+        for key, label, tip in (("front", "In front", ""), ("normal", "Normal", ""), ("behind", "Behind", "")):
+            act = QAction(label, menu, checkable=True, checked=logic.layer(self.cfg) == key)
+            act.triggered.connect(lambda checked=False, k=key: self._on_layer_changed(k))
+            layers.addAction(act)
+            menu.addAction(act)
+        menu.addSection("Place")
+        sides = QActionGroup(menu)
+        for key in ("right", "left", "bottom-right", "bottom-left"):
+            act = QAction(SIDE_LABELS[key][0], menu, checkable=True, checked=logic.dock_side(self.cfg) == key)
+            act.triggered.connect(lambda checked=False, k=key: self._on_side_picked(k))
+            sides.addAction(act)
+            menu.addAction(act)
+        menu.addSeparator()
+        menu.addAction("Off screen…", self._go_off_screen)
+        menu.addAction("Quit myGeeKy", self._quit)
+        menu.exec(self.folded_widget.mapToGlobal(pos))
 
     def _quit(self) -> None:
         if logic.sync_enabled(self.cfg) and not self._syncing:
@@ -4353,13 +4505,14 @@ class MyGeekyPanel(QWidget):
             self._puff_hearts()  # show what you just turned on
 
     def _maybe_puff_hearts(self) -> None:
-        if self.cfg.gui_hearts_enabled and self.folded_widget.isVisible() and self.isVisible():
+        if (self.cfg.gui_hearts_enabled and self.folded_widget.isVisible() and self.isVisible()
+                and logic.layer(self.cfg) != "behind"):      # behind other windows: hearts would float alone
             self._puff_hearts()
 
     def _puff_hearts(self) -> None:
         from PySide6.QtCore import QRect
         top_left = self.folded_widget.mapToGlobal(QPoint(0, 0))
-        self.hearts.puff(QRect(top_left, self.folded_widget.size()), self.cfg.gui_dock_side)
+        self.hearts.puff(QRect(top_left, self.folded_widget.size()), logic.dock_side(self.cfg))
 
     def _uninstall(self) -> None:
         """⚙ → Uninstall: opens the step-by-step uninstall wizard. The panel stays
@@ -4670,6 +4823,13 @@ class MyGeekyPanel(QWidget):
         self.settings_panel.setStyleSheet(f"#settings {{ background:{theme['card_bg']}; border-radius:12px; }}")
         self.opacity_value_label.setStyleSheet(f"font-size:10.5px; color:{theme['muted']}; background:transparent;")
         self.hearts_check.setStyleSheet(f"QCheckBox {{ font-size:11px; color:{theme['text']}; background:transparent; }}")
+        self.layer_switch.set_theme(theme)
+        self.screen_picker.set_theme(theme)
+        self.place_name.setStyleSheet(f"color:{theme['text']}; font-size:11.5px; font-weight:700; background:transparent;")
+        self.place_hint.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
+        self.off_screen_btn.setStyleSheet(f"QPushButton {{ background:{theme['btn_bg']}; color:{theme['text']}; border:none; "
+                                          f"border-radius:7px; padding:5px 10px; font-size:11px; }}"
+                                          f"QPushButton:hover {{ background:{theme['btn_hover']}; }}")
         self.sync_label.setStyleSheet(f"color:{theme['muted']}; font-size:10px; background:transparent;")
         self.pair_btn.setStyleSheet(f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; "
                                     f"border:none; border-radius:8px; padding:6px 10px; font-size:11.5px; }}"
@@ -4775,14 +4935,61 @@ class MyGeekyPanel(QWidget):
         need = QSize(0, 0) if folded else self.panel_frame.minimumSizeHint()
         return QRect(*logic._panel_geometry(self.cfg, folded, rect, need.width(), need.height()))
 
-    def _dock(self, folded: bool) -> None:
+    def _dock(self, folded: bool, animate: bool = False) -> None:
         screen = self._home_screen()
         self._screen_name = screen.name()
+        self._stop_dock_anim()
+        corner = logic.dock_side(self.cfg).startswith("bottom")
+        if animate and corner and self.isVisible():
+            bottom = screen.availableGeometry().bottom() + 1
+            if folded and self.panel_frame.isVisible():
+                # sink: the open panel slides down to the corner, then becomes the icon there
+                have = self.geometry()
+                self._animate_to(QPoint(have.x(), bottom - have.height()), QEasingCurve.InCubic,
+                                 lambda: self._dock(True))
+                return
+            if not folded and self.folded_widget.isVisible():
+                # rise: the panel opens at the corner and slides up to the middle of the edge
+                self._show_docked(False, screen)
+                want = self.geometry()
+                self.move(want.x(), bottom - want.height())
+                self._animate_to(want.topLeft(), QEasingCurve.OutCubic)
+                return
+        self._show_docked(folded, screen)
+
+    def _show_docked(self, folded: bool, screen) -> None:
         self.panel_frame.setVisible(not folded)
         self.folded_widget.setVisible(folded)
         self.setMinimumSize(0, 0)
         self.setGeometry(self._docked_geometry(folded, screen))
         self.setWindowOpacity(self.cfg.gui_folded_opacity if folded else max(self.cfg.gui_opacity, logic.MIN_OPACITY))
+        if folded:
+            self._settle_folded()
+
+    def _animate_to(self, end: QPoint, curve, then=None) -> None:
+        anim = QPropertyAnimation(self, b"pos", self)
+        anim.setDuration(DOCK_ANIM_MS)
+        anim.setStartValue(self.pos())
+        anim.setEndValue(end)
+        anim.setEasingCurve(curve)
+        if then is not None:
+            anim.finished.connect(then)
+        self._dock_anim = anim
+        anim.start()
+
+    def _stop_dock_anim(self) -> None:
+        anim = getattr(self, "_dock_anim", None)
+        self._dock_anim = None
+        if anim is not None and anim.state() == QPropertyAnimation.Running:
+            try:
+                anim.finished.disconnect()
+            except (RuntimeError, TypeError):
+                pass
+            anim.stop()
+
+    def _dock_moving(self) -> bool:
+        anim = getattr(self, "_dock_anim", None)
+        return anim is not None and anim.state() == QPropertyAnimation.Running
 
     # The panel has no drag handle: it always belongs docked to its edge (and on
     # top: see topmost.py; the same check puts it back in front). But
@@ -4813,16 +5020,19 @@ class MyGeekyPanel(QWidget):
             QTimer.singleShot(delay, self._ensure_docked)
 
     def _ensure_docked(self) -> None:
-        if not self.isVisible() or self.isMinimized():
+        if not self.isVisible() or self.isMinimized() or self._dock_moving():
             return
-        # Windows also drops "always on top" now and then, leaving the icon behind other windows
-        from . import topmost
-        # our own windows (the QR code, the idea box, a token prompt, the hearts) may
-        # sit over the panel: never lift the panel above them
-        own = {int(w.winId()) for w in QApplication.topLevelWidgets()
-               if w is not self and w.isVisible() and w.isWindow()}
-        topmost.keep_on_top(int(self.winId()), ignore=own)
         folded = self.folded_widget.isVisible()
+        if logic.layer(self.cfg) == "front":
+            # Windows also drops "always on top" now and then, leaving the icon behind other windows
+            from . import topmost
+            # our own windows (the QR code, the idea box, a token prompt, the hearts) may
+            # sit over the panel: never lift the panel above them
+            own = {int(w.winId()) for w in QApplication.topLevelWidgets()
+                   if w is not self and w.isVisible() and w.isWindow()}
+            topmost.keep_on_top(int(self.winId()), ignore=own)
+        elif folded and not self.folded_widget.underMouse():
+            self._settle_folded()
         want = self._docked_geometry(folded, self._home_screen())
         have = self.geometry()
         if abs(have.x() - want.x()) > 2 or abs(have.y() - want.y()) > 2                 or abs(have.width() - want.width()) > 2 or abs(have.height() - want.height()) > 2:
@@ -4837,10 +5047,13 @@ class MyGeekyPanel(QWidget):
         return super().eventFilter(obj, event)
 
     def fold(self) -> None:
-        self._dock(folded=True)
+        self._dock(folded=True, animate=True)
 
     def unfold(self) -> None:
-        self._dock(folded=False)
+        self._dock(folded=False, animate=True)
+        if logic.layer(self.cfg) != "front":       # opened on purpose: in front while you use it
+            self.raise_()
+            self.activateWindow()
         self.hearts.hide()
         self._recheck_tokens_if_warning()
         # opening the panel: show what's new since last time
@@ -4866,9 +5079,12 @@ class MyGeekyPanel(QWidget):
         worker = _Worker(fn)
 
         def _finish(result: Any) -> None:
-            on_done(result)
             if worker in self._workers:
                 self._workers.remove(worker)
+            owner = getattr(on_done, "__self__", None)
+            if isinstance(owner, QObject) and not shiboken6.isValid(owner):
+                return                  # its widget was closed while this ran (e.g. a profile folded mid-load)
+            on_done(result)
 
         worker.done.connect(_finish)
         self._workers.append(worker)
@@ -4880,6 +5096,10 @@ class MyGeekyPanel(QWidget):
         if status["configured"]:
             extra = "" if status["token_present"] else " (no token set — run `mygeeky auth login`)"
             self.status_label.setText(f"Signed in as {status['github_username']}{extra}")
+        elif status["profile_ready"]:
+            who = f"ORCID {status['orcid_id']}" if status["orcid_id"] else "your topics"
+            self.status_label.setText(f"Using {who}, without GitHub. Add GitHub "
+                                      "to unlock People, Activity and Signals.")
         else:
             self.status_label.setText("Run `mygeeky init` in a terminal to get started.")
 
@@ -5070,8 +5290,51 @@ class MyGeekyPanel(QWidget):
             return
         self._render_suggestions(data)
 
+    def _github_card(self, layout, part: str, has_data: bool = False) -> bool:
+        """No GitHub username yet (and nothing to show): say what this part would show, with a
+        way to add GitHub. True when the card was shown (the caller has nothing else to draw)."""
+        if self.cfg.github_username or has_data:
+            return False
+        theme = THEMES[self._theme_name()]
+        _clear_layout(layout)
+        card = QFrame()
+        card.setObjectName("githubCard")
+        card.setStyleSheet(f"QFrame#githubCard {{ background:{theme['card_bg']}; border:1px dashed {theme['accent']}; "
+                           f"border-radius:12px; }} QLabel {{ background:transparent; color:{theme['text']}; }}")
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(14, 12, 14, 12)
+        lay.setSpacing(6)
+        title = QLabel("🔓 <b>Add GitHub to see this</b>")
+        title.setTextFormat(Qt.RichText)
+        why = QLabel(GITHUB_UNLOCKS.get(part, ""))
+        why.setWordWrap(True)
+        why.setStyleSheet(f"color:{theme['muted']}; font-size:11px;")
+        row = QHBoxLayout()
+        add = QPushButton("Add GitHub…")
+        add.setCursor(Qt.PointingHandCursor)
+        add.setStyleSheet(f"QPushButton {{ background:{theme['accent']}; color:{theme['on_accent']}; border:none; "
+                          f"border-radius:8px; padding:5px 12px; font-weight:700; }}")
+        add.setToolTip("Opens setup: sign in with GitHub, or type your username")
+        add.clicked.connect(self._open_setup_window)
+        new = QLabel(f"<a href='https://github.com/signup' style='color:{theme['accent']}'>No account? Create one, free</a>")
+        new.setTextFormat(Qt.RichText)
+        new.setOpenExternalLinks(True)
+        row.addWidget(add)
+        row.addSpacing(8)
+        row.addWidget(new)
+        row.addStretch(1)
+        lay.addWidget(title)
+        lay.addWidget(why)
+        lay.addLayout(row)
+        layout.addWidget(card)
+        return True
+
     def _render_suggestions(self, data: dict[str, Any] | None) -> None:
         theme = THEMES[self._theme_name()]
+        if self._github_card(self.followback_area, "people",
+                             bool((data or {}).get("followback") or (data or {}).get("domain_highlights"))):
+            _clear_layout(self.domain_area)
+            return
         followback = (data or {}).get("followback") or []
         domain = (data or {}).get("domain_highlights") or []
         self._set_card_list(self.followback_area, followback, "score", theme)
@@ -5378,6 +5641,8 @@ class MyGeekyPanel(QWidget):
 
     def _render_contributions(self, items: list[dict[str, Any]] | None) -> None:
         theme = THEMES[self._theme_name()]
+        if self._github_card(self.repos_area, "repos", bool(items)):
+            return
         _clear_layout(self.repos_area)
         if not items:
             empty = QLabel("No repo suggestions yet — click Refresh, or run `mygeeky contribute`.")
@@ -5397,9 +5662,15 @@ class MyGeekyPanel(QWidget):
 
     # ------------------------------------------------------------------ activity
     def _refresh_activity(self, force: bool) -> None:
+        if self._activity_running:          # still busy (GitHub slow): the next tick tries again
+            return
+        self._activity_running = True
         self._run_async(lambda: logic.get_activity(self.cfg, force=force), self._on_activity_ready)
 
     def _on_activity_ready(self, data: Any) -> None:
+        self._activity_running = False
+        if self._github_card(self.activity_area, "activity", bool((data or {}).get("events"))):
+            return
         theme = THEMES[self._theme_name()]
         events = (data or {}).get("events") or []
         _clear_layout(self.activity_area)
@@ -5454,6 +5725,11 @@ class MyGeekyPanel(QWidget):
         self.signals_updated_label.setStyleSheet(muted)
         self.signals_quiet.setStyleSheet(f"QCheckBox {{ color:{theme['muted']}; font-size:10.5px; "
                                          "background:transparent; }")
+        if not data.get("enabled") and self._github_card(self.signals_area, "signals"):
+            self.signals_hint.setText("")
+            self.refresh_signals_btn.setEnabled(False)
+            self.signals_quiet.setVisible(False)
+            return
         if not data.get("enabled"):
             self.signals_hint.setText(
                 "Send other myGeeKy users small private signals (🙏 📚 👀 🤝), see theirs to you, and invite "

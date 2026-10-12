@@ -112,17 +112,21 @@ def issue_url(report: str, login: str = "", note: str = "") -> str:
     """A prefilled 'new issue' page with the cleaned report (you submit it)."""
     clean = redact(report, login)
     lines = clean.splitlines()
-    if len(lines) > 80:                               # the start (where/version) and the end (the error)
-        lines = lines[:6] + ["…"] + lines[-70:]
-    body_report = "\n".join(lines)
+    head, tail = lines[:6], lines[6:]                 # the start: where, version, and a hard crash's cause
+    if len(tail) > 70:
+        tail = tail[-70:]                             # the end: the error, or the thread that crashed
+    def joined(rest: list[str]) -> str:
+        return "\n".join(head + (["…"] if len(rest) < len(lines) - 6 else []) + rest)
+    body_report = joined(tail)
     intro = (note.strip() + "\n\n") if note.strip() else "**What were you doing when it happened?**\n\n\n"
     def build(rep: str) -> str:
         body = f"{intro}**Crash report** (sent from myGeeKy, personal details removed):\n```\n{rep}\n```"
         return f"https://github.com/{REPO}/issues/new?" + urlencode(
             {"title": f"💥 {headline(report)}", "body": body, "labels": "crash"})
     url = build(body_report)
-    while len(url) > MAX_URL and len(body_report) > 400:   # long: keep the end, where the error is
-        body_report = "…\n" + body_report[len(body_report) // 4:]
+    while len(url) > MAX_URL and len(tail) > 4:            # still long: drop from the middle
+        tail = tail[len(tail) // 4:]
+        body_report = joined(tail)
         url = build(body_report)
     return url
 

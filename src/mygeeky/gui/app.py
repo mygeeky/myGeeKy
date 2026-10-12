@@ -45,7 +45,7 @@ from pathlib import Path
 from .. import auth
 from ..activity import get_matched_activity, get_recent_activity
 from ..cli import _run_contribute, _run_suggestions
-from ..config import MyGeekyConfig, load_config, save_config
+from ..config import MyGeekyConfig, load_config, profile_ready, save_config
 from ..github_client import GitHubClient
 from ..storage import (
     add_excluded,
@@ -129,9 +129,11 @@ def get_status(cfg: MyGeekyConfig) -> dict[str, Any]:
     return {
         "github_username": cfg.github_username,
         "token_present": auth.get_token(cfg.github_username) is not None,
-        "dock_side": cfg.gui_dock_side,
+        "dock_side": dock_side(cfg),
         "theme": cfg.gui_theme if cfg.gui_theme in THEME_NAMES else "midnight",
         "configured": bool(cfg.github_username),
+        "profile_ready": profile_ready(cfg),
+        "orcid_id": cfg.orcid_id,
     }
 
 
@@ -139,6 +141,34 @@ def set_theme(cfg: MyGeekyConfig, theme: str) -> bool:
     if theme not in THEME_NAMES:
         return False
     cfg.gui_theme = theme
+    save_config(cfg)
+    return True
+
+
+DOCK_SIDES = ("right", "left", "bottom-right", "bottom-left")
+LAYERS = ("front", "normal", "behind")
+
+
+def dock_side(cfg: MyGeekyConfig) -> str:
+    return cfg.gui_dock_side if cfg.gui_dock_side in DOCK_SIDES else "right"
+
+
+def layer(cfg: MyGeekyConfig) -> str:
+    return cfg.gui_layer if cfg.gui_layer in LAYERS else "front"
+
+
+def set_dock_side(cfg: MyGeekyConfig, side: str) -> bool:
+    if side not in DOCK_SIDES:
+        return False
+    cfg.gui_dock_side = side
+    save_config(cfg)
+    return True
+
+
+def set_layer(cfg: MyGeekyConfig, value: str) -> bool:
+    if value not in LAYERS:
+        return False
+    cfg.gui_layer = value
     save_config(cfg)
     return True
 
@@ -463,7 +493,7 @@ def get_trends(cfg: MyGeekyConfig) -> dict[str, Any]:
 
 def trends_due(cfg: MyGeekyConfig) -> bool:
     from .. import papers
-    return bool(cfg.github_username) and papers.trends_due(cfg, papers.load_trends())
+    return profile_ready(cfg) and papers.trends_due(cfg, papers.load_trends())   # OpenAlex: no GitHub needed
 
 
 def refresh_trends(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
@@ -1089,6 +1119,9 @@ def _panel_geometry(cfg: MyGeekyConfig, folded: bool, screen_rect,
                     min_width: int = 0, min_height: int = 0) -> tuple[int, int, int, int]:
     """Returns (x, y, width, height) docked to the configured edge of
     `screen_rect` (the screen's available area, i.e. minus the taskbar).
+    On the left or right edge it sits in the middle, folded or open. In a
+    bottom corner the folded icon sits in the corner, and the open panel
+    rises to the middle of that edge.
 
     `min_width`/`min_height` are what the content actually needs: Qt won't
     shrink a window below that, so the position is computed from the real
@@ -1101,8 +1134,12 @@ def _panel_geometry(cfg: MyGeekyConfig, folded: bool, screen_rect,
         width, height = cfg.gui_expanded_width, int(screen_rect.height() * clamp_panel_height(cfg.gui_panel_height_fraction))
     width = min(max(width, min_width), screen_rect.width())
     height = min(max(height, min_height), screen_rect.height())
-    y = screen_rect.y() + (screen_rect.height() - height) // 2
-    x = screen_rect.x() if cfg.gui_dock_side == "left" else screen_rect.x() + screen_rect.width() - width
+    side = dock_side(cfg)
+    if folded and side.startswith("bottom"):
+        y = screen_rect.y() + screen_rect.height() - height
+    else:
+        y = screen_rect.y() + (screen_rect.height() - height) // 2
+    x = screen_rect.x() if side.endswith("left") else screen_rect.x() + screen_rect.width() - width
     return x, y, width, height
 
 
@@ -1212,7 +1249,28 @@ def _main() -> None:
     # running at exit, so after a few seconds leave without waiting for it.
     from .qt_panel import _Worker
     if _Worker.drain(5000):
-        os._exit(0)
+        _leave_now()
+
+
+def _leave_now() -> None:
+    """Exit at once, with background work still running. On Windows even
+    os._exit unloads Qt, which aborts over the running threads, and that abort
+    would come back as a crash report on the next start, so end the process
+    directly; and stop recording fatal errors first."""
+    import faulthandler
+    import os
+    import sys
+    faulthandler.disable()
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.flush()
+        except Exception:
+            pass
+    if sys.platform == "win32":
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        k32.TerminateProcess(k32.GetCurrentProcess(), 0)
+    os._exit(0)
 
 
 def _play_intro_once(cfg: MyGeekyConfig):

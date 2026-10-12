@@ -3,6 +3,29 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.22.0 (2026-10-12): Sign in with ORCID, no GitHub needed, and where the panel lives (phone app 1.6.0)
+
+- **Sign in with ORCID.** In setup (on the computer, in `mygeeky init`, and on the phone), a green **Sign in with ORCID** button opens orcid.org; you sign in there, and myGeeKy gets your confirmed ORCID iD and the name on your record.
+  - **No server, no secret.** ORCID returns to [mygeeky.org/orcid/](https://mygeeky.org/orcid/), a static page that hands the answer straight to the app (on a computer, to myGeeKy on that same computer) and stores nothing.
+  - **Only who you are.** It asks for the `openid` permission alone. ORCID's token lasts 10 minutes; myGeeKy uses it once to ask whose it is, then forgets it. It never sees your ORCID password and can't read or change your record.
+  - **A typed iD is checked.** ORCID iDs end in a check digit, so a mistyped one (`…-0098` for `…-0097`) is caught on both the computer and the phone.
+- **myGeeKy without a GitHub account.** The GitHub username is now optional: your ORCID, a few topics or keywords are each enough to start.
+  - **Works straight away:** News, Research, AI models and Launches, for your field.
+  - **Needs GitHub:** People, Repos, Activity and Signals each show what adding GitHub would unlock, with an **Add GitHub** button (and a link to create a free account). Add it any time; everything fills in.
+  - **Setup** skips the token, sync and Signals pages when there's no GitHub username, and Research now refreshes on its own without one.
+- **Where the panel lives (⚙ Settings → Window).**
+  - **Stay:** *In front* (as before), *Normal* (other windows can cover it), or *Behind* (folded, it waits under your windows, on the desktop).
+  - **Place on screen:** click a spot on a small drawing of your screen: the right or left edge, or the bottom-right or bottom-left corner. In a corner the folded icon sits low; opening it rises to the middle of the edge, and folding sinks it back.
+  - **Off screen:** hides the panel until you open myGeeKy again.
+  - **Right-click the folded icon** for the same choices in a menu.
+- **Fixed: a crash when a profile closed while it was loading** ([#4](https://github.com/mygeeky/myGeeKy/issues/4)). Closing a person's card before their details arrived made the late answer update a card that no longer existed. Late answers for closed windows are now dropped, everywhere.
+- **Fixed: a "crash" when quitting while GitHub was slow** ([#5](https://github.com/mygeeky/myGeeKy/issues/5)).
+  - Activity refreshed every minute without waiting for the last refresh, so a slow GitHub piled them up. Now one runs at a time.
+  - Quitting with work still running now ends quietly; on Windows it used to record a fatal error that the next start offered as a crash report.
+  - A long crash report keeps its first lines (where the cause is) when it's trimmed to fit in a GitHub link.
+- **A support address: [support@mygeeky.org](mailto:support@mygeeky.org).** For anyone who'd rather write privately, or has no GitHub account. It's on the website, the privacy page, the README, the guide, the PyPI page, the 💡 window and the phone's settings.
+- **Phone app 1.6.0:** Sign in with ORCID and starting without GitHub (it then opens on Papers), the support link, and **block and report**: a flag on every signal, call and person offers *Report to GitHub* or *Block*. Blocked people's signals and calls disappear, and a Blocked list lets you undo it.
+
 ## 0.21.4 (2026-10-12): calls for contributors, a new Signals planet, and a Linux crash fixed (phone app 1.5.0)
 
 - **Fixed a crash on Linux.** After running for hours, the panel could close by itself ("free(): invalid pointer" while a tab refreshed). The small "new" dot on new cards was a Python-made Qt object hooked onto its card; when Qt deleted a refreshed card, freeing that dot could corrupt memory. Linux's allocator caught it and stopped the program; Windows and macOS never noticed. The dot is now a plain label owned by the card, and a test keeps it that way.
