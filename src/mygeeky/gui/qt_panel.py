@@ -3926,6 +3926,8 @@ class MyGeekyPanel(QWidget):
         self._growth_running = False
         self._editing_protocol = ""
         self._building_protocol = False
+        self._open_protocol = ""          # the one protocol shown open; the others fold to one line
+        self._open_step: dict[str, str] = {}
 
         def build(layout: QVBoxLayout) -> None:
             actions = QHBoxLayout()
@@ -4296,6 +4298,9 @@ class MyGeekyPanel(QWidget):
                             "a skill in 📈 Skills.", theme)
             return
         self._grow_header("🧭 YOUR PROTOCOLS", theme)
+        ids = [p["id"] for p in mine]
+        if self._open_protocol not in ids and self._open_protocol != "-":
+            self._open_protocol = next((p["id"] for p in mine if not p["finished"]), ids[0])
         for p in mine:
             pid = p["id"]
             self.grow_area.addWidget(ProtocolCard(
@@ -4309,7 +4314,21 @@ class MyGeekyPanel(QWidget):
                 on_rename=lambda st, pid=pid: self._on_rename_stage(pid, st),
                 on_add_stage=lambda pid=pid: self._on_add_stage(pid),
                 vote_item=lambda it: self._voter("resource", it["url"], f"{it['title']} {it.get('note', '')}", []),
-                vote_of=lambda it: logic.vote_of("resource", it["url"])))
+                vote_of=lambda it: logic.vote_of("resource", it["url"]),
+                is_open=pid == self._open_protocol, selected=self._open_step.get(pid, ""),
+                on_toggle=lambda pid=pid: self._toggle_protocol_open(pid),
+                on_select=lambda sid, pid=pid: self._select_protocol_step(pid, sid)))
+
+    def _toggle_protocol_open(self, pid: str) -> None:
+        self._open_protocol = "" if self._open_protocol == pid else pid
+        if not self._open_protocol:
+            self._open_protocol = "-"            # all folded (not reopened by default)
+        self._render_grow()
+
+    def _select_protocol_step(self, pid: str, sid: str) -> None:
+        self._open_step[pid] = sid
+        self._open_protocol = pid
+        self._render_grow()
 
     def _on_start_path(self, skill: str, goal: str = "") -> None:
         """🧭 on a skill (or a reviewed protocol): start it, building one first if there's no reviewed one."""
@@ -4327,6 +4346,8 @@ class MyGeekyPanel(QWidget):
 
     def _on_protocol_built(self, result: Any) -> None:
         self._building_protocol = False
+        if isinstance(result, dict) and result.get("id"):
+            self._open_protocol = result["id"]          # the new one opens; the others fold
         if isinstance(result, dict) and result.get("error"):
             QMessageBox.information(self, "Protocol", result["error"])
         self._load_growth()

@@ -90,6 +90,99 @@ function CheckSheet({ stage, onClose, onQuiz, onKnown }: { stage: Stage; onClose
   );
 }
 
+const KIND_COLOR: Record<string, string> = { repo: '#a78bfa', article: '#38bdf8', book: '#f59e0b', course: '#34d399',
+  tutorial: '#34d399', video: '#f472b6', website: '#94a3b8', search: '#94a3b8' };
+const statusColor = (status: string) => (status === 'done' || status === 'known' ? C.green : status === 'current' ? C.violet : C.muted);
+
+/** The steps as a line of numbered circles; tap one to show it. */
+function StepBar({ steps, selected, onSelect }: { steps: P.Step[]; selected: string; onSelect: (id: string) => void }) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.stepBar}>
+      {steps.map((x, i) => {
+        const on = x.status !== 'todo';
+        return (
+          <View key={x.id} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            {i > 0 ? <View style={[st.connector, { backgroundColor: steps[i - 1].status === 'done' || steps[i - 1].status === 'known' ? C.green : C.line }]} /> : null}
+            <Pressable onPress={() => onSelect(x.id)} style={st.stepCol} accessibilityLabel={`Step ${x.number}: ${x.title}, ${x.statusLabel}`}
+                       accessibilityState={{ selected: x.id === selected }}>
+              <View style={[st.ring, x.id === selected && { borderColor: C.text }]}>
+                <View style={[st.dot, { backgroundColor: on ? statusColor(x.status) : 'rgba(255,255,255,0.10)' }]}>
+                  <Text style={st.dotText}>{x.status === 'done' || x.status === 'known' ? '✓' : x.number}</Text>
+                </View>
+              </View>
+              <Text style={[st.stepLabel, x.id === selected && { color: C.text }]} numberOfLines={2}>{x.title}</Text>
+            </Pressable>
+          </View>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function Dots({ steps }: { steps: P.Step[] }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 4, marginTop: 6 }}>
+      {steps.map((x) => <View key={x.id} style={[st.miniDot, { backgroundColor: x.status === 'todo' ? 'rgba(255,255,255,0.12)' : statusColor(x.status) }]} />)}
+    </View>
+  );
+}
+
+/** One link inside a step: what it is, its name, the facts that help you choose, and one clear button. */
+function ResourceCard({ r, vote, onVote }: { r: P.Resource; vote: number; onVote: ((up: boolean) => Promise<number>) | null }) {
+  const color = KIND_COLOR[r.kind] ?? C.muted;
+  return (
+    <View style={st.resCard}>
+      <View style={[st.resIcon, { backgroundColor: `${color}33` }]}><Text style={{ fontSize: 18 }}>{r.icon}</Text></View>
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={[st.resLabel, { color, flex: 1 }]}>{r.label.toUpperCase()}</Text>
+          {onVote ? <Thumbs vote={vote} onVote={onVote} /> : null}
+        </View>
+        <Pressable onPress={() => open(r.url)}><Text style={[s.title, { fontSize: 14.5 }]}>{r.title}</Text></Pressable>
+        {r.subtitle ? <Text style={s.muted}>{r.subtitle}</Text> : null}
+        {r.blurb ? <Text style={s.body} numberOfLines={3}>{r.blurb}</Text> : null}
+        <Pressable onPress={() => open(r.url)} style={[st.resBtn, { backgroundColor: `${color}2e` }]} accessibilityRole="link">
+          <Text style={st.resBtnText}>{r.action}  ↗</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function StepPanel({ step, steps, onSelect, onCheck, onAct, votes }: {
+  step: P.Step; steps: P.Step[]; onSelect: (id: string) => void; onCheck: () => void;
+  onAct: (what: 'tick' | 'untick' | 'notReally' | 'undo') => void; votes: Record<string, taste.Vote> }) {
+  const color = statusColor(step.status);
+  const i = steps.findIndex((x) => x.id === step.id);
+  return (
+    <View style={st.panel}>
+      <Text style={st.kicker}>STEP {step.number} OF {steps.length} · {step.roleLabel.toUpperCase()}</Text>
+      <View style={[s.head, { alignItems: 'center' }]}>
+        <Text style={[s.title, { fontSize: 17 }]}>{step.title}</Text>
+        <Text style={[st.chip, { color: step.status === 'todo' ? C.text : color, backgroundColor: `${color}22` }]}>{step.statusLabel}</Text>
+      </View>
+      {step.why ? <Text style={s.muted}>{step.why}</Text> : null}
+      <View style={s.row}>
+        {step.canCheck ? <Button label="🎓 I know this: check me" onPress={onCheck} /> : null}
+        {!step.auto ? <Button accent={step.status === 'current'} label={step.status === 'done' ? '↩ Not done' : '☑ Mark as done'}
+                              onPress={() => onAct(step.status === 'done' ? 'untick' : 'tick')} /> : null}
+        {step.how === 'evidence' && !step.auto ? <Pressable onPress={() => onAct('notReally')}><Text style={s.link}>Not really</Text></Pressable> : null}
+        {step.overruled || step.how === 'self' ? <Pressable onPress={() => onAct('undo')}><Text style={s.link}>Undo</Text></Pressable> : null}
+      </View>
+      {step.resources.map((r) => (
+        <ResourceCard key={r.url} r={r} vote={taste.voteOf(votes, 'resource', r.url)}
+                      onVote={r.kind === 'search' ? null : (up) => taste.vote('resource', r.url, up, `${r.link.title} ${r.link.note}`, [])} />
+      ))}
+      {!step.resources.length && !step.auto ? <Text style={s.muted}>No links yet: ✏️ Edit to add one.</Text> : null}
+      <View style={[s.row, { justifyContent: 'space-between' }]}>
+        {i > 0 ? <Pressable onPress={() => onSelect(steps[i - 1].id)} style={{ flex: 1 }}><Text style={s.link} numberOfLines={1}>← {steps[i - 1].title}</Text></Pressable> : <View />}
+        {i < steps.length - 1 ? <Pressable onPress={() => onSelect(steps[i + 1].id)} style={{ flex: 1, alignItems: 'flex-end' }}>
+          <Text style={s.link} numberOfLines={1}>{steps[i + 1].title} →</Text></Pressable> : null}
+      </View>
+    </View>
+  );
+}
+
 export function ProtocolsView({ lists, docs, repos, profile, token, startWith, onStarted }: {
   lists: Lists | null; docs: Doc[]; repos: MyRepo[]; profile: string; token: string | null;
   startWith: { skill: string; goal: string } | null; onStarted: () => void }) {
@@ -102,6 +195,8 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
   const [ask, setAsk] = useState<Ask | null>(null);
   const [check, setCheck] = useState<{ pid: string; stage: Stage } | null>(null);
   const [note, setNote] = useState('');
+  const [openId, setOpenId] = useState('');                 // one protocol open; the others fold to one line
+  const [chosen, setChosen] = useState<Record<string, string>>({});
 
   const reload = useCallback(async () => {
     if (!lists) return;
@@ -116,7 +211,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
     setNote('');
     try {
       const p = await P.build(sk.trim(), gl.trim(), lists, token, docs);
-      await P.start(lists, p);
+      setOpenId(await P.start(lists, p));
       setSkill('');
       setGoal('');
       await reload();
@@ -138,6 +233,8 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
   const started = new Set(views.flatMap((v) => [v.id, v.based_on]));
   const offer = lists.protocols.filter((p) => !started.has(p.id));
   const act = async (fn: () => Promise<unknown>) => { await fn(); await reload(); };
+  const shown = views.some((v) => v.id === openId) || openId === '-' ? openId
+    : (views.find((v) => !v.finished) ?? views[0])?.id ?? '';
 
   const publish = (pid: string, title: string) => {
     const e = state[pid];
@@ -181,27 +278,54 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
       )}
       {views.map((v) => {
         const ed = editing === v.id;
+        const isOpen = shown === v.id;
+        const steps = v.stages.map((x, n) => P.stepOf(x, n + 1));
+        const step = steps.find((x) => x.id === chosen[v.id]) ?? steps.find((x) => x.status === 'current') ?? steps[0];
+        if (!isOpen) {
+          return (
+            <Pressable key={v.id} onPress={() => setOpenId(v.id)} accessibilityLabel={`Open ${v.title}`}>
+              <GCard>
+                <View style={s.head}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.title}>{v.finished ? '🏁' : '🧭'} {v.title}  <Text style={s.muted}>{v.doneCount}/{v.total}</Text></Text>
+                    <Text style={[s.muted, v.source === 'reviewed' && { color: C.green }]}>{SOURCE[v.source]}</Text>
+                    <Dots steps={steps} />
+                  </View>
+                  <Text style={{ color: C.muted, fontSize: 18 }}>›</Text>
+                </View>
+              </GCard>
+            </Pressable>
+          );
+        }
         return (
           <GCard key={v.id}>
             <View style={s.head}>
-              <View style={{ flex: 1 }}>
+              <Pressable style={{ flex: 1 }} onPress={() => setOpenId('-')} accessibilityLabel="Fold">
                 <Text style={s.title}>{v.finished ? '🏁' : '🧭'} {v.title}  <Text style={s.muted}>{v.doneCount}/{v.total}</Text></Text>
                 <Text style={[s.muted, v.source === 'reviewed' && { color: C.green }]}>
                   {SOURCE[v.source]}{v.source === 'mine' && v.based_on ? ' · changed from a reviewed one' : ''}</Text>
-              </View>
+              </Pressable>
               <Pressable onPress={() => Alert.alert('Stop this protocol', 'Your progress and your changes to it are removed.', [
                 { text: 'Cancel', style: 'cancel' }, { text: 'Stop it', style: 'destructive', onPress: () => act(() => P.stop(lists, v.id)) }])}
                          accessibilityLabel="Stop this protocol" hitSlop={8}>
                 <Text style={{ color: C.muted, fontSize: 18 }}>×</Text>
               </Pressable>
             </View>
-            <View style={s.bar}><View style={[s.barFill, { width: `${(100 * v.doneCount) / Math.max(v.total, 1)}%` }]} /></View>
-            {v.summary ? <Text style={s.muted}>{v.summary}</Text> : null}
+            {v.summary && !ed ? <Text style={s.muted}>{v.summary}</Text> : null}
             <View style={s.row}>
               <Button label={ed ? '✅ Done editing' : '✏️ Edit'} onPress={() => setEditing(ed ? '' : v.id)} />
               <Button label="📤 Publish" onPress={() => publish(v.id, v.title)} />
             </View>
-            {v.stages.map((st2, i) => {
+            {!ed && step ? (
+              <View>
+                <StepBar steps={steps} selected={step.id} onSelect={(id) => setChosen({ ...chosen, [v.id]: id })} />
+                <StepPanel step={step} steps={steps} votes={votes} onSelect={(id) => setChosen({ ...chosen, [v.id]: id })}
+                           onCheck={() => setCheck({ pid: v.id, stage: step.stage })}
+                           onAct={(what) => act(() => (what === 'tick' || what === 'untick' ? P.tick(lists, v.id, step.id, what === 'tick')
+                             : P.markKnown(lists, v.id, step.id, what === 'notReally' ? 'no' : null)))} />
+              </View>
+            ) : null}
+            {ed ? v.stages.map((st2, i) => {
               const [icon, word] = STATUS[st2.status];
               const known = st2.status === 'done' || st2.status === 'known';
               return (
@@ -261,7 +385,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
                     } })}><Text style={[s.link, { marginTop: 6 }]}>➕ Add a link</Text></Pressable> : null}
                 </View>
               );
-            })}
+            }) : null}
             {ed ? <View style={s.row}><Button label="➕ Add a stage" onPress={() => setAsk({ title: 'Add a stage', label: 'Name of the new stage',
               onDone: (t) => act(() => P.addStage(lists, v.id, t)) })} /></View> : null}
           </GCard>
@@ -295,4 +419,20 @@ const st = StyleSheet.create({
   stage: { marginTop: 10, padding: 8, borderRadius: 10 },
   stageNow: { backgroundColor: 'rgba(255,255,255,0.05)' },
   item: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, marginLeft: 10 },
+  stepBar: { paddingVertical: 10, paddingHorizontal: 2 },
+  stepCol: { width: 58, alignItems: 'center', paddingHorizontal: 2 },
+  connector: { width: 6, height: 3, marginTop: 18, borderRadius: 2 },
+  ring: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  dotText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  stepLabel: { color: C.muted, fontSize: 10.5, textAlign: 'center', marginTop: 4, lineHeight: 13 },
+  miniDot: { width: 9, height: 9, borderRadius: 5 },
+  panel: { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10, marginTop: 4 },
+  kicker: { color: C.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8 },
+  chip: { fontSize: 11.5, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, overflow: 'hidden' },
+  resCard: { flexDirection: 'row', gap: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 10, marginTop: 8 },
+  resIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  resLabel: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.7 },
+  resBtn: { alignSelf: 'flex-start', borderRadius: 9, paddingHorizontal: 12, paddingVertical: 7, marginTop: 8 },
+  resBtnText: { color: C.text, fontSize: 13, fontWeight: '700' },
 });

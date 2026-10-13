@@ -170,6 +170,9 @@ class SkillCard(QFrame):
 STATUS = {"done": ("✅", "Done"), "known": ("🎓", "You know this"), "current": ("▶", "Start here"),
           "todo": ("○", "")}
 SOURCE = {"reviewed": "✓ Reviewed", "auto": "Auto-built, not reviewed", "mine": "Yours"}
+STATUS_ICON_TEXT = {"done": "✓", "known": "🎓", "current": "▶", "todo": "○"}
+KIND_COLOR = {"repo": "#a78bfa", "article": "#38bdf8", "book": "#f59e0b", "course": "#34d399", "tutorial": "#34d399",
+              "video": "#f472b6", "website": "#94a3b8", "search": "#94a3b8"}
 
 
 def _small_button(text: str, tip: str, theme: dict[str, Any], on_click: Callable[[], Any]) -> QPushButton:
@@ -183,19 +186,167 @@ def _small_button(text: str, tip: str, theme: dict[str, Any], on_click: Callable
     return b
 
 
+def _pill_button(text: str, tip: str, theme: dict[str, Any], on_click: Callable[[], Any], accent: bool = False) -> QPushButton:
+    b = QPushButton(text)
+    b.setToolTip(tip)
+    b.setCursor(Qt.PointingHandCursor)
+    b.setStyleSheet(_button_style(theme, accent=accent))
+    b.clicked.connect(lambda checked=False: on_click())
+    return b
+
+
+def _status_color(theme: dict[str, Any], status: str) -> str:
+    return {"done": theme["good"], "known": theme["good"], "current": theme["accent"]}.get(status, theme["muted"])
+
+
+class StepBar(QWidget):
+    """The protocol's steps as a line of numbered circles: green when done or known, the accent colour
+    where to start, grey still to do. The chosen step is ringed; click a circle to show that step."""
+
+    def __init__(self, steps: list[Any], selected: str, theme: dict[str, Any], on_select: Callable[[str], None]) -> None:
+        super().__init__()
+        self.steps, self.selected, self.theme, self.on_select = steps, selected, theme, on_select
+        self.setMinimumHeight(58)
+        self.setMouseTracking(True)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setToolTip("Click a step to see it")
+
+    def _centres(self) -> list[float]:
+        n = max(len(self.steps), 1)
+        w = self.width()
+        pad = min(30.0, w / (2 * n))
+        return [pad + i * (w - 2 * pad) / max(n - 1, 1) for i in range(n)] if n > 1 else [w / 2]
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        from PySide6.QtCore import QRectF
+        from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        xs, y, r = self._centres(), 18.0, 11.0
+        t = self.theme
+        for i in range(len(xs) - 1):                         # the line between steps: green once the left one is done
+            left = self.steps[i].status in ("done", "known")
+            p.setPen(QPen(QColor(t["good"] if left else t["btn_bg"]), 3))
+            p.drawLine(int(xs[i] + r), int(y), int(xs[i + 1] - r), int(y))
+        f = QFont(self.font())
+        f.setPointSizeF(7.5)
+        fm = QFontMetrics(f)
+        col = (self.width() / max(len(xs), 1)) - 4
+        for x, st in zip(xs, self.steps):
+            c = QColor(_status_color(t, st.status))
+            if st.id == self.selected:
+                p.setPen(QPen(QColor(t["text"]), 2))
+                p.setBrush(Qt.NoBrush)
+                p.drawEllipse(QRectF(x - r - 4, y - r - 4, 2 * r + 8, 2 * r + 8))
+            p.setPen(Qt.NoPen)
+            p.setBrush(c if st.status != "todo" else QColor(t["btn_bg"]))
+            p.drawEllipse(QRectF(x - r, y - r, 2 * r, 2 * r))
+            p.setPen(QColor("#ffffff" if st.status != "todo" else t["text"]))
+            bf = QFont(f)
+            bf.setBold(True)
+            bf.setPointSizeF(8.5)
+            p.setFont(bf)
+            mark = "✓" if st.status in ("done", "known") else str(st.number)
+            p.drawText(QRectF(x - r, y - r, 2 * r, 2 * r), Qt.AlignCenter, mark)
+            p.setFont(f)
+            p.setPen(QColor(t["text"] if st.id == self.selected else t["muted"]))
+            label = fm.elidedText(st.title, Qt.ElideRight, int(max(col, 30)))
+            p.drawText(QRectF(x - col / 2, y + r + 6, col, 16), Qt.AlignHCenter | Qt.AlignTop, label)
+        p.end()
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        x = event.position().x()
+        xs = self._centres()
+        if xs:
+            i = min(range(len(xs)), key=lambda k: abs(xs[k] - x))
+            self.on_select(self.steps[i].id)
+
+
+class StepDots(QWidget):
+    """A folded protocol's progress in one glance: one small dot per step."""
+
+    def __init__(self, steps: list[Any], theme: dict[str, Any]) -> None:
+        super().__init__()
+        self.steps, self.theme = steps, theme
+        self.setFixedSize(12 * len(steps) + 2, 12)
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        from PySide6.QtGui import QColor, QPainter
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setPen(Qt.NoPen)
+        for i, st in enumerate(self.steps):
+            p.setBrush(QColor(_status_color(self.theme, st.status) if st.status != "todo" else self.theme["btn_bg"]))
+            p.drawEllipse(2 + 12 * i, 2, 8, 8)
+        p.end()
+
+
+class ResourceCard(QFrame):
+    """One link inside a step: a coloured badge for what it is (GitHub repo, paper, free book…), its name,
+    the facts that help you choose (owner, ⭐ stars, language, year, citations, where it lives), one or
+    two lines on what it is, and one clear button."""
+
+    def __init__(self, res: Any, theme: dict[str, Any], on_open: Callable[[str], Any],
+                 thumbs: QWidget | None = None) -> None:
+        super().__init__()
+        self.setObjectName("resourceCard")
+        color = KIND_COLOR.get(res.kind, theme["muted"])
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(8, 8, 8, 8)
+        outer.setSpacing(8)
+        icon = QLabel(res.icon)
+        icon.setFixedSize(34, 34)
+        icon.setAlignment(Qt.AlignCenter)
+        icon.setStyleSheet(f"background:{color}33; border-radius:9px; font-size:17px;")
+        outer.addWidget(icon, 0, Qt.AlignTop)
+        body = QVBoxLayout()
+        body.setSpacing(2)
+        top = QHBoxLayout()
+        top.addWidget(_label(res.label.upper(), f"color:{color}; font-size:9px; font-weight:700; letter-spacing:0.6px; "
+                                                "background:transparent;", wrap=False), 1)
+        if thumbs is not None:
+            top.addWidget(thumbs, 0, Qt.AlignRight)
+        body.addLayout(top)
+        title = _label(f"<b>{html.escape(res.title)}</b>", f"color:{theme['text']}; font-size:12px; background:transparent;",
+                       rich=True)
+        title.setCursor(Qt.PointingHandCursor)
+        title.mousePressEvent = lambda ev: on_open(res.url)  # noqa: ARG005
+        body.addWidget(title)
+        if res.subtitle:
+            body.addWidget(_label(res.subtitle, _muted(theme, 10)))
+        if res.blurb:
+            body.addWidget(_label(res.blurb, f"color:{theme['text']}; font-size:10.5px; background:transparent;"))
+        go = QPushButton(f"{res.action}  ↗")
+        go.setCursor(Qt.PointingHandCursor)
+        go.setToolTip(res.url)
+        go.setStyleSheet(f"QPushButton {{ background:{color}26; color:{theme['text']}; border:none; border-radius:8px; "
+                         f"padding:4px 10px; font-size:10.5px; font-weight:600; }} QPushButton:hover {{ background:{color}55; }}")
+        go.clicked.connect(lambda checked=False: on_open(res.url))
+        row = QHBoxLayout()
+        row.addWidget(go)
+        row.addStretch(1)
+        body.addLayout(row)
+        outer.addLayout(body, 1)
+        self.setStyleSheet(f"QFrame#resourceCard {{ background:{theme['btn_bg']}; border-radius:10px; }}")
+
+
 class ProtocolCard(QFrame):
-    """A protocol: its stages in order, each with its status (done, known, start here), its links and
-    its level check. In edit mode every stage and link can be moved, renamed, added or removed.
+    """A protocol. Folded, it's one line: its name, a dot per step and how far you are. Open, it shows its
+    steps as a bar of circles (StepBar) and one step at a time: what kind of step it is, where you stand
+    and why, what you can do (check, done), and its resources as cards. In edit mode every stage and link
+    can be moved, renamed, added or removed.
 
     act(action, *args) changes the protocol (see app.protocol_action); on_check(stage) opens the level
-    check; on_add_link(stage id) and on_rename(stage) ask for text; on_publish() sends it to the maker."""
+    check; on_add_link(stage id) and on_rename(stage) ask for text; on_publish() sends it to the maker;
+    on_toggle() opens or folds it; on_select(step id) shows another step."""
 
     def __init__(self, p: dict[str, Any], theme: dict[str, Any], editing: bool, act: Callable[..., Any],
                  on_check: Callable[[dict[str, Any]], None], on_open: Callable[[str], Any],
                  on_edit: Callable[[], None], on_publish: Callable[[], None],
                  on_add_link: Callable[[str], None], on_rename: Callable[[dict[str, Any]], None],
                  on_add_stage: Callable[[], None], vote_item: Callable[[dict[str, Any]], Callable[[bool], int]],
-                 vote_of: Callable[[dict[str, Any]], int]) -> None:
+                 vote_of: Callable[[dict[str, Any]], int], is_open: bool = True, selected: str = "",
+                 on_toggle: Callable[[], None] | None = None, on_select: Callable[[str], None] | None = None) -> None:
         super().__init__()
         self.setObjectName("protocolCard")
         self.protocol = p
@@ -210,45 +361,124 @@ class ProtocolCard(QFrame):
         self.vote_of = vote_of
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 8, 10, 8)
-        lay.setSpacing(5)
-        head = QHBoxLayout()
-        flag = "🏁 " if p["finished"] else "🧭 "
+        lay.setSpacing(6)
+        steps = p.get("steps") or []
         src = p.get("source", "mine")
-        badge_color = theme["good"] if src == "reviewed" else theme["muted"]
         badge = SOURCE.get(src, "")
         if src == "mine" and p.get("based_on"):
             badge += " · changed from a reviewed one"
-        head.addWidget(_label(f"<b>{flag}{html.escape(p['title'])}</b> "
-                              f"<span style='color:{theme['muted']}'>{p['done']}/{p['total']}</span><br>"
-                              f"<span style='color:{badge_color}; font-size:10px'>{html.escape(badge)}</span>",
-                              f"color:{theme['text']}; font-size:12px; background:transparent;", rich=True), 1)
-        head.addWidget(_small_button("✅ Done editing" if editing else "✏️ Edit",
-                                     "Reorder, rename, add or remove stages and links", theme, on_edit), 0, Qt.AlignTop)
-        head.addWidget(_small_button("📤 Publish", "Send this protocol to myGeeKy, for everyone", theme, on_publish),
-                       0, Qt.AlignTop)
-        head.addWidget(_small_button("✕", "Stop this protocol", theme, lambda: act("stop")), 0, Qt.AlignTop)
+        badge_color = theme["good"] if src == "reviewed" else theme["muted"]
+        flag = "🏁" if p["finished"] else "🧭"
+
+        head = QHBoxLayout()
+        head.setSpacing(6)
+        name = _label(f"<b>{flag} {html.escape(p['title'])}</b><br>"
+                      f"<span style='color:{badge_color}; font-size:10px'>{html.escape(badge)}</span>",
+                      f"color:{theme['text']}; font-size:12.5px; background:transparent;", rich=True)
+        head.addWidget(name, 1)
+        if not is_open:
+            head.addWidget(StepDots(steps, theme), 0, Qt.AlignVCenter)
+        head.addWidget(_label(f"{p['done']}/{p['total']}", _muted(theme, 10.5), wrap=False), 0, Qt.AlignVCenter)
+        if on_toggle:
+            head.addWidget(_small_button("▾" if is_open else "▸", "Fold" if is_open else "Open this protocol", theme,
+                                         on_toggle), 0, Qt.AlignVCenter)
         lay.addLayout(head)
-        bar = QFrame()
-        bar.setFixedHeight(4)
-        share = p["done"] / max(p["total"], 1)
-        bar.setStyleSheet(f"background:qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 {theme['good']}, "
-                          f"stop:{max(share, 0.001):.3f} {theme['good']}, stop:{min(share + 0.001, 1):.3f} {theme['btn_bg']}, "
-                          f"stop:1 {theme['btn_bg']}); border-radius:2px;")
-        lay.addWidget(bar)
-        if p.get("summary"):
+        if on_toggle and not is_open:
+            for w in (name,):
+                w.setCursor(Qt.PointingHandCursor)
+                w.mousePressEvent = lambda ev: on_toggle()  # noqa: ARG005
+            self.setStyleSheet(_card_style("protocolCard", theme, hover=True))
+            return
+
+        tools = QHBoxLayout()
+        tools.setSpacing(2)
+        tools.addWidget(_small_button("✅ Done editing" if editing else "✏️ Edit",
+                                      "Reorder, rename, add or remove stages and links", theme, on_edit))
+        tools.addWidget(_small_button("📤 Publish", "Send this protocol to myGeeKy, for everyone", theme, on_publish))
+        tools.addStretch(1)
+        tools.addWidget(_small_button("✕ Stop", "Stop this protocol", theme, lambda: act("stop")))
+        lay.addLayout(tools)
+        if p.get("summary") and not editing:
             lay.addWidget(_label(p["summary"], _muted(theme, 10.5)))
-        last = len(p["stages"]) - 1
-        for i, st in enumerate(p["stages"]):
-            lay.addWidget(self._stage(st, i, last))
+
         if editing:
+            last = len(p["stages"]) - 1
+            for i, st in enumerate(p["stages"]):
+                lay.addWidget(self._edit_stage(st, i, last))
             row = QHBoxLayout()
             row.addWidget(_small_button("➕ Add a stage", "A new stage before 'Use it in your own work'", theme,
                                         on_add_stage))
             row.addStretch(1)
             lay.addLayout(row)
+        elif steps:
+            chosen = next((s for s in steps if s.id == selected), None) or \
+                next((s for s in steps if s.status == "current"), steps[0])
+            lay.addWidget(StepBar(steps, chosen.id, theme, on_select or (lambda sid: None)))
+            lay.addWidget(self._step_panel(chosen, steps, on_select))
         self.setStyleSheet(_card_style("protocolCard", theme))
 
-    def _stage(self, st: dict[str, Any], i: int, last: int) -> QFrame:
+    def _step_panel(self, step: Any, steps: list[Any], on_select: Callable[[str], None] | None) -> QFrame:
+        theme, act = self.theme, self.act
+        stage = next(s for s in self.protocol["stages"] if s["id"] == step.id)
+        box = QFrame()
+        box.setObjectName("stepPanel")
+        box.setStyleSheet(f"QFrame#stepPanel {{ background:transparent; border-top:1px solid {theme['btn_bg']}; }}")
+        lay = QVBoxLayout(box)
+        lay.setContentsMargins(0, 8, 0, 0)
+        lay.setSpacing(6)
+        color = _status_color(theme, step.status)
+        lay.addWidget(_label(f"STEP {step.number} OF {len(steps)} · {step.role_label.upper()}",
+                             f"color:{theme['muted']}; font-size:9.5px; font-weight:700; letter-spacing:0.6px; "
+                             "background:transparent;"))
+        head = QHBoxLayout()
+        head.addWidget(_label(f"<b>{html.escape(step.title)}</b>", f"color:{theme['text']}; font-size:14px; "
+                                                                    "background:transparent;", rich=True), 1)
+        chip = _label(f"{STATUS_ICON_TEXT.get(step.status, '')} {step.status_label}".strip(),
+                      f"color:{color}; background:{color}22; border-radius:8px; padding:2px 8px; font-size:10px; "
+                      "font-weight:700;", wrap=False)
+        head.addWidget(chip, 0, Qt.AlignVCenter)
+        lay.addLayout(head)
+        if step.why:
+            lay.addWidget(_label(step.why, _muted(theme, 10.5)))
+        actions = QHBoxLayout()
+        actions.setSpacing(6)
+        if step.can_check:
+            actions.addWidget(_pill_button("🎓 I know this: check me", "A short quiz, or 'I can do these'", theme,
+                                           lambda: self.on_check(stage)))
+        if not step.auto:
+            done = step.status == "done"
+            actions.addWidget(_pill_button("↩ Not done" if done else "☑ Mark as done",
+                                           "Mark as not done" if done else "Mark this step as done", theme,
+                                           lambda: act("tick", step.id, not done), accent=not done and step.status == "current"))
+        if step.how == "evidence" and not step.auto:
+            actions.addWidget(_small_button("Not really", "Show this step as still to do", theme,
+                                            lambda: act("known", step.id, "no")))
+        elif step.overruled or step.how == "self":
+            actions.addWidget(_small_button("Undo", "Go back to what your work shows", theme,
+                                            lambda: act("known", step.id, None)))
+        actions.addStretch(1)
+        lay.addLayout(actions)
+        for res, it in zip(step.resources, stage["items"]):
+            thumbs = None if res.kind == "search" else ThumbBar(self.vote_of(it), theme, self.vote_item(it),
+                                                                up_tip="Good to learn from", down_tip="Not helpful")
+            lay.addWidget(ResourceCard(res, theme, self.on_open, thumbs))
+        if not step.resources and not step.auto:
+            lay.addWidget(_label("No links yet: ✏️ Edit to add one.", _muted(theme, 10.5)))
+        if on_select and len(steps) > 1:
+            i = next(k for k, s in enumerate(steps) if s.id == step.id)
+            nav = QHBoxLayout()
+            if i > 0:
+                nav.addWidget(_small_button(f"← {steps[i - 1].title}", "The step before", theme,
+                                            lambda: on_select(steps[i - 1].id)))
+            nav.addStretch(1)
+            if i < len(steps) - 1:
+                nav.addWidget(_small_button(f"{steps[i + 1].title} →", "The next step", theme,
+                                            lambda: on_select(steps[i + 1].id)))
+            lay.addLayout(nav)
+        return box
+
+
+    def _edit_stage(self, st: dict[str, Any], i: int, last: int) -> QFrame:
         theme, act, editing = self.theme, self.act, self.editing
         box = QFrame()
         box.setObjectName("stageBox")

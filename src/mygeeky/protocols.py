@@ -39,6 +39,7 @@ import json
 import math
 import re
 import sys
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
 from urllib.parse import quote_plus, urlencode
@@ -90,8 +91,20 @@ def clean_item(raw: Any) -> dict[str, Any] | None:
     if not url or not title:
         return None
     kind = str(raw.get("kind") or "website").lower()
-    return {"title": title, "url": url, "kind": kind if kind in ITEM_KINDS else "website",
-            "note": curated._text(raw.get("note"), 200)}
+    out = {"title": title, "url": url, "kind": kind if kind in ITEM_KINDS else "website",
+           "note": curated._text(raw.get("note"), 200)}
+    for k in ("stars", "cited", "year"):                 # facts shown on the link's card (optional)
+        try:
+            n = int(raw.get(k) or 0)
+        except (TypeError, ValueError):
+            n = 0
+        if 0 < n < 10_000_000:
+            out[k] = n
+    for k, n in (("lang", 40), ("updated", 10)):
+        v = curated._text(raw.get(k), n)
+        if v:
+            out[k] = v
+    return out
 
 
 def clean_stage(raw: Any, i: int = 0) -> dict[str, Any] | None:
@@ -291,8 +304,11 @@ def fill(proto: dict[str, Any], cands: list[dict[str, Any]], data: dict[str, Any
         if stage_of.get(c.get("asked_by", "")) == role:
             boost += 0.25
         tilt = taste.lean(f"{c['title']} {c.get('text', '')}", c.get("topics") or [], lean_weights)
-        item = {"title": c["title"], "url": c["url"], "kind": c["kind"],
-                "note": (c.get("text") or "")[:200]}
+        item = clean_item({"title": c["title"], "url": c["url"], "kind": c["kind"], "note": c.get("text") or "",
+                           "stars": c.get("stars"), "lang": c.get("language"), "updated": c.get("updated"),
+                           "year": c.get("year"), "cited": c.get("cited")})
+        if not item:
+            continue
         by_role[role].append((p[role] * boost + 0.25 * tilt, item))
     used: set[str] = set()
     out = json.loads(json.dumps(proto))
@@ -398,6 +414,125 @@ def quiz_score(stage: dict[str, Any], answers: list[int]) -> float:
         return 0.0
     right = sum(1 for q, a in zip(qs, answers) if a == q["answer"])
     return right / len(qs)
+
+
+# --------------------------------------------------------------------------- how a protocol is shown
+ROLE_LABEL = {"basics": "Learn the basics", "deeper": "Go deeper", "applied": "Apply it",
+              "project": "Practise on a real project", "use": "Use it in your own work"}
+STATUS_LABEL = {"done": "Done", "known": "You know this", "current": "Start here", "todo": "Still to do"}
+STATUS_ICON = {"done": "✓", "known": "🎓", "current": "▶", "todo": ""}
+# kind: (icon, what it is, the button)
+RESOURCE_KINDS = {
+    "repo": ("📦", "GitHub repo", "Open on GitHub"),
+    "article": ("📄", "Paper", "Read the paper"),
+    "book": ("📖", "Free book", "Read the book"),
+    "course": ("🎓", "Course", "Start the course"),
+    "tutorial": ("🧭", "Tutorial", "Follow the tutorial"),
+    "video": ("🎬", "Video", "Watch it"),
+    "website": ("🌐", "Website", "Open the site"),
+    "search": ("🔎", "GitHub search", "Search GitHub"),
+}
+
+
+def _short(n: int) -> str:
+    return f"{n / 1000:.1f}k".replace(".0k", "k") if n >= 1000 else str(n)
+
+
+def _host(url: str) -> str:
+    from urllib.parse import urlsplit
+    host = urlsplit(url).netloc.lower()
+    return host[4:] if host.startswith("www.") else host
+
+
+@dataclass
+class Resource:
+    """One link inside a step, as it's shown: what it is, its name, the facts that help you choose, and
+    one clear button. A repo shows its owner, stars, language and last update; a paper its year and
+    citations; a book, course or site where it lives."""
+    kind: str            # repo, article, book, course, tutorial, video, website, search
+    icon: str
+    label: str           # "GitHub repo", "Paper", "Free book"...
+    title: str           # the name to show (a repo's own name, without its owner)
+    subtitle: str        # "by hadley · ⭐ 4.9k · R · updated 2025", "2014 · cited 6.1k", "r4ds.hadley.nz"
+    blurb: str           # one or two lines on what it is
+    action: str          # "Open on GitHub", "Read the paper"...
+    url: str
+
+    @classmethod
+    def from_link(cls, it: dict[str, Any]) -> "Resource":
+        url = it["url"]
+        kind = "search" if url.startswith("https://github.com/search?") else it.get("kind", "website")
+        icon, label, action = RESOURCE_KINDS.get(kind, RESOURCE_KINDS["website"])
+        title, facts = it["title"], []
+        if kind == "repo":
+            owner, _, name = it["title"].partition("/") if "/" in it["title"] and " " not in it["title"] else ("", "", "")
+            if name:
+                title = name.replace("-", " ").replace("_", " ")
+                facts.append(f"by {owner}")
+            if it.get("stars"):
+                facts.append(f"⭐ {_short(int(it['stars']))}")
+            if it.get("lang"):
+                facts.append(it["lang"])
+            if it.get("updated"):
+                facts.append(f"updated {str(it['updated'])[:4]}")
+        elif kind == "article":
+            if it.get("year"):
+                facts.append(str(it["year"]))
+            if it.get("cited"):
+                facts.append(f"cited {_short(int(it['cited']))}×")
+            facts.append(_host(url).replace("doi.org", "DOI"))
+        elif kind == "search":
+            title = it["title"].replace("Search GitHub: ", "")
+            facts.append("nothing picked yet: the most-starred matches")
+        else:
+            facts.append(_host(url))
+        blurb = "" if kind == "search" else (it.get("note") or "")
+        return cls(kind, icon, label, title, " · ".join(f for f in facts if f), blurb, action, url)
+
+
+@dataclass
+class Step:
+    """One stage of a protocol, as it's shown: its number, what kind of step it is, where you stand
+    (done, you know this, start here, still to do) and why, what you can do, and its resources."""
+    number: int
+    id: str
+    title: str
+    role: str
+    role_label: str      # "Learn the basics", "Go deeper"...
+    status: str          # done, known, current, todo
+    status_label: str
+    icon: str            # ✓ 🎓 ▶ or the number
+    why: str             # "From your work: 6 of your repos use R"
+    how: str             # quiz, self, evidence or ""
+    score: float | None
+    overruled: bool
+    can_check: bool      # a quiz or "I can do these" is there
+    auto: bool           # the last step: it ticks itself
+    resources: list[Resource] = field(default_factory=list)
+
+    @classmethod
+    def from_stage(cls, st: dict[str, Any], number: int) -> "Step":
+        status = st["status"]
+        why = st.get("why") or ""
+        if st["role"] == "use":
+            why = f"Done: {why}" if status in ("done", "known") else (why or "Ticks itself when one of your repos shows the skill")
+        elif st.get("how") == "evidence" and why:
+            why = f"From your work: {why}"
+        elif st.get("how") == "quiz" and st.get("score") is not None:
+            why = f"You passed the check ({round(st['score'] * 100)}%)"
+        elif st.get("how") == "self":
+            why = "You said you can do this"
+        elif st.get("overruled"):
+            why = f"{why or 'Your work suggests you know this'}, but you said not yet"
+        else:
+            why = ""
+        return cls(number=number, id=st["id"], title=st["title"], role=st["role"],
+                   role_label=ROLE_LABEL.get(st["role"], "Step"), status=status,
+                   status_label=STATUS_LABEL.get(status, ""), icon=STATUS_ICON.get(status) or str(number),
+                   why=why, how=st.get("how", ""), score=st.get("score"), overruled=bool(st.get("overruled")),
+                   can_check=bool(st.get("quiz") or st.get("can")) and status not in ("done", "known")
+                   and st["role"] != "use",
+                   auto=st["role"] == "use", resources=[Resource.from_link(it) for it in st.get("items") or []])
 
 
 # --------------------------------------------------------------------------- your protocols
@@ -653,7 +788,8 @@ def view(cfg: MyGeekyConfig, entry: dict[str, Any], ev: dict[str, dict[str, Any]
         stages.append({**st, "status": status, "how": how, "why": e["why"], "score": scores.get(st["id"]),
                        "overruled": known_by.get(st["id"]) == "no"})
     n = sum(1 for s in stages if s["status"] in ("done", "known"))
-    return {**proto, "stages": stages, "current": current, "done": n, "total": len(stages),
+    steps = [Step.from_stage(st, i) for i, st in enumerate(stages, 1)]
+    return {**proto, "stages": stages, "steps": steps, "current": current, "done": n, "total": len(stages),
             "finished": n == len(stages), "started_at": entry.get("started_at", ""), "edited": entry.get("edited")}
 
 
@@ -672,7 +808,8 @@ def publish_payload(entry: dict[str, Any]) -> dict[str, Any]:
     p = entry["protocol"]
     payload = {k: p[k] for k in ("id", "skill", "goal", "title", "summary", "based_on")}
     payload["stages"] = [{"id": s["id"], "title": s["title"], "role": s["role"], "query": s.get("query", ""),
-                          "items": [dict(it) for it in s["items"]]} for s in p["stages"]]
+                          "items": [{k: it[k] for k in ("title", "url", "kind", "note")} for it in s["items"]]}
+                         for s in p["stages"]]
     payload["removed"] = list(entry.get("removed") or [])
     return payload
 

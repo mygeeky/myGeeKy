@@ -123,7 +123,9 @@ export async function fill(p: Protocol, cands: Cand[], lists: Lists): Promise<Pr
     let boost = 1 + (c.kind === 'repo' ? 0.15 * Math.log10(1 + (c.stars ?? 0)) : 0.1 * Math.log10(1 + (c.cited ?? 0)));
     if (stageOf[c.askedBy ?? ''] === role) boost += 0.25;
     const tilt = taste.lean(`${c.title} ${c.text}`, c.topics ?? [], leanW);
-    byRole[role].push([pr[role] * boost + 0.25 * tilt, { title: c.title, url: c.url, kind: c.kind, note: (c.text ?? '').slice(0, 200) }]);
+    const link = cleanLink({ title: c.title, url: c.url, kind: c.kind, note: c.text ?? '', stars: c.stars, lang: c.language,
+      updated: c.updated, year: c.year, cited: c.cited });
+    if (link) byRole[role].push([pr[role] * boost + 0.25 * tilt, link]);
   }
   const out = clone(p);
   const used = new Set<string>();
@@ -394,7 +396,8 @@ export function view(e: Entry, ev: Record<string, { known: boolean; why: string 
 export function publish(e: Entry): { url: string; clipboard: string } {
   const p = e.protocol;
   const payload = { id: p.id, skill: p.skill, goal: p.goal, title: p.title, summary: p.summary, based_on: p.based_on,
-    stages: p.stages.map((s) => ({ id: s.id, title: s.title, role: s.role, query: s.query, items: s.items.map((i) => ({ ...i })) })),
+    stages: p.stages.map((s) => ({ id: s.id, title: s.title, role: s.role, query: s.query,
+      items: s.items.map((i) => ({ title: i.title, url: i.url, kind: i.kind, note: i.note })) })),
     removed: [...e.removed] };
   const block = (pl: object) => `<details><summary>For myGeeKy (don't edit)</summary>\n\n\`\`\`json\n${JSON.stringify(pl)}\n\`\`\`\n</details>\n`;
   const readable = (links: boolean) => [`A protocol for **${p.skill}**${p.goal ? ` (${p.goal})` : ''}${p.based_on ? `, changed from \`${p.based_on}\`` : ''}:`, '',
@@ -408,4 +411,68 @@ export function publish(e: Entry): { url: string; clipboard: string } {
     if (u.length <= MAX_URL) return { url: u, clipboard: '' };
   }
   return { url: url(`${readable(false)}**Paste the protocol here** (myGeeKy copied it for you):\n\n`), clipboard: block(payload) };
+}
+
+// ---- how a protocol is shown (the same as the desktop's protocols.Step and protocols.Resource)
+export const ROLE_LABEL: Record<string, string> = { basics: 'Learn the basics', deeper: 'Go deeper', applied: 'Apply it',
+  project: 'Practise on a real project', use: 'Use it in your own work' };
+export const STATUS_LABEL: Record<string, string> = { done: 'Done', known: 'You know this', current: 'Start here', todo: 'Still to do' };
+/** kind: [icon, what it is, the button] */
+export const RESOURCE_KINDS: Record<string, [string, string, string]> = {
+  repo: ['📦', 'GitHub repo', 'Open on GitHub'], article: ['📄', 'Paper', 'Read the paper'], book: ['📖', 'Free book', 'Read the book'],
+  course: ['🎓', 'Course', 'Start the course'], tutorial: ['🧭', 'Tutorial', 'Follow the tutorial'], video: ['🎬', 'Video', 'Watch it'],
+  website: ['🌐', 'Website', 'Open the site'], search: ['🔎', 'GitHub search', 'Search GitHub'],
+};
+
+/** One link inside a step, as it's shown: what it is, its name, the facts that help you choose, one button. */
+export type Resource = { kind: string; icon: string; label: string; title: string; subtitle: string; blurb: string; action: string;
+  url: string; link: Link };
+/** One stage, as it's shown: its number, what kind of step, where you stand and why, and its resources. */
+export type Step = { number: number; id: string; title: string; role: string; roleLabel: string; status: StageView['status'];
+  statusLabel: string; why: string; how: StageView['how']; overruled: boolean; canCheck: boolean; auto: boolean;
+  resources: Resource[]; stage: StageView };
+
+const short = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k` : String(n));
+const host = (url: string) => (url.split('/')[2] ?? '').toLowerCase().replace(/^www\./, '');
+
+export function resourceOf(it: Link): Resource {
+  const kind = it.url.startsWith('https://github.com/search?') ? 'search' : it.kind;
+  const [icon, label, action] = RESOURCE_KINDS[kind] ?? RESOURCE_KINDS.website;
+  let title = it.title;
+  const facts: string[] = [];
+  if (kind === 'repo') {
+    const [owner, name] = it.title.includes('/') && !it.title.includes(' ') ? it.title.split('/', 2) : ['', ''];
+    if (name) {
+      title = name.replace(/[-_]/g, ' ');
+      facts.push(`by ${owner}`);
+    }
+    if (it.stars) facts.push(`⭐ ${short(it.stars)}`);
+    if (it.lang) facts.push(it.lang);
+    if (it.updated) facts.push(`updated ${it.updated.slice(0, 4)}`);
+  } else if (kind === 'article') {
+    if (it.year) facts.push(String(it.year));
+    if (it.cited) facts.push(`cited ${short(it.cited)}×`);
+    facts.push(host(it.url).replace('doi.org', 'DOI'));
+  } else if (kind === 'search') {
+    title = it.title.replace('Search GitHub: ', '');
+    facts.push('nothing picked yet: the most-starred matches');
+  } else {
+    facts.push(host(it.url));
+  }
+  return { kind, icon, label, title, subtitle: facts.filter(Boolean).join(' · '), blurb: kind === 'search' ? '' : it.note, action,
+    url: it.url, link: it };
+}
+
+export function stepOf(st: StageView, number: number): Step {
+  let why = st.why;
+  if (st.role === 'use') why = st.status === 'done' || st.status === 'known' ? `Done: ${why}` : why || 'Ticks itself when one of your repos shows the skill';
+  else if (st.how === 'evidence' && why) why = `From your work: ${why}`;
+  else if (st.how === 'quiz' && st.score != null) why = `You passed the check (${Math.round(st.score * 100)}%)`;
+  else if (st.how === 'self') why = 'You said you can do this';
+  else if (st.overruled) why = `${why || 'Your work suggests you know this'}, but you said not yet`;
+  else why = '';
+  return { number, id: st.id, title: st.title, role: st.role, roleLabel: ROLE_LABEL[st.role] ?? 'Step', status: st.status,
+    statusLabel: STATUS_LABEL[st.status] ?? '', why, how: st.how, overruled: st.overruled,
+    canCheck: (st.quiz.length > 0 || st.can.length > 0) && st.status !== 'done' && st.status !== 'known' && st.role !== 'use',
+    auto: st.role === 'use', resources: st.items.map(resourceOf), stage: st };
 }

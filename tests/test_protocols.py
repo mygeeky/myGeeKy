@@ -311,3 +311,46 @@ def test_queries_follow_the_skill():
     assert "R tutorial" in qs and "R data analysis" in qs and "data analysis language:R" in qs
     assert protomodel.github_queries("Nextflow")[0] == "Nextflow tutorial"
     assert protomodel.github_queries("Mixed models")[0] == '"Mixed models" tutorial'
+
+
+# --------------------------------------------------------------------------- how it's shown: Step and Resource
+def test_each_kind_of_link_is_shown_its_own_way():
+    R = protocols.Resource.from_link
+    repo = R(protocols.clean_item({"title": "hadley/r4ds", "url": "https://github.com/hadley/r4ds", "kind": "repo",
+                                   "note": "R for data science", "stars": 4900, "lang": "R", "updated": "2025-03-01"}))
+    assert (repo.label, repo.title, repo.action) == ("GitHub repo", "r4ds", "Open on GitHub")
+    assert repo.subtitle == "by hadley · ⭐ 4.9k · R · updated 2025" and repo.blurb == "R for data science"
+    paper = R({"title": "Tidy Data", "url": "https://doi.org/10.18637/jss.v059.i10", "kind": "article", "year": 2014,
+               "cited": 6100})
+    assert (paper.label, paper.action, paper.subtitle) == ("Paper", "Read the paper", "2014 · cited 6.1k× · DOI")
+    book = R({"title": "R for Data Science (2e)", "url": "https://www.r4ds.hadley.nz/", "kind": "book"})
+    assert (book.icon, book.subtitle, book.action) == ("📖", "r4ds.hadley.nz", "Read the book")
+    search = R(protocols._search_link("Polars", "tutorial"))
+    assert search.kind == "search" and search.title == "Polars tutorial" and search.action == "Search GitHub"
+
+
+def test_a_protocol_view_has_steps_ready_to_show():
+    cfg = MyGeekyConfig()
+    pid = protocols.start(cfg, protocols.find_reviewed("R", "data analysis"))
+    _write_repos([{"name": f"me/r{i}", "description": "x", "topics": [], "language": "R"} for i in range(2)])
+    protocols.tick(cfg, pid, "deeper")
+    steps = protocols.views(cfg)[0]["steps"]
+    assert [s.number for s in steps] == [1, 2, 3, 4, 5]
+    assert [s.status for s in steps] == ["known", "done", "current", "todo", "done"]
+    first, third, last = steps[0], steps[2], steps[4]
+    assert first.why == "From your work: 2 of your repos use R" and not first.can_check
+    assert third.role_label == "Apply it" and third.status_label == "Start here" and third.can_check
+    assert [r.kind for r in third.resources] == ["course", "book", "article"]
+    assert last.auto and last.why.startswith("Done: ")
+
+
+def test_facts_are_kept_on_links_but_not_published():
+    cfg = MyGeekyConfig()
+    p = protocols.fill(protocols.template("Snakemake"), [_repo("a/snake-intro", "beginner introduction", stars=321,
+                                                                language="Python")],
+                       {"resources": []}, model=_model(basics="beginner"), lean_weights={}, today=TODAY)
+    item = p["stages"][0]["items"][0]
+    assert item["stars"] == 321 and item["lang"] == "Python" and item["updated"] == "2026-01-01"
+    pid = protocols.start(cfg, p)
+    payload = protocols.publish_payload(protocols.mine(cfg)[pid])
+    assert set(payload["stages"][0]["items"][0]) == {"title", "url", "kind", "note"}

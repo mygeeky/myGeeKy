@@ -10,7 +10,8 @@ export const ITEM_KINDS: Record<string, string> = { repo: '📦', article: '📄
 export const MAX_STAGES = 10;
 export const MAX_ITEMS = 8;
 
-export type Link = { title: string; url: string; kind: string; note: string };
+export type Link = { title: string; url: string; kind: string; note: string; stars?: number; cited?: number; year?: number;
+  lang?: string; updated?: string };
 export type Quiz = { q: string; options: string[]; answer: number };
 export type Stage = { id: string; title: string; role: Role; query: string; skills: string[]; can: string[]; quiz: Quiz[];
   items: Link[] };
@@ -39,7 +40,16 @@ export function cleanLink(raw: any): Link | null {
   const title = text(raw.title, 160);
   if (!url || !title) return null;
   const kind = String(raw.kind ?? 'website').toLowerCase();
-  return { title, url, kind: kind in ITEM_KINDS ? kind : 'website', note: text(raw.note, 200) };
+  const out: Link = { title, url, kind: kind in ITEM_KINDS ? kind : 'website', note: text(raw.note, 200) };
+  for (const k of ['stars', 'cited', 'year'] as const) {      // facts shown on the link's card (optional)
+    const n = Math.trunc(Number(raw[k] ?? 0));
+    if (n > 0 && n < 10_000_000) out[k] = n;
+  }
+  const lang = text(raw.lang, 40);
+  const updated = text(raw.updated, 10);
+  if (lang) out.lang = lang;
+  if (updated) out.updated = updated;
+  return out;
 }
 
 function cleanQuiz(raw: unknown): Quiz[] {
