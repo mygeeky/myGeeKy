@@ -1,6 +1,6 @@
 # YouTube upload
 
-**Published:** https://youtu.be/NTYDY7IGufw (current: planet dock, the phone app; replaces https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY)
+**Published:** https://youtu.be/fPQHOnYs8sA (current: every feature rolling in, Grow, Protocols and Chances; replaces https://youtu.be/NTYDY7IGufw, https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY)
 
 **File:** `launch/video/mygeeky-intro.mp4` (re-render: `python launch/video/make_video.py`). It opens with `intro/intro-source.mp4` (made with Gemini) from its 4th second; the soundtrack is original, composed in `make_video.py`, so it's free to use anywhere.
 **Thumbnail:** `launch/video/youtube-thumbnail.png` (1280×720)

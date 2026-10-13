@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/NTYDY7IGufw"><b>▶ Watch the video</b></a> ·
+  <a href="https://youtu.be/fPQHOnYs8sA"><b>▶ Watch the video</b></a> ·
   <a href="https://mygeeky.org">Website</a> ·
   <a href="#-get-started-in-3-steps">Get started</a> ·
   <a href="#-every-tab">Every tab</a> ·
@@ -102,7 +102,7 @@ shows everyone on Signals and every call, closer when they're closer to your wor
 ## 🚀 Get started in 3 steps
 
 <p align="center">
-  <a href="https://youtu.be/NTYDY7IGufw"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/video-thumbnail.png" width="640" alt="Watch: install and set up myGeeKy"></a><br>
+  <a href="https://youtu.be/fPQHOnYs8sA"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/video-thumbnail.png" width="640" alt="Watch: install and set up myGeeKy"></a><br>
   <sub>▶ <b>Watch the video:</b> install, set up, and a tour of the panel</sub>
 </p>
 
