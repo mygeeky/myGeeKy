@@ -25,6 +25,7 @@ KINDS = {
     "problem": ("🐞", "Problem", "problem"),
     "question": ("❓", "Question", "question"),
     "keyword": ("🔤", "Keyword", "keyword"),
+    "report": ("🚩", "Report", "report"),   # a job, call or resource that looks fake
 }
 
 

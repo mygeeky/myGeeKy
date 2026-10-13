@@ -1432,6 +1432,8 @@ PLANETS = {
     "news": ("#eab308", "M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9h4M18 14h-8M15 18h-5M10 6h8v4h-8z"),
     "activity": ("#34d399", "M22 12h-4l-3 9L9 3l-3 9H2"),
     "signals": ("#a78bfa", "M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"),
+    "grow": ("#4ade80", "M7 20h10M10 20c5.5-2.5.8-6.4 3-10M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8zM14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"),
+    "chances": ("#f472b6", "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"),
     "model": ("#ffd24a", "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"),
     "badges": ("#f0a35e", "M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM8.2 13.9 7 23l5-3 5 3-1.2-9.1"),
     "admin": ("#94a3b8", "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"),
@@ -1968,6 +1970,8 @@ class IdeaDialog(QDialog):
         kinds = QHBoxLayout()
         self.kind_buttons: dict[str, QRadioButton] = {}
         for key, (emoji, label, _) in KINDS.items():
+            if key == "report":          # sent from the listing itself (its 🚩), with its details filled in
+                continue
             b = QRadioButton(f"{emoji} {label}")
             self.kind_buttons[key] = b
             kinds.addWidget(b)
@@ -3188,6 +3192,8 @@ TABS = {
     "news": ("\U0001f4f0", "News"),
     "activity": ("\U0001f552", "Activity"),
     "signals": ("\U0001f4e1", "Signals"),
+    "grow": ("\U0001f331", "Grow: rising skills, learning paths and your wins"),
+    "chances": ("\U0001f3af", "Chances: verified jobs, funding and conferences"),
     "model": ("\U0001f9e0", "Model"),
     "badges": ("\U0001f3c5", "Badges"),
     "admin": ("\U0001f6e1", "Admin"),
@@ -3260,7 +3266,8 @@ class MyGeekyPanel(QWidget):
         for load in (self._refresh_badges, self._load_github_achievements, self._load_live_stats,
                      self._load_suggestions, self._load_contributions, lambda: self._refresh_activity(force=False),
                      self._load_model_history, self._load_market, self._load_research, self._style_market_switch,
-                     self._load_news, lambda: self._refresh_signals(force=False)):
+                     self._load_news, lambda: self._refresh_signals(force=False), self._load_growth,
+                     self._load_chances):
             self._load_safely(load)
         self.ticker.start(int(self.cfg.gui_live_rotate_seconds * 1000))
 
@@ -3286,6 +3293,12 @@ class MyGeekyPanel(QWidget):
         self._signals_timer = QTimer(self)
         self._signals_timer.timeout.connect(lambda: self._refresh_signals(force=False))
         self._signals_timer.start(5 * 60_000)
+
+        # Grow and Chances: your wins once a day, the maker's lists every few hours (each checks if it's due)
+        self._growth_timer = QTimer(self)
+        self._growth_timer.timeout.connect(self._maybe_refresh_growth)
+        self._growth_timer.start(60 * 60_000)
+        QTimer.singleShot(40_000, self._maybe_refresh_growth)
 
         self.hearts = HeartsOverlay()
         self._hearts_timer = QTimer(self)
@@ -3422,7 +3435,8 @@ class MyGeekyPanel(QWidget):
         self.height_grip = HeightGrip(self._resize_from_grip, lambda: self.cfg.gui_panel_height_fraction)
         panel_layout.addWidget(self.height_grip, 0, Qt.AlignHCenter)
 
-        self._tab_order = ["live", "suggestions", "repos", "market", "news", "activity", "signals", "model"]
+        self._tab_order = ["live", "suggestions", "repos", "market", "news", "activity", "signals",
+                           "grow", "chances", "model"]
         self.content_stack.addWidget(self._build_live_tab())
         self.content_stack.addWidget(self._build_suggestions_tab())
         self.content_stack.addWidget(self._build_repos_tab())
@@ -3430,6 +3444,8 @@ class MyGeekyPanel(QWidget):
         self.content_stack.addWidget(self._build_news_tab())
         self.content_stack.addWidget(self._build_activity_tab())
         self.content_stack.addWidget(self._build_signals_tab())
+        self.content_stack.addWidget(self._build_grow_tab())
+        self.content_stack.addWidget(self._build_chances_tab())
         self.content_stack.addWidget(self._build_model_tab())
         self._tab_order.append("badges")
         self.content_stack.addWidget(self._build_badges_tab())
@@ -3866,6 +3882,412 @@ class MyGeekyPanel(QWidget):
         scroll.viewport().setStyleSheet("background: transparent;")
         page.setAutoFillBackground(False)
         return scroll
+
+    # ------------------------------------------------------------------ 🌱 Grow and 🎯 Chances
+    GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Paths"), ("learn", "📚 Learn"), ("wins", "🎉 Wins"),
+                  ("collab", "🤝 Collaborators"))
+    CHANCE_MODES = (("jobs", "💼 Jobs"), ("funding", "💶 Funding"), ("conferences", "🎤 Conferences"))
+
+    def _scroll_page(self, build: Callable[[QVBoxLayout], None]) -> QScrollArea:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 4, 4, 0)
+        build(layout)
+        layout.addStretch(1)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidget(page)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background:transparent; border:none;")
+        scroll.viewport().setAutoFillBackground(False)
+        scroll.viewport().setStyleSheet("background: transparent;")
+        page.setAutoFillBackground(False)
+        return scroll
+
+    def _mode_row(self, layout: QVBoxLayout, modes, on_pick: Callable[[str], None]) -> dict[str, QPushButton]:
+        from .growth_ui import FlowRow
+        row = FlowRow()
+        buttons: dict[str, QPushButton] = {}
+        for mode, label in modes:
+            b = QPushButton(label)
+            b.setCursor(Qt.PointingHandCursor)
+            b.clicked.connect(lambda checked=False, m=mode: on_pick(m))
+            buttons[mode] = b
+            row.add(b)
+        row.finish()
+        layout.addWidget(row)
+        return buttons
+
+    def _build_grow_tab(self) -> QScrollArea:
+        self._grow_mode = "skills"
+        self._growth: dict[str, Any] = {}
+        self._collabs: dict[str, Any] = {}
+        self._growth_running = False
+
+        def build(layout: QVBoxLayout) -> None:
+            actions = QHBoxLayout()
+            self.grow_updated_label = QLabel("")
+            self.refresh_grow_btn = QPushButton("Refresh")
+            self.refresh_grow_btn.setCursor(Qt.PointingHandCursor)
+            self.refresh_grow_btn.clicked.connect(lambda: self._refresh_growth(force=True))
+            actions.addWidget(self.grow_updated_label, 1)
+            actions.addWidget(self.refresh_grow_btn)
+            layout.addLayout(actions)
+            self.grow_mode_buttons = self._mode_row(layout, self.GROW_MODES, self._set_grow_mode)
+            self.grow_hint = QLabel("")
+            self.grow_hint.setWordWrap(True)
+            layout.addWidget(self.grow_hint)
+            box = QWidget()
+            self.grow_area = QVBoxLayout(box)
+            self.grow_area.setContentsMargins(0, 0, 0, 0)
+            self.grow_area.setSpacing(6)
+            layout.addWidget(box)
+        return self._scroll_page(build)
+
+    def _build_chances_tab(self) -> QScrollArea:
+        self._chance_mode = "jobs"
+        self._chances: dict[str, Any] = {}
+
+        def build(layout: QVBoxLayout) -> None:
+            actions = QHBoxLayout()
+            self.chances_updated_label = QLabel("")
+            self.refresh_chances_btn = QPushButton("Refresh")
+            self.refresh_chances_btn.setCursor(Qt.PointingHandCursor)
+            self.refresh_chances_btn.clicked.connect(lambda: self._refresh_chances(force=True))
+            actions.addWidget(self.chances_updated_label, 1)
+            actions.addWidget(self.refresh_chances_btn)
+            layout.addLayout(actions)
+            self.chance_mode_buttons = self._mode_row(layout, self.CHANCE_MODES, self._set_chance_mode)
+            self.chances_hint = QLabel("")
+            self.chances_hint.setWordWrap(True)
+            layout.addWidget(self.chances_hint)
+            box = QWidget()
+            self.chances_area = QVBoxLayout(box)
+            self.chances_area.setContentsMargins(0, 0, 0, 0)
+            self.chances_area.setSpacing(6)
+            layout.addWidget(box)
+        return self._scroll_page(build)
+
+    def _style_grow_switches(self) -> None:
+        from .growth_ui import mode_style
+        theme = THEMES[self._theme_name()]
+        for mode, b in getattr(self, "grow_mode_buttons", {}).items():
+            b.setStyleSheet(mode_style(theme, mode == self._grow_mode))
+        for mode, b in getattr(self, "chance_mode_buttons", {}).items():
+            b.setStyleSheet(mode_style(theme, mode == self._chance_mode))
+        btn = (f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
+               f"border-radius:8px; padding:6px 10px; font-size:11.5px; }}")
+        muted = f"color:{theme['muted']}; font-size:10.5px; background:transparent;"
+        for w in ("refresh_grow_btn", "refresh_chances_btn"):
+            if hasattr(self, w):
+                getattr(self, w).setStyleSheet(btn)
+        for w in ("grow_updated_label", "grow_hint", "chances_updated_label", "chances_hint"):
+            if hasattr(self, w):
+                getattr(self, w).setStyleSheet(muted)
+
+    # ---- loading
+    def _load_growth(self) -> None:
+        if self._growth_running:
+            return
+        self._growth_running = True
+        self.grow_updated_label.setText("reading your field…")
+        self._run_async(lambda: logic.get_growth(self.cfg), self._on_growth_ready)
+
+    def _refresh_growth(self, force: bool) -> None:
+        if self._growth_running:
+            return
+        self._growth_running = True
+        self.refresh_grow_btn.setEnabled(False)
+        self.grow_updated_label.setText("updating…")
+        self._run_async(lambda: logic.refresh_growth(self.cfg, force=force), self._on_growth_ready)
+        if self._grow_mode == "collab":
+            self._load_collaborators()
+
+    def _maybe_refresh_growth(self) -> None:
+        if logic.growth_due(self.cfg):
+            self._refresh_growth(force=False)
+        self._refresh_chances(force=False)       # fetches the maker's lists only when they're due
+
+    def _on_growth_ready(self, data: Any) -> None:
+        self._growth_running = False
+        self.refresh_grow_btn.setEnabled(True)
+        self._growth = data if isinstance(data, dict) else {}
+        self._render_grow()
+
+    def _load_collaborators(self) -> None:
+        self._run_async(lambda: logic.get_collaborators(self.cfg), self._on_collaborators_ready)
+
+    def _on_collaborators_ready(self, data: Any) -> None:
+        self._collabs = data if isinstance(data, dict) else {}
+        if self._grow_mode == "collab":
+            self._render_grow()
+
+    def _load_chances(self) -> None:
+        self._run_async(lambda: logic.get_opportunities(self.cfg), self._on_chances_ready)
+
+    def _refresh_chances(self, force: bool) -> None:
+        if getattr(self, "_chances_running", False):
+            return
+        self._chances_running = True
+        self.refresh_chances_btn.setEnabled(False)
+        if force:
+            self.chances_updated_label.setText("updating…")
+        self._run_async(lambda: logic.refresh_opportunities(self.cfg, force=force), self._on_chances_ready)
+
+    def _on_chances_ready(self, data: Any) -> None:
+        self._chances_running = False
+        self.refresh_chances_btn.setEnabled(True)
+        self._chances = data if isinstance(data, dict) else {}
+        self._render_chances()
+
+    def _set_grow_mode(self, mode: str) -> None:
+        self._grow_mode = mode
+        if mode == "collab":
+            self._load_collaborators()
+        self._render_grow()
+
+    def _set_chance_mode(self, mode: str) -> None:
+        self._chance_mode = mode
+        self._render_chances()
+
+    # ---- drawing
+    def _grow_note(self, text: str, theme: dict[str, Any]) -> None:
+        lbl = QLabel(text)
+        lbl.setWordWrap(True)
+        lbl.setTextFormat(Qt.PlainText)
+        lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+        self.grow_area.addWidget(lbl)
+
+    def _grow_header(self, text: str, theme: dict[str, Any], area=None) -> None:
+        lbl = QLabel(text)
+        lbl.setWordWrap(True)
+        lbl.setStyleSheet("font-size:10.5px; font-weight:700; letter-spacing:0.5px; margin-top:6px; "
+                          f"color:{theme['text']}; background:transparent;")
+        (area or self.grow_area).addWidget(lbl)
+
+    def _render_grow(self) -> None:
+        from .growth_ui import PathCard, ResourceRow, SkillCard, WinRow
+        theme = THEMES[self._theme_name()]
+        self._style_grow_switches()
+        _clear_layout(self.grow_area)
+        data = self._growth
+        if not self._growth_running:
+            err = data.get("error") or ""
+            updated = (data.get("rising") or {}).get("updated_at")
+            self.grow_updated_label.setText(err or ("updated " + _time_ago(updated) if updated else ""))
+        mode = self._grow_mode
+        open_ = logic.open_link
+        if mode == "skills":
+            self.grow_hint.setText("Skills growing in your field that your profile doesn't show yet, from the "
+                                   "papers, repos, models and people myGeeKy follows for you. 👍 / 👎 teach it "
+                                   "what to suggest; 🧭 turns a skill into steps.")
+            rising = data.get("rising") or {}
+            started = {p["skill"] for p in data.get("paths") or []}
+            if not data:
+                self._grow_note("Reading your field…", theme)
+                return
+            if not rising.get("skills"):
+                self._grow_note("No rising skills yet. They come from what myGeeKy has read about your field: "
+                                "open News and Market (Research, Repos, Models) once, then Refresh.", theme)
+            for s in rising.get("skills") or []:
+                self.grow_area.addWidget(SkillCard(
+                    s, theme, self._voter("skill", s["name"], s["name"], [s["name"]], rerender=True),
+                    self._on_start_path, open_, s["name"] in started))
+            if rising.get("hidden"):
+                self._hidden_note(self.grow_area, rising["hidden"], "skill", theme)
+            if rising.get("strengths"):
+                self._grow_header("💪 YOUR STRENGTHS THAT ARE RISING TOO", theme)
+                for s in rising["strengths"][:5]:
+                    self.grow_area.addWidget(SkillCard(s, theme, lambda up: 0, self._on_start_path, open_,
+                                                       True, strength=True))
+        elif mode == "paths":
+            self.grow_hint.setText("Your learning paths: learn the basics, go deeper, practise on a real project, "
+                                   "then use it in your own work. The last step ticks itself when one of your "
+                                   "repos shows the skill.")
+            paths = data.get("paths") or []
+            if not paths:
+                self._grow_note("No paths yet. In 📈 Skills, press 🧭 Start a learning path on a skill.", theme)
+            for pth in paths:
+                self.grow_area.addWidget(PathCard(pth, theme, self._on_tick_step, self._on_stop_path, open_))
+        elif mode == "learn":
+            self.grow_hint.setText("Free courses, books, tutorials and repos picked by myGeeKy's maker, matched "
+                                   "to your work and the skills rising in your field. 👍 / 👎 teach it what helps you.")
+            res = data.get("resources") or {}
+            for r in (res.get("items") or [])[:30]:
+                self.grow_area.addWidget(ResourceRow(r, theme, self._voter("resource", r["id"], r["title"],
+                                                                           r.get("skills", []) + r.get("keywords", [])),
+                                                     open_))
+            if not res.get("items"):
+                self._grow_note("No learning resources yet.", theme)
+            if res.get("hidden"):
+                self._hidden_note(self.grow_area, res["hidden"], "resource", theme)
+        elif mode == "wins":
+            self.grow_hint.setText("New stars and forks on your repos, and new citations of your papers "
+                                   "(with the newest paper citing you). Checked once a day.")
+            wins = data.get("wins") or []
+            if data.get("wins_updated_at") and not self._growth_running:
+                self.grow_updated_label.setText("checked " + _time_ago(data["wins_updated_at"]))
+            if not wins:
+                need = [] if data.get("has_github") else ["GitHub (for stars and forks)"]
+                if not data.get("has_orcid"):
+                    need.append("your ORCID (for citations)")
+                self._grow_note("No wins in the last 30 days yet. The first check only sets the starting point; "
+                                "from then on, every new star, fork and citation shows up here."
+                                + (" Add " + " and ".join(need) + " in setup to see them." if need else ""), theme)
+            for w in wins:
+                self.grow_area.addWidget(WinRow(w, theme, open_, _time_ago(w.get("at", ""))))
+        elif mode == "collab":
+            self.grow_hint.setText("Fellow myGeeKy users whose skills complement yours: they bring what you "
+                                   "don't, you bring what they don't. 🤝 is sealed: they only see it if they "
+                                   "pick you too.")
+            self._render_collaborators(theme)
+
+    def _render_collaborators(self, theme: dict[str, Any]) -> None:
+        from .growth_ui import CollaboratorCard
+        if self._github_card(self.grow_area, "signals"):
+            return
+        data = self._collabs
+        if not data:
+            self._grow_note("Looking for people who complement you…", theme)
+            return
+        if not data.get("enabled"):
+            self._grow_note("Collaborator matching uses Signals: turn it on in ⚙ Settings (Signals), and "
+                            "people who complement you show up here.", theme)
+            return
+        people = data.get("people") or []
+        if not people:
+            self._grow_note("Nobody on Signals complements you yet. As more people join myGeeKy, matches "
+                            "show up here.", theme)
+        for p in people:
+            self.grow_area.addWidget(CollaboratorCard(
+                p, theme, lambda login, url, size: _avatar_widget(login, url, size, self.avatar_loader),
+                self._voter("collaborator", p["login"], " ; ".join(p.get("interests") or []), p.get("interests") or [],
+                            rerender=True),
+                self._on_ask_collab, logic.open_link, bool(data.get("can_send"))))
+        if data.get("hidden"):
+            self._hidden_note(self.grow_area, data["hidden"], "collaborator", theme)
+
+    def _render_chances(self) -> None:
+        from .growth_ui import OpportunityCard
+        theme = THEMES[self._theme_name()]
+        self._style_grow_switches()
+        _clear_layout(self.chances_area)
+        data = self._chances
+        mode = self._chance_mode
+        if not getattr(self, "_chances_running", False):
+            self.chances_updated_label.setText(data.get("error") or "")
+        hints = {
+            "jobs": "Verified jobs: PhD places, postdocs, master's and research jobs that myGeeKy's maker checked "
+                    "are real. Matched to you here, on your computer: nobody learns what you looked at. "
+                    "Each one disappears after its deadline.",
+            "funding": "Grants, fellowships, scholarships and travel grants, matched to your field. "
+                       "Each one disappears after its deadline.",
+            "conferences": "Conferences in your field, with the abstract deadline and what students get. "
+                           "Each one disappears after its deadline.",
+        }
+        self.chances_hint.setText(hints[mode] + " 👍 / 👎 teach your model; 🚩 tells the maker one looks fake.")
+        block = data.get(mode) or {}
+        items = block.get("items") or []
+        if not data:
+            lbl = QLabel("Loading…")
+            lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+            self.chances_area.addWidget(lbl)
+            return
+        if not items:
+            lbl = QLabel({"jobs": "No open verified jobs right now. New ones are added by hand as they're "
+                                  "checked; myGeeKy looks for them every few hours.",
+                          "funding": "No open funding calls right now. New ones show up here by themselves.",
+                          "conferences": "No upcoming conferences right now. New ones show up here by themselves."}[mode])
+            lbl.setWordWrap(True)
+            lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+            self.chances_area.addWidget(lbl)
+        vote_kind = {"jobs": "job", "funding": "funding", "conferences": "conference"}[mode]
+        for it in items:
+            self.chances_area.addWidget(OpportunityCard(
+                mode, it, theme, self._voter(vote_kind, it["id"], f"{it['title']} {it.get('summary', '')}",
+                                             it.get("keywords", []), rerender_chances=True),
+                logic.open_link, self._on_report))
+        if block.get("hidden"):
+            self._hidden_note(self.chances_area, block["hidden"], vote_kind, theme)
+
+    def _hidden_note(self, area, n: int, kind: str, theme: dict[str, Any]) -> None:
+        row = QHBoxLayout()
+        lbl = QLabel(f"{n} hidden by your 👎.")
+        lbl.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
+        again = QPushButton("Show them again")
+        again.setCursor(Qt.PointingHandCursor)
+        again.setStyleSheet(f"QPushButton {{ background:transparent; color:{theme['link']}; border:none; "
+                            "font-size:10.5px; text-decoration:underline; }")
+        again.clicked.connect(lambda: self._unhide(kind))
+        row.addWidget(lbl)
+        row.addWidget(again)
+        row.addStretch(1)
+        holder = QWidget()
+        holder.setLayout(row)
+        row.setContentsMargins(0, 0, 0, 0)
+        area.addWidget(holder)
+
+    def _unhide(self, kind: str) -> None:
+        logic.unhide(kind)
+        if kind in ("job", "funding", "conference"):
+            self._load_chances()
+        elif kind == "collaborator":
+            self._load_collaborators()
+        else:
+            self._load_growth()
+
+    # ---- actions
+    def _voter(self, kind: str, item_id: str, text: str, tags: list[str], rerender: bool = False,
+               rerender_chances: bool = False) -> Callable[[bool], int]:
+        """A thumb's handler: records the vote; a 👎 that hides something redraws the list."""
+        def press(up: bool) -> int:
+            v = logic.vote(kind, item_id, up, text, tags)
+            if v < 0 and rerender:
+                QTimer.singleShot(0, self._load_growth if kind != "collaborator" else self._load_collaborators)
+            if v < 0 and rerender_chances:
+                QTimer.singleShot(0, self._load_chances)
+            return v
+        return press
+
+    def _on_start_path(self, skill: str) -> None:
+        logic.start_path(skill)
+        self._grow_mode = "paths"
+        self._load_growth()
+
+    def _on_stop_path(self, skill: str) -> None:
+        logic.stop_path(skill)
+        self._load_growth()
+
+    def _on_tick_step(self, skill: str, step: str, done: bool) -> None:
+        logic.tick_step(skill, step, done)
+        self._load_growth()
+
+    def _on_ask_collab(self, card) -> None:
+        login = card.person["login"]
+        card.ask.setEnabled(False)
+        card.note.setText("sending…")
+        self._run_async(lambda: logic.send_signal(self.cfg, login, "collab"),
+                        lambda r: card.set_result(bool((r or {}).get("ok")),
+                                                  "sent: you'll both know if they pick you too"
+                                                  if (r or {}).get("ok") else f"couldn't send: {(r or {}).get('error', '')}")
+                        if _alive(card) else None)
+
+    def _on_report(self, kind: str, item: dict[str, Any]) -> None:
+        links = logic.report_links(kind, item)
+        box = QMessageBox(self)
+        box.setWindowTitle("Report a listing")
+        box.setText(f"Does “{item.get('title', '')}” look fake, or is it no longer real?\n\n"
+                    "Tell myGeeKy's maker, who checks it and takes it down. A GitHub issue is public and "
+                    "sent with your account; an email is private.")
+        gh = box.addButton("Report on GitHub", QMessageBox.AcceptRole)
+        mail = box.addButton("Email support", QMessageBox.AcceptRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        if box.clickedButton() is gh:
+            logic.open_link(links["issue"])
+        elif box.clickedButton() is mail:
+            logic.open_link(links["email"])
 
     def _build_update_banner(self) -> QFrame:
         banner = QFrame()
@@ -4900,7 +5322,8 @@ class MyGeekyPanel(QWidget):
         """Everything else that was coloured when it was drawn, redrawn in the new
         theme -- or it keeps the old theme's text colour (dark text on dark)."""
         steps = [self._style_market_switch, self._render_badges, self._render_badge_strip,
-                 self._render_keywords, self._update_tab_styles, self._fold_profile]
+                 self._render_keywords, self._update_tab_styles, self._fold_profile,
+                 self._render_grow, self._render_chances]
         if self._is_admin:
             steps.append(self._render_admin)
         if self.settings_panel.isVisible() and getattr(self, "_setup", None):

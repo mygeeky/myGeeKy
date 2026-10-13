@@ -1,0 +1,679 @@
+{
+ "version": "2026-10-13T00:00:00Z",
+ "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
+ "jobs": [],
+ "funding": [],
+ "conferences": [],
+ "resources": [
+  {
+   "id": "software-carpentry",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "python",
+    "r",
+    "git",
+    "bash",
+    "sql"
+   ],
+   "keywords": [
+    "programming",
+    "research computing"
+   ],
+   "title": "Software Carpentry lessons",
+   "url": "https://software-carpentry.org/lessons/",
+   "summary": "Free, hands-on lessons in the shell, Git, Python and R, written for researchers."
+  },
+  {
+   "id": "data-carpentry",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "r",
+    "python",
+    "sql",
+    "data visualization"
+   ],
+   "keywords": [
+    "data analysis",
+    "spreadsheets"
+   ],
+   "title": "Data Carpentry",
+   "url": "https://datacarpentry.org/",
+   "summary": "Domain-specific lessons (genomics, ecology, social science, imaging) on working with data."
+  },
+  {
+   "id": "hpc-carpentry",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "hpc",
+    "slurm",
+    "bash"
+   ],
+   "keywords": [
+    "cluster",
+    "research computing"
+   ],
+   "title": "HPC Carpentry",
+   "url": "https://www.hpc-carpentry.org/",
+   "summary": "Getting started on a computing cluster: the shell, job schedulers and running work at scale."
+  },
+  {
+   "id": "missing-semester",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "bash",
+    "git"
+   ],
+   "keywords": [
+    "command line",
+    "tools"
+   ],
+   "title": "The Missing Semester of Your CS Education (MIT)",
+   "url": "https://missing.csail.mit.edu/",
+   "summary": "The tools nobody teaches: the shell, editors, Git, debugging and automation."
+  },
+  {
+   "id": "pro-git",
+   "type": "book",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "git"
+   ],
+   "keywords": [
+    "version control"
+   ],
+   "title": "Pro Git (free book)",
+   "url": "https://git-scm.com/book/en/v2",
+   "summary": "The complete Git book, free to read online."
+  },
+  {
+   "id": "github-skills",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "git",
+    "github actions"
+   ],
+   "keywords": [
+    "github",
+    "collaboration"
+   ],
+   "title": "GitHub Skills",
+   "url": "https://skills.github.com/",
+   "summary": "Short interactive courses inside GitHub: pull requests, Actions, Pages and more."
+  },
+  {
+   "id": "happy-git-r",
+   "type": "book",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "git",
+    "r"
+   ],
+   "keywords": [
+    "version control",
+    "rstudio"
+   ],
+   "title": "Happy Git and GitHub for the useR",
+   "url": "https://happygitwithr.com/",
+   "summary": "Git and GitHub for R users, step by step."
+  },
+  {
+   "id": "turing-way",
+   "type": "book",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "reproducible research",
+    "open science",
+    "data management"
+   ],
+   "keywords": [
+    "reproducibility",
+    "collaboration",
+    "ethics"
+   ],
+   "title": "The Turing Way",
+   "url": "https://book.the-turing-way.org/",
+   "summary": "A community handbook on reproducible, ethical and collaborative data science."
+  },
+  {
+   "id": "r4ds",
+   "type": "book",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "r",
+    "tidyverse",
+    "ggplot2",
+    "data visualization"
+   ],
+   "keywords": [
+    "data science"
+   ],
+   "title": "R for Data Science (2e)",
+   "url": "https://r4ds.hadley.nz/",
+   "summary": "Import, tidy, transform, visualize and model data with the tidyverse."
+  },
+  {
+   "id": "advanced-r",
+   "type": "book",
+   "level": "advanced",
+   "free": true,
+   "skills": [
+    "r",
+    "packaging"
+   ],
+   "keywords": [
+    "programming"
+   ],
+   "title": "Advanced R",
+   "url": "https://adv-r.hadley.nz/",
+   "summary": "How R really works, for people who already use it."
+  },
+  {
+   "id": "python-ds-handbook",
+   "type": "book",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "python",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn"
+   ],
+   "keywords": [
+    "data science"
+   ],
+   "title": "Python Data Science Handbook",
+   "url": "https://jakevdp.github.io/PythonDataScienceHandbook/",
+   "summary": "NumPy, pandas, Matplotlib and scikit-learn, free online with notebooks."
+  },
+  {
+   "id": "sklearn-mooc",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "scikit-learn",
+    "machine learning"
+   ],
+   "keywords": [
+    "predictive modeling"
+   ],
+   "title": "scikit-learn MOOC (Inria)",
+   "url": "https://inria.github.io/scikit-learn-mooc/",
+   "summary": "Machine learning in Python with scikit-learn, from the people who build it."
+  },
+  {
+   "id": "kaggle-learn",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "python",
+    "machine learning",
+    "pandas",
+    "sql"
+   ],
+   "keywords": [
+    "data science"
+   ],
+   "title": "Kaggle Learn",
+   "url": "https://www.kaggle.com/learn",
+   "summary": "Short, free micro-courses with exercises you run in the browser."
+  },
+  {
+   "id": "fastai",
+   "type": "course",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "deep learning",
+    "pytorch"
+   ],
+   "keywords": [
+    "ai"
+   ],
+   "title": "Practical Deep Learning for Coders (fast.ai)",
+   "url": "https://course.fast.ai/",
+   "summary": "Top-down, practical deep learning: get models working first, then the theory."
+  },
+  {
+   "id": "d2l",
+   "type": "book",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "deep learning",
+    "pytorch",
+    "jax",
+    "large language models"
+   ],
+   "keywords": [
+    "ai"
+   ],
+   "title": "Dive into Deep Learning",
+   "url": "https://d2l.ai/",
+   "summary": "An interactive deep learning book with code, maths and discussions."
+  },
+  {
+   "id": "hf-learn",
+   "type": "course",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "hugging face transformers",
+    "large language models",
+    "nlp",
+    "fine-tuning",
+    "ai agents"
+   ],
+   "keywords": [
+    "ai",
+    "llm"
+   ],
+   "title": "Hugging Face Learn",
+   "url": "https://huggingface.co/learn",
+   "summary": "Free courses on transformers, LLMs, agents, diffusion and more."
+  },
+  {
+   "id": "pytorch-tutorials",
+   "type": "tutorial",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "pytorch",
+    "deep learning"
+   ],
+   "keywords": [
+    "ai"
+   ],
+   "title": "PyTorch tutorials",
+   "url": "https://pytorch.org/tutorials/",
+   "summary": "Official PyTorch tutorials, from tensors to training and deployment."
+  },
+  {
+   "id": "nextflow-training",
+   "type": "tutorial",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "nextflow",
+    "workflow management",
+    "docker"
+   ],
+   "keywords": [
+    "pipelines",
+    "bioinformatics"
+   ],
+   "title": "Nextflow training",
+   "url": "https://training.nextflow.io/",
+   "summary": "Official Nextflow training: write, run and scale reproducible pipelines."
+  },
+  {
+   "id": "snakemake-tutorial",
+   "type": "tutorial",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "snakemake",
+    "reproducible research"
+   ],
+   "keywords": [
+    "pipelines",
+    "bioinformatics"
+   ],
+   "title": "Snakemake tutorial",
+   "url": "https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html",
+   "summary": "Build a small variant-calling workflow while learning Snakemake."
+  },
+  {
+   "id": "docker-get-started",
+   "type": "tutorial",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "docker"
+   ],
+   "keywords": [
+    "containers"
+   ],
+   "title": "Docker: get started",
+   "url": "https://docs.docker.com/get-started/",
+   "summary": "Build, run and share your first containers."
+  },
+  {
+   "id": "galaxy-training",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "galaxy",
+    "rna-seq",
+    "variant calling",
+    "single-cell rna-seq",
+    "metagenomics",
+    "proteomics"
+   ],
+   "keywords": [
+    "bioinformatics"
+   ],
+   "title": "Galaxy Training Network",
+   "url": "https://training.galaxyproject.org/",
+   "summary": "Hundreds of free bioinformatics tutorials you can follow in the browser."
+  },
+  {
+   "id": "ebi-training",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "genomics",
+    "proteomics",
+    "annotation"
+   ],
+   "keywords": [
+    "bioinformatics",
+    "databases"
+   ],
+   "title": "EMBL-EBI Training",
+   "url": "https://www.ebi.ac.uk/training/",
+   "summary": "Free on-demand courses and webinars on bioinformatics data and tools."
+  },
+  {
+   "id": "rosalind",
+   "type": "website",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "python",
+    "genomics"
+   ],
+   "keywords": [
+    "bioinformatics",
+    "algorithms"
+   ],
+   "title": "Rosalind",
+   "url": "https://rosalind.info/",
+   "summary": "Learn bioinformatics by solving programming problems."
+  },
+  {
+   "id": "gwas-tutorial",
+   "type": "repo",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "gwas",
+    "plink",
+    "population genetics"
+   ],
+   "keywords": [
+    "genetics",
+    "quality control"
+   ],
+   "title": "GWAS tutorial (Marees et al.)",
+   "url": "https://github.com/MareesAT/GWA_tutorial",
+   "summary": "A step-by-step GWAS with PLINK: quality control, population structure and association."
+  },
+  {
+   "id": "plink2-docs",
+   "type": "website",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "plink",
+    "gwas"
+   ],
+   "keywords": [
+    "genetics"
+   ],
+   "title": "PLINK 2 documentation",
+   "url": "https://www.cog-genomics.org/plink/2.0/",
+   "summary": "The reference for PLINK 2's commands and file formats."
+  },
+  {
+   "id": "sc-best-practices",
+   "type": "book",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "single-cell rna-seq",
+    "scanpy",
+    "spatial transcriptomics",
+    "multi-omics"
+   ],
+   "keywords": [
+    "single-cell"
+   ],
+   "title": "Single-cell best practices",
+   "url": "https://www.sc-best-practices.org/",
+   "summary": "A complete, current guide to single-cell analysis in Python (scverse)."
+  },
+  {
+   "id": "osca",
+   "type": "book",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "single-cell rna-seq",
+    "bioconductor",
+    "r"
+   ],
+   "keywords": [
+    "single-cell"
+   ],
+   "title": "Orchestrating Single-Cell Analysis with Bioconductor",
+   "url": "https://bioconductor.org/books/release/OSCA/",
+   "summary": "Single-cell RNA-seq analysis in R, from Bioconductor."
+  },
+  {
+   "id": "awesome-bioinformatics",
+   "type": "repo",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "genomics",
+    "rna-seq",
+    "variant calling"
+   ],
+   "keywords": [
+    "bioinformatics",
+    "tools"
+   ],
+   "title": "Awesome Bioinformatics",
+   "url": "https://github.com/danielecook/Awesome-Bioinformatics",
+   "summary": "A curated list of bioinformatics software, resources and libraries."
+  },
+  {
+   "id": "awesome-single-cell",
+   "type": "repo",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "single-cell rna-seq",
+    "scanpy",
+    "seurat"
+   ],
+   "keywords": [
+    "single-cell",
+    "tools"
+   ],
+   "title": "Awesome single cell",
+   "url": "https://github.com/seandavi/awesome-single-cell",
+   "summary": "A list of software packages and data resources for single-cell analysis."
+  },
+  {
+   "id": "stat-rethinking",
+   "type": "course",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "bayesian statistics",
+    "causal inference",
+    "stan"
+   ],
+   "keywords": [
+    "statistics"
+   ],
+   "title": "Statistical Rethinking (lectures and code)",
+   "url": "https://github.com/rmcelreath/stat_rethinking_2024",
+   "summary": "Richard McElreath's Bayesian statistics course: recorded lectures, slides and code."
+  },
+  {
+   "id": "seeing-theory",
+   "type": "website",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "bayesian statistics"
+   ],
+   "keywords": [
+    "statistics",
+    "probability"
+   ],
+   "title": "Seeing Theory",
+   "url": "https://seeing-theory.brown.edu/",
+   "summary": "A visual introduction to probability and statistics."
+  },
+  {
+   "id": "causal-mixtape",
+   "type": "book",
+   "level": "intermediate",
+   "free": true,
+   "skills": [
+    "causal inference"
+   ],
+   "keywords": [
+    "statistics",
+    "econometrics"
+   ],
+   "title": "Causal Inference: The Mixtape",
+   "url": "https://mixtape.scunning.com/",
+   "summary": "Causal inference with code in R, Stata and Python, free online."
+  },
+  {
+   "id": "what-if",
+   "type": "book",
+   "level": "advanced",
+   "free": true,
+   "skills": [
+    "causal inference",
+    "epidemiology"
+   ],
+   "keywords": [
+    "statistics"
+   ],
+   "title": "Causal Inference: What If (Hernán and Robins)",
+   "url": "https://miguelhernan.org/whatifbook",
+   "summary": "The epidemiologists' textbook on causal inference, free to download."
+  },
+  {
+   "id": "polars-guide",
+   "type": "tutorial",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "polars"
+   ],
+   "keywords": [
+    "data analysis"
+   ],
+   "title": "Polars user guide",
+   "url": "https://docs.pola.rs/",
+   "summary": "Fast DataFrames in Python and Rust, with a guide for pandas users."
+  },
+  {
+   "id": "rust-book",
+   "type": "book",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "rust"
+   ],
+   "keywords": [
+    "programming"
+   ],
+   "title": "The Rust Programming Language",
+   "url": "https://doc.rust-lang.org/book/",
+   "summary": "The official, free book on Rust."
+  },
+  {
+   "id": "julia-academy",
+   "type": "course",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "julia"
+   ],
+   "keywords": [
+    "scientific computing"
+   ],
+   "title": "JuliaAcademy",
+   "url": "https://juliaacademy.com/",
+   "summary": "Free courses on Julia for data science and scientific computing."
+  },
+  {
+   "id": "mit-ocw",
+   "type": "website",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "machine learning",
+    "statistical learning"
+   ],
+   "keywords": [
+    "courses"
+   ],
+   "title": "MIT OpenCourseWare",
+   "url": "https://ocw.mit.edu/",
+   "summary": "Materials from thousands of MIT courses, free."
+  },
+  {
+   "id": "github-student-pack",
+   "type": "website",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "git",
+    "cloud computing"
+   ],
+   "keywords": [
+    "students",
+    "free tools"
+   ],
+   "title": "GitHub Student Developer Pack",
+   "url": "https://education.github.com/pack",
+   "summary": "Free developer tools and cloud credits for students."
+  },
+  {
+   "id": "colab",
+   "type": "website",
+   "level": "beginner",
+   "free": true,
+   "skills": [
+    "python",
+    "jupyter",
+    "deep learning"
+   ],
+   "keywords": [
+    "notebooks",
+    "gpu"
+   ],
+   "title": "Google Colab",
+   "url": "https://colab.research.google.com/",
+   "summary": "Notebooks in the browser with free (limited) GPUs."
+  }
+ ]
+}

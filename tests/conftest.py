@@ -34,6 +34,11 @@ import mygeeky.config as config_module
 import mygeeky.gui.app  # noqa: F401
 import mygeeky.storage  # noqa: F401
 import mygeeky.sync  # noqa: F401
+import mygeeky.taste  # noqa: F401
+import mygeeky.curated  # noqa: F401
+import mygeeky.skills  # noqa: F401
+import mygeeky.wins  # noqa: F401
+import mygeeky.collab  # noqa: F401
 
 REAL_ROOTS = (Path(config_module.CONFIG_DIR), Path(config_module.DATA_DIR))
 
@@ -59,6 +64,13 @@ def _isolate_real_data(tmp_path, monkeypatch):
                 if hit:
                     root, rel = hit
                     monkeypatch.setattr(module, attr, fake_roots[root] / rel)
+
+
+@pytest.fixture(autouse=True)
+def _fresh_curated_lists(monkeypatch):
+    """The curated lists are cached in memory once read: every test starts from the files."""
+    import mygeeky.curated as curated
+    monkeypatch.setattr(curated, "_loaded", None)
 
 
 @pytest.fixture(autouse=True)

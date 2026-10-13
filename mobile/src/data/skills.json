@@ -1,0 +1,1231 @@
+{
+ "version": "2026-10-13",
+ "skills": [
+  {
+   "name": "Python",
+   "kind": "language",
+   "aliases": [
+    "python",
+    "python3"
+   ]
+  },
+  {
+   "name": "R",
+   "kind": "language",
+   "aliases": [
+    "r",
+    "rstats",
+    "r-package",
+    "r language",
+    "cran"
+   ]
+  },
+  {
+   "name": "Julia",
+   "kind": "language",
+   "aliases": [
+    "julia",
+    "julialang",
+    "julia-language"
+   ]
+  },
+  {
+   "name": "Rust",
+   "kind": "language",
+   "aliases": [
+    "rust",
+    "rust-lang"
+   ]
+  },
+  {
+   "name": "C++",
+   "kind": "language",
+   "aliases": [
+    "c++",
+    "cpp",
+    "c-plus-plus"
+   ]
+  },
+  {
+   "name": "Go",
+   "kind": "language",
+   "aliases": [
+    "go",
+    "golang"
+   ]
+  },
+  {
+   "name": "JavaScript",
+   "kind": "language",
+   "aliases": [
+    "javascript"
+   ]
+  },
+  {
+   "name": "TypeScript",
+   "kind": "language",
+   "aliases": [
+    "typescript"
+   ]
+  },
+  {
+   "name": "SQL",
+   "kind": "language",
+   "aliases": [
+    "sql",
+    "postgresql",
+    "postgres",
+    "mysql",
+    "sqlite"
+   ]
+  },
+  {
+   "name": "Bash",
+   "kind": "language",
+   "aliases": [
+    "bash",
+    "shell scripting",
+    "zsh"
+   ]
+  },
+  {
+   "name": "MATLAB",
+   "kind": "language",
+   "aliases": [
+    "matlab"
+   ]
+  },
+  {
+   "name": "Git",
+   "kind": "tool",
+   "aliases": [
+    "git",
+    "version control"
+   ]
+  },
+  {
+   "name": "GitHub Actions",
+   "kind": "tool",
+   "aliases": [
+    "github actions",
+    "github-actions",
+    "continuous integration",
+    "ci/cd"
+   ]
+  },
+  {
+   "name": "Docker",
+   "kind": "tool",
+   "aliases": [
+    "docker",
+    "containers",
+    "dockerfile"
+   ]
+  },
+  {
+   "name": "Apptainer",
+   "kind": "tool",
+   "aliases": [
+    "apptainer",
+    "singularity"
+   ]
+  },
+  {
+   "name": "Conda",
+   "kind": "tool",
+   "aliases": [
+    "conda",
+    "bioconda",
+    "mamba",
+    "micromamba"
+   ]
+  },
+  {
+   "name": "Kubernetes",
+   "kind": "tool",
+   "aliases": [
+    "kubernetes",
+    "k8s"
+   ]
+  },
+  {
+   "name": "Slurm",
+   "kind": "tool",
+   "aliases": [
+    "slurm",
+    "sbatch"
+   ]
+  },
+  {
+   "name": "HPC",
+   "kind": "method",
+   "aliases": [
+    "hpc",
+    "high-performance-computing",
+    "high performance computing"
+   ]
+  },
+  {
+   "name": "Cloud computing",
+   "kind": "method",
+   "aliases": [
+    "aws",
+    "gcp",
+    "azure",
+    "cloud computing"
+   ]
+  },
+  {
+   "name": "Nextflow",
+   "kind": "tool",
+   "aliases": [
+    "nextflow",
+    "nf-core"
+   ]
+  },
+  {
+   "name": "Snakemake",
+   "kind": "tool",
+   "aliases": [
+    "snakemake"
+   ]
+  },
+  {
+   "name": "WDL",
+   "kind": "tool",
+   "aliases": [
+    "wdl",
+    "cromwell"
+   ]
+  },
+  {
+   "name": "Galaxy",
+   "kind": "tool",
+   "aliases": [
+    "galaxy",
+    "galaxy project",
+    "usegalaxy"
+   ]
+  },
+  {
+   "name": "Workflow management",
+   "kind": "method",
+   "aliases": [
+    "workflow management",
+    "workflow manager",
+    "workflow managers"
+   ]
+  },
+  {
+   "name": "Jupyter",
+   "kind": "tool",
+   "aliases": [
+    "jupyter",
+    "jupyterlab"
+   ]
+  },
+  {
+   "name": "Quarto",
+   "kind": "tool",
+   "aliases": [
+    "quarto"
+   ]
+  },
+  {
+   "name": "R Markdown",
+   "kind": "tool",
+   "aliases": [
+    "rmarkdown",
+    "r markdown"
+   ]
+  },
+  {
+   "name": "Reproducible research",
+   "kind": "method",
+   "aliases": [
+    "reproducibility",
+    "reproducible research",
+    "reproducible-research"
+   ]
+  },
+  {
+   "name": "FAIR data",
+   "kind": "method",
+   "aliases": [
+    "fair data",
+    "fair principles"
+   ]
+  },
+  {
+   "name": "Open science",
+   "kind": "method",
+   "aliases": [
+    "open science",
+    "open-science",
+    "preregistration"
+   ]
+  },
+  {
+   "name": "Research software engineering",
+   "kind": "method",
+   "aliases": [
+    "research software engineering",
+    "research-software-engineering"
+   ]
+  },
+  {
+   "name": "Testing",
+   "kind": "method",
+   "aliases": [
+    "testing",
+    "unit testing",
+    "pytest",
+    "testthat"
+   ]
+  },
+  {
+   "name": "Packaging",
+   "kind": "method",
+   "aliases": [
+    "packaging",
+    "python packaging",
+    "pypi",
+    "r package development"
+   ]
+  },
+  {
+   "name": "pandas",
+   "kind": "tool",
+   "aliases": [
+    "pandas"
+   ]
+  },
+  {
+   "name": "Polars",
+   "kind": "tool",
+   "aliases": [
+    "polars"
+   ]
+  },
+  {
+   "name": "NumPy",
+   "kind": "tool",
+   "aliases": [
+    "numpy"
+   ]
+  },
+  {
+   "name": "SciPy",
+   "kind": "tool",
+   "aliases": [
+    "scipy"
+   ]
+  },
+  {
+   "name": "scikit-learn",
+   "kind": "tool",
+   "aliases": [
+    "scikit-learn",
+    "sklearn"
+   ]
+  },
+  {
+   "name": "tidyverse",
+   "kind": "tool",
+   "aliases": [
+    "tidyverse",
+    "dplyr",
+    "tidyr"
+   ]
+  },
+  {
+   "name": "data.table",
+   "kind": "tool",
+   "aliases": [
+    "data.table"
+   ]
+  },
+  {
+   "name": "ggplot2",
+   "kind": "tool",
+   "aliases": [
+    "ggplot2"
+   ]
+  },
+  {
+   "name": "Matplotlib",
+   "kind": "tool",
+   "aliases": [
+    "matplotlib",
+    "seaborn"
+   ]
+  },
+  {
+   "name": "Plotly",
+   "kind": "tool",
+   "aliases": [
+    "plotly"
+   ]
+  },
+  {
+   "name": "Shiny",
+   "kind": "tool",
+   "aliases": [
+    "shiny",
+    "rshiny"
+   ]
+  },
+  {
+   "name": "Streamlit",
+   "kind": "tool",
+   "aliases": [
+    "streamlit",
+    "gradio"
+   ]
+  },
+  {
+   "name": "Data visualization",
+   "kind": "method",
+   "aliases": [
+    "data visualization",
+    "data-visualization"
+   ]
+  },
+  {
+   "name": "DuckDB",
+   "kind": "tool",
+   "aliases": [
+    "duckdb"
+   ]
+  },
+  {
+   "name": "Apache Arrow",
+   "kind": "tool",
+   "aliases": [
+    "apache arrow",
+    "parquet"
+   ]
+  },
+  {
+   "name": "Spark",
+   "kind": "tool",
+   "aliases": [
+    "spark",
+    "apache spark",
+    "pyspark"
+   ]
+  },
+  {
+   "name": "Dask",
+   "kind": "tool",
+   "aliases": [
+    "dask"
+   ]
+  },
+  {
+   "name": "PyTorch",
+   "kind": "tool",
+   "aliases": [
+    "pytorch"
+   ]
+  },
+  {
+   "name": "TensorFlow",
+   "kind": "tool",
+   "aliases": [
+    "tensorflow",
+    "keras"
+   ]
+  },
+  {
+   "name": "JAX",
+   "kind": "tool",
+   "aliases": [
+    "jax"
+   ]
+  },
+  {
+   "name": "Hugging Face Transformers",
+   "kind": "tool",
+   "aliases": [
+    "hugging face transformers",
+    "huggingface"
+   ]
+  },
+  {
+   "name": "Machine learning",
+   "kind": "method",
+   "aliases": [
+    "machine learning",
+    "machine-learning"
+   ]
+  },
+  {
+   "name": "Deep learning",
+   "kind": "method",
+   "aliases": [
+    "deep learning",
+    "deep-learning",
+    "neural network",
+    "neural networks"
+   ]
+  },
+  {
+   "name": "Large language models",
+   "kind": "method",
+   "aliases": [
+    "llm",
+    "llms",
+    "large language model",
+    "large language models"
+   ]
+  },
+  {
+   "name": "Fine-tuning",
+   "kind": "method",
+   "aliases": [
+    "fine-tuning",
+    "fine tuning",
+    "lora",
+    "peft"
+   ]
+  },
+  {
+   "name": "RAG",
+   "kind": "method",
+   "aliases": [
+    "rag",
+    "retrieval augmented generation",
+    "retrieval-augmented generation",
+    "graphrag"
+   ]
+  },
+  {
+   "name": "AI agents",
+   "kind": "method",
+   "aliases": [
+    "ai agents",
+    "agentic",
+    "llm agents",
+    "mcp server",
+    "model context protocol"
+   ]
+  },
+  {
+   "name": "Embeddings",
+   "kind": "method",
+   "aliases": [
+    "embeddings",
+    "vector database",
+    "semantic search"
+   ]
+  },
+  {
+   "name": "Graph neural networks",
+   "kind": "method",
+   "aliases": [
+    "graph neural networks",
+    "graph neural network",
+    "gnn",
+    "gnns"
+   ]
+  },
+  {
+   "name": "Diffusion models",
+   "kind": "method",
+   "aliases": [
+    "diffusion model",
+    "diffusion models"
+   ]
+  },
+  {
+   "name": "Foundation models",
+   "kind": "method",
+   "aliases": [
+    "foundation model",
+    "foundation models"
+   ]
+  },
+  {
+   "name": "Computer vision",
+   "kind": "method",
+   "aliases": [
+    "computer vision",
+    "computer-vision",
+    "image segmentation",
+    "object detection"
+   ]
+  },
+  {
+   "name": "NLP",
+   "kind": "method",
+   "aliases": [
+    "nlp",
+    "natural language processing",
+    "natural-language-processing",
+    "text mining"
+   ]
+  },
+  {
+   "name": "Reinforcement learning",
+   "kind": "method",
+   "aliases": [
+    "reinforcement learning",
+    "reinforcement-learning"
+   ]
+  },
+  {
+   "name": "Explainable AI",
+   "kind": "method",
+   "aliases": [
+    "explainable ai",
+    "interpretability",
+    "xai"
+   ]
+  },
+  {
+   "name": "MLOps",
+   "kind": "method",
+   "aliases": [
+    "mlops",
+    "mlflow",
+    "wandb"
+   ]
+  },
+  {
+   "name": "Bayesian statistics",
+   "kind": "method",
+   "aliases": [
+    "bayesian",
+    "bayesian statistics",
+    "bayesian inference",
+    "bayesian-inference"
+   ]
+  },
+  {
+   "name": "Stan",
+   "kind": "tool",
+   "aliases": [
+    "stan",
+    "brms",
+    "cmdstan"
+   ]
+  },
+  {
+   "name": "PyMC",
+   "kind": "tool",
+   "aliases": [
+    "pymc"
+   ]
+  },
+  {
+   "name": "MCMC",
+   "kind": "method",
+   "aliases": [
+    "mcmc",
+    "markov chain monte carlo"
+   ]
+  },
+  {
+   "name": "Causal inference",
+   "kind": "method",
+   "aliases": [
+    "causal inference",
+    "causal-inference",
+    "causality"
+   ]
+  },
+  {
+   "name": "Mixed models",
+   "kind": "method",
+   "aliases": [
+    "mixed model",
+    "mixed models",
+    "lme4",
+    "linear mixed model"
+   ]
+  },
+  {
+   "name": "Survival analysis",
+   "kind": "method",
+   "aliases": [
+    "survival analysis",
+    "cox regression"
+   ]
+  },
+  {
+   "name": "Time series",
+   "kind": "method",
+   "aliases": [
+    "time series",
+    "time-series",
+    "forecasting"
+   ]
+  },
+  {
+   "name": "Meta-analysis",
+   "kind": "method",
+   "aliases": [
+    "meta-analysis",
+    "meta analysis"
+   ]
+  },
+  {
+   "name": "Statistical learning",
+   "kind": "method",
+   "aliases": [
+    "statistical learning",
+    "lasso",
+    "elastic net"
+   ]
+  },
+  {
+   "name": "Network analysis",
+   "kind": "method",
+   "aliases": [
+    "network analysis",
+    "igraph",
+    "networkx"
+   ]
+  },
+  {
+   "name": "Simulation",
+   "kind": "method",
+   "aliases": [
+    "simulation",
+    "agent-based modeling",
+    "monte carlo"
+   ]
+  },
+  {
+   "name": "Genomics",
+   "kind": "method",
+   "aliases": [
+    "genomics"
+   ]
+  },
+  {
+   "name": "GWAS",
+   "kind": "method",
+   "aliases": [
+    "gwas",
+    "genome-wide association",
+    "genome wide association"
+   ]
+  },
+  {
+   "name": "Fine-mapping",
+   "kind": "method",
+   "aliases": [
+    "fine-mapping",
+    "fine mapping",
+    "susie",
+    "finemap",
+    "credible sets"
+   ]
+  },
+  {
+   "name": "Polygenic risk scores",
+   "kind": "method",
+   "aliases": [
+    "polygenic risk score",
+    "polygenic risk scores",
+    "polygenic score",
+    "polygenic scores"
+   ]
+  },
+  {
+   "name": "Mendelian randomization",
+   "kind": "method",
+   "aliases": [
+    "mendelian randomization",
+    "mendelian randomisation"
+   ]
+  },
+  {
+   "name": "Colocalization",
+   "kind": "method",
+   "aliases": [
+    "colocalization",
+    "colocalisation",
+    "coloc"
+   ]
+  },
+  {
+   "name": "eQTL mapping",
+   "kind": "method",
+   "aliases": [
+    "eqtl mapping",
+    "eqtl",
+    "eqtls",
+    "qtl mapping"
+   ]
+  },
+  {
+   "name": "TWAS",
+   "kind": "method",
+   "aliases": [
+    "twas",
+    "transcriptome-wide association"
+   ]
+  },
+  {
+   "name": "Heritability",
+   "kind": "method",
+   "aliases": [
+    "heritability",
+    "ldsc",
+    "ld score regression",
+    "gcta",
+    "greml"
+   ]
+  },
+  {
+   "name": "PLINK",
+   "kind": "tool",
+   "aliases": [
+    "plink",
+    "plink2"
+   ]
+  },
+  {
+   "name": "REGENIE",
+   "kind": "tool",
+   "aliases": [
+    "regenie",
+    "saige",
+    "bolt-lmm"
+   ]
+  },
+  {
+   "name": "Imputation",
+   "kind": "method",
+   "aliases": [
+    "imputation",
+    "genotype imputation",
+    "beagle",
+    "minimac"
+   ]
+  },
+  {
+   "name": "Population genetics",
+   "kind": "method",
+   "aliases": [
+    "population genetics",
+    "population-genetics",
+    "population structure",
+    "admixture"
+   ]
+  },
+  {
+   "name": "Phylogenetics",
+   "kind": "method",
+   "aliases": [
+    "phylogenetics",
+    "phylogenetic",
+    "phylogenomics",
+    "iq-tree",
+    "raxml"
+   ]
+  },
+  {
+   "name": "Variant calling",
+   "kind": "method",
+   "aliases": [
+    "variant calling",
+    "gatk",
+    "deepvariant",
+    "bcftools"
+   ]
+  },
+  {
+   "name": "Structural variants",
+   "kind": "method",
+   "aliases": [
+    "structural variants",
+    "structural variant"
+   ]
+  },
+  {
+   "name": "Long-read sequencing",
+   "kind": "method",
+   "aliases": [
+    "long-read sequencing",
+    "long-read",
+    "long reads",
+    "nanopore",
+    "pacbio"
+   ]
+  },
+  {
+   "name": "Genome assembly",
+   "kind": "method",
+   "aliases": [
+    "genome assembly",
+    "de novo assembly",
+    "hifiasm"
+   ]
+  },
+  {
+   "name": "Pangenomes",
+   "kind": "method",
+   "aliases": [
+    "pangenome",
+    "pangenomes",
+    "pangenomics"
+   ]
+  },
+  {
+   "name": "Annotation",
+   "kind": "method",
+   "aliases": [
+    "annotation",
+    "functional annotation",
+    "genome annotation",
+    "variant annotation"
+   ]
+  },
+  {
+   "name": "RNA-seq",
+   "kind": "method",
+   "aliases": [
+    "rna-seq",
+    "rnaseq",
+    "differential expression",
+    "deseq2",
+    "edger"
+   ]
+  },
+  {
+   "name": "Single-cell RNA-seq",
+   "kind": "method",
+   "aliases": [
+    "single-cell",
+    "single cell",
+    "scrna-seq",
+    "scrnaseq",
+    "single-cell rna-seq"
+   ]
+  },
+  {
+   "name": "Scanpy",
+   "kind": "tool",
+   "aliases": [
+    "scanpy",
+    "anndata",
+    "scverse"
+   ]
+  },
+  {
+   "name": "Seurat",
+   "kind": "tool",
+   "aliases": [
+    "seurat"
+   ]
+  },
+  {
+   "name": "Spatial transcriptomics",
+   "kind": "method",
+   "aliases": [
+    "spatial transcriptomics",
+    "visium",
+    "spatial omics",
+    "xenium"
+   ]
+  },
+  {
+   "name": "Multi-omics",
+   "kind": "method",
+   "aliases": [
+    "multi-omics",
+    "multiomics"
+   ]
+  },
+  {
+   "name": "Epigenomics",
+   "kind": "method",
+   "aliases": [
+    "epigenomics",
+    "chip-seq",
+    "atac-seq",
+    "dna methylation"
+   ]
+  },
+  {
+   "name": "Proteomics",
+   "kind": "method",
+   "aliases": [
+    "proteomics",
+    "mass spectrometry"
+   ]
+  },
+  {
+   "name": "Metabolomics",
+   "kind": "method",
+   "aliases": [
+    "metabolomics",
+    "lipidomics"
+   ]
+  },
+  {
+   "name": "Metagenomics",
+   "kind": "method",
+   "aliases": [
+    "metagenomics",
+    "microbiome",
+    "shotgun metagenomics"
+   ]
+  },
+  {
+   "name": "Protein structure prediction",
+   "kind": "method",
+   "aliases": [
+    "protein structure prediction",
+    "protein structure",
+    "alphafold",
+    "colabfold",
+    "esmfold",
+    "protein folding"
+   ]
+  },
+  {
+   "name": "Protein language models",
+   "kind": "method",
+   "aliases": [
+    "protein language model",
+    "protein language models"
+   ]
+  },
+  {
+   "name": "Molecular dynamics",
+   "kind": "method",
+   "aliases": [
+    "molecular dynamics",
+    "gromacs",
+    "openmm"
+   ]
+  },
+  {
+   "name": "Cheminformatics",
+   "kind": "method",
+   "aliases": [
+    "cheminformatics",
+    "rdkit",
+    "molecular docking"
+   ]
+  },
+  {
+   "name": "Drug discovery",
+   "kind": "method",
+   "aliases": [
+    "drug discovery",
+    "drug-discovery",
+    "virtual screening"
+   ]
+  },
+  {
+   "name": "CRISPR screens",
+   "kind": "method",
+   "aliases": [
+    "crispr screen",
+    "crispr screens",
+    "crispr"
+   ]
+  },
+  {
+   "name": "Gene regulatory networks",
+   "kind": "method",
+   "aliases": [
+    "gene regulatory network",
+    "gene regulatory networks"
+   ]
+  },
+  {
+   "name": "Pathway analysis",
+   "kind": "method",
+   "aliases": [
+    "pathway analysis",
+    "gene set enrichment",
+    "gsea",
+    "enrichment analysis"
+   ]
+  },
+  {
+   "name": "Bioconductor",
+   "kind": "tool",
+   "aliases": [
+    "bioconductor"
+   ]
+  },
+  {
+   "name": "Biopython",
+   "kind": "tool",
+   "aliases": [
+    "biopython"
+   ]
+  },
+  {
+   "name": "Samtools",
+   "kind": "tool",
+   "aliases": [
+    "samtools",
+    "htslib"
+   ]
+  },
+  {
+   "name": "Medical imaging",
+   "kind": "method",
+   "aliases": [
+    "medical imaging",
+    "medical-imaging",
+    "radiology",
+    "dicom"
+   ]
+  },
+  {
+   "name": "Neuroimaging",
+   "kind": "method",
+   "aliases": [
+    "neuroimaging",
+    "fmri",
+    "eeg"
+   ]
+  },
+  {
+   "name": "Electronic health records",
+   "kind": "method",
+   "aliases": [
+    "electronic health records",
+    "fhir",
+    "omop"
+   ]
+  },
+  {
+   "name": "Epidemiology",
+   "kind": "method",
+   "aliases": [
+    "epidemiology",
+    "epidemiological"
+   ]
+  },
+  {
+   "name": "Biostatistics",
+   "kind": "method",
+   "aliases": [
+    "biostatistics"
+   ]
+  },
+  {
+   "name": "Remote sensing",
+   "kind": "method",
+   "aliases": [
+    "remote sensing",
+    "remote-sensing",
+    "satellite imagery",
+    "earth observation"
+   ]
+  },
+  {
+   "name": "GIS",
+   "kind": "method",
+   "aliases": [
+    "gis",
+    "geospatial",
+    "qgis",
+    "gdal"
+   ]
+  },
+  {
+   "name": "Climate modelling",
+   "kind": "method",
+   "aliases": [
+    "climate model",
+    "climate modeling",
+    "climate modelling"
+   ]
+  },
+  {
+   "name": "Quantum computing",
+   "kind": "method",
+   "aliases": [
+    "quantum computing",
+    "quantum-computing",
+    "qiskit"
+   ]
+  },
+  {
+   "name": "Robotics",
+   "kind": "method",
+   "aliases": [
+    "robotics"
+   ]
+  },
+  {
+   "name": "Web development",
+   "kind": "method",
+   "aliases": [
+    "web development",
+    "web-development",
+    "fastapi",
+    "flask",
+    "django"
+   ]
+  },
+  {
+   "name": "LaTeX",
+   "kind": "tool",
+   "aliases": [
+    "latex",
+    "overleaf"
+   ]
+  },
+  {
+   "name": "Scientific writing",
+   "kind": "method",
+   "aliases": [
+    "scientific writing",
+    "academic writing"
+   ]
+  },
+  {
+   "name": "Grant writing",
+   "kind": "method",
+   "aliases": [
+    "grant writing",
+    "grant proposal"
+   ]
+  },
+  {
+   "name": "Data management",
+   "kind": "method",
+   "aliases": [
+    "data management",
+    "data management plan"
+   ]
+  },
+  {
+   "name": "Responsible AI",
+   "kind": "method",
+   "aliases": [
+    "ai ethics",
+    "responsible ai",
+    "algorithmic fairness"
+   ]
+  },
+  {
+   "name": "Federated learning",
+   "kind": "method",
+   "aliases": [
+    "federated learning",
+    "differential privacy"
+   ]
+  },
+  {
+   "name": "Benchmarking",
+   "kind": "method",
+   "aliases": [
+    "benchmarking"
+   ]
+  }
+ ]
+}

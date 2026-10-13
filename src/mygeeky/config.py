@@ -60,6 +60,12 @@ BEACON_CACHE_FILE = DATA_DIR / "beacons_cache.json"  # everyone else's beacons, 
 COMMIT_NAME = "myGeeKy"
 COMMIT_EMAIL = "housekeeping@mygeeky.invalid"
 SEEN_FILE = DATA_DIR / "seen.json"                    # what you've already seen in the panel (synced)
+TASTE_FILE = DATA_DIR / "taste.json"                  # your 👍/👎 on skills, jobs, resources... (synced)
+CURATED_FILE = DATA_DIR / "curated.json"              # jobs, funding, conferences, resources: the newest list fetched
+SKILLS_HISTORY_FILE = DATA_DIR / "skills_history.json"  # how often each skill showed up in your field, by day
+MY_REPOS_FILE = DATA_DIR / "my_repos.json"            # your own repos (names, topics, stars), for paths and alerts
+PATHS_FILE = DATA_DIR / "learning_paths.json"         # the learning paths you started (synced)
+WINS_FILE = DATA_DIR / "wins.json"                    # stars, forks and citations: the last counts and what changed
 
 
 @dataclass

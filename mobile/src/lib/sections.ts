@@ -11,7 +11,8 @@ import { Paper } from './research';
 import { BADGES } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
-export type SectionId = 'live' | 'people' | 'activity' | 'signals' | 'news' | 'papers' | 'repos' | 'models' | 'launches' | 'you';
+export type SectionId = 'live' | 'people' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
+  | 'chances' | 'you';
 
 export type Section = { id: SectionId; label: string; color: string; icon: IconName; about: string };
 
@@ -20,16 +21,18 @@ export const SECTIONS: Record<SectionId, Section> = {
   people: { id: 'people', label: 'People', color: '#7fd8ff', icon: 'people-outline', about: 'People building the tools of your field, and who follows you.' },
   activity: { id: 'activity', label: 'Activity', color: '#34d399', icon: 'pulse-outline', about: 'What the people you follow are doing on GitHub.' },
   signals: { id: 'signals', label: 'Signals', color: '#a78bfa', icon: 'radio-outline', about: 'Private thank-yous and collab invites between myGeeKy users.' },
+  grow: { id: 'grow', label: 'Grow', color: '#4ade80', icon: 'leaf-outline', about: 'Rising skills to learn, learning paths, your wins and collaborators.' },
   news: { id: 'news', label: 'News', color: '#eab308', icon: 'newspaper-outline', about: 'AI labs, journals and the tech press, ranked by your interests.' },
   papers: { id: 'papers', label: 'Papers', color: '#22c55e', icon: 'document-text-outline', about: 'Rising in your field: papers gaining citations fastest.' },
   repos: { id: 'repos', label: 'Repos', color: '#7fd8ff', icon: 'git-branch-outline', about: 'The popular, active projects your field runs on.' },
   models: { id: 'models', label: 'AI models', color: '#ffc457', icon: 'hardware-chip-outline', about: 'Trending on Hugging Face: your field first, then everywhere.' },
   launches: { id: 'launches', label: 'Launches', color: '#ff6fd8', icon: 'rocket-outline', about: 'Today on Product Hunt, the ones in your field first.' },
+  chances: { id: 'chances', label: 'Chances', color: '#f472b6', icon: 'briefcase-outline', about: 'Verified jobs, funding and conferences, checked by hand.' },
   you: { id: 'you', label: 'You', color: '#ffd24a', icon: 'person-outline', about: 'Your model, your badges and your settings.' },
 };
 
-export const INNER: SectionId[] = ['live', 'people', 'activity', 'signals'];
-export const OUTER: SectionId[] = ['news', 'papers', 'repos', 'models', 'launches'];
+export const INNER: SectionId[] = ['live', 'people', 'activity', 'signals', 'grow'];
+export const OUTER: SectionId[] = ['news', 'papers', 'repos', 'models', 'launches', 'chances'];
 export const RING_NAME = { inner: 'YOUR CIRCLE', outer: 'THE WORLD', you: 'THE CENTRE' };
 
 export type Row = {

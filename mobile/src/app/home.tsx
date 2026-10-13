@@ -10,6 +10,8 @@ import { Image, Linking, NativeScrollEvent, NativeSyntheticEvent, Pressable, Ref
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Orbit, orbitHeight } from '../components/orbit';
 import { PersonCard } from '../components/person-card';
+import { ChancesView } from '../components/chances-view';
+import { GrowView } from '../components/grow-view';
 import { SignalsView } from '../components/signals-view';
 import { Empty, open, Segments } from '../components/ui';
 import { BadgesPart, ModelPart, MorePart } from '../components/you-parts';
@@ -117,7 +119,7 @@ export default function Home() {
   const launches = useFeed('launches', 6, (p) => fetchLaunches(p.weights));
   const feedsOf: Record<SectionId, { loading: boolean; error: string | null; at: string | null; refresh: () => Promise<void> }[]> = {
     live: [live, people], activity: [live], people: [people], signals: [], news: [headlines], papers: [research],
-    repos: [repos], models: [models], launches: [launches], you: [],
+    repos: [repos], models: [models], launches: [launches], you: [], grow: [], chances: [],
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
@@ -169,6 +171,7 @@ export default function Home() {
     else if (y <= 0 && collapsed) setCollapsed(false);
   };
   const ringsH = collapsed ? 0 : orbitHeight(width);
+  const dot = Math.min(34, Math.floor((width - 12) / DOCK.length) - 4);      // every planet fits the dock
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
@@ -200,6 +203,10 @@ export default function Home() {
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />
           ) : sel === 'signals' ? (
             <SignalsView />
+          ) : sel === 'grow' ? (
+            <GrowView />
+          ) : sel === 'chances' ? (
+            <ChancesView />
           ) : rows.length ? rows.map((r, i) => (
             <RowView key={r.id} r={r} color={section.color} isOpen={openId === r.id || (openId === 'first' && i === 0)}
                      onPick={() => {
@@ -226,8 +233,8 @@ export default function Home() {
               return (
                 <Pressable key={id} onPress={() => pick(id)} style={st.dockBtn} accessibilityRole="button"
                            accessibilityLabel={`${s.label}${counts[id] ? `, ${counts[id]} new` : ''}`}>
-                  <View style={[st.dockDot, { borderColor: s.color, backgroundColor: on ? s.color : '#1c1c2c' }]}>
-                    <Ionicons name={s.icon} size={15} color={on ? '#0d0d16' : s.color} />
+                  <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: s.color, backgroundColor: on ? s.color : '#1c1c2c' }]}>
+                    <Ionicons name={s.icon} size={Math.round(dot * 0.44)} color={on ? '#0d0d16' : s.color} />
                   </View>
                 </Pressable>
               );

@@ -223,10 +223,39 @@ myGeeKy reminds you a week before either one expires, and `mygeeky auth status` 
   <sub><b>Folded</b>, it's just a small icon on your screen edge that now and then lets out a few floating hearts (turn them off in ⚙).</sub>
 </p>
 
+## 🌱 Grow, and 🎯 Chances
+
+Two planets for what comes next in your career. Everything in them is matched to you **on your own device**; your 👍
+and 👎 teach your model what to show you more and less of, and never leave your devices.
+
+**🌱 Grow**
+- **📈 Rising Skills.** Skills, tools and methods growing in your field (in the rising papers, trending repos and
+  models, and the people myGeeKy follows for you) that your profile, CV, papers and repos don't show yet. Each one says
+  why: *"in 5 repos near your work, 2 trending models; not in your profile yet"*.
+- **🧭 Learning paths.** Turn a skill into four steps:
+  1. learn the basics;
+  2. go deeper;
+  3. practise on a real project from your field;
+  4. use it in your own work. This last step ticks itself when one of your repos shows the skill.
+- **📚 Learn.** Free courses, books, tutorials and repos picked by hand, matched to you and your rising skills.
+- **🎉 Wins.** New ⭐ stars and 🍴 forks on your repos, and new 📚 citations of your papers, with the newest paper citing
+  you. Checked once a day.
+- **🤝 Collaborators.** Fellow myGeeKy users whose skills complement yours: they bring what you don't, and you bring
+  what they don't. Asking is the sealed 🤝 signal, which they only ever see if they pick you too.
+
+**🎯 Chances**
+- **Verified jobs.** PhD places, postdocs, master's places and research jobs, each one checked by hand to be real.
+- **Funding and conferences.** Grants, fellowships, travel grants and conferences, with who can apply and what
+  students get.
+- **Each one disappears after its deadline.** A 🚩 tells the maker a listing looks fake.
+
+They're curated by hand (how: [docs/CURATED.md](docs/CURATED.md)), and nobody, not even the maker, learns what you
+looked at.
+
 ## 📱 On your phone
 
 Your world, in orbit: you in the middle, **your circle** (Live, People, Activity, Signals) on the inner ring and
-**the world** (News, Papers, Repos, AI models, Launches) on the outer one. Spin a ring with your thumb; the planet
+**the world** (News, Papers, Repos, AI models, Launches) on the outer one, plus 🌱 Grow and 🎯 Chances. Spin a ring with your thumb; the planet
 that locks into the lens opens above. Tap something to read and the rings fold into a slim dock.
 
 <p align="center">

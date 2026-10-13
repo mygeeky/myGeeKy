@@ -3,6 +3,22 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased: 🌱 Grow and 🎯 Chances
+
+- **🌱 Grow, a new planet.**
+  - **📈 Rising Skills:** what's growing in your field and missing from your profile, CV, papers and repos, each with
+    why. It comes from the rising papers, trending repos and models, and people myGeeKy already reads for you.
+  - **🧭 Learning paths:** four steps per skill. The last ticks itself when one of your repos shows the skill.
+  - **📚 Learn:** hand-picked learning resources, matched to you and your rising skills.
+  - **🎉 Wins:** new stars, forks and citations, with the newest paper citing you.
+  - **🤝 Collaborators:** fellow users whose skills complement yours, asked with the sealed, mutual-only 🤝.
+- **🎯 Chances, a new planet:** verified jobs, funding and conferences, each checked by hand. They disappear after
+  their deadline, and a 🚩 reports one that looks fake. They're curated in one file
+  ([docs/CURATED.md](docs/CURATED.md)), and a daily workflow removes what's past its deadline.
+- **👍 / 👎 everywhere in them.** They teach your model; the same thumb again takes a vote back. Votes stay on your
+  devices (and your private sync repository).
+- **Phone app:** the same two planets on the rings: 🌱 Grow on your circle, 🎯 Chances on the world.
+
 ## 0.22.0 (2026-10-12): Sign in with ORCID, no GitHub needed, and where the panel lives (phone app 1.6.0)
 
 - **Sign in with ORCID.** In setup (on the computer, in `mygeeky init`, and on the phone), a green **Sign in with ORCID** button opens orcid.org; you sign in there, and myGeeKy gets your confirmed ORCID iD and the name on your record.

@@ -852,6 +852,118 @@ def hf_models_due(cfg: MyGeekyConfig) -> bool:
     return cfg.market_hf_enabled and hfmodels.refresh_due(cfg, hfmodels.load_state())
 
 
+# --------------------------------------------------------------------------- growing: skills, learning, wins
+def get_growth(cfg: MyGeekyConfig, save: bool = True) -> dict[str, Any]:
+    """Rising Skills, your learning paths, learning resources and your wins -- all from
+    saved files (no network). Slow-ish (reads everything about your field): call it off the UI thread."""
+    from .. import curated, skills, wins
+    rising = skills.rising(cfg, save=save)
+    wanted = {s["name"].lower(): 0.7 for s in rising["skills"][:6]}
+    data = curated.load()
+    resources = curated.ranked(cfg, "resources", data=data, extra_terms=wanted)
+    return {"rising": rising, "paths": skills.paths(cfg, data), "resources": resources,
+            "wins": wins.recent(), "wins_updated_at": wins.load().get("updated_at"),
+            "has_orcid": bool(cfg.orcid_id), "has_github": bool(cfg.github_username)}
+
+
+def refresh_growth(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
+    """Fetch the newest curated lists and read your stars, forks and citations (when due), then
+    everything as get_growth. Network errors are kept in `error`, never raised."""
+    from .. import curated, wins
+    errors = []
+    try:
+        curated.refresh_if_due(force=force)
+    except Exception as exc:
+        from ..errors import describe
+        errors.append(f"Couldn't fetch the newest lists: {describe(exc)}")
+    try:
+        client = _build_client(cfg) if cfg.github_username else None
+        wins.refresh(cfg, client=client, force=force)
+    except Exception as exc:
+        from ..errors import describe
+        errors.append(f"Couldn't read your stars and citations: {describe(exc)}")
+    out = get_growth(cfg)
+    out["error"] = " ".join(errors)
+    return out
+
+
+def growth_due(cfg: MyGeekyConfig) -> bool:
+    from .. import wins
+    return profile_ready(cfg) and wins.due(wins.load())
+
+
+def get_opportunities(cfg: MyGeekyConfig) -> dict[str, Any]:
+    """Verified jobs, funding and conferences, matched to you here (no network)."""
+    from .. import curated, interests
+    data = curated.load()
+    weights = interests.profile_terms(cfg)
+    return {kind: curated.ranked(cfg, kind, weights=weights, data=data) for kind in curated.DATED} | {
+        "version": data.get("version", "")}
+
+
+def refresh_opportunities(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
+    from .. import curated
+    error = ""
+    try:
+        curated.refresh_if_due(force=force)
+    except Exception as exc:
+        from ..errors import describe
+        error = f"Couldn't fetch the newest lists: {describe(exc)}"
+    return {**get_opportunities(cfg), "error": error}
+
+
+def vote(kind: str, item_id: str, up: bool, text: str = "", tags: list[str] | None = None) -> int:
+    """👍 / 👎 on a skill, resource, job, call, conference or person. Same thumb again: taken back."""
+    from .. import taste
+    return taste.vote(kind, item_id, up, text, tags or [])
+
+
+def unhide(kind: str) -> int:
+    """Take back every 👎 on this kind of thing, so they show again."""
+    from .. import taste
+    return taste.clear(kind, -1)
+
+
+def report_links(kind: str, item: dict[str, Any]) -> dict[str, str]:
+    from .. import curated
+    return curated.report_links(kind, item)
+
+
+def start_path(skill: str) -> bool:
+    from .. import skills
+    return skills.start_path(skill)
+
+
+def stop_path(skill: str) -> None:
+    from .. import skills
+    skills.stop_path(skill)
+
+
+def tick_step(skill: str, step: str, done: bool) -> None:
+    from .. import skills
+    skills.tick(skill, step, done)
+
+
+def get_collaborators(cfg: MyGeekyConfig) -> dict[str, Any]:
+    """Fellow myGeeKy users whose skills complement yours (from saved beacons; no network)."""
+    from .. import beacon as bc, collab, interests, skills
+    if not cfg.github_username or not cfg.beacon_enabled:
+        return {"enabled": False, "people": [], "hidden": 0}
+    cache, mine = bc.load_cache(), bc.load_my_beacon()
+    try:
+        weights = interests.profile_terms(cfg)
+    except Exception:
+        weights = {}
+    people = bc.people(cache, cfg, mine, private_key=bc.private_key_or_none(cfg), weights=weights)
+    have = skills.skills_in(skills.own_text(cfg)) | {"Git"}
+    rising = skills.rising(cfg, save=False, top=20)
+    wanted = [s["name"] for s in rising["skills"]]
+    strengths = [s["name"] for s in rising["strengths"]]
+    can_send = auth.get_beacon_token(cfg.github_username) is not None
+    return {"enabled": True, "can_send": can_send,
+            **collab.matches(people, have, wanted, bc._sent_to(mine, "collab"), strengths=strengths)}
+
+
 def market_refresh_due(cfg: MyGeekyConfig, now: datetime | None = None) -> bool:
     from ..market import load_state
     updated = load_state().get("updated_at")
@@ -1104,10 +1216,24 @@ LINK_PREFIXES = ("https://github.com/", "https://www.producthunt.com/posts/", "h
                  "https://doi.org/", "https://orcid.org/", "https://openalex.org/")
 
 
+def _curated_link(url: str) -> bool:
+    """A link from the maker's curated lists (jobs, funding, conferences, resources), a learning-path
+    search, or a report to support: those, and only those, may go anywhere https."""
+    if url.startswith("mailto:support@mygeeky.org?") or url.startswith("https://github.com/search?"):
+        return True
+    try:
+        from .. import curated
+        data = curated.load()
+        return any(url == it.get("url") for kind in curated.LISTS for it in data.get(kind, []))
+    except Exception:
+        return False
+
+
 def open_link(url: str) -> bool:
     """Like open_profile, but also lets Product Hunt launch pages through."""
     from .. import headlines
-    if not isinstance(url, str) or not (url.startswith(LINK_PREFIXES) or headlines.allowed_link(url)):
+    if not isinstance(url, str) or not (url.startswith(LINK_PREFIXES) or headlines.allowed_link(url)
+                                        or _curated_link(url)):
         return False
     from PySide6.QtCore import QUrl
     from PySide6.QtGui import QDesktopServices

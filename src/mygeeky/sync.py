@@ -48,6 +48,10 @@ keywords.json
 trends.json
 papers_cache.json
 interest_seen.json
+curated.json
+skills_history.json
+my_repos.json
+wins.json
 *.token
 *.lock
 *.tmp

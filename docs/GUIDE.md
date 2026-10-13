@@ -46,6 +46,31 @@ zero dependencies.)
 happens — myGeeKy has no follow/unfollow code anywhere in the project; see
 [Safety](#safety).*
 
+## 🌱 Grow and 🎯 Chances
+
+Two planets on the panel (and two on the phone's rings) for what comes next.
+
+**🌱 Grow** has five parts:
+- **📈 Skills**: Rising Skills, the skills growing in your field that you don't show yet.
+  - Each one says why it's suggested.
+  - 👍 means "yes, I want to learn this"; 👎 hides it ("Show them again" brings hidden ones back).
+  - **🧭 Start a learning path** turns a skill into steps.
+- **🧭 Paths**: your learning paths.
+  - Tick a step when you've done it.
+  - The last step, *Use it in your own work*, ticks itself when one of your repos shows the skill.
+- **📚 Learn**: hand-picked learning resources, matched to you and your rising skills.
+- **🎉 Wins**: new stars, forks and citations. The first check only sets the starting point.
+- **🤝 Collaborators**: fellow myGeeKy users on Signals whose skills complement yours.
+  - **🤝 I'd like to collaborate** sends the sealed, mutual-only collaborate signal.
+
+**🎯 Chances** has verified **jobs**, **funding** and **conferences**:
+- each one is checked by hand and disappears after its deadline;
+- 👍 / 👎 teach your model;
+- 🚩 reports one that looks fake (as a GitHub issue, or by email to support@mygeeky.org).
+
+All matching happens on your device. Your votes are kept in `taste.json` and your paths in `learning_paths.json`
+(both synced to your private data repository if sync is on). How listings are added: [CURATED.md](CURATED.md).
+
 ## Finding people (`mygeeky run`)
 
 How the people suggestions are made:
