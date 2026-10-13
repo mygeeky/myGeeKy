@@ -304,4 +304,5 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
     out.sort(key=lambda r: r["score"], reverse=True)
     strengths.sort(key=lambda r: r["score"], reverse=True)
     return {"skills": out[:top], "strengths": strengths[:8], "hidden": hidden, "documents": len(docs),
+            "have": sorted(have),                  # the skills you already show (Collaborators reuses them)
             "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}

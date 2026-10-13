@@ -4027,7 +4027,7 @@ class MyGeekyPanel(QWidget):
         self.grow_updated_label.setText("updating…")
         self._run_async(lambda: logic.refresh_growth(self.cfg, force=force), self._on_growth_ready)
         if self._grow_mode == "collab":
-            self._load_collaborators()
+            self._load_collaborators(force=True)
 
     def _maybe_refresh_growth(self) -> None:
         if logic.growth_due(self.cfg):
@@ -4040,10 +4040,21 @@ class MyGeekyPanel(QWidget):
         self._growth = data if isinstance(data, dict) else {}
         self._render_grow()
 
-    def _load_collaborators(self) -> None:
-        self._run_async(lambda: logic.get_collaborators(self.cfg), self._on_collaborators_ready)
+    COLLABS_FRESH_S = 300
+
+    def _load_collaborators(self, force: bool = False) -> None:
+        """Fellow users who complement you. The last list shows straight away; it's worked out again only
+        when it's older than a few minutes, or when asked (Refresh, a 👎, Show them again)."""
+        fresh = time.monotonic() - getattr(self, "_collabs_at", -1e9) < self.COLLABS_FRESH_S
+        if getattr(self, "_collabs_running", False) or (self._collabs and fresh and not force):
+            return
+        self._collabs_running = True
+        rising = (self._growth or {}).get("rising")
+        self._run_async(lambda: logic.get_collaborators(self.cfg, rising), self._on_collaborators_ready)
 
     def _on_collaborators_ready(self, data: Any) -> None:
+        self._collabs_running = False
+        self._collabs_at = time.monotonic()
         self._collabs = data if isinstance(data, dict) else {}
         if self._grow_mode == "collab":
             self._render_grow()
@@ -4252,7 +4263,7 @@ class MyGeekyPanel(QWidget):
         if kind in ("job", "funding", "conference"):
             self._load_chances()
         elif kind == "collaborator":
-            self._load_collaborators()
+            self._load_collaborators(force=True)
         else:
             self._load_growth()
 
@@ -4263,7 +4274,8 @@ class MyGeekyPanel(QWidget):
         def press(up: bool) -> int:
             v = logic.vote(kind, item_id, up, text, tags)
             if v < 0 and rerender:
-                QTimer.singleShot(0, self._load_growth if kind != "collaborator" else self._load_collaborators)
+                QTimer.singleShot(0, self._load_growth if kind != "collaborator"
+                                  else lambda: self._load_collaborators(force=True))
             if v < 0 and rerender_chances:
                 QTimer.singleShot(0, self._load_chances)
             return v

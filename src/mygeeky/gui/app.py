@@ -980,8 +980,9 @@ def publish_protocol(cfg: MyGeekyConfig, pid: str) -> dict[str, str]:
     return protocols.publish(entry) if entry else {"url": "", "clipboard": ""}
 
 
-def get_collaborators(cfg: MyGeekyConfig) -> dict[str, Any]:
-    """Fellow myGeeKy users whose skills complement yours (from saved beacons; no network)."""
+def get_collaborators(cfg: MyGeekyConfig, rising: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Fellow myGeeKy users whose skills complement yours (from saved beacons; no network).
+    `rising` is Grow's own result when it has one: reusing it skips reading your whole field and CV again."""
     from .. import beacon as bc, collab, interests, skills
     if not cfg.github_username or not cfg.beacon_enabled:
         return {"enabled": False, "people": [], "hidden": 0}
@@ -991,8 +992,9 @@ def get_collaborators(cfg: MyGeekyConfig) -> dict[str, Any]:
     except Exception:
         weights = {}
     people = bc.people(cache, cfg, mine, private_key=bc.private_key_or_none(cfg), weights=weights)
-    have = skills.skills_in(skills.own_text(cfg)) | {"Git"}
-    rising = skills.rising(cfg, save=False, top=20)
+    if not (isinstance(rising, dict) and "have" in rising):
+        rising = skills.rising(cfg, save=False, top=20)
+    have = set(rising["have"]) | {"Git"}
     wanted = [s["name"] for s in rising["skills"]]
     strengths = [s["name"] for s in rising["strengths"]]
     can_send = auth.get_beacon_token(cfg.github_username) is not None
