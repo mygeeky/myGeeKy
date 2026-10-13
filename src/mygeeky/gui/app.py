@@ -854,14 +854,17 @@ def hf_models_due(cfg: MyGeekyConfig) -> bool:
 
 # --------------------------------------------------------------------------- growing: skills, learning, wins
 def get_growth(cfg: MyGeekyConfig, save: bool = True) -> dict[str, Any]:
-    """Rising Skills, your learning paths, learning resources and your wins -- all from
+    """Rising Skills, your protocols, learning resources and your wins -- all from
     saved files (no network). Slow-ish (reads everything about your field): call it off the UI thread."""
     from .. import curated, skills, wins
     rising = skills.rising(cfg, save=save)
     wanted = {s["name"].lower(): 0.7 for s in rising["skills"][:6]}
     data = curated.load()
     resources = curated.ranked(cfg, "resources", data=data, extra_terms=wanted)
-    return {"rising": rising, "paths": skills.paths(cfg, data), "resources": resources,
+    from .. import protocols
+    return {"rising": rising, "paths": protocols.views(cfg, data), "resources": resources,
+            "reviewed": [{"id": p["id"], "skill": p["skill"], "goal": p.get("goal", ""), "title": p["title"],
+                          "summary": p.get("summary", "")} for p in protocols.reviewed(data)],
             "wins": wins.recent(), "wins_updated_at": wins.load().get("updated_at"),
             "has_orcid": bool(cfg.orcid_id), "has_github": bool(cfg.github_username)}
 
@@ -918,6 +921,11 @@ def vote(kind: str, item_id: str, up: bool, text: str = "", tags: list[str] | No
     return taste.vote(kind, item_id, up, text, tags or [])
 
 
+def vote_of(kind: str, item_id: str) -> int:
+    from .. import taste
+    return taste.vote_of(kind, item_id)
+
+
 def unhide(kind: str) -> int:
     """Take back every 👎 on this kind of thing, so they show again."""
     from .. import taste
@@ -929,19 +937,47 @@ def report_links(kind: str, item: dict[str, Any]) -> dict[str, str]:
     return curated.report_links(kind, item)
 
 
-def start_path(skill: str) -> bool:
-    from .. import skills
-    return skills.start_path(skill)
+# ---- protocols: a skill as ordered stages (protocols.py)
+def build_protocol(cfg: MyGeekyConfig, skill: str, goal: str = "") -> dict[str, Any]:
+    """Start a protocol for `skill`: the reviewed one if there is one, else one built now from GitHub and
+    OpenAlex with the protocol model. Slow (searches): call it off the UI thread. {"id"} or {"error"}."""
+    import requests
+    from .. import protocols
+    skill = " ".join((skill or "").split())[:60]
+    if not skill:
+        return {"error": "Which skill?"}
+    try:
+        client = _build_client(cfg)
+    except Exception:
+        client = None
+    try:
+        with requests.Session() as session:
+            proto = protocols.build(cfg, skill, goal, client=client, session=session)
+    except Exception as exc:
+        from ..errors import describe
+        return {"error": f"Couldn't build it: {describe(exc)}"}
+    pid = protocols.start(cfg, proto)
+    return {"id": pid, "reviewed": proto.get("reviewed", False)} if pid else {"error": "Couldn't build it."}
 
 
-def stop_path(skill: str) -> None:
-    from .. import skills
-    skills.stop_path(skill)
+def protocol_action(cfg: MyGeekyConfig, action: str, pid: str, *args: Any) -> Any:
+    """Change one of your protocols: tick, known, quiz, stop, or an edit (move_stage, rename_stage,
+    add_stage, remove_stage, move_item, remove_item, add_item)."""
+    from .. import protocols
+    fn = {"tick": protocols.tick, "known": protocols.mark_known, "quiz": protocols.answer_quiz,
+          "stop": protocols.stop, "move_stage": protocols.move_stage, "rename_stage": protocols.rename_stage,
+          "add_stage": protocols.add_stage, "remove_stage": protocols.remove_stage,
+          "move_item": protocols.move_item, "remove_item": protocols.remove_item,
+          "add_item": protocols.add_item}.get(action)
+    return fn(cfg, pid, *args) if fn else None
 
 
-def tick_step(skill: str, step: str, done: bool) -> None:
-    from .. import skills
-    skills.tick(skill, step, done)
+def publish_protocol(cfg: MyGeekyConfig, pid: str) -> dict[str, str]:
+    """The prefilled public issue for one of your protocols (you press Submit, with your own account):
+    {"url", "clipboard"} -- clipboard holds the protocol to paste when it's too long for a link."""
+    from .. import protocols
+    entry = protocols.mine(cfg).get(pid)
+    return protocols.publish(entry) if entry else {"url": "", "clipboard": ""}
 
 
 def get_collaborators(cfg: MyGeekyConfig) -> dict[str, Any]:
@@ -1219,12 +1255,19 @@ LINK_PREFIXES = ("https://github.com/", "https://www.producthunt.com/posts/", "h
 def _curated_link(url: str) -> bool:
     """A link from the maker's curated lists (jobs, funding, conferences, resources), a learning-path
     search, or a report to support: those, and only those, may go anywhere https."""
-    if url.startswith("mailto:support@mygeeky.org?") or url.startswith("https://github.com/search?"):
+    if url.startswith(("mailto:support@mygeeky.org?", "https://github.com/search?",
+                       "https://github.com/mygeeky/myGeeKy-ideas/issues/new?")):
         return True
     try:
         from .. import curated
         data = curated.load()
-        return any(url == it.get("url") for kind in curated.LISTS for it in data.get(kind, []))
+        if any(url == it.get("url") for kind in curated.LISTS for it in data.get(kind, [])):
+            return True
+        from .. import protocols         # a link in a reviewed protocol, or in one of yours
+        for p in protocols.reviewed(data) + [e["protocol"] for e in protocols.mine().values()]:
+            if any(url == it["url"] for st in p["stages"] for it in st["items"]):
+                return True
+        return False
     except Exception:
         return False
 

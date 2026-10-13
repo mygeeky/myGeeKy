@@ -1,4 +1,4 @@
-"""Widgets for the 🌱 Grow planet (Rising Skills, Learning paths, Learn, Wins, Collaborators)
+"""Widgets for the 🌱 Grow planet (Rising Skills, Protocols, Learn, Wins, Collaborators)
 and the 🎯 Chances planet (Verified jobs, Funding, Conferences).
 
 Every card has a 👍 and a 👎 (ThumbBar): they teach your model (taste.py) what to show
@@ -156,7 +156,7 @@ class SkillCard(QFrame):
             lay.addWidget(ex)
         if not strength:
             row = QHBoxLayout()
-            btn = QPushButton("✓ On your paths" if path_started else "🧭 Start a learning path")
+            btn = QPushButton("✓ In your protocols" if path_started else "🧭 Make it a protocol")
             btn.setCursor(Qt.PointingHandCursor)
             btn.setEnabled(not path_started)
             btn.setStyleSheet(_button_style(theme))
@@ -167,29 +167,66 @@ class SkillCard(QFrame):
         self.setStyleSheet(_card_style("skillCard", theme))
 
 
-class PathCard(QFrame):
-    """A learning path: four steps with ticks; the last ticks itself."""
+STATUS = {"done": ("✅", "Done"), "known": ("🎓", "You know this"), "current": ("▶", "Start here"),
+          "todo": ("○", "")}
+SOURCE = {"reviewed": "✓ Reviewed", "auto": "Auto-built, not reviewed", "mine": "Yours"}
 
-    def __init__(self, p: dict[str, Any], theme: dict[str, Any], on_tick: Callable[[str, str, bool], None],
-                 on_stop: Callable[[str], None], on_open: Callable[[str], Any]) -> None:
+
+def _small_button(text: str, tip: str, theme: dict[str, Any], on_click: Callable[[], Any]) -> QPushButton:
+    b = QPushButton(text)
+    b.setToolTip(tip)
+    b.setCursor(Qt.PointingHandCursor)
+    b.setFixedHeight(22)
+    b.setStyleSheet(f"QPushButton {{ background:transparent; color:{theme['muted']}; border:none; padding:0 4px; "
+                    f"font-size:11px; }} QPushButton:hover {{ color:{theme['text']}; }}")
+    b.clicked.connect(lambda checked=False: on_click())
+    return b
+
+
+class ProtocolCard(QFrame):
+    """A protocol: its stages in order, each with its status (done, known, start here), its links and
+    its level check. In edit mode every stage and link can be moved, renamed, added or removed.
+
+    act(action, *args) changes the protocol (see app.protocol_action); on_check(stage) opens the level
+    check; on_add_link(stage id) and on_rename(stage) ask for text; on_publish() sends it to the maker."""
+
+    def __init__(self, p: dict[str, Any], theme: dict[str, Any], editing: bool, act: Callable[..., Any],
+                 on_check: Callable[[dict[str, Any]], None], on_open: Callable[[str], Any],
+                 on_edit: Callable[[], None], on_publish: Callable[[], None],
+                 on_add_link: Callable[[str], None], on_rename: Callable[[dict[str, Any]], None],
+                 on_add_stage: Callable[[], None], vote_item: Callable[[dict[str, Any]], Callable[[bool], int]],
+                 vote_of: Callable[[dict[str, Any]], int]) -> None:
         super().__init__()
-        self.setObjectName("pathCard")
+        self.setObjectName("protocolCard")
+        self.protocol = p
+        self.theme = theme
+        self.editing = editing
+        self.act = act
+        self.on_check = on_check
+        self.on_open = on_open
+        self.on_add_link = on_add_link
+        self.on_rename = on_rename
+        self.vote_item = vote_item
+        self.vote_of = vote_of
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 8, 10, 8)
-        lay.setSpacing(4)
+        lay.setSpacing(5)
         head = QHBoxLayout()
-        done = "🏁 " if p["finished"] else "🧭 "
-        head.addWidget(_label(f"<b>{done}{html.escape(p['skill'])}</b> "
-                              f"<span style='color:{theme['muted']}'>{p['done']}/{p['total']}</span>",
-                              f"color:{theme['text']}; font-size:12px; background:transparent;", rich=True, wrap=False), 1)
-        stop = QPushButton("✕")
-        stop.setToolTip("Stop this path")
-        stop.setCursor(Qt.PointingHandCursor)
-        stop.setFixedSize(22, 22)
-        stop.setStyleSheet(f"QPushButton {{ background:transparent; color:{theme['muted']}; border:none; }}"
-                           f"QPushButton:hover {{ color:{theme['text']}; }}")
-        stop.clicked.connect(lambda: on_stop(p["skill"]))
-        head.addWidget(stop)
+        flag = "🏁 " if p["finished"] else "🧭 "
+        src = p.get("source", "mine")
+        badge_color = theme["good"] if src == "reviewed" else theme["muted"]
+        badge = SOURCE.get(src, "")
+        if src == "mine" and p.get("based_on"):
+            badge += " · changed from a reviewed one"
+        head.addWidget(_label(f"<b>{flag}{html.escape(p['title'])}</b> "
+                              f"<span style='color:{theme['muted']}'>{p['done']}/{p['total']}</span><br>"
+                              f"<span style='color:{badge_color}; font-size:10px'>{html.escape(badge)}</span>",
+                              f"color:{theme['text']}; font-size:12px; background:transparent;", rich=True), 1)
+        head.addWidget(_small_button("✅ Done editing" if editing else "✏️ Edit",
+                                     "Reorder, rename, add or remove stages and links", theme, on_edit), 0, Qt.AlignTop)
+        head.addWidget(_small_button("📤 Publish", "Send this protocol to myGeeKy, for everyone", theme, on_publish),
+                       0, Qt.AlignTop)
+        head.addWidget(_small_button("✕", "Stop this protocol", theme, lambda: act("stop")), 0, Qt.AlignTop)
         lay.addLayout(head)
         bar = QFrame()
         bar.setFixedHeight(4)
@@ -198,32 +235,104 @@ class PathCard(QFrame):
                           f"stop:{max(share, 0.001):.3f} {theme['good']}, stop:{min(share + 0.001, 1):.3f} {theme['btn_bg']}, "
                           f"stop:1 {theme['btn_bg']}); border-radius:2px;")
         lay.addWidget(bar)
-        for st in p["steps"]:
+        if p.get("summary"):
+            lay.addWidget(_label(p["summary"], _muted(theme, 10.5)))
+        last = len(p["stages"]) - 1
+        for i, st in enumerate(p["stages"]):
+            lay.addWidget(self._stage(st, i, last))
+        if editing:
             row = QHBoxLayout()
-            row.setSpacing(6)
-            box = QPushButton("☑" if st["done"] else "☐")
-            box.setFixedSize(22, 22)
-            box.setCursor(Qt.ArrowCursor if st["auto"] else Qt.PointingHandCursor)
-            box.setToolTip("Ticks itself when one of your repos shows this skill" if st["auto"]
-                           else ("Not done yet" if st["done"] else "Mark as done"))
-            box.setEnabled(not st["auto"])
-            box.setStyleSheet(f"QPushButton {{ background:transparent; border:none; font-size:14px; "
-                              f"color:{theme['good'] if st['done'] else theme['text']}; }}")
-            box.clicked.connect(lambda checked=False, sid=st["id"], d=st["done"]: on_tick(p["skill"], sid, not d))
-            row.addWidget(box, 0, Qt.AlignTop)
-            text = f"<b>{html.escape(st['title'])}</b><br><span style='color:{theme['muted']}'>"
-            if st.get("url"):
-                text += (f"<a href='{html.escape(st['url'], quote=True)}' style='color:{theme['link']}'>"
-                         f"{html.escape(st['detail'])}</a>")
-            else:
-                text += html.escape(st["detail"])
-            text += "</span>"
-            lbl = _label(text, f"color:{theme['text']}; font-size:11px; background:transparent;", rich=True)
-            lbl.setOpenExternalLinks(False)
-            lbl.linkActivated.connect(on_open)
-            row.addWidget(lbl, 1)
+            row.addWidget(_small_button("➕ Add a stage", "A new stage before 'Use it in your own work'", theme,
+                                        on_add_stage))
+            row.addStretch(1)
             lay.addLayout(row)
-        self.setStyleSheet(_card_style("pathCard", theme))
+        self.setStyleSheet(_card_style("protocolCard", theme))
+
+    def _stage(self, st: dict[str, Any], i: int, last: int) -> QFrame:
+        theme, act, editing = self.theme, self.act, self.editing
+        box = QFrame()
+        box.setObjectName("stageBox")
+        current = st["status"] == "current"
+        box.setStyleSheet(f"QFrame#stageBox {{ background:{theme['btn_bg'] if current else 'transparent'}; "
+                          "border-radius:8px; }")
+        lay = QVBoxLayout(box)
+        lay.setContentsMargins(6, 4, 6, 4)
+        lay.setSpacing(2)
+        top = QHBoxLayout()
+        top.setSpacing(4)
+        icon, word = STATUS.get(st["status"], ("○", ""))
+        how = ""
+        if st.get("how") == "quiz":
+            how = " (check passed" + (f", {round(st['score'] * 100)}%" if st.get("score") is not None else "") + ")"
+        elif st.get("how") == "self":
+            how = " (you said so)"
+        color = theme["good"] if st["status"] in ("done", "known") else theme["text"]
+        tag = f" <span style='color:{theme['muted']}; font-size:10px'>{word}{how}</span>" if word else ""
+        top.addWidget(_label(f"<span style='color:{color}'>{icon}</span> <b>{i + 1}. {html.escape(st['title'])}</b>{tag}",
+                             f"color:{theme['text']}; font-size:11.5px; background:transparent;", rich=True), 1)
+        if editing:
+            top.addWidget(_small_button("▲", "Move this stage up", theme, lambda: act("move_stage", st["id"], -1)))
+            top.addWidget(_small_button("▼", "Move this stage down", theme, lambda: act("move_stage", st["id"], 1)))
+            top.addWidget(_small_button("✎", "Rename this stage", theme, lambda: self.on_rename(st)))
+            top.addWidget(_small_button("🗑", "Remove this stage", theme, lambda: act("remove_stage", st["id"])))
+        elif st["role"] != "use":
+            if st["status"] not in ("done", "known") and (st.get("quiz") or st.get("can")):
+                top.addWidget(_small_button("🎓 Check", "Already know this? A short check skips it", theme,
+                                            lambda: self.on_check(st)))
+            done = st["status"] == "done"
+            top.addWidget(_small_button("↩ Not done" if done else "☑ Done",
+                                        "Mark as not done" if done else "Mark this stage as done", theme,
+                                        lambda: act("tick", st["id"], not done)))
+        lay.addLayout(top)
+        if st["role"] == "use":
+            text = ("Done: " + st["why"]) if st["status"] in ("done", "known") else \
+                (st.get("why") or "Ticks itself when one of your repos shows the skill")
+            lay.addWidget(_label(text, _muted(theme, 10)))
+        elif st.get("how") == "evidence" and st.get("why"):
+            why = QHBoxLayout()
+            why.addWidget(_label(f"From your work: {st['why']}", _muted(theme, 10)), 1)
+            why.addWidget(_small_button("Not really", "Show this stage as still to do", theme,
+                                        lambda: act("known", st["id"], "no")))
+            lay.addLayout(why)
+        elif st.get("overruled"):
+            why = QHBoxLayout()
+            why.addWidget(_label(f"{st['why'] or 'Your work suggests you know this'}, but you said not yet",
+                                 _muted(theme, 10)), 1)
+            why.addWidget(_small_button("Undo", "Go back to what your work shows", theme,
+                                        lambda: act("known", st["id"], None)))
+            lay.addLayout(why)
+        elif st.get("how") == "self":
+            lay.addWidget(_small_button("Undo “I know this”", "Show this stage as still to do", theme,
+                                        lambda: act("known", st["id"], None)), 0, Qt.AlignLeft)
+        from ..protocols import ITEM_KINDS
+        n = len(st["items"])
+        for k, it in enumerate(st["items"]):
+            row = QHBoxLayout()
+            row.setSpacing(4)
+            note = f"<br><span style='color:{theme['muted']}'>{html.escape(it['note'])}</span>" if it.get("note") else ""
+            link = _label(f"{ITEM_KINDS.get(it['kind'], '🌐')} <a href='{html.escape(it['url'], quote=True)}' "
+                          f"style='color:{theme['link']}'>{html.escape(it['title'])}</a>{note}",
+                          f"color:{theme['text']}; font-size:10.5px; background:transparent; margin-left:14px;", rich=True)
+            link.setOpenExternalLinks(False)
+            link.linkActivated.connect(self.on_open)
+            row.addWidget(link, 1)
+            if editing:
+                if k > 0 or i > 0:
+                    row.addWidget(_small_button("▲", "Up (past the top: to the stage before)", theme,
+                                                lambda u=it["url"]: act("move_item", st["id"], u, -1)), 0, Qt.AlignTop)
+                if k < n - 1 or i < last:
+                    row.addWidget(_small_button("▼", "Down (past the bottom: to the next stage)", theme,
+                                                lambda u=it["url"]: act("move_item", st["id"], u, 1)), 0, Qt.AlignTop)
+                row.addWidget(_small_button("✕", "Remove this link", theme,
+                                            lambda u=it["url"]: act("remove_item", st["id"], u)), 0, Qt.AlignTop)
+            elif "github.com/search" not in it["url"]:
+                row.addWidget(ThumbBar(self.vote_of(it), theme, self.vote_item(it), up_tip="Good to learn from",
+                                       down_tip="Not helpful"), 0, Qt.AlignTop)
+            lay.addLayout(row)
+        if editing:
+            lay.addWidget(_small_button("➕ Add a link", "A repo, a paper or a page that teaches this stage", theme,
+                                        lambda: self.on_add_link(st["id"])), 0, Qt.AlignLeft)
+        return box
 
 
 class ResourceRow(QFrame):

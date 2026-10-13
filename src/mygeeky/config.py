@@ -64,7 +64,7 @@ TASTE_FILE = DATA_DIR / "taste.json"                  # your 👍/👎 on skills
 CURATED_FILE = DATA_DIR / "curated.json"              # jobs, funding, conferences, resources: the newest list fetched
 SKILLS_HISTORY_FILE = DATA_DIR / "skills_history.json"  # how often each skill showed up in your field, by day
 MY_REPOS_FILE = DATA_DIR / "my_repos.json"            # your own repos (names, topics, stars), for paths and alerts
-PATHS_FILE = DATA_DIR / "learning_paths.json"         # the learning paths you started (synced)
+PATHS_FILE = DATA_DIR / "learning_paths.json"         # the protocols you started (synced)
 WINS_FILE = DATA_DIR / "wins.json"                    # stars, forks and citations: the last counts and what changed
 
 

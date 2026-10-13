@@ -6,6 +6,7 @@
 import bundled from '../data/curated.json';
 import { match, Weights } from './interests';
 import { fetchT } from './net';
+import { cleanProtocol, type Protocol } from './protocol-shape';
 import { isStale, readCache, writeCache } from './storage';
 import * as taste from './taste';
 
@@ -27,7 +28,7 @@ export type Item = {
   org?: string; place?: string; type?: string; remote?: boolean; who?: string; amount?: string;
   starts?: string; ends?: string; student?: string; skills?: string[]; level?: string; free?: boolean;
 };
-export type Lists = { version: string } & Record<ListName, Item[]>;
+export type Lists = { version: string; protocols: Protocol[] } & Record<ListName, Item[]>;
 export type Ranked = Item & { score: number; match: string[]; daysLeft: number | null; vote: number };
 
 const text = (v: unknown, n: number) => (typeof v === 'string' || typeof v === 'number' ? String(v).split(/\s+/).join(' ').trim().slice(0, n) : '');
@@ -67,7 +68,15 @@ export function cleanItem(kind: ListName, raw: any): Item | null {
 }
 
 export function clean(data: any): Lists {
-  const out = { version: text(data?.version, 40) } as Lists;
+  const out = { version: text(data?.version, 40), protocols: [] as Protocol[] } as Lists;
+  const pids = new Set<string>();
+  for (const raw of (Array.isArray(data?.protocols) ? data.protocols : []).slice(0, 200)) {
+    const p = cleanProtocol(raw, true);                 // reviewed protocols: a skill as ordered stages (protocols.ts)
+    if (p && !pids.has(p.id)) {
+      pids.add(p.id);
+      out.protocols.push(p);
+    }
+  }
   for (const kind of LISTS) {
     const seen = new Set<string>();
     out[kind] = (Array.isArray(data?.[kind]) ? data[kind].slice(0, 500) : [])

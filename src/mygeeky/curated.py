@@ -16,7 +16,8 @@ it straight away, and a daily job in the repo removes it from the file
      "jobs":        [{"id", "title", "org", "place", "url", "deadline", "type", "keywords", "summary"}],
      "funding":     [{"id", "title", "org", "url", "deadline", "who", "amount", "keywords", "summary"}],
      "conferences": [{"id", "title", "place", "url", "deadline", "starts", "ends", "student", "keywords", "summary"}],
-     "resources":   [{"id", "title", "url", "type", "skills", "keywords", "level", "free", "summary"}]}
+     "resources":   [{"id", "title", "url", "type", "skills", "keywords", "level", "free", "summary"}],
+     "protocols":   [{"id", "skill", "goal", "title", "summary", "stages": [...]}]}   # see protocols.py
 
 The file is someone else's text by the time it reaches you: every field is
 checked, lengths are capped, and only https links survive.
@@ -133,6 +134,14 @@ def clean(data: Any) -> dict[str, Any]:
                 seen.add(it["id"])
                 items.append(it)
         out[kind] = items
+    from .protocols import clean_protocol     # reviewed protocols: a skill as ordered stages (protocols.py)
+    seen = set()
+    out["protocols"] = []
+    for r in ((data.get("protocols") if isinstance(data, dict) else None) or [])[:200]:
+        p = clean_protocol(r, reviewed=True) if isinstance(data.get("protocols"), list) else None
+        if p and p["id"] not in seen:
+            seen.add(p["id"])
+            out["protocols"].append(p)
     return out
 
 
@@ -291,6 +300,32 @@ def problems(data: Any) -> list[str]:
                 out.append(f"{label}: the url must start with https://")
             if kind in DATED and not _day(raw.get("deadline")):
                 out.append(f"{label}: deadline must be a date like 2026-12-31")
+    from .protocols import clean_protocol, clean_stage, clean_item as clean_link
+    ids = set()
+    for i, raw in enumerate(data.get("protocols") or []):
+        label = f"protocols '{raw.get('id', i) if isinstance(raw, dict) else i}'"
+        p = clean_protocol(raw, reviewed=True)
+        if not p:
+            out.append(f"{label}: needs a skill, a title and at least one stage with a title")
+            continue
+        if not _ID.match(str(raw.get("id", ""))):
+            out.append(f"{label}: id must be 3-80 lowercase letters, digits or dashes")
+        elif p["id"] in ids:
+            out.append(f"{label}: the same id appears twice")
+        ids.add(p["id"])
+        for j, s in enumerate(raw.get("stages") or []):
+            if not clean_stage(s, j):
+                out.append(f"{label}: stage {j + 1} has no title")
+                continue
+            for it in s.get("items") or []:
+                if not clean_link(it):
+                    out.append(f"{label}, stage '{s.get('title')}': every link needs a title and an https:// url")
+            for q in s.get("quiz") or []:
+                opts = q.get("options") if isinstance(q, dict) else None
+                if not (isinstance(q, dict) and isinstance(opts, list) and isinstance(q.get("answer"), int)
+                        and 0 <= q["answer"] < len(opts)):
+                    out.append(f"{label}, stage '{s.get('title')}': a quiz question needs options and the answer's "
+                               "position (0 = the first option)")
     return out
 
 

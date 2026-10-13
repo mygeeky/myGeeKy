@@ -1,5 +1,5 @@
 // The 🌱 Grow planet: Rising Skills (what's growing in your field and missing from
-// you), Learning paths, Learn (curated resources), Wins (new stars, forks, citations)
+// you), Protocols, Learn (curated resources), Wins (new stars, forks, citations)
 // and Collaborators (fellow users who complement you). Everything is matched here,
 // on the phone; 👍/👎 teach your model.
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -8,19 +8,21 @@ import { quickProfile, timeAgo, useApp } from '../lib/app-state';
 import { matches, type Match } from '../lib/collab';
 import { loadLists, type Lists, ranked, RESOURCE_TYPES, type Ranked } from '../lib/curated';
 import { collabAsked, isSetUp, loadBeacons, type Parsed, send, signalsData } from '../lib/signals';
-import { type Doc, fieldDocs, find, loadPaths, ownText, pathSteps, type PathState, rising, type Rising, skillsIn, startPath,
-         stopPath, tick } from '../lib/skills';
+import { load as loadProtocols } from '../lib/protocols';
+import { type Doc, fieldDocs, find, ownText, rising, type Rising, skillsIn } from '../lib/skills';
 import * as taste from '../lib/taste';
 import { C } from '../lib/theme';
 import { recent, refreshWins, type WinsState, loadWins } from '../lib/wins';
 import { Button, GCard, Hidden, s, Thumbs } from './growth-parts';
+import { ProtocolsView } from './protocols-view';
 import { Empty, open, Segments } from './ui';
 
 type Mode = 'skills' | 'paths' | 'learn' | 'wins' | 'collab';
-const MODES: [Mode, string][] = [['skills', 'Skills'], ['paths', 'Paths'], ['learn', 'Learn'], ['wins', 'Wins'], ['collab', 'People']];
+const MODES: [Mode, string][] = [['skills', 'Skills'], ['paths', 'Protocols'], ['learn', 'Learn'], ['wins', 'Wins'], ['collab', 'People']];
 const ABOUT: Record<Mode, string> = {
   skills: "Skills growing in your field that you don't show yet. 👍 / 👎 teach it what to suggest; 🧭 turns one into steps.",
-  paths: 'Learn the basics, go deeper, practise on a real project, then use it in your own work (that step ticks itself).',
+  paths: 'A skill as stages, e.g. R basics → statistics with R → data analysis → a real project. A short check skips what you know. '
+    + 'Reviewed ones come from the maker; for any other skill myGeeKy builds one from GitHub and papers. Change it, then 📤 publish it.',
   learn: "Free courses, books, tutorials and repos picked by myGeeKy's maker, matched to you and your rising skills.",
   wins: 'New stars and forks on your repos, and new citations of your papers. Checked once a day.',
   collab: "Fellow myGeeKy users whose skills complement yours. 🤝 is sealed: they only see it if they pick you too.",
@@ -39,7 +41,7 @@ function SkillCard({ sk, started, onVote, onPath }: { sk: Rising; started: boole
         <Pressable key={e.url} onPress={() => open(e.url)}><Text style={s.link} numberOfLines={1}>e.g. {e.title}</Text></Pressable>
       ))}
       <View style={s.row}>
-        <Button label={started ? '✓ On your paths' : '🧭 Start a learning path'} onPress={onPath} disabled={started} />
+        <Button label={started ? '✓ In your protocols' : '🧭 Make it a protocol'} onPress={onPath} disabled={started} />
       </View>
     </GCard>
   );
@@ -68,7 +70,8 @@ export function GrowView() {
   const [lists, setLists] = useState<Lists | null>(null);
   const [docs, setDocs] = useState<Doc[] | null>(null);
   const [wins, setWins] = useState<WinsState | null>(null);
-  const [paths, setPaths] = useState<PathState>({});
+  const [startedSkills, setStartedSkills] = useState<Set<string>>(new Set());
+  const [startWith, setStartWith] = useState<{ skill: string; goal: string } | null>(null);
   const [skills, setSkills] = useState<{ skills: Rising[]; strengths: Rising[]; hidden: number } | null>(null);
   const [resources, setResources] = useState<{ items: Ranked[]; hidden: number }>({ items: [], hidden: 0 });
   const [people, setPeople] = useState<{ people: Match[]; hidden: number } | null>(null);
@@ -83,7 +86,6 @@ export function GrowView() {
   useEffect(() => {
     loadLists().then(setLists).catch(() => undefined);
     fieldDocs().then(setDocs).catch(() => setDocs([]));
-    loadPaths().then(setPaths).catch(() => undefined);
     loadWins().then(setWins).catch(() => undefined);
     refreshWins(me, settings?.orcid ?? '', token).then(setWins).catch(() => undefined);
   }, [me, settings?.orcid, token]);
@@ -95,8 +97,6 @@ export function GrowView() {
 
   const mine = useMemo(() => ownText(keywords, profile?.field ?? [], wins ?? { wins: [], myRepos: [], myPapers: [] }),
     [keywords, profile, wins]);
-  const reposText = useMemo(() => (wins?.myRepos ?? []).map((r) => `${r.name} ; ${r.description} ; ${r.topics.join(' ')} ; ${r.language}`).join('\n'),
-    [wins]);
 
   const rank = useCallback(async () => {
     if (!docs || !lists) return;
@@ -133,12 +133,16 @@ export function GrowView() {
     if (mode === 'collab' && people === null) Promise.resolve().then(loadPeople);
   }, [mode, people, loadPeople]);
 
-  const started = new Set(Object.keys(paths));
-  const onPath = async (name: string) => {
-    await startPath(name);
-    setPaths(await loadPaths());
+  useEffect(() => {
+    if (lists) loadProtocols(lists).then((st) => setStartedSkills(new Set(Object.values(st).map((e) => e.protocol.skill))))
+      .catch(() => undefined);
+  }, [lists, mode]);
+  const started = startedSkills;
+  const onPath = (name: string) => {
+    setStartWith({ skill: name, goal: '' });
     setMode('paths');
   };
+  const onStarted = useCallback(() => setStartWith(null), []);
   const vote = (kind: taste.Kind, id: string, text: string, tags: string[], again: () => void) => async (up: boolean) => {
     const v = await taste.vote(kind, id, up, text, tags);
     if (v < 0) again();
@@ -169,38 +173,8 @@ export function GrowView() {
       ) : null}
 
       {mode === 'paths' ? (
-        !started.size ? <Empty>No paths yet. In Skills, press 🧭 Start a learning path on a skill.</Empty> : (
-          <View>
-            {[...started].map((name) => {
-              const steps = lists && docs ? pathSteps(name, paths, lists, docs, mine, reposText) : [];
-              const n = steps.filter((x) => x.done).length;
-              return (
-                <GCard key={name}>
-                  <View style={s.head}>
-                    <Text style={s.title}>{n === steps.length && n ? '🏁' : '🧭'} {name}  <Text style={s.muted}>{n}/{steps.length}</Text></Text>
-                    <Pressable onPress={async () => { await stopPath(name); setPaths(await loadPaths()); }} accessibilityLabel="Stop this path" hitSlop={8}>
-                      <Text style={{ color: C.muted, fontSize: 18 }}>×</Text>
-                    </Pressable>
-                  </View>
-                  <View style={s.bar}><View style={[s.barFill, { width: `${steps.length ? (100 * n) / steps.length : 0}%` }]} /></View>
-                  {steps.map((st) => (
-                    <View key={st.id} style={s.step}>
-                      <Pressable disabled={st.auto} style={s.box} accessibilityLabel={st.done ? 'Done' : 'Mark as done'}
-                                 onPress={async () => { await tick(name, st.id, !st.done); setPaths(await loadPaths()); }}>
-                        <Text style={{ color: st.done ? C.green : C.text, fontSize: 16 }}>{st.done ? '✓' : ''}</Text>
-                      </Pressable>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[s.title, { fontSize: 14 }]}>{st.title}</Text>
-                        {st.url ? <Pressable onPress={() => open(st.url)}><Text style={s.link}>{st.detail}</Text></Pressable>
-                          : <Text style={s.muted}>{st.detail}</Text>}
-                      </View>
-                    </View>
-                  ))}
-                </GCard>
-              );
-            })}
-          </View>
-        )
+        <ProtocolsView lists={lists} docs={docs ?? []} repos={wins?.myRepos ?? []} profile={mine} token={token}
+                       startWith={startWith} onStarted={onStarted} />
       ) : null}
 
       {mode === 'learn' ? (

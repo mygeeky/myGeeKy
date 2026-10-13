@@ -3,18 +3,15 @@
 // the desktop uses) shows up in what it already read about your field (rising papers,
 // field repos, models, headlines), compares it with what you show (your keywords, your
 // repos, your papers), and suggests what's rising there but missing from you. 👍/👎
-// tilt it; 👎 hides a skill. A learning path turns a skill into four steps; the last
-// ticks itself when one of your repos shows the skill. Nothing here sends anything.
+// tilt it; 👎 hides a skill (protocols.ts turns one into stages). Nothing here sends anything.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import vocab from '../data/skills.json';
-import { forSkill, Lists } from './curated';
 import { match, Weights } from './interests';
 import { readCache } from './storage';
 import * as taste from './taste';
 import { loadWins, WinsState } from './wins';
 
 const HISTORY_KEY = 'mygeeky.skills.history';
-const PATHS_KEY = 'mygeeky.paths';
 const RECENT_DAYS = 45;
 const MIN_DOCS = 2;
 
@@ -166,70 +163,6 @@ export async function rising(opts: { docs: Doc[]; mine: string; weights: Weights
   out.sort((a, b) => b.score - a.score);
   strengths.sort((a, b) => b.score - a.score);
   return { skills: out.slice(0, opts.top ?? 12), strengths: strengths.slice(0, 5), hidden };
-}
-
-// ---- learning paths
-export type PathState = Record<string, { startedAt: string; done: string[] }>;
-export type Step = { id: string; title: string; detail: string; url: string; done: boolean; auto: boolean };
-
-export async function loadPaths(): Promise<PathState> {
-  try {
-    return JSON.parse((await AsyncStorage.getItem(PATHS_KEY)) ?? '{}') ?? {};
-  } catch {
-    return {};
-  }
-}
-
-async function savePaths(p: PathState) {
-  await AsyncStorage.setItem(PATHS_KEY, JSON.stringify(p));
-}
-
-export async function startPath(skill: string): Promise<boolean> {
-  const s = find(skill);
-  if (!s) return false;
-  const p = await loadPaths();
-  if (!p[s.name]) p[s.name] = { startedAt: new Date().toISOString().slice(0, 10), done: [] };
-  await savePaths(p);
-  return true;
-}
-
-export async function stopPath(skill: string) {
-  const p = await loadPaths();
-  delete p[skill];
-  await savePaths(p);
-}
-
-export async function tick(skill: string, step: string, done: boolean) {
-  const p = await loadPaths();
-  if (!p[skill]) return;
-  p[skill].done = [...p[skill].done.filter((x) => x !== step), ...(done ? [step] : [])];
-  await savePaths(p);
-}
-
-const search = (skill: string, what: string) =>
-  `https://github.com/search?q=${encodeURIComponent(`${skill} ${what}`)}&type=repositories&s=stars`;
-
-export function pathSteps(skill: string, state: PathState, lists: Lists, docs: Doc[], mine: string, repos: string): Step[] {
-  const s = find(skill);
-  if (!s) return [];
-  const done = new Set(state[s.name]?.done ?? []);
-  const res = forSkill(s.name, s.aliases, lists);
-  const basics = res.find((r) => !r.level || r.level === 'beginner') ?? res[0];
-  const deeper = res.find((r) => r !== basics && (r.level === 'intermediate' || r.level === 'advanced')) ?? res.find((r) => r !== basics);
-  const project = docs.find((d) => ['repo', 'tool'].includes(d.source) && d.url && s.re.test(d.text));
-  const yours = s.re.test(repos);
-  const inProfile = s.re.test(mine);
-  return [
-    { id: 'basics', title: 'Learn the basics', detail: basics?.title ?? `Find a beginner tutorial on ${s.name}`,
-      url: basics?.url ?? search(s.name, 'tutorial'), auto: false, done: done.has('basics') },
-    { id: 'deeper', title: 'Go deeper', detail: deeper?.title ?? `Read how experienced people use ${s.name}`,
-      url: deeper?.url ?? search(s.name, 'awesome'), auto: false, done: done.has('deeper') },
-    { id: 'practice', title: 'Practise on a real project', detail: project ? `Read and run ${project.title}` : `Run a small ${s.name} project from your field`,
-      url: project?.url ?? search(s.name, 'example'), auto: false, done: done.has('practice') },
-    { id: 'use', title: 'Use it in your own work', url: '', auto: true, done: yours || inProfile,
-      detail: yours ? "Done: it's in one of your repos" : inProfile ? "Done: it's in your profile"
-        : `Push a repo that uses ${s.name} (ticks itself), then add it to your CV` },
-  ];
 }
 
 export { loadWins };

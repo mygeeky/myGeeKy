@@ -1970,7 +1970,7 @@ class IdeaDialog(QDialog):
         kinds = QHBoxLayout()
         self.kind_buttons: dict[str, QRadioButton] = {}
         for key, (emoji, label, _) in KINDS.items():
-            if key == "report":          # sent from the listing itself (its 🚩), with its details filled in
+            if key in ("report", "protocol"):   # sent from the listing or protocol itself, details filled in
                 continue
             b = QRadioButton(f"{emoji} {label}")
             self.kind_buttons[key] = b
@@ -3192,7 +3192,7 @@ TABS = {
     "news": ("\U0001f4f0", "News"),
     "activity": ("\U0001f552", "Activity"),
     "signals": ("\U0001f4e1", "Signals"),
-    "grow": ("\U0001f331", "Grow: rising skills, learning paths and your wins"),
+    "grow": ("\U0001f331", "Grow: rising skills, protocols and your wins"),
     "chances": ("\U0001f3af", "Chances: verified jobs, funding and conferences"),
     "model": ("\U0001f9e0", "Model"),
     "badges": ("\U0001f3c5", "Badges"),
@@ -3884,7 +3884,7 @@ class MyGeekyPanel(QWidget):
         return scroll
 
     # ------------------------------------------------------------------ 🌱 Grow and 🎯 Chances
-    GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Paths"), ("learn", "📚 Learn"), ("wins", "🎉 Wins"),
+    GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("learn", "📚 Learn"), ("wins", "🎉 Wins"),
                   ("collab", "🤝 Collaborators"))
     CHANCE_MODES = (("jobs", "💼 Jobs"), ("funding", "💶 Funding"), ("conferences", "🎤 Conferences"))
 
@@ -3924,6 +3924,8 @@ class MyGeekyPanel(QWidget):
         self._growth: dict[str, Any] = {}
         self._collabs: dict[str, Any] = {}
         self._growth_running = False
+        self._editing_protocol = ""
+        self._building_protocol = False
 
         def build(layout: QVBoxLayout) -> None:
             actions = QHBoxLayout()
@@ -4067,7 +4069,7 @@ class MyGeekyPanel(QWidget):
         (area or self.grow_area).addWidget(lbl)
 
     def _render_grow(self) -> None:
-        from .growth_ui import PathCard, ResourceRow, SkillCard, WinRow
+        from .growth_ui import ResourceRow, SkillCard, WinRow
         theme = THEMES[self._theme_name()]
         self._style_grow_switches()
         _clear_layout(self.grow_area)
@@ -4102,14 +4104,7 @@ class MyGeekyPanel(QWidget):
                     self.grow_area.addWidget(SkillCard(s, theme, lambda up: 0, self._on_start_path, open_,
                                                        True, strength=True))
         elif mode == "paths":
-            self.grow_hint.setText("Your learning paths: learn the basics, go deeper, practise on a real project, "
-                                   "then use it in your own work. The last step ticks itself when one of your "
-                                   "repos shows the skill.")
-            paths = data.get("paths") or []
-            if not paths:
-                self._grow_note("No paths yet. In 📈 Skills, press 🧭 Start a learning path on a skill.", theme)
-            for pth in paths:
-                self.grow_area.addWidget(PathCard(pth, theme, self._on_tick_step, self._on_stop_path, open_))
+            self._render_protocols(data, theme)
         elif mode == "learn":
             self.grow_hint.setText("Free courses, books, tutorials and repos picked by myGeeKy's maker, matched "
                                    "to your work and the skills rising in your field. 👍 / 👎 teach it what helps you.")
@@ -4250,17 +4245,220 @@ class MyGeekyPanel(QWidget):
             return v
         return press
 
-    def _on_start_path(self, skill: str) -> None:
-        logic.start_path(skill)
+    # ---- protocols
+    def _render_protocols(self, data: dict[str, Any], theme: dict[str, Any]) -> None:
+        from .growth_ui import FlowRow, ProtocolCard
+        from .signals_ui import _button_style
+        self.grow_hint.setText("A protocol turns a skill into stages, e.g. R basics → statistics with R → data "
+                               "analysis → a real project. A short check skips what you already know. Reviewed "
+                               "ones are written by myGeeKy's maker; for any other skill myGeeKy builds one from "
+                               "GitHub and papers. Change it as you like, then 📤 publish it for everyone.")
+        new = QHBoxLayout()
+        new.setSpacing(4)
+        self.protocol_skill = QLineEdit()
+        self.protocol_skill.setPlaceholderText("A skill, e.g. R, Nextflow, GWAS")
+        self.protocol_goal = QLineEdit()
+        self.protocol_goal.setPlaceholderText("for… (optional), e.g. data analysis")
+        style = (f"QLineEdit {{ background:{theme['card_bg']}; color:{theme['text']}; border:none; "
+                 "border-radius:8px; padding:5px 8px; font-size:11px; }")
+        for w in (self.protocol_skill, self.protocol_goal):
+            w.setStyleSheet(style)
+            w.returnPressed.connect(self._on_build_protocol)
+        go = QPushButton("Building…" if self._building_protocol else "🧭 Build")
+        go.setEnabled(not self._building_protocol)
+        go.setCursor(Qt.PointingHandCursor)
+        go.setStyleSheet(_button_style(theme, accent=True))
+        go.clicked.connect(self._on_build_protocol)
+        new.addWidget(self.protocol_skill, 3)
+        new.addWidget(self.protocol_goal, 3)
+        new.addWidget(go)
+        self.grow_area.addLayout(new)
+        if self._building_protocol:
+            self._grow_note("Searching GitHub and papers, and sorting what comes back into stages…", theme)
+        mine = data.get("paths") or []
+        started = {p.get("based_on") or p["id"] for p in mine} | {p["id"] for p in mine}
+        offer = [r for r in data.get("reviewed") or [] if r["id"] not in started]
+        if offer:
+            self._grow_header("✓ REVIEWED PROTOCOLS", theme)
+            row = FlowRow()
+            for r in offer:
+                b = QPushButton(f"🧭 {r['title']}")
+                b.setToolTip(r.get("summary") or "")
+                b.setCursor(Qt.PointingHandCursor)
+                b.setStyleSheet(f"QPushButton {{ background:{theme['card_bg']}; color:{theme['text']}; border:none; "
+                                "border-radius:8px; padding:4px 9px; font-size:11px; }")
+                b.clicked.connect(lambda checked=False, r=r: self._on_start_path(r["skill"], r.get("goal", "")))
+                row.add(b)
+            row.finish()
+            self.grow_area.addWidget(row)
+        if not mine:
+            self._grow_note("No protocols yet. Pick a reviewed one above, build one for any skill, or press 🧭 on "
+                            "a skill in 📈 Skills.", theme)
+            return
+        self._grow_header("🧭 YOUR PROTOCOLS", theme)
+        for p in mine:
+            pid = p["id"]
+            self.grow_area.addWidget(ProtocolCard(
+                p, theme, self._editing_protocol == pid,
+                act=lambda action, *args, pid=pid: self._protocol_act(pid, action, *args),
+                on_check=lambda st, pid=pid: self._on_level_check(pid, st),
+                on_open=logic.open_link,
+                on_edit=lambda pid=pid: self._toggle_protocol_edit(pid),
+                on_publish=lambda p=p: self._on_publish_protocol(p),
+                on_add_link=lambda sid, pid=pid: self._on_add_protocol_link(pid, sid),
+                on_rename=lambda st, pid=pid: self._on_rename_stage(pid, st),
+                on_add_stage=lambda pid=pid: self._on_add_stage(pid),
+                vote_item=lambda it: self._voter("resource", it["url"], f"{it['title']} {it.get('note', '')}", []),
+                vote_of=lambda it: logic.vote_of("resource", it["url"])))
+
+    def _on_start_path(self, skill: str, goal: str = "") -> None:
+        """🧭 on a skill (or a reviewed protocol): start it, building one first if there's no reviewed one."""
+        if self._building_protocol:
+            return
+        self._building_protocol = True
         self._grow_mode = "paths"
+        self._render_grow()
+        self._run_async(lambda: logic.build_protocol(self.cfg, skill, goal), self._on_protocol_built)
+
+    def _on_build_protocol(self) -> None:
+        skill = self.protocol_skill.text().strip() if hasattr(self, "protocol_skill") else ""
+        if skill:
+            self._on_start_path(skill, self.protocol_goal.text().strip())
+
+    def _on_protocol_built(self, result: Any) -> None:
+        self._building_protocol = False
+        if isinstance(result, dict) and result.get("error"):
+            QMessageBox.information(self, "Protocol", result["error"])
         self._load_growth()
 
-    def _on_stop_path(self, skill: str) -> None:
-        logic.stop_path(skill)
+    def _protocol_act(self, pid: str, action: str, *args: Any) -> None:
+        if action == "stop":
+            box = QMessageBox(self)
+            box.setWindowTitle("Stop this protocol")
+            box.setText("Stop this protocol? Your progress and your changes to it are removed.")
+            yes = box.addButton("Stop it", QMessageBox.DestructiveRole)
+            box.addButton(QMessageBox.Cancel)
+            box.exec()
+            if box.clickedButton() is not yes:
+                return
+        logic.protocol_action(self.cfg, action, pid, *args)
         self._load_growth()
 
-    def _on_tick_step(self, skill: str, step: str, done: bool) -> None:
-        logic.tick_step(skill, step, done)
+    def _toggle_protocol_edit(self, pid: str) -> None:
+        self._editing_protocol = "" if self._editing_protocol == pid else pid
+        self._render_grow()
+
+    def _ask_text(self, title: str, label: str, value: str = "") -> str:
+        from PySide6.QtWidgets import QInputDialog
+        text, ok = QInputDialog.getText(self, title, label, QLineEdit.Normal, value)
+        return text.strip() if ok else ""
+
+    def _on_rename_stage(self, pid: str, st: dict[str, Any]) -> None:
+        title = self._ask_text("Rename stage", "New name:", st["title"])
+        if title:
+            self._protocol_act(pid, "rename_stage", st["id"], title)
+
+    def _on_add_stage(self, pid: str) -> None:
+        title = self._ask_text("Add a stage", "Name of the new stage (e.g. Statistics with R):")
+        if title:
+            self._protocol_act(pid, "add_stage", title)
+
+    def _on_add_protocol_link(self, pid: str, sid: str) -> None:
+        url = self._ask_text("Add a link", "Link (https://…): a GitHub repo, a paper (doi.org) or a page")
+        if not url:
+            return
+        if not url.startswith("https://"):
+            QMessageBox.information(self, "Add a link", "Only https:// links can be added.")
+            return
+        title = self._ask_text("Add a link", "What is it? (a short title)") or url
+        logic.protocol_action(self.cfg, "add_item", pid, sid, url, title)
+        self._load_growth()
+
+    def _on_level_check(self, pid: str, st: dict[str, Any]) -> None:
+        """The level check for one stage: a short quiz if it has one, else 'I can do these'."""
+        theme = THEMES[self._theme_name()]
+        dlg = QDialog(self)
+        dlg.setWindowTitle(f"Check: {st['title']}")
+        dlg.setStyleSheet(f"QDialog {{ background:{theme['bg']}; }} QLabel, QRadioButton, QCheckBox "
+                          f"{{ color:{theme['text']}; font-size:11.5px; }}")
+        lay = QVBoxLayout(dlg)
+        groups: list[list[QRadioButton]] = []
+        boxes: list[QCheckBox] = []
+        if st.get("quiz"):
+            intro = QLabel(f"{len(st['quiz'])} questions. Get {round(75)}% right and this stage is marked as "
+                           "known. Your answers stay on this computer.")
+            intro.setWordWrap(True)
+            lay.addWidget(intro)
+            for n, q in enumerate(st["quiz"], 1):
+                ql = QLabel(f"<b>{n}. {html.escape(q['q'])}</b>")
+                ql.setWordWrap(True)
+                lay.addWidget(ql)
+                opts = []
+                holder = QWidget()
+                hl = QVBoxLayout(holder)
+                hl.setContentsMargins(12, 0, 0, 4)
+                for o in q["options"]:
+                    rb = QRadioButton(o)
+                    hl.addWidget(rb)
+                    opts.append(rb)
+                lay.addWidget(holder)
+                groups.append(opts)
+        else:
+            intro = QLabel("Tick what you can already do. All ticked, and this stage is marked as known.")
+            intro.setWordWrap(True)
+            lay.addWidget(intro)
+            for c in st.get("can") or []:
+                cb = QCheckBox(c)
+                lay.addWidget(cb)
+                boxes.append(cb)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        cancel = QPushButton("Cancel")
+        ok = QPushButton("Check")
+        cancel.clicked.connect(dlg.reject)
+        ok.clicked.connect(dlg.accept)
+        row.addWidget(cancel)
+        row.addWidget(ok)
+        lay.addLayout(row)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        if groups:
+            answers = [next((i for i, rb in enumerate(g) if rb.isChecked()), -1) for g in groups]
+            score = logic.protocol_action(self.cfg, "quiz", pid, st["id"], answers) or 0.0
+            right = round(score * len(groups))
+            QMessageBox.information(self, "Check", f"{right} of {len(groups)} right." + (
+                " You know this one: it's marked as known." if score >= 0.75 else
+                " Not yet: this stage stays on your list. The links below it are a good place to start."))
+        elif boxes and all(cb.isChecked() for cb in boxes):
+            logic.protocol_action(self.cfg, "known", pid, st["id"], "self")
+        self._load_growth()
+
+    def _on_publish_protocol(self, p: dict[str, Any]) -> None:
+        box = QMessageBox(self)
+        box.setWindowTitle("Publish this protocol")
+        box.setText(f"Send “{p['title']}” to myGeeKy, for everyone?\n\n"
+                    "This opens a public GitHub issue in mygeeky/myGeeKy-ideas, sent with your GitHub account "
+                    "when you press Submit. It holds the protocol (its stages and links) and the links you "
+                    "removed, so the maker can review it for everyone and improve the protocol model.\n\n"
+                    "Your progress, your checks and your answers are not included.")
+        go = box.addButton("Open on GitHub", QMessageBox.AcceptRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        if box.clickedButton() is go:
+            out = logic.publish_protocol(self.cfg, p["id"])
+            if out.get("clipboard"):
+                QApplication.clipboard().setText(out["clipboard"])
+                QMessageBox.information(self, "Publish this protocol",
+                                        "It's too long for a link, so myGeeKy copied it for you. On the GitHub page "
+                                        "that opens, paste it (Ctrl+V / ⌘V) where it says, then press Submit.")
+            if out.get("url"):
+                logic.open_link(out["url"])
+
+    def _on_stop_path(self, pid: str) -> None:
+        self._protocol_act(pid, "stop")
+
+    def _on_tick_step(self, pid: str, step: str, done: bool) -> None:
+        logic.protocol_action(self.cfg, "tick", pid, step, done)
         self._load_growth()
 
     def _on_ask_collab(self, card) -> None:

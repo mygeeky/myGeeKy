@@ -8,7 +8,15 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 - **🌱 Grow, a new planet.**
   - **📈 Rising Skills:** what's growing in your field and missing from your profile, CV, papers and repos, each with
     why. It comes from the rising papers, trending repos and models, and people myGeeKy already reads for you.
-  - **🧭 Learning paths:** four steps per skill. The last ticks itself when one of your repos shows the skill.
+  - **🧭 Protocols:** a skill as ordered stages, e.g. R basics → statistics with R → R for data analysis → a real
+    project → your own work.
+    - A level check skips what you know: your repos as evidence, a short quiz, or "I can do these".
+    - Five reviewed protocols to start with: R for data analysis, Python for data analysis, GWAS, Nextflow, and
+      single-cell RNA-seq.
+    - For any other skill myGeeKy builds one from GitHub and papers, with a small protocol model trained for this
+      (`tools/protocol_model`: about 400 KB, trained on 7,440 labelled examples across 55 skills; the same numbers on the computer and the phone).
+    - Edit it (reorder, rename, add, remove), then 📤 publish it to the maker as a public issue. Published protocols
+      become reviewed ones and training data for the next model.
   - **📚 Learn:** hand-picked learning resources, matched to you and your rising skills.
   - **🎉 Wins:** new stars, forks and citations, with the newest paper citing you.
   - **🤝 Collaborators:** fellow users whose skills complement yours, asked with the sealed, mutual-only 🤝.

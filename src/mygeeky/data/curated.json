@@ -1,5 +1,5 @@
 {
- "version": "2026-10-13T00:00:00Z",
+ "version": "2026-10-13T20:29:40Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [],
  "funding": [],
@@ -674,6 +674,812 @@
    "title": "Google Colab",
    "url": "https://colab.research.google.com/",
    "summary": "Notebooks in the browser with free (limited) GPUs."
+  }
+ ],
+ "protocols": [
+  {
+   "id": "r-data-analysis",
+   "skill": "R",
+   "goal": "data analysis",
+   "title": "R for data analysis",
+   "summary": "From your first R script to a full analysis: the basics, statistics with R, tidy data analysis, then a real project.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "R basics",
+     "role": "basics",
+     "skills": [
+      "r"
+     ],
+     "can": [
+      "I can install and load packages",
+      "I can read a CSV file into a data frame and look at it",
+      "I can write a small function and a loop"
+     ],
+     "quiz": [
+      {
+       "q": "Which gives the mean of the column age in the data frame df?",
+       "options": [
+        "df.mean(age)",
+        "mean(df$age)",
+        "avg(df, age)",
+        "mean(df[age])"
+       ],
+       "answer": 1
+      },
+      {
+       "q": "What does c(1, 2, 3) * 2 return?",
+       "options": [
+        "1 2 3 1 2 3",
+        "an error",
+        "2 4 6",
+        "12"
+       ],
+       "answer": 2
+      },
+      {
+       "q": "In base R, which reads a CSV file into a data frame?",
+       "options": [
+        "read.csv(\"data.csv\")",
+        "open(\"data.csv\")",
+        "load.csv(\"data.csv\")",
+        "source(\"data.csv\")"
+       ],
+       "answer": 0
+      },
+      {
+       "q": "What is NA in R?",
+       "options": [
+        "the text \"NA\"",
+        "zero",
+        "a missing value",
+        "an error message"
+       ],
+       "answer": 2
+      }
+     ],
+     "items": [
+      {
+       "title": "R for Reproducible Scientific Analysis (Software Carpentry)",
+       "url": "https://swcarpentry.github.io/r-novice-gapminder/",
+       "kind": "course",
+       "note": "Hands-on lessons for researchers, from zero to data frames and plots."
+      },
+      {
+       "title": "Hands-On Programming with R",
+       "url": "https://rstudio-education.github.io/hopr/",
+       "kind": "book",
+       "note": "Free book: R as a programming language, through small projects."
+      },
+      {
+       "title": "R for Data Science (2e)",
+       "url": "https://r4ds.hadley.nz/",
+       "kind": "book",
+       "note": "The free classic: import, tidy, transform, visualise."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Statistics with R",
+     "role": "deeper",
+     "query": "statistics",
+     "skills": [
+      "r"
+     ],
+     "can": [
+      "I can choose between a t-test, a chi-squared test and a regression",
+      "I can explain what a p-value and a confidence interval mean",
+      "I can fit a linear model in R and read its output"
+     ],
+     "quiz": [
+      {
+       "q": "Which compares the means of two independent groups?",
+       "options": [
+        "cor.test(x, y)",
+        "t.test(x, y)",
+        "chisq.test(x, y)",
+        "lm(x)"
+       ],
+       "answer": 1
+      },
+      {
+       "q": "In lm(weight ~ height, data = df), what is being modelled?",
+       "options": [
+        "height from weight",
+        "only the correlation",
+        "weight from height",
+        "nothing: it draws a plot"
+       ],
+       "answer": 2
+      },
+      {
+       "q": "A p-value of 0.03 means…",
+       "options": [
+        "there's a 3% chance the null hypothesis is true",
+        "if there were no effect, data this extreme would turn up about 3% of the time",
+        "the effect is 3% large",
+        "97% of repeats will find the same"
+       ],
+       "answer": 1
+      },
+      {
+       "q": "Why look at residuals after fitting a linear model?",
+       "options": [
+        "to check the model's assumptions (shape, spread, outliers)",
+        "to get the p-value",
+        "to make the model faster",
+        "residuals are only for plots"
+       ],
+       "answer": 0
+      }
+     ],
+     "items": [
+      {
+       "title": "Learning Statistics with R",
+       "url": "https://learningstatisticswithr.com/",
+       "kind": "book",
+       "note": "Free book: statistics from the ground up, with R."
+      },
+      {
+       "title": "ModernDive: Statistical Inference via Data Science",
+       "url": "https://moderndive.com/",
+       "kind": "book",
+       "note": "Regression and inference with the tidyverse, free online."
+      },
+      {
+       "title": "Introduction to Modern Statistics (OpenIntro)",
+       "url": "https://openintro-ims.netlify.app/",
+       "kind": "book",
+       "note": "Free textbook with R tutorials for every chapter."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "R for data analysis",
+     "role": "applied",
+     "query": "data analysis",
+     "skills": [
+      "r",
+      "tidyverse"
+     ],
+     "can": [
+      "I can clean, reshape, join and summarise data with the tidyverse",
+      "I can make publication-quality plots with ggplot2",
+      "I can fit, check and compare models on real data"
+     ],
+     "quiz": [
+      {
+       "q": "In the tidyverse, which keeps only the rows where age > 30?",
+       "options": [
+        "select(df, age > 30)",
+        "filter(df, age > 30)",
+        "arrange(df, age > 30)",
+        "mutate(df, age > 30)"
+       ],
+       "answer": 1
+      },
+      {
+       "q": "df |> group_by(sex) |> summarise(m = mean(bmi)) gives…",
+       "options": [
+        "the mean BMI only",
+        "df sorted by sex",
+        "one row per sex, with its mean BMI",
+        "an error"
+       ],
+       "answer": 2
+      },
+      {
+       "q": "Which turns a wide table into a long one?",
+       "options": [
+        "pivot_longer()",
+        "pivot_wider()",
+        "left_join()",
+        "bind_cols()"
+       ],
+       "answer": 0
+      },
+      {
+       "q": "Why keep a test set apart when you build a model?",
+       "options": [
+        "to make it faster",
+        "to remove outliers",
+        "to tidy the data",
+        "to check the model on data it hasn't seen"
+       ],
+       "answer": 3
+      }
+     ],
+     "items": [
+      {
+       "title": "Data Analysis and Visualisation in R for Ecologists (Data Carpentry)",
+       "url": "https://datacarpentry.github.io/R-ecology-lesson/",
+       "kind": "course",
+       "note": "A full analysis from raw data to plots, in the tidyverse."
+      },
+      {
+       "title": "Tidy Modeling with R",
+       "url": "https://www.tmwr.org/",
+       "kind": "book",
+       "note": "Free book: building, checking and comparing models with tidymodels."
+      },
+      {
+       "title": "Tidy Data (Wickham, Journal of Statistical Software, 2014)",
+       "url": "https://doi.org/10.18637/jss.v059.i10",
+       "kind": "article",
+       "note": "The paper behind the tidyverse: how to shape data for analysis."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "A real project to rerun",
+     "role": "project",
+     "query": "data analysis",
+     "skills": [
+      "r"
+     ],
+     "can": [
+      "I've analysed a real data set from start to end and shared it"
+     ],
+     "items": [
+      {
+       "title": "TidyTuesday",
+       "url": "https://github.com/rfordatascience/tidytuesday",
+       "kind": "repo",
+       "note": "A new real data set every week, and hundreds of shared R analyses to compare with."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "r"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "python-data-analysis",
+   "skill": "Python",
+   "goal": "data analysis",
+   "title": "Python for data analysis",
+   "summary": "Python from the first script to statistics, pandas and machine learning on real data.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "Python basics",
+     "role": "basics",
+     "skills": [
+      "python"
+     ],
+     "can": [
+      "I can write and run a Python script",
+      "I can use lists, dictionaries, loops and functions",
+      "I can install a package with pip or conda"
+     ],
+     "quiz": [
+      {
+       "q": "What does len([3, 5, 7]) return?",
+       "options": [
+        "7",
+        "3",
+        "15",
+        "an error"
+       ],
+       "answer": 1
+      },
+      {
+       "q": "Which makes a dictionary?",
+       "options": [
+        "[1, 2]",
+        "(1, 2)",
+        "{\"a\": 1}",
+        "{1, 2}"
+       ],
+       "answer": 2
+      },
+      {
+       "q": "What does range(3) give in a for loop?",
+       "options": [
+        "0, 1, 2",
+        "1, 2, 3",
+        "3",
+        "0, 1, 2, 3"
+       ],
+       "answer": 0
+      }
+     ],
+     "items": [
+      {
+       "title": "Programming with Python (Software Carpentry)",
+       "url": "https://swcarpentry.github.io/python-novice-inflammation/",
+       "kind": "course",
+       "note": "Lessons for researchers: loops, functions, files, plots."
+      },
+      {
+       "title": "Python for Data Analysis, 3rd edition (free online)",
+       "url": "https://wesmckinney.com/book/",
+       "kind": "book",
+       "note": "By the creator of pandas."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Statistics with Python",
+     "role": "deeper",
+     "query": "statistics",
+     "skills": [
+      "python"
+     ],
+     "can": [
+      "I can explain what a p-value and a confidence interval mean",
+      "I can run a t-test and a regression in Python and read the result"
+     ],
+     "quiz": [
+      {
+       "q": "A p-value of 0.03 means…",
+       "options": [
+        "there's a 3% chance the null hypothesis is true",
+        "if there were no effect, data this extreme would turn up about 3% of the time",
+        "the effect is 3% large",
+        "97% of repeats will find the same"
+       ],
+       "answer": 1
+      },
+      {
+       "q": "Why look at residuals after fitting a linear model?",
+       "options": [
+        "to check the model's assumptions (shape, spread, outliers)",
+        "to get the p-value",
+        "to make the model faster",
+        "residuals are only for plots"
+       ],
+       "answer": 0
+      }
+     ],
+     "items": [
+      {
+       "title": "Think Stats",
+       "url": "https://greenteapress.com/wp/think-stats-2e/",
+       "kind": "book",
+       "note": "Free book: statistics by writing Python."
+      },
+      {
+       "title": "Python Data Science Handbook",
+       "url": "https://jakevdp.github.io/PythonDataScienceHandbook/",
+       "kind": "book",
+       "note": "NumPy, pandas, Matplotlib and scikit-learn, free online."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Python for data analysis",
+     "role": "applied",
+     "query": "data analysis",
+     "skills": [
+      "python",
+      "pandas"
+     ],
+     "can": [
+      "I can clean, reshape and summarise data with pandas",
+      "I can train and evaluate a model with scikit-learn"
+     ],
+     "items": [
+      {
+       "title": "Data Analysis and Visualization in Python for Ecologists (Data Carpentry)",
+       "url": "https://datacarpentry.github.io/python-ecology-lesson/",
+       "kind": "course",
+       "note": "A full analysis with pandas and plotnine."
+      },
+      {
+       "title": "Machine learning in Python with scikit-learn (the official MOOC)",
+       "url": "https://inria.github.io/scikit-learn-mooc/",
+       "kind": "course",
+       "note": "Free course from the scikit-learn team."
+      },
+      {
+       "title": "Array programming with NumPy (Nature, 2020)",
+       "url": "https://doi.org/10.1038/s41586-020-2649-2",
+       "kind": "article",
+       "note": "Why NumPy works the way it does."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "A real project to rerun",
+     "role": "project",
+     "query": "data analysis",
+     "skills": [
+      "python"
+     ],
+     "can": [
+      "I've analysed a real data set from start to end and shared it"
+     ],
+     "items": []
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "python"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "gwas",
+   "skill": "GWAS",
+   "goal": "",
+   "title": "Genome-wide association studies",
+   "summary": "Quality control, association testing and reading the results, with the tools people actually use.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "GWAS basics",
+     "role": "basics",
+     "skills": [
+      "gwas"
+     ],
+     "can": [
+      "I can explain what a GWAS tests",
+      "I know the main quality-control steps",
+      "I can read a Manhattan plot and a QQ plot"
+     ],
+     "quiz": [
+      {
+       "q": "What does a Manhattan plot show?",
+       "options": [
+        "allele frequencies per population",
+        "-log10(p) for each variant along the genome",
+        "the LD between two variants",
+        "the heritability of the trait"
+       ],
+       "answer": 1
+      },
+      {
+       "q": "The usual genome-wide significance threshold is…",
+       "options": [
+        "0.05",
+        "0.001",
+        "5 × 10⁻⁸",
+        "1 × 10⁻²"
+       ],
+       "answer": 2
+      },
+      {
+       "q": "Why add principal components as covariates?",
+       "options": [
+        "to control for population structure",
+        "to speed up the test",
+        "to remove rare variants",
+        "to impute missing genotypes"
+       ],
+       "answer": 0
+      }
+     ],
+     "items": [
+      {
+       "title": "A tutorial on conducting GWAS: quality control and statistical analysis (Marees et al., 2018)",
+       "url": "https://doi.org/10.1002/mpr.1608",
+       "kind": "article",
+       "note": "Step-by-step tutorial paper, with scripts."
+      },
+      {
+       "title": "GWA_tutorial: the scripts and data for that tutorial",
+       "url": "https://github.com/MareesAT/GWA_tutorial",
+       "kind": "repo",
+       "note": "Run every QC and association step yourself with PLINK."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "GWAS in depth",
+     "role": "deeper",
+     "skills": [
+      "gwas"
+     ],
+     "can": [
+      "I know the strengths and limits of GWAS",
+      "I can choose between linear, logistic and mixed models"
+     ],
+     "items": [
+      {
+       "title": "Genome-wide association studies (Nature Reviews Methods Primers, 2021)",
+       "url": "https://doi.org/10.1038/s43586-021-00056-9",
+       "kind": "article",
+       "note": "The review to read: design, analysis, follow-up and pitfalls."
+      },
+      {
+       "title": "PLINK 2 documentation",
+       "url": "https://www.cog-genomics.org/plink/2.0/",
+       "kind": "website",
+       "note": "The reference for the most-used GWAS tool."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "GWAS at scale",
+     "role": "applied",
+     "query": "biobank",
+     "skills": [
+      "gwas",
+      "regenie"
+     ],
+     "can": [
+      "I can run a GWAS on a large cohort with a mixed-model tool"
+     ],
+     "items": [
+      {
+       "title": "REGENIE documentation",
+       "url": "https://rgcgithub.github.io/regenie/",
+       "kind": "website",
+       "note": "Whole-genome regression for biobank-scale GWAS."
+      },
+      {
+       "title": "Hail GWAS tutorial",
+       "url": "https://hail.is/docs/0.2/tutorials/01-genome-wide-association-study.html",
+       "kind": "tutorial",
+       "note": "A full GWAS in Python on a sample data set."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "A real project to rerun",
+     "role": "project",
+     "query": "pipeline",
+     "skills": [
+      "gwas"
+     ],
+     "can": [
+      "I've run a GWAS pipeline from raw genotypes to results"
+     ],
+     "items": []
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "gwas"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "nextflow",
+   "skill": "Nextflow",
+   "goal": "",
+   "title": "Nextflow pipelines",
+   "summary": "Write, run and share reproducible pipelines, the nf-core way.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "Nextflow basics",
+     "role": "basics",
+     "skills": [
+      "nextflow"
+     ],
+     "can": [
+      "I can run a Nextflow pipeline",
+      "I can write a process and connect it with a channel"
+     ],
+     "items": [
+      {
+       "title": "Nextflow training",
+       "url": "https://training.nextflow.io/",
+       "kind": "course",
+       "note": "The official, hands-on training."
+      },
+      {
+       "title": "Introduction to Bioinformatics workflows with Nextflow (Carpentries Incubator)",
+       "url": "https://carpentries-incubator.github.io/workflows-nextflow/",
+       "kind": "course",
+       "note": "A Carpentries-style lesson."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Nextflow in depth",
+     "role": "deeper",
+     "skills": [
+      "nextflow"
+     ],
+     "can": [
+      "I can use configs and profiles for different computers",
+      "I understand how nf-core pipelines are built"
+     ],
+     "items": [
+      {
+       "title": "nf-core documentation",
+       "url": "https://nf-co.re/docs/",
+       "kind": "website",
+       "note": "How community pipelines are written, tested and run."
+      },
+      {
+       "title": "Nextflow enables reproducible computational workflows (Nature Biotechnology, 2017)",
+       "url": "https://doi.org/10.1038/nbt.3820",
+       "kind": "article",
+       "note": "The paper behind Nextflow."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Community pipelines",
+     "role": "applied",
+     "skills": [
+      "nextflow"
+     ],
+     "can": [
+      "I can run and adapt an nf-core pipeline on my own data"
+     ],
+     "items": [
+      {
+       "title": "The nf-core framework for community-curated pipelines (Nature Biotechnology, 2020)",
+       "url": "https://doi.org/10.1038/s41587-020-0439-x",
+       "kind": "article",
+       "note": "Why and how nf-core works."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "A real pipeline to rerun",
+     "role": "project",
+     "skills": [
+      "nextflow"
+     ],
+     "can": [
+      "I've run a real pipeline from start to end"
+     ],
+     "items": [
+      {
+       "title": "nf-core/rnaseq",
+       "url": "https://github.com/nf-core/rnaseq",
+       "kind": "repo",
+       "note": "A widely used RNA-seq pipeline: read it, run its test profile."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "nextflow"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "single-cell-rna-seq",
+   "skill": "Single-cell RNA-seq",
+   "goal": "",
+   "title": "Single-cell RNA-seq analysis",
+   "summary": "From count matrices to cell types, with the best-practice guides in R and Python.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "Single-cell basics",
+     "role": "basics",
+     "skills": [
+      "single-cell rna-seq"
+     ],
+     "can": [
+      "I can explain what a count matrix is",
+      "I know the steps: QC, normalisation, clustering, annotation"
+     ],
+     "items": [
+      {
+       "title": "Current best practices in single-cell RNA-seq analysis: a tutorial (Luecken & Theis, 2019)",
+       "url": "https://doi.org/10.15252/msb.20188746",
+       "kind": "article",
+       "note": "The tutorial paper most people start with."
+      },
+      {
+       "title": "Seurat tutorials (R)",
+       "url": "https://satijalab.org/seurat/",
+       "kind": "website",
+       "note": "The standard R toolkit."
+      },
+      {
+       "title": "Scanpy tutorials (Python)",
+       "url": "https://scanpy.readthedocs.io/en/stable/tutorials/",
+       "kind": "website",
+       "note": "The standard Python toolkit."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Single-cell in depth",
+     "role": "deeper",
+     "skills": [
+      "single-cell rna-seq"
+     ],
+     "can": [
+      "I can choose a normalisation and an integration method and explain why"
+     ],
+     "items": [
+      {
+       "title": "Single-cell best practices (online book)",
+       "url": "https://www.sc-best-practices.org/",
+       "kind": "book",
+       "note": "A free book with runnable notebooks."
+      },
+      {
+       "title": "Best practices for single-cell analysis across modalities (Nature Reviews Genetics, 2023)",
+       "url": "https://doi.org/10.1038/s41576-023-00586-w",
+       "kind": "article",
+       "note": "The review behind that book."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Single-cell with Bioconductor",
+     "role": "applied",
+     "skills": [
+      "single-cell rna-seq",
+      "bioconductor"
+     ],
+     "can": [
+      "I can run a full analysis on a public data set"
+     ],
+     "items": [
+      {
+       "title": "Orchestrating Single-Cell Analysis with Bioconductor",
+       "url": "https://bioconductor.org/books/release/OSCA/",
+       "kind": "book",
+       "note": "Free book with complete worked analyses."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "A real project to rerun",
+     "role": "project",
+     "skills": [
+      "single-cell rna-seq"
+     ],
+     "can": [
+      "I've reproduced a published single-cell analysis"
+     ],
+     "items": [
+      {
+       "title": "single-cell-best-practices (the book's code)",
+       "url": "https://github.com/theislab/single-cell-best-practices",
+       "kind": "repo",
+       "note": "Every notebook of the book, ready to run."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "single-cell rna-seq"
+     ],
+     "items": []
+    }
+   ]
   }
  ]
 }

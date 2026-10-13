@@ -201,33 +201,6 @@ def test_counts_are_kept_per_day_for_later(monkeypatch):
     assert hist["2026-10-13"]["Polars"] > 0
 
 
-# --------------------------------------------------------------------------- Learning paths
-def test_a_path_has_four_steps_and_the_last_ticks_itself():
-    cfg = MyGeekyConfig()
-    data = curated.clean(_lists(resources=[
-        {"id": "nf-basic", "title": "Nextflow training", "url": "https://training.nextflow.io/", "type": "tutorial",
-         "skills": ["nextflow"], "level": "beginner"},
-        {"id": "nf-deep", "title": "nf-core docs", "url": "https://nf-co.re/docs", "type": "website",
-         "skills": ["nextflow"], "level": "advanced"}]))
-    assert skills.start_path("nextflow")                 # any alias finds the skill
-    steps = skills.path_steps(cfg, "Nextflow", data, mine="", docs=[_doc("a nextflow pipeline", url="https://github.com/x/y", title="x/y")])
-    assert [s["id"] for s in steps] == ["basics", "deeper", "practice", "use"]
-    assert steps[0]["url"] == "https://training.nextflow.io/" and steps[1]["url"] == "https://nf-co.re/docs"
-    assert steps[2]["url"] == "https://github.com/x/y" and not any(s["done"] for s in steps)
-    skills.tick("Nextflow", "basics")
-    from mygeeky.config import MY_REPOS_FILE
-    from mygeeky.files import write_json
-    write_json(MY_REPOS_FILE, {"repos": [{"name": "me/pipe", "description": "My Nextflow pipeline", "topics": []}]})
-    steps = skills.path_steps(cfg, "Nextflow", data, mine="", docs=[])
-    assert [s["done"] for s in steps] == [True, False, False, True]
-    assert "github.com/search" in steps[2]["url"]          # no project known: a search for one
-    p = skills.paths(cfg, data)[0]
-    assert p["skill"] == "Nextflow" and p["done"] == 2 and p["total"] == 4
-    skills.stop_path("Nextflow")
-    assert skills.paths(cfg, data) == []
-    assert skills.start_path("not a skill at all") is False
-
-
 # --------------------------------------------------------------------------- wins
 def _repo(name, stars, forks=0):
     return {"name": name, "url": f"https://github.com/{name}", "stars": stars, "forks": forks}

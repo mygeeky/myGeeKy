@@ -1,4 +1,4 @@
-"""Rising Skills and Learning paths: what to learn next, and the steps to get there.
+"""Rising Skills: what to learn next (protocols.py turns a skill into stages).
 
 **Rising Skills.** myGeeKy already reads what's moving in your field: rising
 papers and tools with papers (OpenAlex), discussions and headlines, trending
@@ -18,11 +18,8 @@ back). Every suggestion says why: "in 4 rising papers, 3 trending repos; not
 in your profile yet". Counts are kept per day (skills_history.json), so
 "rising" gets sharper the longer myGeeKy runs.
 
-**Learning paths.** Start a path on any skill and it becomes four steps: learn
-the basics, go deeper (both from the curated learning resources), practise on
-a real project in your field, and use it in your own work. The last step
-ticks itself when one of your own repos (or your CV/papers) shows the skill;
-the others you tick when you've done them.
+**Protocols** (protocols.py) turn a skill into ordered stages, with a level
+check; they replace the four-step learning paths that used to live here.
 
 Everything here is local: it reads files myGeeKy already saved, and sends
 nothing.
@@ -36,11 +33,10 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
-from urllib.parse import quote_plus
 
-from . import curated, taste
+from . import taste
 from .config import (ACTIVITY_CACHE_FILE, BEACON_CACHE_FILE, CV_TEXT_FILE, DATA_DIR, HEADLINES_FILE, HF_MODELS_FILE,
-                     MARKET_FILE, NEWS_FILE, PATHS_FILE, SKILLS_HISTORY_FILE, TRENDS_FILE, MyGeekyConfig, ensure_dirs)
+                     MARKET_FILE, NEWS_FILE, SKILLS_HISTORY_FILE, TRENDS_FILE, MyGeekyConfig, ensure_dirs)
 from .files import read_json, read_jsonl, write_json
 
 BUNDLED = Path(__file__).parent / "data" / "skills.json"
@@ -309,95 +305,3 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
     strengths.sort(key=lambda r: r["score"], reverse=True)
     return {"skills": out[:top], "strengths": strengths[:8], "hidden": hidden, "documents": len(docs),
             "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-
-
-# --------------------------------------------------------------------------- learning paths
-def _paths() -> dict[str, dict[str, Any]]:
-    data = read_json(PATHS_FILE, {}) or {}
-    paths = data.get("paths") if isinstance(data, dict) else None
-    return {k: v for k, v in (paths or {}).items() if isinstance(v, dict)}
-
-
-def _save_paths(paths: dict[str, dict[str, Any]]) -> None:
-    ensure_dirs()
-    write_json(PATHS_FILE, {"paths": paths}, indent=1)
-
-
-def start_path(skill: str) -> bool:
-    s = find(skill)
-    if not s:
-        return False
-    paths = _paths()
-    paths.setdefault(s["name"], {"started_at": date.today().isoformat(), "done": []})
-    _save_paths(paths)
-    return True
-
-
-def stop_path(skill: str) -> None:
-    paths = _paths()
-    paths.pop(skill, None)
-    _save_paths(paths)
-
-
-def tick(skill: str, step: str, done: bool = True) -> None:
-    paths = _paths()
-    if skill not in paths:
-        return
-    steps = [x for x in paths[skill].get("done") or [] if x != step]
-    if done:
-        steps.append(step)
-    paths[skill]["done"] = steps
-    _save_paths(paths)
-
-
-def _search(skill: str, what: str) -> str:
-    return f"https://github.com/search?q={quote_plus(skill + ' ' + what)}&type=repositories&s=stars"
-
-
-def path_steps(cfg: MyGeekyConfig, skill: str, data: dict[str, Any] | None = None,
-               mine: str | None = None, docs: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
-    """The four steps for `skill`: [{"id", "title", "detail", "url", "done", "auto"}]."""
-    s = find(skill) or {"name": skill, "aliases": [skill.lower()], "pattern": re.compile(re.escape(skill), re.I)}
-    state = _paths().get(s["name"], {})
-    done = set(state.get("done") or [])
-    resources = curated.for_skill(s["name"], s["aliases"], data)
-    basics = next((r for r in resources if r.get("level") in ("beginner", "")), resources[0] if resources else None)
-    deeper = next((r for r in resources if r is not basics and r.get("level") in ("intermediate", "advanced")),
-                  next((r for r in resources if r is not basics), None))
-    docs = field_documents() if docs is None else docs
-    project = next((d for d in docs if d["source"] in ("repo", "contribute", "tool") and d.get("url")
-                    and s["pattern"].search(d["text"])), None)
-    yours = s["pattern"].search(repos_text()) is not None
-    in_profile = s["pattern"].search(own_text(cfg) if mine is None else mine) is not None
-    steps = [
-        {"id": "basics", "title": "Learn the basics",
-         "detail": basics["title"] if basics else f"Find a beginner tutorial on {s['name']}",
-         "url": basics["url"] if basics else _search(s["name"], "tutorial"), "auto": False},
-        {"id": "deeper", "title": "Go deeper",
-         "detail": deeper["title"] if deeper else f"Read how experienced people use {s['name']}",
-         "url": deeper["url"] if deeper else _search(s["name"], "awesome"), "auto": False},
-        {"id": "practice", "title": "Practise on a real project",
-         "detail": (f"Read and run {project['title']}" if project else f"Run a small {s['name']} project from your field"),
-         "url": project["url"] if project else _search(s["name"], "example"), "auto": False},
-        {"id": "use", "title": "Use it in your own work",
-         "detail": ("Done: it's in one of your repos" if yours else
-                    "Done: it's in your profile" if in_profile else
-                    f"Push a repo that uses {s['name']} (ticks itself), then add it to your CV"),
-         "url": "", "auto": True},
-    ]
-    for st in steps:
-        st["done"] = (yours or in_profile) if st["auto"] else st["id"] in done
-    return steps
-
-
-def paths(cfg: MyGeekyConfig, data: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-    """Your started paths with their steps and progress, the least finished first."""
-    docs = field_documents()
-    mine = own_text(cfg)
-    out = []
-    for name, st in _paths().items():
-        steps = path_steps(cfg, name, data, mine=mine, docs=docs)
-        n = sum(1 for x in steps if x["done"])
-        out.append({"skill": name, "started_at": st.get("started_at", ""), "steps": steps,
-                    "done": n, "total": len(steps), "finished": n == len(steps)})
-    return sorted(out, key=lambda p: (p["finished"], p["started_at"]))

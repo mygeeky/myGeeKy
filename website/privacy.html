@@ -77,7 +77,7 @@
     <tr><td>Your GitHub username (optional)</td><td>To find your followers, repos and the people and projects in your field. myGeeKy also works without a GitHub account, from your ORCID iD or keywords</td><td>On your device</td></tr>
     <tr><td>Your CV (only if you point myGeeKy to it)</td><td>To learn your research interests. The text is extracted and analysed on your computer</td><td>On your computer. It is never uploaded anywhere, except to your own private sync repository if you turn sync on</td></tr>
     <tr><td>Your ORCID iD and Google Scholar profile (only if you give them)</td><td>To find your research field and rising papers. With <em>Sign in with ORCID</em>, also the name on your ORCID record, to show who signed in</td><td>On your device</td></tr>
-    <tr><td>Your 👍 and 👎, and the learning paths you start</td><td>To suggest skills, learning resources, jobs, funding, conferences and collaborators that fit you. A vote keeps a few words of what you voted on (its tags and title words)</td><td>On your device (and your own private sync repository, if you turn sync on). Never sent to myGeeKy or anyone else</td></tr>
+    <tr><td>Your 👍 and 👎, the protocols you start and change, and your level checks (quiz answers, "I can do these")</td><td>To suggest skills, learning resources, jobs, funding, conferences and collaborators that fit you. A vote keeps a few words of what you voted on (its tags and title words)</td><td>On your device (and your own private sync repository, if you turn sync on). Never sent to myGeeKy or anyone else</td></tr>
     <tr><td>Keywords you add, and what you click in myGeeKy</td><td>To rank news, papers, people and repos for you. Clicks are recorded as interest terms and as the <em>kind</em> of thing opened (for badges), never as titles or links</td><td>On your device</td></tr>
     <tr><td>Your GitHub tokens</td><td>To read GitHub's public data with a higher rate limit, and (only if you set up Signals) to update your own beacon repository</td><td>Your system's credential store (Windows Credential Manager, macOS Keychain, Linux Secret Service; on the phone, Android Keystore / iOS Keychain)</td></tr>
   </table></div>
@@ -115,6 +115,8 @@
     <li><strong>GitHub</strong> (again): every few hours, the public list of verified jobs, funding, conferences and learning
       resources (one file, the same for everyone); and once a day the star and fork counts of your own repositories</li>
     <li><strong>OpenAlex</strong> (again): once a day, the citation counts of your papers, and the newest paper citing one that gained citations</li>
+    <li><strong>GitHub and OpenAlex</strong> (again): when you build a protocol for a skill, a few searches for learning
+      material on that skill (the skill's name and, if you give one, what it's for; nothing about you)</li>
   </ul>
   <p>myGeeKy sends none of your personal data to these services beyond what a search needs, such as a topic word or a username.</p>
 
@@ -126,6 +128,15 @@
     <li>Applying happens on the employer's own page, and only when you choose to.</li>
     <li>The 🚩 on a listing opens a report you send yourself: a public GitHub issue with your account, or a private email to
       support@mygeeky.org. Nothing is sent unless you send it.</li>
+  </ul>
+
+  <h2>Protocols you publish</h2>
+  <ul>
+    <li>📤 <em>Publish</em> on a protocol opens a prefilled, public GitHub issue in <code>mygeeky/myGeeKy-ideas</code>.
+      Nothing is sent unless you press Submit there, with your own GitHub account.</li>
+    <li>It holds the protocol's stages and links, and the links you removed from it. It never holds your progress,
+      your quiz answers or anything else about you.</li>
+    <li>myGeeKy's maker may turn it into a reviewed protocol for everyone, and uses it to train the protocol model.</li>
   </ul>
 
   <h2>What you choose to make public</h2>

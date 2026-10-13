@@ -10,7 +10,7 @@ const MAX_TERMS = 10;
 const MAX_VOTES = 2000;
 export const KINDS = ['skill', 'resource', 'job', 'funding', 'conference', 'collaborator'] as const;
 export type Kind = (typeof KINDS)[number];
-type Vote = { vote: 1 | -1; kind: Kind; terms: string[]; at: string };
+export type Vote = { vote: 1 | -1; kind: Kind; terms: string[]; at: string };
 const SKIP = new Set((
   'the and for with from into this that your their our are was were has have had not but all any can new using use based ' +
   'via about over under more most other some such than then them they its position positions job jobs phd postdoc ' +

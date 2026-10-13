@@ -92,6 +92,57 @@ Then the daily **Curated lists** workflow (`.github/workflows/curated-lists.yml`
   - Use names from the skills dictionary (`src/mygeeky/data/skills.json`), in lowercase.
   - The test suite checks every tag is a known skill.
 
+### `protocols`: reviewed protocols
+
+A protocol turns a skill into ordered stages, each with links and a level check. For skills that have no reviewed
+protocol, the app builds one itself from GitHub and papers.
+
+```json
+{"id": "r-data-analysis", "skill": "R", "goal": "data analysis", "title": "R for data analysis",
+ "summary": "From your first R script to a full analysis.",
+ "stages": [
+  {"id": "basics", "title": "R basics", "role": "basics",
+   "can": ["I can read a CSV file into a data frame"],
+   "quiz": [{"q": "What does c(1, 2, 3) * 2 return?", "options": ["1 2 3 1 2 3", "2 4 6", "an error"], "answer": 1}],
+   "items": [{"title": "R for Data Science (2e)", "url": "https://r4ds.hadley.nz/", "kind": "book",
+              "note": "The free classic."}]},
+  {"id": "use", "title": "Use it in your own work", "role": "use", "items": []}]}
+```
+
+- **`skill`** is a name from the skills dictionary. Any alias finds it (`rstats` finds `R`).
+- **`role`** is one of `basics`, `deeper`, `applied`, `project` or `use`.
+  - The `use` stage ticks itself when one of the user's repos shows the skill.
+  - The other roles decide how the user's own repos count as evidence.
+- **`query`** (optional) adds words to that stage's evidence check, and to its searches when the app fills an
+  empty stage. Example: `"statistics"`.
+- **The level check:**
+  - **`quiz`:** multiple choice, where `answer` is the position of the right option (0 = the first). Passing at 75%
+    marks the stage as known.
+  - **`can`:** "I can do these" statements, used when there's no quiz.
+- **`kind`** for a link is one of `repo`, `article`, `website`, `course`, `book`, `tutorial` or `video`.
+- **A `project` stage with no links** is filled with real repos from the user's own field.
+
+### Protocols users publish
+
+Users can change any protocol (reorder, rename, add and remove stages and links) and 📤 publish it. Publishing opens
+a prefilled issue in [mygeeky/myGeeKy-ideas](https://github.com/mygeeky/myGeeKy-ideas/issues), with a title starting
+**🧭 Protocol:**. The issue holds:
+- the stages and their links;
+- the links the user removed from an auto-built one, which teach the model what *not* to pick.
+
+It never holds anyone's progress, checks or answers. To collect them:
+
+```
+python -m mygeeky.protocols harvest      # -> tools/protocol_model/published.jsonl
+```
+
+To make a published protocol reviewed:
+1. Check it.
+2. Copy its JSON into `protocols` here.
+3. Add a quiz if you like.
+
+Every harvested protocol also becomes training data for the next model (see `tools/protocol_model/README.md`).
+
 ## When someone reports a listing
 
 Each card has a 🚩. It opens either:

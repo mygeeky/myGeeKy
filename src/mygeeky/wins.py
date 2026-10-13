@@ -10,7 +10,7 @@ Once a day myGeeKy reads two public counts and compares them with yesterday's:
 The first read only sets the starting point (no flood of "wins" for everything
 you already had). Wins are kept for 60 days in wins.json, which also holds the
 last counts; your repos' names, topics and languages go to my_repos.json, which
-Rising Skills and Learning paths read to see what you already work with.
+Rising Skills and protocols read to see what you already work with.
 Nothing is sent anywhere except the two reads above.
 """
 
