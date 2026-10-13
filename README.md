@@ -223,10 +223,43 @@ myGeeKy reminds you a week before either one expires, and `mygeeky auth status` 
   <sub><b>Folded</b>, it's just a small icon on your screen edge that now and then lets out a few floating hearts (turn them off in ⚙).</sub>
 </p>
 
+## 🌱 Grow, and 🎯 Chances
+
+Two planets for what comes next in your career. Everything in them is matched to you **on your own device**; your 👍
+and 👎 teach your model what to show you more and less of, and never leave your devices.
+
+**🌱 Grow**
+- **📈 Rising Skills.** Skills, tools and methods growing in your field (in the rising papers, trending repos and
+  models, and the people myGeeKy follows for you) that your profile, CV, papers and repos don't show yet. Each one says
+  why: *"in 5 repos near your work, 2 trending models; not in your profile yet"*.
+- **🧭 Protocols.** A skill as ordered stages, e.g. *R for data analysis*: R basics → statistics with R → R for data
+  analysis → a real project to rerun → your own work.
+  - **A level check skips what you already know.** Your own repos are the evidence (*"6 of your repos use R"*,
+    which you can overrule); there's also a short quiz, or "I can do these".
+  - **Reviewed protocols** are written by myGeeKy's maker.
+  - **For any other skill, myGeeKy builds one.** It searches GitHub and papers, and a small model trained for
+    this (about 400 KB, running on your device) sorts what it finds into stages.
+  - **Change it as you like** (reorder, rename, add and remove), then **📤 publish it**: it goes to the maker as a
+    public GitHub issue you send yourself, so it can become a reviewed protocol for everyone and teach the next model.
+- **📚 Learn.** Free courses, books, tutorials and repos picked by hand, matched to you and your rising skills.
+- **🎉 Wins.** New ⭐ stars and 🍴 forks on your repos, and new 📚 citations of your papers, with the newest paper citing
+  you. Checked once a day.
+- **🤝 Collaborators.** Fellow myGeeKy users whose skills complement yours: they bring what you don't, and you bring
+  what they don't. Asking is the sealed 🤝 signal, which they only ever see if they pick you too.
+
+**🎯 Chances**
+- **Verified jobs.** PhD places, postdocs, master's places and research jobs, each one checked by hand to be real.
+- **Funding and conferences.** Grants, fellowships, travel grants and conferences, with who can apply and what
+  students get.
+- **Each one disappears after its deadline.** A 🚩 tells the maker a listing looks fake.
+
+They're curated by hand (how: [docs/CURATED.md](docs/CURATED.md)), and nobody, not even the maker, learns what you
+looked at.
+
 ## 📱 On your phone
 
 Your world, in orbit: you in the middle, **your circle** (Live, People, Activity, Signals) on the inner ring and
-**the world** (News, Papers, Repos, AI models, Launches) on the outer one. Spin a ring with your thumb; the planet
+**the world** (News, Papers, Repos, AI models, Launches) on the outer one, plus 🌱 Grow and 🎯 Chances. Spin a ring with your thumb; the planet
 that locks into the lens opens above. Tap something to read and the rings fold into a slim dock.
 
 <p align="center">

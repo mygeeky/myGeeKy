@@ -87,6 +87,11 @@ export async function loadBeacons(me: string, token: string | null): Promise<Par
   return out;
 }
 
+/** Everyone this phone already asked to collaborate (🤝), lowercased. */
+export async function collabAsked(): Promise<Set<string>> {
+  return new Set((await loadSent()).filter((g) => g.type === 'collab').map((g) => g.to.toLowerCase()));
+}
+
 // ---- what this phone sent (courtesy limits)
 async function loadSent(): Promise<Sent[]> {
   try {

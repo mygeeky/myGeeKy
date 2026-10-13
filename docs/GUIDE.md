@@ -46,6 +46,43 @@ zero dependencies.)
 happens — myGeeKy has no follow/unfollow code anywhere in the project; see
 [Safety](#safety).*
 
+## 🌱 Grow and 🎯 Chances
+
+Two planets on the panel (and two on the phone's rings) for what comes next.
+
+**🌱 Grow** has five parts:
+- **📈 Skills**: Rising Skills, the skills growing in your field that you don't show yet.
+  - Each one says why it's suggested.
+  - 👍 means "yes, I want to learn this"; 👎 hides it ("Show them again" brings hidden ones back).
+  - **🧭 Make it a protocol** turns a skill into stages.
+- **🧭 Protocols**: a skill as ordered stages, e.g. R basics → statistics with R → R for data analysis → a real
+  project to rerun → your own work.
+  - **Start one:** pick a ✓ reviewed protocol, or type any skill (and, if you like, what it's for, like *data
+    analysis*) and press **🧭 Build**. Without a reviewed one, myGeeKy searches GitHub and papers, and its small
+    protocol model sorts what it finds into stages. That one is marked *Auto-built, not reviewed*.
+  - **The level check:** stages your own repos already show are marked *You know this*; press **Not really** if
+    they aren't. **🎓 Check** opens a short quiz (pass at 75%) or a list of "I can do these". **▶ Start here** marks
+    the first stage you don't know yet.
+  - Tick a stage with **☑ Done**. The last stage, *Use it in your own work*, ticks itself when one of your repos
+    shows the skill.
+  - **✏️ Edit** lets you move stages and links up and down (a link past the top or bottom moves to the stage before
+    or after), rename, add and remove them. Your copy is then *Yours*.
+  - **📤 Publish** sends your protocol to myGeeKy's maker, as a public issue in the ideas repository that you send
+    with your own GitHub account. It holds the stages, the links, and the links you removed. It never holds your
+    progress, checks or answers. Published protocols become reviewed ones for everyone and teach the next model.
+- **📚 Learn**: hand-picked learning resources, matched to you and your rising skills.
+- **🎉 Wins**: new stars, forks and citations. The first check only sets the starting point.
+- **🤝 Collaborators**: fellow myGeeKy users on Signals whose skills complement yours.
+  - **🤝 I'd like to collaborate** sends the sealed, mutual-only collaborate signal.
+
+**🎯 Chances** has verified **jobs**, **funding** and **conferences**:
+- each one is checked by hand and disappears after its deadline;
+- 👍 / 👎 teach your model;
+- 🚩 reports one that looks fake (as a GitHub issue, or by email to support@mygeeky.org).
+
+All matching happens on your device. Your votes are kept in `taste.json` and your protocols in `learning_paths.json`
+(both synced to your private data repository if sync is on). How listings are added: [CURATED.md](CURATED.md).
+
 ## Finding people (`mygeeky run`)
 
 How the people suggestions are made:

@@ -240,6 +240,19 @@ def _avatar_widget(username: str, avatar_url: str, size: int, loader: "AvatarLoa
     return label
 
 
+def dialog_css(theme: dict[str, Any]) -> str:
+    """Dialogs are windows of their own: the panel's see-through colours would sit on black there (and
+    the text kept the system's black), so they get solid colours that match the theme."""
+    dark = theme.get("dark", True)
+    bg, fg, field, btn, hover, edge = (("#1f1b2e", "#f0f0f5", "#2a2640", "#3a3456", "#4a4370", "#4a4466") if dark
+                                       else ("#f6f3ee", "#241f1a", "#ffffff", "#e4ded4", "#d6cec2", "#cfc6b8"))
+    return (f"QDialog, QMessageBox, QInputDialog {{ background:{bg}; }}"
+            f"QLabel, QRadioButton, QCheckBox {{ color:{fg}; background:transparent; font-size:12px; }}"
+            f"QLineEdit {{ background:{field}; color:{fg}; border:1px solid {edge}; border-radius:6px; padding:5px; }}"
+            f"QPushButton {{ background:{btn}; color:{fg}; border:none; border-radius:8px; padding:6px 14px; "
+            f"font-size:12px; min-width:64px; }} QPushButton:hover {{ background:{hover}; }}")
+
+
 def _clear_layout(layout) -> None:
     while layout.count():
         item = layout.takeAt(0)
@@ -249,6 +262,11 @@ def _clear_layout(layout) -> None:
             widget.setProperty("fresh_state", None)
             widget.hide()  # deleteLater only runs on a later event-loop turn
             widget.deleteLater()
+        elif item.layout() is not None:
+            # a row inside the list: its widgets belong to the list's own widget, so without this they'd
+            # stay on screen behind the next drawing (old boxes and buttons piling up on each redraw)
+            _clear_layout(item.layout())
+            item.layout().deleteLater()
 
 
 # --------------------------------------------------------------------------- freshness (see freshness.py)
@@ -1432,6 +1450,8 @@ PLANETS = {
     "news": ("#eab308", "M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9h4M18 14h-8M15 18h-5M10 6h8v4h-8z"),
     "activity": ("#34d399", "M22 12h-4l-3 9L9 3l-3 9H2"),
     "signals": ("#a78bfa", "M4.9 19.1a10 10 0 0 1 0-14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M19.1 4.9a10 10 0 0 1 0 14.2M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"),
+    "grow": ("#4ade80", "M7 20h10M10 20c5.5-2.5.8-6.4 3-10M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8zM14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"),
+    "chances": ("#f472b6", "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"),
     "model": ("#ffd24a", "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"),
     "badges": ("#f0a35e", "M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM8.2 13.9 7 23l5-3 5 3-1.2-9.1"),
     "admin": ("#94a3b8", "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"),
@@ -1968,6 +1988,8 @@ class IdeaDialog(QDialog):
         kinds = QHBoxLayout()
         self.kind_buttons: dict[str, QRadioButton] = {}
         for key, (emoji, label, _) in KINDS.items():
+            if key in ("report", "protocol"):   # sent from the listing or protocol itself, details filled in
+                continue
             b = QRadioButton(f"{emoji} {label}")
             self.kind_buttons[key] = b
             kinds.addWidget(b)
@@ -3188,6 +3210,8 @@ TABS = {
     "news": ("\U0001f4f0", "News"),
     "activity": ("\U0001f552", "Activity"),
     "signals": ("\U0001f4e1", "Signals"),
+    "grow": ("\U0001f331", "Grow: rising skills, protocols and your wins"),
+    "chances": ("\U0001f3af", "Chances: verified jobs, funding and conferences"),
     "model": ("\U0001f9e0", "Model"),
     "badges": ("\U0001f3c5", "Badges"),
     "admin": ("\U0001f6e1", "Admin"),
@@ -3260,7 +3284,8 @@ class MyGeekyPanel(QWidget):
         for load in (self._refresh_badges, self._load_github_achievements, self._load_live_stats,
                      self._load_suggestions, self._load_contributions, lambda: self._refresh_activity(force=False),
                      self._load_model_history, self._load_market, self._load_research, self._style_market_switch,
-                     self._load_news, lambda: self._refresh_signals(force=False)):
+                     self._load_news, lambda: self._refresh_signals(force=False), self._load_growth,
+                     self._load_chances):
             self._load_safely(load)
         self.ticker.start(int(self.cfg.gui_live_rotate_seconds * 1000))
 
@@ -3286,6 +3311,12 @@ class MyGeekyPanel(QWidget):
         self._signals_timer = QTimer(self)
         self._signals_timer.timeout.connect(lambda: self._refresh_signals(force=False))
         self._signals_timer.start(5 * 60_000)
+
+        # Grow and Chances: your wins once a day, the maker's lists every few hours (each checks if it's due)
+        self._growth_timer = QTimer(self)
+        self._growth_timer.timeout.connect(self._maybe_refresh_growth)
+        self._growth_timer.start(60 * 60_000)
+        QTimer.singleShot(40_000, self._maybe_refresh_growth)
 
         self.hearts = HeartsOverlay()
         self._hearts_timer = QTimer(self)
@@ -3422,7 +3453,8 @@ class MyGeekyPanel(QWidget):
         self.height_grip = HeightGrip(self._resize_from_grip, lambda: self.cfg.gui_panel_height_fraction)
         panel_layout.addWidget(self.height_grip, 0, Qt.AlignHCenter)
 
-        self._tab_order = ["live", "suggestions", "repos", "market", "news", "activity", "signals", "model"]
+        self._tab_order = ["live", "suggestions", "repos", "market", "news", "activity", "signals",
+                           "grow", "chances", "model"]
         self.content_stack.addWidget(self._build_live_tab())
         self.content_stack.addWidget(self._build_suggestions_tab())
         self.content_stack.addWidget(self._build_repos_tab())
@@ -3430,6 +3462,8 @@ class MyGeekyPanel(QWidget):
         self.content_stack.addWidget(self._build_news_tab())
         self.content_stack.addWidget(self._build_activity_tab())
         self.content_stack.addWidget(self._build_signals_tab())
+        self.content_stack.addWidget(self._build_grow_tab())
+        self.content_stack.addWidget(self._build_chances_tab())
         self.content_stack.addWidget(self._build_model_tab())
         self._tab_order.append("badges")
         self.content_stack.addWidget(self._build_badges_tab())
@@ -3867,6 +3901,675 @@ class MyGeekyPanel(QWidget):
         page.setAutoFillBackground(False)
         return scroll
 
+    # ------------------------------------------------------------------ 🌱 Grow and 🎯 Chances
+    GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("learn", "📚 Learn"), ("wins", "🎉 Wins"),
+                  ("collab", "🤝 Collaborators"))
+    CHANCE_MODES = (("jobs", "💼 Jobs"), ("funding", "💶 Funding"), ("conferences", "🎤 Conferences"))
+
+    def _scroll_page(self, build: Callable[[QVBoxLayout], None]) -> QScrollArea:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 4, 4, 0)
+        build(layout)
+        layout.addStretch(1)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidget(page)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background:transparent; border:none;")
+        scroll.viewport().setAutoFillBackground(False)
+        scroll.viewport().setStyleSheet("background: transparent;")
+        page.setAutoFillBackground(False)
+        return scroll
+
+    def _mode_row(self, layout: QVBoxLayout, modes, on_pick: Callable[[str], None]) -> dict[str, QPushButton]:
+        from .growth_ui import FlowRow
+        row = FlowRow()
+        buttons: dict[str, QPushButton] = {}
+        for mode, label in modes:
+            b = QPushButton(label)
+            b.setCursor(Qt.PointingHandCursor)
+            b.clicked.connect(lambda checked=False, m=mode: on_pick(m))
+            buttons[mode] = b
+            row.add(b)
+        row.finish()
+        layout.addWidget(row)
+        return buttons
+
+    def _build_grow_tab(self) -> QScrollArea:
+        self._grow_mode = "skills"
+        self._growth: dict[str, Any] = {}
+        self._collabs: dict[str, Any] = {}
+        self._growth_running = False
+        self._editing_protocol = ""
+        self._building_protocol = False
+        self._open_protocol = ""          # the one protocol shown open; the others fold to one line
+        self._open_step: dict[str, str] = {}
+
+        def build(layout: QVBoxLayout) -> None:
+            actions = QHBoxLayout()
+            self.grow_updated_label = QLabel("")
+            self.refresh_grow_btn = QPushButton("Refresh")
+            self.refresh_grow_btn.setCursor(Qt.PointingHandCursor)
+            self.refresh_grow_btn.clicked.connect(lambda: self._refresh_growth(force=True))
+            actions.addWidget(self.grow_updated_label, 1)
+            actions.addWidget(self.refresh_grow_btn)
+            layout.addLayout(actions)
+            self.grow_mode_buttons = self._mode_row(layout, self.GROW_MODES, self._set_grow_mode)
+            self.grow_hint = QLabel("")
+            self.grow_hint.setWordWrap(True)
+            layout.addWidget(self.grow_hint)
+            box = QWidget()
+            self.grow_area = QVBoxLayout(box)
+            self.grow_area.setContentsMargins(0, 0, 0, 0)
+            self.grow_area.setSpacing(6)
+            layout.addWidget(box)
+        scroll = self._scroll_page(build)
+        # Wrapped text is measured for the width it's drawn at. Cards drawn before the panel has its real
+        # width (at start, or while Grow is hidden) would keep the wrong heights, so draw again whenever
+        # the width they're shown at changes.
+        self._grow_scroll = scroll
+        self._grow_drawn_width = -1
+        self._grow_refit = QTimer(self)
+        self._grow_refit.setSingleShot(True)
+        self._grow_refit.setInterval(120)
+        self._grow_refit.timeout.connect(self._refit_grow)
+        scroll.viewport().installEventFilter(self)
+        return scroll
+
+    def _refit_grow(self) -> None:
+        width = self._grow_scroll.viewport().width()
+        if self._grow_scroll.isVisible() and abs(width - self._grow_drawn_width) > 4:
+            self._render_grow()
+
+    def _build_chances_tab(self) -> QScrollArea:
+        self._chance_mode = "jobs"
+        self._chances: dict[str, Any] = {}
+
+        def build(layout: QVBoxLayout) -> None:
+            actions = QHBoxLayout()
+            self.chances_updated_label = QLabel("")
+            self.refresh_chances_btn = QPushButton("Refresh")
+            self.refresh_chances_btn.setCursor(Qt.PointingHandCursor)
+            self.refresh_chances_btn.clicked.connect(lambda: self._refresh_chances(force=True))
+            actions.addWidget(self.chances_updated_label, 1)
+            actions.addWidget(self.refresh_chances_btn)
+            layout.addLayout(actions)
+            self.chance_mode_buttons = self._mode_row(layout, self.CHANCE_MODES, self._set_chance_mode)
+            self.chances_hint = QLabel("")
+            self.chances_hint.setWordWrap(True)
+            layout.addWidget(self.chances_hint)
+            box = QWidget()
+            self.chances_area = QVBoxLayout(box)
+            self.chances_area.setContentsMargins(0, 0, 0, 0)
+            self.chances_area.setSpacing(6)
+            layout.addWidget(box)
+        return self._scroll_page(build)
+
+    def _style_grow_switches(self) -> None:
+        from .growth_ui import mode_style
+        theme = THEMES[self._theme_name()]
+        for mode, b in getattr(self, "grow_mode_buttons", {}).items():
+            b.setStyleSheet(mode_style(theme, mode == self._grow_mode))
+        for mode, b in getattr(self, "chance_mode_buttons", {}).items():
+            b.setStyleSheet(mode_style(theme, mode == self._chance_mode))
+        btn = (f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
+               f"border-radius:8px; padding:6px 10px; font-size:11.5px; }}")
+        muted = f"color:{theme['muted']}; font-size:10.5px; background:transparent;"
+        for w in ("refresh_grow_btn", "refresh_chances_btn"):
+            if hasattr(self, w):
+                getattr(self, w).setStyleSheet(btn)
+        for w in ("grow_updated_label", "grow_hint", "chances_updated_label", "chances_hint"):
+            if hasattr(self, w):
+                getattr(self, w).setStyleSheet(muted)
+
+    # ---- loading
+    def _load_growth(self) -> None:
+        if self._growth_running:
+            return
+        self._growth_running = True
+        self.grow_updated_label.setText("reading your field…")
+        self._run_async(lambda: logic.get_growth(self.cfg), self._on_growth_ready)
+
+    def _refresh_growth(self, force: bool) -> None:
+        if self._growth_running:
+            return
+        self._growth_running = True
+        self.refresh_grow_btn.setEnabled(False)
+        self.grow_updated_label.setText("updating…")
+        self._run_async(lambda: logic.refresh_growth(self.cfg, force=force), self._on_growth_ready)
+        if self._grow_mode == "collab":
+            self._load_collaborators(force=True)
+
+    def _maybe_refresh_growth(self) -> None:
+        if logic.growth_due(self.cfg):
+            self._refresh_growth(force=False)
+        self._refresh_chances(force=False)       # fetches the maker's lists only when they're due
+
+    def _on_growth_ready(self, data: Any) -> None:
+        self._growth_running = False
+        self.refresh_grow_btn.setEnabled(True)
+        self._growth = data if isinstance(data, dict) else {}
+        self._render_grow()
+
+    COLLABS_FRESH_S = 300
+
+    def _load_collaborators(self, force: bool = False) -> None:
+        """Fellow users who complement you. The last list shows straight away; it's worked out again only
+        when it's older than a few minutes, or when asked (Refresh, a 👎, Show them again)."""
+        fresh = time.monotonic() - getattr(self, "_collabs_at", -1e9) < self.COLLABS_FRESH_S
+        if getattr(self, "_collabs_running", False) or (self._collabs and fresh and not force):
+            return
+        self._collabs_running = True
+        rising = (self._growth or {}).get("rising")
+        self._run_async(lambda: logic.get_collaborators(self.cfg, rising), self._on_collaborators_ready)
+
+    def _on_collaborators_ready(self, data: Any) -> None:
+        self._collabs_running = False
+        self._collabs_at = time.monotonic()
+        self._collabs = data if isinstance(data, dict) else {}
+        if self._grow_mode == "collab":
+            self._render_grow()
+
+    def _load_chances(self) -> None:
+        self._run_async(lambda: logic.get_opportunities(self.cfg), self._on_chances_ready)
+
+    def _refresh_chances(self, force: bool) -> None:
+        if getattr(self, "_chances_running", False):
+            return
+        self._chances_running = True
+        self.refresh_chances_btn.setEnabled(False)
+        if force:
+            self.chances_updated_label.setText("updating…")
+        self._run_async(lambda: logic.refresh_opportunities(self.cfg, force=force), self._on_chances_ready)
+
+    def _on_chances_ready(self, data: Any) -> None:
+        self._chances_running = False
+        self.refresh_chances_btn.setEnabled(True)
+        self._chances = data if isinstance(data, dict) else {}
+        self._render_chances()
+
+    def _set_grow_mode(self, mode: str) -> None:
+        self._grow_mode = mode
+        if mode == "collab":
+            self._load_collaborators()
+        self._render_grow()
+
+    def _set_chance_mode(self, mode: str) -> None:
+        self._chance_mode = mode
+        self._render_chances()
+
+    # ---- drawing
+    def _grow_note(self, text: str, theme: dict[str, Any]) -> None:
+        lbl = QLabel(text)
+        lbl.setWordWrap(True)
+        lbl.setTextFormat(Qt.PlainText)
+        lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+        self.grow_area.addWidget(lbl)
+
+    def _grow_header(self, text: str, theme: dict[str, Any], area=None) -> None:
+        lbl = QLabel(text)
+        lbl.setWordWrap(True)
+        lbl.setStyleSheet("font-size:10.5px; font-weight:700; letter-spacing:0.5px; margin-top:6px; "
+                          f"color:{theme['text']}; background:transparent;")
+        (area or self.grow_area).addWidget(lbl)
+
+    def _render_grow(self) -> None:
+        from .growth_ui import ResourceRow, SkillCard, WinRow
+        theme = THEMES[self._theme_name()]
+        self._style_grow_switches()
+        _clear_layout(self.grow_area)
+        self._grow_drawn_width = self._grow_scroll.viewport().width() if self._grow_scroll.isVisible() else -1
+        data = self._growth
+        if not self._growth_running:
+            err = data.get("error") or ""
+            updated = (data.get("rising") or {}).get("updated_at")
+            self.grow_updated_label.setText(err or ("updated " + _time_ago(updated) if updated else ""))
+        mode = self._grow_mode
+        open_ = logic.open_link
+        if mode == "skills":
+            self.grow_hint.setText("Skills growing in your field that your profile doesn't show yet, from the "
+                                   "papers, repos, models and people myGeeKy follows for you. 👍 / 👎 teach it "
+                                   "what to suggest; 🧭 turns a skill into steps.")
+            rising = data.get("rising") or {}
+            started = {p["skill"] for p in data.get("paths") or []}
+            if not data:
+                self._grow_note("Reading your field…", theme)
+                return
+            if not rising.get("skills"):
+                self._grow_note("No rising skills yet. They come from what myGeeKy has read about your field: "
+                                "open News and Market (Research, Repos, Models) once, then Refresh.", theme)
+            for s in rising.get("skills") or []:
+                self.grow_area.addWidget(SkillCard(
+                    s, theme, self._voter("skill", s["name"], s["name"], [s["name"]], rerender=True),
+                    self._on_start_path, open_, s["name"] in started))
+            if rising.get("hidden"):
+                self._hidden_note(self.grow_area, rising["hidden"], "skill", theme)
+            if rising.get("strengths"):
+                self._grow_header("💪 YOUR STRENGTHS THAT ARE RISING TOO", theme)
+                for s in rising["strengths"][:5]:
+                    self.grow_area.addWidget(SkillCard(s, theme, lambda up: 0, self._on_start_path, open_,
+                                                       True, strength=True))
+        elif mode == "paths":
+            self._render_protocols(data, theme)
+        elif mode == "learn":
+            self.grow_hint.setText("Free courses, books, tutorials and repos picked by myGeeKy's maker, matched "
+                                   "to your work and the skills rising in your field. 👍 / 👎 teach it what helps you.")
+            res = data.get("resources") or {}
+            for r in (res.get("items") or [])[:30]:
+                self.grow_area.addWidget(ResourceRow(r, theme, self._voter("resource", r["id"], r["title"],
+                                                                           r.get("skills", []) + r.get("keywords", [])),
+                                                     open_))
+            if not res.get("items"):
+                self._grow_note("No learning resources yet.", theme)
+            if res.get("hidden"):
+                self._hidden_note(self.grow_area, res["hidden"], "resource", theme)
+        elif mode == "wins":
+            self.grow_hint.setText("New stars and forks on your repos, and new citations of your papers "
+                                   "(with the newest paper citing you). Checked once a day.")
+            wins = data.get("wins") or []
+            if data.get("wins_updated_at") and not self._growth_running:
+                self.grow_updated_label.setText("checked " + _time_ago(data["wins_updated_at"]))
+            if not wins:
+                need = [] if data.get("has_github") else ["GitHub (for stars and forks)"]
+                if not data.get("has_orcid"):
+                    need.append("your ORCID (for citations)")
+                self._grow_note("No wins in the last 30 days yet. The first check only sets the starting point; "
+                                "from then on, every new star, fork and citation shows up here."
+                                + (" Add " + " and ".join(need) + " in setup to see them." if need else ""), theme)
+            for w in wins:
+                self.grow_area.addWidget(WinRow(w, theme, open_, _time_ago(w.get("at", ""))))
+        elif mode == "collab":
+            self.grow_hint.setText("Fellow myGeeKy users whose skills complement yours: they bring what you "
+                                   "don't, you bring what they don't. 🤝 is sealed: they only see it if they "
+                                   "pick you too.")
+            self._render_collaborators(theme)
+
+    def _render_collaborators(self, theme: dict[str, Any]) -> None:
+        from .growth_ui import CollaboratorCard
+        if self._github_card(self.grow_area, "signals"):
+            return
+        data = self._collabs
+        if not data:
+            self._grow_note("Looking for people who complement you…", theme)
+            return
+        if not data.get("enabled"):
+            self._grow_note("Collaborator matching uses Signals: turn it on in ⚙ Settings (Signals), and "
+                            "people who complement you show up here.", theme)
+            return
+        people = data.get("people") or []
+        if not people:
+            self._grow_note("Nobody on Signals complements you yet. As more people join myGeeKy, matches "
+                            "show up here.", theme)
+        for p in people:
+            self.grow_area.addWidget(CollaboratorCard(
+                p, theme, lambda login, url, size: _avatar_widget(login, url, size, self.avatar_loader),
+                self._voter("collaborator", p["login"], " ; ".join(p.get("interests") or []), p.get("interests") or [],
+                            rerender=True),
+                self._on_ask_collab, logic.open_link, bool(data.get("can_send"))))
+        if data.get("hidden"):
+            self._hidden_note(self.grow_area, data["hidden"], "collaborator", theme)
+
+    def _render_chances(self) -> None:
+        from .growth_ui import OpportunityCard
+        theme = THEMES[self._theme_name()]
+        self._style_grow_switches()
+        _clear_layout(self.chances_area)
+        data = self._chances
+        mode = self._chance_mode
+        if not getattr(self, "_chances_running", False):
+            self.chances_updated_label.setText(data.get("error") or "")
+        hints = {
+            "jobs": "Verified jobs: PhD places, postdocs, master's and research jobs that myGeeKy's maker checked "
+                    "are real. Matched to you here, on your computer: nobody learns what you looked at. "
+                    "Each one disappears after its deadline.",
+            "funding": "Grants, fellowships, scholarships and travel grants, matched to your field. "
+                       "Each one disappears after its deadline.",
+            "conferences": "Conferences in your field, with the abstract deadline and what students get. "
+                           "Each one disappears after its deadline.",
+        }
+        self.chances_hint.setText(hints[mode] + " 👍 / 👎 teach your model; 🚩 tells the maker one looks fake.")
+        block = data.get(mode) or {}
+        items = block.get("items") or []
+        if not data:
+            lbl = QLabel("Loading…")
+            lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+            self.chances_area.addWidget(lbl)
+            return
+        if not items:
+            lbl = QLabel({"jobs": "No open verified jobs right now. New ones are added by hand as they're "
+                                  "checked; myGeeKy looks for them every few hours.",
+                          "funding": "No open funding calls right now. New ones show up here by themselves.",
+                          "conferences": "No upcoming conferences right now. New ones show up here by themselves."}[mode])
+            lbl.setWordWrap(True)
+            lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+            self.chances_area.addWidget(lbl)
+        vote_kind = {"jobs": "job", "funding": "funding", "conferences": "conference"}[mode]
+        for it in items:
+            self.chances_area.addWidget(OpportunityCard(
+                mode, it, theme, self._voter(vote_kind, it["id"], f"{it['title']} {it.get('summary', '')}",
+                                             it.get("keywords", []), rerender_chances=True),
+                logic.open_link, self._on_report))
+        if block.get("hidden"):
+            self._hidden_note(self.chances_area, block["hidden"], vote_kind, theme)
+
+    def _hidden_note(self, area, n: int, kind: str, theme: dict[str, Any]) -> None:
+        row = QHBoxLayout()
+        lbl = QLabel(f"{n} hidden by your 👎.")
+        lbl.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
+        again = QPushButton("Show them again")
+        again.setCursor(Qt.PointingHandCursor)
+        again.setStyleSheet(f"QPushButton {{ background:transparent; color:{theme['link']}; border:none; "
+                            "font-size:10.5px; text-decoration:underline; }")
+        again.clicked.connect(lambda: self._unhide(kind))
+        row.addWidget(lbl)
+        row.addWidget(again)
+        row.addStretch(1)
+        holder = QWidget()
+        holder.setLayout(row)
+        row.setContentsMargins(0, 0, 0, 0)
+        area.addWidget(holder)
+
+    def _unhide(self, kind: str) -> None:
+        logic.unhide(kind)
+        if kind in ("job", "funding", "conference"):
+            self._load_chances()
+        elif kind == "collaborator":
+            self._load_collaborators(force=True)
+        else:
+            self._load_growth()
+
+    # ---- actions
+    def _voter(self, kind: str, item_id: str, text: str, tags: list[str], rerender: bool = False,
+               rerender_chances: bool = False) -> Callable[[bool], int]:
+        """A thumb's handler: records the vote; a 👎 that hides something redraws the list."""
+        def press(up: bool) -> int:
+            v = logic.vote(kind, item_id, up, text, tags)
+            if v < 0 and rerender:
+                QTimer.singleShot(0, self._load_growth if kind != "collaborator"
+                                  else lambda: self._load_collaborators(force=True))
+            if v < 0 and rerender_chances:
+                QTimer.singleShot(0, self._load_chances)
+            return v
+        return press
+
+    # ---- protocols
+    def _render_protocols(self, data: dict[str, Any], theme: dict[str, Any]) -> None:
+        from .growth_ui import FlowRow, ProtocolCard
+        from .signals_ui import _button_style
+        self.grow_hint.setText("A protocol turns a skill into stages, e.g. R basics → statistics with R → data "
+                               "analysis → a real project. A short check skips what you already know. Reviewed "
+                               "ones are written by myGeeKy's maker; for any other skill myGeeKy builds one from "
+                               "GitHub and papers. Change it as you like, then 📤 publish it for everyone.")
+        new = QHBoxLayout()
+        new.setSpacing(4)
+        self.protocol_skill = QLineEdit()
+        self.protocol_skill.setPlaceholderText("A skill, e.g. R, Nextflow, GWAS")
+        self.protocol_goal = QLineEdit()
+        self.protocol_goal.setPlaceholderText("for… (optional), e.g. data analysis")
+        for w in (self.protocol_skill, self.protocol_goal):
+            w.setMinimumWidth(0)
+        style = (f"QLineEdit {{ background:{theme['card_bg']}; color:{theme['text']}; border:none; "
+                 "border-radius:8px; padding:5px 8px; font-size:11px; }")
+        for w in (self.protocol_skill, self.protocol_goal):
+            w.setStyleSheet(style)
+            w.returnPressed.connect(self._on_build_protocol)
+        go = QPushButton("Building…" if self._building_protocol else "🧭 Build")
+        go.setEnabled(not self._building_protocol)
+        go.setCursor(Qt.PointingHandCursor)
+        go.setStyleSheet(_button_style(theme, accent=True))
+        go.clicked.connect(self._on_build_protocol)
+        # two lines, so both boxes stay readable in a narrow panel
+        self.grow_area.addWidget(self.protocol_skill)
+        new.addWidget(self.protocol_goal, 1)
+        new.addWidget(go)
+        self.grow_area.addLayout(new)
+        if self._building_protocol:
+            self._grow_note("Searching GitHub and papers, and sorting what comes back into stages…", theme)
+        mine = data.get("paths") or []
+        started = {p.get("based_on") or p["id"] for p in mine} | {p["id"] for p in mine}
+        offer = [r for r in data.get("reviewed") or [] if r["id"] not in started]
+        if offer:
+            self._grow_header("✓ REVIEWED PROTOCOLS", theme)
+            row = FlowRow()
+            for r in offer:
+                b = QPushButton(f"🧭 {r['title']}")
+                b.setToolTip(r.get("summary") or "")
+                b.setCursor(Qt.PointingHandCursor)
+                b.setStyleSheet(f"QPushButton {{ background:{theme['card_bg']}; color:{theme['text']}; border:none; "
+                                "border-radius:8px; padding:4px 9px; font-size:11px; }")
+                b.clicked.connect(lambda checked=False, r=r: self._on_start_path(r["skill"], r.get("goal", "")))
+                row.add(b)
+            row.finish()
+            self.grow_area.addWidget(row)
+        if not mine:
+            self._grow_note("No protocols yet. Pick a reviewed one above, build one for any skill, or press 🧭 on "
+                            "a skill in 📈 Skills.", theme)
+            return
+        self._grow_header("🧭 YOUR PROTOCOLS", theme)
+        ids = [p["id"] for p in mine]
+        if self._open_protocol not in ids and self._open_protocol != "-":
+            self._open_protocol = next((p["id"] for p in mine if not p["finished"]), ids[0])
+        for p in mine:
+            pid = p["id"]
+            self.grow_area.addWidget(ProtocolCard(
+                p, theme, self._editing_protocol == pid,
+                act=lambda action, *args, pid=pid: self._protocol_act(pid, action, *args),
+                on_check=lambda st, pid=pid: self._on_level_check(pid, st),
+                on_open=logic.open_link,
+                on_edit=lambda pid=pid: self._toggle_protocol_edit(pid),
+                on_publish=lambda p=p: self._on_publish_protocol(p),
+                on_add_link=lambda sid, pid=pid: self._on_add_protocol_link(pid, sid),
+                on_rename=lambda st, pid=pid: self._on_rename_stage(pid, st),
+                on_add_stage=lambda pid=pid: self._on_add_stage(pid),
+                vote_item=lambda it: self._voter("resource", it["url"], f"{it['title']} {it.get('note', '')}", []),
+                vote_of=lambda it: logic.vote_of("resource", it["url"]),
+                is_open=pid == self._open_protocol, selected=self._open_step.get(pid, ""),
+                on_toggle=lambda pid=pid: self._toggle_protocol_open(pid),
+                on_select=lambda sid, pid=pid: self._select_protocol_step(pid, sid)))
+
+    def _toggle_protocol_open(self, pid: str) -> None:
+        self._open_protocol = "" if self._open_protocol == pid else pid
+        if not self._open_protocol:
+            self._open_protocol = "-"            # all folded (not reopened by default)
+        self._render_grow()
+
+    def _select_protocol_step(self, pid: str, sid: str) -> None:
+        self._open_step[pid] = sid
+        self._open_protocol = pid
+        self._render_grow()
+
+    def _on_start_path(self, skill: str, goal: str = "") -> None:
+        """🧭 on a skill (or a reviewed protocol): start it, building one first if there's no reviewed one."""
+        if self._building_protocol:
+            return
+        self._building_protocol = True
+        self._grow_mode = "paths"
+        self._render_grow()
+        self._run_async(lambda: logic.build_protocol(self.cfg, skill, goal), self._on_protocol_built)
+
+    def _on_build_protocol(self) -> None:
+        skill = self.protocol_skill.text().strip() if hasattr(self, "protocol_skill") else ""
+        if skill:
+            self._on_start_path(skill, self.protocol_goal.text().strip())
+
+    def _on_protocol_built(self, result: Any) -> None:
+        self._building_protocol = False
+        if isinstance(result, dict) and result.get("id"):
+            self._open_protocol = result["id"]          # the new one opens; the others fold
+        if isinstance(result, dict) and result.get("error"):
+            self._info("Protocol", result["error"])
+        self._load_growth()
+
+    def _protocol_act(self, pid: str, action: str, *args: Any) -> None:
+        if action == "stop":
+            box = self._box("Stop this protocol", "Stop this protocol? Your progress and your changes to it are removed.")
+            yes = box.addButton("Stop it", QMessageBox.DestructiveRole)
+            box.addButton(QMessageBox.Cancel)
+            box.exec()
+            if box.clickedButton() is not yes:
+                return
+        logic.protocol_action(self.cfg, action, pid, *args)
+        self._load_growth()
+
+    def _toggle_protocol_edit(self, pid: str) -> None:
+        self._editing_protocol = "" if self._editing_protocol == pid else pid
+        self._render_grow()
+
+    def _dialog_css(self) -> str:
+        return dialog_css(THEMES[self._theme_name()])
+
+    def _box(self, title: str, text: str) -> QMessageBox:
+        box = QMessageBox(self)
+        box.setWindowTitle(title)
+        box.setText(text)
+        box.setStyleSheet(self._dialog_css())
+        return box
+
+    def _info(self, title: str, text: str) -> None:
+        box = self._box(title, text)
+        box.addButton(QMessageBox.Ok)
+        box.exec()
+
+    def _ask_text(self, title: str, label: str, value: str = "", echo=None) -> str:
+        from PySide6.QtWidgets import QInputDialog
+        dlg = QInputDialog(self)
+        dlg.setWindowTitle(title)
+        dlg.setLabelText(label)
+        dlg.setTextValue(value)
+        dlg.setTextEchoMode(echo if echo is not None else QLineEdit.Normal)
+        dlg.setStyleSheet(self._dialog_css())
+        return dlg.textValue().strip() if dlg.exec() == QDialog.Accepted else ""
+
+    def _on_rename_stage(self, pid: str, st: dict[str, Any]) -> None:
+        title = self._ask_text("Rename stage", "New name:", st["title"])
+        if title:
+            self._protocol_act(pid, "rename_stage", st["id"], title)
+
+    def _on_add_stage(self, pid: str) -> None:
+        title = self._ask_text("Add a stage", "Name of the new stage (e.g. Statistics with R):")
+        if title:
+            self._protocol_act(pid, "add_stage", title)
+
+    def _on_add_protocol_link(self, pid: str, sid: str) -> None:
+        url = self._ask_text("Add a link", "Link (https://…): a GitHub repo, a paper (doi.org) or a page")
+        if not url:
+            return
+        if not url.startswith("https://"):
+            self._info("Add a link", "Only https:// links can be added.")
+            return
+        title = self._ask_text("Add a link", "What is it? (a short title)") or url
+        logic.protocol_action(self.cfg, "add_item", pid, sid, url, title)
+        self._load_growth()
+
+    def _on_level_check(self, pid: str, st: dict[str, Any]) -> None:
+        """The level check for one stage: a short quiz if it has one, else 'I can do these'."""
+        dlg = QDialog(self)
+        dlg.setWindowTitle(f"Check: {st['title']}")
+        dlg.setStyleSheet(self._dialog_css())
+        lay = QVBoxLayout(dlg)
+        groups: list[list[QRadioButton]] = []
+        boxes: list[QCheckBox] = []
+        if st.get("quiz"):
+            intro = QLabel(f"{len(st['quiz'])} questions. Get {round(75)}% right and this stage is marked as "
+                           "known. Your answers stay on this computer.")
+            intro.setWordWrap(True)
+            lay.addWidget(intro)
+            for n, q in enumerate(st["quiz"], 1):
+                ql = QLabel(f"<b>{n}. {html.escape(q['q'])}</b>")
+                ql.setWordWrap(True)
+                lay.addWidget(ql)
+                opts = []
+                holder = QWidget()
+                hl = QVBoxLayout(holder)
+                hl.setContentsMargins(12, 0, 0, 4)
+                for o in q["options"]:
+                    rb = QRadioButton(o)
+                    hl.addWidget(rb)
+                    opts.append(rb)
+                lay.addWidget(holder)
+                groups.append(opts)
+        else:
+            intro = QLabel("Tick what you can already do. All ticked, and this stage is marked as known.")
+            intro.setWordWrap(True)
+            lay.addWidget(intro)
+            for c in st.get("can") or []:
+                cb = QCheckBox(c)
+                lay.addWidget(cb)
+                boxes.append(cb)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        cancel = QPushButton("Cancel")
+        ok = QPushButton("Check")
+        cancel.clicked.connect(dlg.reject)
+        ok.clicked.connect(dlg.accept)
+        row.addWidget(cancel)
+        row.addWidget(ok)
+        lay.addLayout(row)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        if groups:
+            answers = [next((i for i, rb in enumerate(g) if rb.isChecked()), -1) for g in groups]
+            score = logic.protocol_action(self.cfg, "quiz", pid, st["id"], answers) or 0.0
+            right = round(score * len(groups))
+            self._info("Check", f"{right} of {len(groups)} right." + (
+                " You know this one: it's marked as known." if score >= 0.75 else
+                " Not yet: this stage stays on your list. The links below it are a good place to start."))
+        elif boxes and all(cb.isChecked() for cb in boxes):
+            logic.protocol_action(self.cfg, "known", pid, st["id"], "self")
+        self._load_growth()
+
+    def _on_publish_protocol(self, p: dict[str, Any]) -> None:
+        box = self._box("Publish this protocol", f"Send “{p['title']}” to myGeeKy, for everyone?\n\n"
+                    "This opens a public GitHub issue in mygeeky/myGeeKy-ideas, sent with your GitHub account "
+                    "when you press Submit. It holds the protocol (its stages and links) and the links you "
+                    "removed, so the maker can review it for everyone and improve the protocol model.\n\n"
+                    "Your progress, your checks and your answers are not included.")
+        go = box.addButton("Open on GitHub", QMessageBox.AcceptRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        if box.clickedButton() is go:
+            out = logic.publish_protocol(self.cfg, p["id"])
+            if out.get("clipboard"):
+                QApplication.clipboard().setText(out["clipboard"])
+                self._info("Publish this protocol",
+                                        "It's too long for a link, so myGeeKy copied it for you. On the GitHub page "
+                                        "that opens, paste it (Ctrl+V / ⌘V) where it says, then press Submit.")
+            if out.get("url"):
+                logic.open_link(out["url"])
+
+    def _on_stop_path(self, pid: str) -> None:
+        self._protocol_act(pid, "stop")
+
+    def _on_tick_step(self, pid: str, step: str, done: bool) -> None:
+        logic.protocol_action(self.cfg, "tick", pid, step, done)
+        self._load_growth()
+
+    def _on_ask_collab(self, card) -> None:
+        login = card.person["login"]
+        card.ask.setEnabled(False)
+        card.note.setText("sending…")
+        self._run_async(lambda: logic.send_signal(self.cfg, login, "collab"),
+                        lambda r: card.set_result(bool((r or {}).get("ok")),
+                                                  "sent: you'll both know if they pick you too"
+                                                  if (r or {}).get("ok") else f"couldn't send: {(r or {}).get('error', '')}")
+                        if _alive(card) else None)
+
+    def _on_report(self, kind: str, item: dict[str, Any]) -> None:
+        links = logic.report_links(kind, item)
+        box = self._box("Report a listing", f"Does “{item.get('title', '')}” look fake, or is it no longer real?\n\n"
+                    "Tell myGeeKy's maker, who checks it and takes it down. A GitHub issue is public and "
+                    "sent with your account; an email is private.")
+        gh = box.addButton("Report on GitHub", QMessageBox.AcceptRole)
+        mail = box.addButton("Email support", QMessageBox.AcceptRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        if box.clickedButton() is gh:
+            logic.open_link(links["issue"])
+        elif box.clickedButton() is mail:
+            logic.open_link(links["email"])
+
     def _build_update_banner(self) -> QFrame:
         banner = QFrame()
         banner.setObjectName("updateBanner")
@@ -4001,13 +4704,12 @@ class MyGeekyPanel(QWidget):
         winproc.popen([python, "-m", "mygeeky.gui.setup_wizard"], close_fds=True, cwd=str(Path.home()))
 
     def _on_paste_token(self) -> None:
-        from PySide6.QtWidgets import QInputDialog, QLineEdit
+        from PySide6.QtWidgets import QLineEdit
         if not self._token_warnings:
             return
         target = self._token_warnings[0]
-        value, ok = QInputDialog.getText(self, "myGeeKy", f"Paste your new {target['label']}:",
-                                         QLineEdit.Password)
-        if not ok or not value.strip():
+        value = self._ask_text("myGeeKy", f"Paste your new {target['label']}:", echo=QLineEdit.Password)
+        if not value:
             return
         self.paste_token_btn.setEnabled(False)
         self.token_label.setText("Checking the new token…")
@@ -4070,6 +4772,13 @@ class MyGeekyPanel(QWidget):
         self.admin_funnel = QLabel("")
         self.admin_funnel.setWordWrap(True)
         layout.addWidget(self.admin_funnel)
+        self.admin_scout_header = QLabel("\U0001f3af LISTINGS TO REVIEW")
+        layout.addWidget(self.admin_scout_header)
+        scout_box = QWidget()
+        self.admin_scout = QVBoxLayout(scout_box)
+        self.admin_scout.setContentsMargins(0, 0, 0, 0)
+        self.admin_scout.setSpacing(6)
+        layout.addWidget(scout_box)
         layout.addWidget(self.admin_headers[1])
         inbox_box = QWidget()
         self.admin_inbox = QVBoxLayout(inbox_box)
@@ -4151,7 +4860,8 @@ class MyGeekyPanel(QWidget):
             self.admin_kw.setText(f"<span style='color:{theme['muted']}'>No unknown keywords yet. They come "
                                   "from beacons and from the suggest button.</span>")
         self.admin_kw.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; background:transparent;")
-        for lbl in self.admin_headers + [self.admin_kw_header]:
+        self._render_scout()
+        for lbl in self.admin_headers + [self.admin_kw_header, self.admin_scout_header]:
             lbl.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
                               "margin-top:6px; background:transparent;")
         for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated):
@@ -4162,6 +4872,213 @@ class MyGeekyPanel(QWidget):
         self.admin_undo_btn.setStyleSheet(
             f"QPushButton {{ background:transparent; color:{theme['link']}; border:none; padding:4px 6px; "
             f"font-size:11px; text-decoration:underline; }}")
+
+    # ---- 🎯 listings to review (scout.py): found with DeepSeek, checked, accepted by you, then published
+    SCOUT_EMOJI = {"jobs": "💼", "funding": "💶", "conferences": "🎤"}
+
+    def _render_scout(self) -> None:
+        from .growth_ui import FlowRow, _label, _muted, _pill_button, _small_button, deadline_text
+        theme = THEMES[self._theme_name()]
+        area = self.admin_scout
+        _clear_layout(area)
+        st = logic.scout_state()
+        tools = FlowRow()
+        key_ok = st["has_key"]
+        tools.add(_pill_button("🔑 DeepSeek key ✓" if key_ok else "🔑 Add DeepSeek key",
+                               "Kept in this computer's credential store, never in a file", theme, self._on_scout_key))
+        tools.add(_pill_button("🌐 Sites and field", "Which sites to look through, and your field", theme,
+                               self._on_scout_sites))
+        running = getattr(self, "_scout_running", False)
+        find = _pill_button("Looking…" if running else "🔎 Find new listings",
+                            "Reads the sites, asks DeepSeek, checks every answer (a few minutes)", theme,
+                            self._on_scout_find, accent=key_ok and not running)
+        find.setEnabled(key_ok and not running)
+        tools.add(find)
+        n_acc = len(st["accepted"])
+        pub = _pill_button(f"🚀 Publish {n_acc} to mygeeky.org" if n_acc else "🚀 Publish",
+                           "Adds what you accepted to everyone's lists", theme, self._on_scout_publish, accent=n_acc > 0)
+        pub.setEnabled(n_acc > 0 and not getattr(self, "_scout_publishing", False))
+        tools.add(pub)
+        area.addWidget(tools)
+        note = getattr(self, "_scout_note", "") or st.get("last_run_text", "")
+        if note:
+            area.addWidget(_label(note, _muted(theme, 10.5)))
+        if not key_ok:
+            area.addWidget(_label("Add your DeepSeek key to start. It reads job, funding and conference pages on the "
+                                  "sites you choose; myGeeKy checks every answer against the page; you accept what "
+                                  "goes online.", _muted(theme, 10.5)))
+        for c in st["accepted"]:
+            row = QHBoxLayout()
+            row.addWidget(_label(f"✅ {self.SCOUT_EMOJI.get(c['kind'], '')} {c['item']['title']}",
+                                 f"color:{theme['good']}; font-size:10.5px; background:transparent;"), 1)
+            row.addWidget(_small_button("Undo", "Back to the list to review", theme,
+                                        lambda cid=c["id"]: self._on_scout_status(cid, "new")))
+            area.addLayout(row)
+        for c in st["new"][:40]:
+            area.addWidget(self._scout_card(c, theme, _label, _muted, _pill_button, deadline_text))
+        if key_ok and not st["new"] and not running:
+            area.addWidget(_label("Nothing to review. Press 🔎 Find new listings.", _muted(theme, 10.5)))
+
+    def _scout_card(self, c, theme, _label, _muted, _pill_button, deadline_text) -> QFrame:
+        it = c["item"]
+        card = QFrame()
+        card.setObjectName("scoutCard")
+        card.setStyleSheet(f"QFrame#scoutCard {{ background:{theme['card_bg']}; border-radius:10px; }}")
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(10, 8, 10, 8)
+        lay.setSpacing(3)
+        sure = round(100 * c.get("score", 0))
+        color = theme["good"] if sure >= 70 else theme["warn"] if sure >= 45 else theme["bad"]
+        head = QHBoxLayout()
+        title = _label(f"<b>{self.SCOUT_EMOJI.get(c['kind'], '')} {html.escape(it['title'])}</b>",
+                       f"color:{theme['text']}; font-size:12px; background:transparent;", rich=True)
+        title.setCursor(Qt.PointingHandCursor)
+        title.setToolTip(it["url"])
+        title.mousePressEvent = lambda ev, u=it["url"]: logic.open_link(u)  # noqa: ARG005
+        head.addWidget(title, 1)
+        head.addWidget(_label(f"{sure}% sure", f"color:{color}; background:{color}22; border-radius:7px; "
+                                                "padding:1px 7px; font-size:10px; font-weight:700;", wrap=False), 0, Qt.AlignTop)
+        lay.addLayout(head)
+        facts = [it.get("org", ""), it.get("place", ""), deadline_text(c.get("days_left")),
+                 f"deadline {it.get('deadline', '')}", it.get("amount", ""), it.get("who", "")]
+        lay.addWidget(_label(" · ".join(f for f in facts if f), _muted(theme, 10.5)))
+        if it.get("summary"):
+            lay.addWidget(_label(it["summary"], f"color:{theme['text']}; font-size:10.5px; background:transparent;"))
+        if c.get("quote"):
+            lay.addWidget(_label(f"“{c['quote']}”", f"color:{theme['muted']}; font-size:10px; font-style:italic; "
+                                                    "background:transparent;"))
+        checks = "   ".join(("✓ " if ok else "✗ ") + t for ok, t in c.get("checks") or [])
+        lay.addWidget(_label(f"{checks}   · from {c.get('source', '')}", _muted(theme, 9.5)))
+        row = QHBoxLayout()
+        row.setSpacing(6)
+        row.addWidget(_pill_button("✓ Accept", "Goes online when you press Publish", theme,
+                                   lambda: self._on_scout_status(c["id"], "accepted"), accent=True))
+        row.addWidget(_pill_button("✏️ Edit", "Fix a field, then accept", theme, lambda: self._on_scout_edit(c)))
+        row.addWidget(_pill_button("✕ Reject", "Never offered again", theme,
+                                   lambda: self._on_scout_status(c["id"], "rejected")))
+        row.addStretch(1)
+        lay.addLayout(row)
+        return card
+
+    def _on_scout_key(self) -> None:
+        key = self._ask_text("DeepSeek key", "Paste your DeepSeek API key (it starts with sk-). It's kept in this "
+                             "computer's credential store, never in a file:", echo=QLineEdit.Password)
+        if key:
+            if not logic.scout_set_key(key):
+                self._info("DeepSeek key", "That doesn't look like a DeepSeek key (they start with sk-).")
+            self._render_scout()
+
+    def _on_scout_sites(self) -> None:
+        from PySide6.QtWidgets import QPlainTextEdit
+        st = logic.scout_state()
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Sites and field")
+        dlg.setStyleSheet(self._dialog_css() + "QPlainTextEdit { background:#2a2640; color:#f0f0f5; border-radius:6px; }")
+        dlg.resize(560, 460)
+        lay = QVBoxLayout(dlg)
+        lay.addWidget(QLabel("Your field (what counts as relevant):"))
+        focus = QLineEdit(st["focus"])
+        lay.addWidget(focus)
+        intro = QLabel("Sites, one per line: kind | name | link. Kind is jobs, funding or conferences. "
+                       "Put # in front of a line to skip that site.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+        box = QPlainTextEdit("\n".join(f"{'' if s.get('on', True) else '# '}{s['kind']} | {s['name']} | {s['url']}"
+                                       for s in st["sources"]))
+        lay.addWidget(box, 1)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        cancel, ok = QPushButton("Cancel"), QPushButton("Save")
+        cancel.clicked.connect(dlg.reject)
+        ok.clicked.connect(dlg.accept)
+        row.addWidget(cancel)
+        row.addWidget(ok)
+        lay.addLayout(row)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        sources = []
+        for line in box.toPlainText().splitlines():
+            on = not line.strip().startswith("#")
+            parts = [p.strip() for p in line.strip().lstrip("#").split("|")]
+            if len(parts) == 3:
+                sources.append({"kind": parts[0].lower(), "name": parts[1], "url": parts[2], "on": on})
+        logic.scout_set_sources(sources, focus.text())
+        self._render_scout()
+
+    def _on_scout_find(self) -> None:
+        self._scout_running = True
+        self._scout_note = "Reading the sites and checking every listing. This takes a few minutes…"
+        self._render_scout()
+        self._run_async(lambda: logic.scout_find(self.cfg), self._on_scout_found)
+
+    def _on_scout_found(self, out: Any) -> None:
+        self._scout_running = False
+        out = out if isinstance(out, dict) else {}
+        if out.get("error"):
+            self._scout_note = out["error"]
+        else:
+            self._scout_note = (f"Found {out.get('added', 0)} to review · {out.get('dropped', 0)} dropped by the checks"
+                                + (f" · couldn't read: {', '.join(out['errors'])}" if out.get("errors") else ""))
+        self._render_scout()
+
+    def _on_scout_status(self, cid: str, status: str) -> None:
+        logic.scout_set_status(cid, status)
+        self._render_scout()
+
+    def _on_scout_edit(self, c: dict[str, Any]) -> None:
+        it = c["item"]
+        fields = ["title", "org", "place", "deadline"] + {
+            "jobs": ["type"], "funding": ["who", "amount"], "conferences": ["starts", "ends", "student"]}[c["kind"]] + \
+            ["url", "summary"]
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Edit, then accept")
+        dlg.setStyleSheet(self._dialog_css())
+        dlg.resize(520, 0)
+        lay = QVBoxLayout(dlg)
+        edits = {}
+        for f in fields + ["keywords"]:
+            lay.addWidget(QLabel(f.capitalize() + (" (YYYY-MM-DD)" if f in ("deadline", "starts", "ends") else
+                                                   " (comma separated)" if f == "keywords" else "")))
+            e = QLineEdit(", ".join(it.get(f) or []) if f == "keywords" else str(it.get(f) or ""))
+            lay.addWidget(e)
+            edits[f] = e
+        row = QHBoxLayout()
+        row.addStretch(1)
+        cancel, ok = QPushButton("Cancel"), QPushButton("Accept")
+        cancel.clicked.connect(dlg.reject)
+        ok.clicked.connect(dlg.accept)
+        row.addWidget(cancel)
+        row.addWidget(ok)
+        lay.addLayout(row)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        changed = {f: e.text().strip() for f, e in edits.items()}
+        changed["keywords"] = [k.strip() for k in changed["keywords"].split(",") if k.strip()]
+        if not logic.scout_set_status(c["id"], "accepted", changed):
+            self._info("Edit", "Something isn't right: the link must start with https:// and dates look like 2026-12-31.")
+        self._render_scout()
+
+    def _on_scout_publish(self) -> None:
+        st = logic.scout_state()
+        box = self._box("Publish to mygeeky.org",
+                        f"Add {len(st['accepted'])} listing(s) to everyone's Chances?\n\n"
+                        "This makes one commit to the curated lists on GitHub (main), with your own git login. "
+                        "Every myGeeKy shows them within a few hours. Each one disappears after its deadline.")
+        go = box.addButton("Publish", QMessageBox.AcceptRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        if box.clickedButton() is not go:
+            return
+        self._scout_publishing = True
+        self._scout_note = "Publishing…"
+        self._render_scout()
+        self._run_async(logic.scout_publish, self._on_scout_published)
+
+    def _on_scout_published(self, out: Any) -> None:
+        self._scout_publishing = False
+        out = out if isinstance(out, dict) else {}
+        self._scout_note = out.get("error") or f"Published {out.get('summary', '')} (commit {out.get('commit', '')})."
+        self._render_scout()
 
     def _refresh_admin(self) -> None:
         if getattr(self, "_admin_running", False):
@@ -4900,7 +5817,8 @@ class MyGeekyPanel(QWidget):
         """Everything else that was coloured when it was drawn, redrawn in the new
         theme -- or it keeps the old theme's text colour (dark text on dark)."""
         steps = [self._style_market_switch, self._render_badges, self._render_badge_strip,
-                 self._render_keywords, self._update_tab_styles, self._fold_profile]
+                 self._render_keywords, self._update_tab_styles, self._fold_profile,
+                 self._render_grow, self._render_chances]
         if self._is_admin:
             steps.append(self._render_admin)
         if self.settings_panel.isVisible() and getattr(self, "_setup", None):
@@ -5039,6 +5957,9 @@ class MyGeekyPanel(QWidget):
             self._dock(folded)
 
     def eventFilter(self, obj, event) -> bool:  # noqa: N802 -- Qt's own naming convention
+        grow = getattr(self, "_grow_scroll", None)
+        if grow is not None and obj is grow.viewport() and event.type() in (QEvent.Resize, QEvent.Show):
+            self._grow_refit.start()           # Grow's width changed (or it came into view): fit the cards again
         if obj is self.folded_widget and self.folded_widget.isVisible():
             if event.type() == QEvent.Enter:
                 self.setWindowOpacity(1.0)

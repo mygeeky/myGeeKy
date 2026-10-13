@@ -1,0 +1,50 @@
+name: Curated lists
+
+# The verified jobs, funding, conferences and learning resources live in one hand-edited
+# file, src/mygeeky/data/curated.json (docs/CURATED.md says how to add to it). Every day,
+# and whenever the file changes, this checks it, removes anything past its deadline,
+# stamps a new version (so every myGeeKy picks it up within a few hours) and keeps the
+# phone app's copy (mobile/src/data/curated.json) the same.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  push:
+    branches: [main]
+    paths: ["src/mygeeky/data/curated.json", ".github/workflows/curated-lists.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: curated-lists
+  cancel-in-progress: false
+
+jobs:
+  tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check the file and remove what's past its deadline
+        env:
+          PYTHONPATH: src
+        run: |
+          pip install --quiet requests platformdirs
+          python -m mygeeky.curated prune src/mygeeky/data/curated.json
+
+      - name: Keep the phone app's copy the same
+        run: cp src/mygeeky/data/curated.json mobile/src/data/curated.json
+
+      - name: Save the changes (if any)
+        run: |
+          if git diff --quiet; then echo "nothing to change"; exit 0; fi
+          git config user.name "myGeeKy"
+          git config user.email "housekeeping@mygeeky.invalid"
+          git commit -am "Curated lists: remove what's past its deadline"
+          git push

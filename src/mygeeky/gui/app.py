@@ -746,6 +746,57 @@ def is_admin(cfg: MyGeekyConfig) -> bool:
     return admin.is_admin(cfg)
 
 
+# ---- the maker's listing scout (scout.py)
+def scout_state() -> dict[str, Any]:
+    from .. import scout
+    st = scout.load()
+    last = st.get("last_run") or {}
+    text = ""
+    if last.get("at"):
+        text = (f"Last look {last['at'][:16].replace('T', ' ')} UTC: {last.get('added', 0)} found, "
+                f"{last.get('dropped', 0)} dropped by the checks")
+    return {"has_key": bool(scout.get_key()), "new": scout.candidates("new"), "accepted": scout.candidates("accepted"),
+            "sources": st["sources"], "focus": st["focus"], "last_run_text": text}
+
+
+def scout_set_key(key: str) -> bool:
+    from .. import scout
+    return scout.set_key(key)
+
+
+def scout_set_sources(sources: list[dict[str, Any]], focus: str) -> None:
+    from .. import scout
+    scout.set_sources(sources)
+    scout.set_focus(focus)
+
+
+def scout_find(cfg: MyGeekyConfig) -> dict[str, Any]:
+    """Slow (reads sites and asks DeepSeek): off the UI thread. Errors come back as {"error"}."""
+    from .. import scout
+    try:
+        return scout.find(cfg)
+    except PermissionError as exc:
+        return {"error": str(exc)}
+    except Exception as exc:
+        from ..errors import describe
+        return {"error": f"Couldn't finish: {describe(exc)}"}
+
+
+def scout_set_status(cid: str, status: str, item: dict[str, Any] | None = None) -> bool:
+    from .. import scout
+    return scout.set_status(cid, status, item)
+
+
+def scout_publish() -> dict[str, Any]:
+    from .. import scout
+    try:
+        return scout.publish()
+    except FileNotFoundError as exc:
+        return {"error": str(exc)}
+    except Exception as exc:
+        return {"error": f"Couldn't publish: {exc}"}
+
+
 def admin_data(cfg: MyGeekyConfig) -> dict[str, Any]:
     """The admin tab from local state (no network)."""
     from .. import admin
@@ -850,6 +901,168 @@ def refresh_hf_models(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]
 def hf_models_due(cfg: MyGeekyConfig) -> bool:
     from .. import hfmodels
     return cfg.market_hf_enabled and hfmodels.refresh_due(cfg, hfmodels.load_state())
+
+
+# --------------------------------------------------------------------------- growing: skills, learning, wins
+def get_growth(cfg: MyGeekyConfig, save: bool = True) -> dict[str, Any]:
+    """Rising Skills, your protocols, learning resources and your wins -- all from
+    saved files (no network). Slow-ish (reads everything about your field): call it off the UI thread."""
+    from .. import curated, skills, wins
+    rising = skills.rising(cfg, save=save)
+    wanted = {s["name"].lower(): 0.7 for s in rising["skills"][:6]}
+    data = curated.load()
+    resources = curated.ranked(cfg, "resources", data=data, extra_terms=wanted)
+    from .. import protocols
+    return {"rising": rising, "paths": protocols.views(cfg, data), "resources": resources,
+            "reviewed": [{"id": p["id"], "skill": p["skill"], "goal": p.get("goal", ""), "title": p["title"],
+                          "summary": p.get("summary", "")} for p in protocols.reviewed(data)],
+            "wins": wins.recent(), "wins_updated_at": wins.load().get("updated_at"),
+            "has_orcid": bool(cfg.orcid_id), "has_github": bool(cfg.github_username)}
+
+
+def refresh_growth(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
+    """Fetch the newest curated lists and read your stars, forks and citations (when due), then
+    everything as get_growth. Network errors are kept in `error`, never raised."""
+    from .. import curated, wins
+    errors = []
+    try:
+        curated.refresh_if_due(force=force)
+    except Exception as exc:
+        from ..errors import describe
+        errors.append(f"Couldn't fetch the newest lists: {describe(exc)}")
+    try:
+        client = _build_client(cfg) if cfg.github_username else None
+        wins.refresh(cfg, client=client, force=force)
+    except Exception as exc:
+        from ..errors import describe
+        errors.append(f"Couldn't read your stars and citations: {describe(exc)}")
+    out = get_growth(cfg)
+    out["error"] = " ".join(errors)
+    return out
+
+
+def growth_due(cfg: MyGeekyConfig) -> bool:
+    from .. import wins
+    return profile_ready(cfg) and wins.due(wins.load())
+
+
+def get_opportunities(cfg: MyGeekyConfig) -> dict[str, Any]:
+    """Verified jobs, funding and conferences, matched to you here (no network)."""
+    from .. import curated, interests
+    data = curated.load()
+    if is_admin(cfg):              # the maker sees what they accepted at once, marked "not published yet"
+        try:
+            from .. import scout
+            pending = scout.candidates("accepted")
+        except Exception:
+            pending = []
+        if pending:
+            data = {**data, **{k: list(data.get(k, [])) for k in curated.DATED}}
+            have = {it["url"] for k in curated.DATED for it in data[k]}
+            for c in pending:
+                if c["kind"] in curated.DATED and c["item"]["url"] not in have:
+                    data[c["kind"]].append({**c["item"], "pending": True})
+    weights = interests.profile_terms(cfg)
+    return {kind: curated.ranked(cfg, kind, weights=weights, data=data) for kind in curated.DATED} | {
+        "version": data.get("version", "")}
+
+
+def refresh_opportunities(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
+    from .. import curated
+    error = ""
+    try:
+        curated.refresh_if_due(force=force)
+    except Exception as exc:
+        from ..errors import describe
+        error = f"Couldn't fetch the newest lists: {describe(exc)}"
+    return {**get_opportunities(cfg), "error": error}
+
+
+def vote(kind: str, item_id: str, up: bool, text: str = "", tags: list[str] | None = None) -> int:
+    """👍 / 👎 on a skill, resource, job, call, conference or person. Same thumb again: taken back."""
+    from .. import taste
+    return taste.vote(kind, item_id, up, text, tags or [])
+
+
+def vote_of(kind: str, item_id: str) -> int:
+    from .. import taste
+    return taste.vote_of(kind, item_id)
+
+
+def unhide(kind: str) -> int:
+    """Take back every 👎 on this kind of thing, so they show again."""
+    from .. import taste
+    return taste.clear(kind, -1)
+
+
+def report_links(kind: str, item: dict[str, Any]) -> dict[str, str]:
+    from .. import curated
+    return curated.report_links(kind, item)
+
+
+# ---- protocols: a skill as ordered stages (protocols.py)
+def build_protocol(cfg: MyGeekyConfig, skill: str, goal: str = "") -> dict[str, Any]:
+    """Start a protocol for `skill`: the reviewed one if there is one, else one built now from GitHub and
+    OpenAlex with the protocol model. Slow (searches): call it off the UI thread. {"id"} or {"error"}."""
+    import requests
+    from .. import protocols
+    skill = " ".join((skill or "").split())[:60]
+    if not skill:
+        return {"error": "Which skill?"}
+    try:
+        client = _build_client(cfg)
+    except Exception:
+        client = None
+    try:
+        with requests.Session() as session:
+            proto = protocols.build(cfg, skill, goal, client=client, session=session)
+    except Exception as exc:
+        from ..errors import describe
+        return {"error": f"Couldn't build it: {describe(exc)}"}
+    pid = protocols.start(cfg, proto)
+    return {"id": pid, "reviewed": proto.get("reviewed", False)} if pid else {"error": "Couldn't build it."}
+
+
+def protocol_action(cfg: MyGeekyConfig, action: str, pid: str, *args: Any) -> Any:
+    """Change one of your protocols: tick, known, quiz, stop, or an edit (move_stage, rename_stage,
+    add_stage, remove_stage, move_item, remove_item, add_item)."""
+    from .. import protocols
+    fn = {"tick": protocols.tick, "known": protocols.mark_known, "quiz": protocols.answer_quiz,
+          "stop": protocols.stop, "move_stage": protocols.move_stage, "rename_stage": protocols.rename_stage,
+          "add_stage": protocols.add_stage, "remove_stage": protocols.remove_stage,
+          "move_item": protocols.move_item, "remove_item": protocols.remove_item,
+          "add_item": protocols.add_item}.get(action)
+    return fn(cfg, pid, *args) if fn else None
+
+
+def publish_protocol(cfg: MyGeekyConfig, pid: str) -> dict[str, str]:
+    """The prefilled public issue for one of your protocols (you press Submit, with your own account):
+    {"url", "clipboard"} -- clipboard holds the protocol to paste when it's too long for a link."""
+    from .. import protocols
+    entry = protocols.mine(cfg).get(pid)
+    return protocols.publish(entry) if entry else {"url": "", "clipboard": ""}
+
+
+def get_collaborators(cfg: MyGeekyConfig, rising: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Fellow myGeeKy users whose skills complement yours (from saved beacons; no network).
+    `rising` is Grow's own result when it has one: reusing it skips reading your whole field and CV again."""
+    from .. import beacon as bc, collab, interests, skills
+    if not cfg.github_username or not cfg.beacon_enabled:
+        return {"enabled": False, "people": [], "hidden": 0}
+    cache, mine = bc.load_cache(), bc.load_my_beacon()
+    try:
+        weights = interests.profile_terms(cfg)
+    except Exception:
+        weights = {}
+    people = bc.people(cache, cfg, mine, private_key=bc.private_key_or_none(cfg), weights=weights)
+    if not (isinstance(rising, dict) and "have" in rising):
+        rising = skills.rising(cfg, save=False, top=20)
+    have = set(rising["have"]) | {"Git"}
+    wanted = [s["name"] for s in rising["skills"]]
+    strengths = [s["name"] for s in rising["strengths"]]
+    can_send = auth.get_beacon_token(cfg.github_username) is not None
+    return {"enabled": True, "can_send": can_send,
+            **collab.matches(people, have, wanted, bc._sent_to(mine, "collab"), strengths=strengths)}
 
 
 def market_refresh_due(cfg: MyGeekyConfig, now: datetime | None = None) -> bool:
@@ -1104,10 +1317,34 @@ LINK_PREFIXES = ("https://github.com/", "https://www.producthunt.com/posts/", "h
                  "https://doi.org/", "https://orcid.org/", "https://openalex.org/")
 
 
+def _curated_link(url: str) -> bool:
+    """A link from the maker's curated lists (jobs, funding, conferences, resources), a learning-path
+    search, or a report to support: those, and only those, may go anywhere https."""
+    if url.startswith(("mailto:support@mygeeky.org?", "https://github.com/search?",
+                       "https://github.com/mygeeky/myGeeKy-ideas/issues/new?")):
+        return True
+    try:
+        from .. import curated
+        data = curated.load()
+        if any(url == it.get("url") for kind in curated.LISTS for it in data.get(kind, [])):
+            return True
+        from .. import scout             # a listing the scout found, for you to check
+        if any(url == c["item"]["url"] for c in scout.load()["candidates"].values()):
+            return True
+        from .. import protocols         # a link in a reviewed protocol, or in one of yours
+        for p in protocols.reviewed(data) + [e["protocol"] for e in protocols.mine().values()]:
+            if any(url == it["url"] for st in p["stages"] for it in st["items"]):
+                return True
+        return False
+    except Exception:
+        return False
+
+
 def open_link(url: str) -> bool:
     """Like open_profile, but also lets Product Hunt launch pages through."""
     from .. import headlines
-    if not isinstance(url, str) or not (url.startswith(LINK_PREFIXES) or headlines.allowed_link(url)):
+    if not isinstance(url, str) or not (url.startswith(LINK_PREFIXES) or headlines.allowed_link(url)
+                                        or _curated_link(url)):
         return False
     from PySide6.QtCore import QUrl
     from PySide6.QtGui import QDesktopServices
