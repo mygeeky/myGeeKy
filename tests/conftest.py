@@ -108,3 +108,11 @@ def pytest_unconfigure(config):
         sys.stdout.flush()
         sys.stderr.flush()
         os._exit(_EXIT_STATUS["code"])
+
+
+@pytest.fixture(autouse=True)
+def _no_real_deepseek_key(monkeypatch):
+    """The maker's real DeepSeek key (system keyring) is never seen by a test: a test that needs a key
+    passes a fake one itself, and DeepSeek is always faked."""
+    import mygeeky.scout as scout
+    monkeypatch.setattr(scout, "get_key", lambda: None)
