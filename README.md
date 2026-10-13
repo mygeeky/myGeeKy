@@ -228,6 +228,14 @@ myGeeKy reminds you a week before either one expires, and `mygeeky auth status` 
 Two planets for what comes next in your career. Everything in them is matched to you **on your own device**; your 👍
 and 👎 teach your model what to show you more and less of, and never leave your devices.
 
+<table>
+<tr>
+<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-skills.png" width="260" alt="Rising Skills"><br><b>📈 Rising Skills</b><br><sub>What's growing in your field and missing from you, with why</sub></td>
+<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-protocols.png" width="260" alt="A protocol as a road map"><br><b>🧭 Protocols</b><br><sub>A road map for any skill; the step you're on makes room for itself</sub></td>
+<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-jobs.png" width="260" alt="Verified jobs"><br><b>🎯 Chances</b><br><sub>Verified jobs, funding and conferences, gone after the deadline</sub></td>
+</tr>
+</table>
+
 **🌱 Grow**
 - **📈 Rising Skills.** Skills, tools and methods growing in your field (in the rising papers, trending repos and
   models, and the people myGeeKy follows for you) that your profile, CV, papers and repos don't show yet. Each one says

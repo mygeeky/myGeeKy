@@ -27,6 +27,9 @@ TABS = [  # (file, tab, market mode)
     ("market", "market", "repos"), ("research", "market", "research"), ("models", "market", "models"),
     ("news", "news", None),
     ("activity", "activity", None), ("signals", "signals", None), ("model", "model", None),
+    ("grow-skills", "grow", "skills"), ("grow-protocols", "grow", "paths"), ("grow-learn", "grow", "learn"),
+    ("chances-jobs", "chances", "jobs"), ("chances-funding", "chances", "funding"),
+    ("chances-conferences", "chances", "conferences"),
 ]
 
 
@@ -86,8 +89,34 @@ def render() -> dict[str, Path]:
     logic.get_signals = example_signals
     logic.is_admin = lambda cfg: False      # the maker's private tab stays out of public pictures
     logic.sync_enabled = lambda cfg: False
-    for name in ("news_refresh_due", "trends_due", "market_refresh_due", "hf_models_due"):
+    for name in ("news_refresh_due", "trends_due", "market_refresh_due", "hf_models_due", "growth_due"):
         setattr(logic, name, lambda cfg: False)
+    # Chances: the listings the maker accepted show as they will once published (no "not published" note)
+    shown_opportunities = logic.get_opportunities
+
+    def opportunities(cfg):
+        out = shown_opportunities(cfg)
+        try:
+            from mygeeky import curated, scout
+            accepted = [c for c in scout.candidates("accepted")]
+            if accepted:
+                data = curated.load()
+                data = {**data, **{k: list(data.get(k, [])) + [c["item"] for c in accepted if c["kind"] == k]
+                                   for k in curated.DATED}}
+                from mygeeky import interests
+                w = interests.profile_terms(cfg)
+                out.update({k: curated.ranked(cfg, k, weights=w, data=data) for k in curated.DATED})
+        except Exception:
+            pass
+        return out
+    logic.get_opportunities = opportunities
+    # Protocols: two started ones, in a throwaway file (never your own learning_paths.json)
+    import tempfile
+    from mygeeky import protocols
+    protocols.PATHS_FILE = Path(tempfile.mkdtemp()) / "learning_paths.json"
+    pid = protocols.start(cfg_for_protocols := load_config(), protocols.find_reviewed("R", "data analysis"))
+    protocols.tick(cfg_for_protocols, pid, "deeper")
+    protocols.start(cfg_for_protocols, protocols.find_reviewed("GWAS"))
     from mygeeky.gui.qt_panel import MyGeekyPanel
 
     def pump(seconds: float) -> None:
@@ -108,11 +137,22 @@ def render() -> dict[str, Path]:
             SHOW_EXAMPLES["on"] = True
             panel._refresh_signals(force=True)
         panel._switch_tab(tab)
-        if mode:
+        if tab == "grow":
+            panel._set_grow_mode(mode)
+        elif tab == "chances":
+            panel._set_chance_mode(mode)
+        elif mode:
             panel._set_market_mode(mode)
-        pump(2.5)
-        if tab == "signals":          # start the picture at "Your field" (the panel is short)
+        pump(4.5 if tab in ("grow", "chances") else 2.5)
+        if fname == "grow-protocols":  # start the picture at your protocols: the road map and a step
             from PySide6.QtWidgets import QScrollArea
+            from mygeeky.gui.growth_ui import ProtocolCard
+            cards = [c for c in panel.grow_area.parentWidget().findChildren(ProtocolCard) if c.isVisible()]
+            box = panel._grow_scroll
+            if cards:
+                box.verticalScrollBar().setValue(cards[0].mapTo(box.widget(), cards[0].rect().topLeft()).y() - 4)
+            pump(0.5)
+        if tab == "signals":          # start the picture at "Your field" (the panel is short)
             from mygeeky.gui.signals_ui import FieldCard
             field = panel.signals_area.parentWidget().findChildren(FieldCard)[0]
             box = panel.signals_area.parentWidget()
@@ -191,7 +231,8 @@ def hero(shots: dict[str, Path]) -> None:
 def tour(shots: dict[str, Path]) -> None:
     """Every tab, crossfading -- small enough for GitHub and PyPI."""
     from PIL import Image
-    order = ["live", "suggestions", "repos", "market", "research", "news", "activity", "signals", "model"]
+    order = ["live", "suggestions", "repos", "market", "research", "news", "activity", "signals", "grow-skills",
+             "grow-protocols", "chances-jobs", "model"]
     w = 400
     frames_src = []
     for k in order:

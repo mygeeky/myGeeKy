@@ -334,7 +334,7 @@ def s_reveal(t: float) -> Image.Image:
     return im
 
 
-PILLARS = [
+FEATURES = [
     ("👥", "People", "who share your research and will follow you back", CYAN),
     ("🛠️", "Projects", "repos in your field that welcome your pull requests", GREEN),
     ("📈", "Pulse", "what's rising in your field, every day", AMBER),
@@ -342,44 +342,117 @@ PILLARS = [
     ("🗞️", "News", "arXiv, bioRxiv and Hacker News, for your topics", RED),
     ("📰", "Activity", "what your people are building right now", VIOLET),
     ("🙏", "Signals", "private thank-yous; no reply needed", PINK),
+    ("🌱", "Rising Skills", "what's growing in your field, and missing from you", GREEN),
+    ("🧭", "Protocols", "a road map for any skill: what to learn, in order", CYAN),
+    ("📚", "Learn", "hand-picked free courses, books and tutorials", AMBER),
+    ("🎉", "Wins", "new stars, forks and citations of your work", PINK),
+    ("🤝", "Collaborators", "people whose skills complement yours", VIOLET),
+    ("🎯", "Chances", "verified jobs, funding and conferences, before the deadline", PINK),
     ("🧠", "Learning", "learns what you're into, keeps room to explore", VIOLET),
     ("💡", "Ideas", "send ideas and problems straight to the maker", AMBER),
 ]
+FEATURE_SECS = 1.45          # each feature: roll in, show itself, burst
+FEATURES_START = 1.6         # after the title
+_emoji_cache: dict[tuple[str, int], Image.Image] = {}
+
+
+def emoji_image(chars: str, size: int) -> Image.Image:
+    """An emoji as a picture (to spin and scale), cached."""
+    key = (chars, size)
+    if key not in _emoji_cache:
+        chars = chars.replace(chr(0xFE0F), "")
+        tmp = Image.new("RGBA", (int(EMOJI.size * 1.3) * len(chars), int(EMOJI.size * 1.3)), (0, 0, 0, 0))
+        ImageDraw.Draw(tmp).text((0, 0), chars, font=EMOJI, embedded_color=True)
+        tmp = tmp.crop(tmp.getbbox())
+        k = size / max(tmp.width, tmp.height)
+        _emoji_cache[key] = tmp.resize((max(1, int(tmp.width * k)), max(1, int(tmp.height * k))), Image.LANCZOS)
+    return _emoji_cache[key]
+
+
+def feature_roll(im: Image.Image, t: float, em: str, name: str, line: str, col, seed: int) -> None:
+    """One feature: its logo, in a glowing bubble, rolls in from the left (spinning like a wheel), stops in
+    the middle with its name, then bursts like a bubble -- a ring of droplets flies out and it's gone."""
+    cx, cy, r = W / 2, 470, 120
+    roll_t, hold_t = 0.55, 0.55
+    burst_t = FEATURE_SECS - roll_t - hold_t
+    if t < roll_t:                                           # rolling in: fast, then settling (ease-out, a small bounce)
+        k = t / roll_t
+        p = 1 - (1 - k) ** 3
+        x = -r + (cx + r) * p + 18 * math.sin(k * math.pi) * (1 - k)
+        angle = -(x - cx) / r * 180 / math.pi             # rolls without slipping: angle = distance / radius
+        scale, alpha, burst = 1.0, 1.0, 0.0
+    elif t < roll_t + hold_t:
+        k = (t - roll_t) / hold_t
+        x, angle = cx, 0.0
+        scale, alpha, burst = 1 + 0.05 * math.sin(k * math.pi), 1.0, 0.0
+    else:
+        k = min(1.0, (t - roll_t - hold_t) / burst_t)
+        x, angle = cx, 0.0
+        scale, alpha, burst = 1 + 0.35 * k, max(0.0, 1 - k * 2.2), k
+    layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    rr = r * scale
+    if alpha > 0:                                            # the bubble: a soft glow, a thin rim and a shine
+        glow = Image.new("RGBA", im.size, (0, 0, 0, 0))
+        ImageDraw.Draw(glow).ellipse((x - rr * 1.25, cy - rr * 1.25, x + rr * 1.25, cy + rr * 1.25),
+                                     fill=col + (int(70 * alpha),))
+        im.alpha_composite(glow.filter(ImageFilter.GaussianBlur(28)))
+        d.ellipse((x - rr, cy - rr, x + rr, cy + rr), fill=(255, 255, 255, int(18 * alpha)),
+                  outline=col + (int(230 * alpha),), width=4)
+        d.arc((x - rr * 0.78, cy - rr * 0.78, x + rr * 0.78, cy + rr * 0.78), 200, 250,
+              fill=(255, 255, 255, int(150 * alpha)), width=6)
+        im.alpha_composite(layer)
+        icon = emoji_image(em, int(r * 1.05))
+        if scale != 1:
+            icon = icon.resize((max(1, int(icon.width * scale)), max(1, int(icon.height * scale))), Image.LANCZOS)
+        icon = icon.rotate(angle, resample=Image.BICUBIC, expand=True)
+        if alpha < 1:
+            icon.putalpha(icon.getchannel("A").point(lambda a: int(a * alpha)))
+        im.alpha_composite(icon, (int(x - icon.width / 2), int(cy - icon.height / 2)))
+    if burst > 0:                                            # the pop: a ring that races out, droplets that fly and fade
+        layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
+        d = ImageDraw.Draw(layer)
+        ring = r * (1 + 1.6 * burst)
+        d.ellipse((cx - ring, cy - ring, cx + ring, cy + ring), outline=col + (int(200 * (1 - burst)),),
+                  width=max(1, int(6 * (1 - burst))))
+        rnd = random.Random(seed)
+        for _ in range(16):
+            a = rnd.uniform(0, 2 * math.pi)
+            dist = r * (1.0 + rnd.uniform(0.8, 2.2) * burst)
+            px, py = cx + math.cos(a) * dist, cy + math.sin(a) * dist + 60 * burst ** 2   # a little gravity
+            s = rnd.uniform(5, 13) * (1 - burst * 0.7)
+            d.ellipse((px - s, py - s, px + s, py + s), fill=col + (int(230 * (1 - burst)),))
+        im.alpha_composite(layer)
+    # its name and what it does, under the bubble, while it's there
+    ta = ease((t - roll_t + 0.15) / 0.25) * (1 - ease((t - roll_t - hold_t) / 0.25))
+    if ta > 0:
+        text_center(im, name, cy + r + 50, font(78, bold=True), col, ta)
+        text_center(im, line, cy + r + 150, font(40), MUTED, ta)
 
 
 def s_pillars(t: float) -> Image.Image:
+    """Every feature, one by one: each logo rolls in from the left and bursts like a bubble."""
     im = background(t + 20).convert("RGBA")
-    a = ease(t / 0.6) * ease((16 - t) / 0.6)
+    total = FEATURES_START + len(FEATURES) * FEATURE_SECS + 0.4
+    a = ease(t / 0.6) * ease((total - t) / 0.5)
     text_center(im, "One profile. Your whole field.", 90, font(76, bold=True), TEXT, a)
     text_center(im, "from your CV, your repos, and your ORCID & Google Scholar papers", 195, font(36), MUTED, a)
-    tw, th, gx, gy = 540, 200, 36, 28
-    x0 = (W - (3 * tw + 2 * gx)) / 2
-    for i, (em, name, line, col) in enumerate(PILLARS):
-        appear = ease((t - 1.2 - i * 1.05) / 0.6) * a
-        if appear <= 0:
-            continue
-        x = x0 + (i % 3) * (tw + gx)
-        y = 330 + (i // 3) * (th + gy) + (1 - appear) * 40
-        card = Image.new("RGBA", im.size, (0, 0, 0, 0))
-        cd = ImageDraw.Draw(card)
-        cd.rounded_rectangle((x, y, x + tw, y + th), 26, fill=(255, 255, 255, int(16 * appear)),
-                             outline=(255, 255, 255, int(45 * appear)))
-        cd.rounded_rectangle((x + 30, y + 26, x + 90, y + 32), 4, fill=col + (int(255 * appear),))
-        im.alpha_composite(card)
-        emoji(im, em, (x + 30, y + 48), 46, appear)
-        text_at(im, name, (x + 92, y + 48), font(44, bold=True), col, appear)
-        words, lines, cur = line.split(), [], ""
-        for wd in words:
-            test = (cur + " " + wd).strip()
-            if ImageDraw.Draw(im).textlength(test, font=font(29)) > tw - 60:
-                lines.append(cur)
-                cur = wd
-            else:
-                cur = test
-        lines.append(cur)
-        for j, ln in enumerate(lines):
-            text_at(im, ln, (x + 30, y + 112 + j * 38), font(29), (225, 228, 240), appear)
+    i = int((t - FEATURES_START) // FEATURE_SECS)
+    if 0 <= i < len(FEATURES):
+        em, name, line, col = FEATURES[i]
+        feature_roll(im, t - FEATURES_START - i * FEATURE_SECS, em, name, line, col, seed=i)
+        # progress: a dot per feature
+        n = len(FEATURES)
+        x0 = W / 2 - (n - 1) * 14
+        dots = ImageDraw.Draw(im)
+        for k in range(n):
+            c = FEATURES[k][3] if k <= i else (90, 92, 110)
+            rr = 6 if k == i else 4
+            dots.ellipse((x0 + k * 28 - rr, 1010 - rr, x0 + k * 28 + rr, 1010 + rr), fill=c + (255,))
     return im
+
+
+PILLARS_SECS = FEATURES_START + len(FEATURES) * FEATURE_SECS + 0.4
 
 
 def s_install(t: float) -> Image.Image:
@@ -439,6 +512,9 @@ TOUR = [
     ("repos.png", "Projects that welcome your pull requests", "starter issues, and maintainers who actually merge"),
     ("market.png", "The pulse of your field", "stars, commits and downloads: who's rising this week"),
     ("signals.png", "Say thanks, privately", "only they can read it, and no reply is expected"),
+    ("grow-skills.png", "Rising skills: what to learn next", "growing in your field, missing from your profile"),
+    ("grow-protocols.png", "A road map for any skill", "skip what you know; repos, papers and books for each step"),
+    ("chances-jobs.png", "Verified jobs, funding and conferences", "checked by hand, matched to you, gone after the deadline"),
     ("activity.png", "What your people are building, live", "one card per person, right on your screen edge"),
     ("research.png", "The papers behind the code", "rising papers, their repos, and the people behind them"),
     ("news.png", "News from your field, not everyone's", "arXiv, bioRxiv and Hacker News, matched to you"),
@@ -484,8 +560,8 @@ def s_tour(t: float) -> Image.Image:
 
 PHONE = [
     ("live.png", "Spin a ring with your thumb", "your circle inside, the world outside, you in the middle"),
-    ("news.png", "The planet in the lens opens above", "each planet shows how much it holds"),
-    ("read.png", "Tap to read, and the rings fold away", "news, papers, repos, AI models and launches"),
+    ("protocols.png", "Your road map, in your pocket", "every step, its check, and what to learn from"),
+    ("chances.png", "Chances, wherever you are", "jobs, funding and conferences that fit you"),
 ]
 
 
@@ -597,8 +673,9 @@ def after_flash(im: Image.Image, t: float) -> Image.Image:
 
 
 
-SCENES = [(s_intro, INTRO_DUR), (s_hook, 13.0), (s_reveal, 6.0), (s_pillars, 16.5), (s_install, 23.6), (s_configure, 21.0),
-          (s_signals, 16.2), (s_tour, 44.0), (s_phone, 11.0), (s_close, 8.0)]
+SCENES = [(s_intro, INTRO_DUR), (s_hook, 13.0), (s_reveal, 6.0), (s_pillars, PILLARS_SECS), (s_install, 23.6),
+          (s_configure, 21.0), (s_signals, 16.2), (s_tour, 3.6 + len(TOUR) * 5.0 + 0.4), (s_phone, 11.0),
+          (s_close, 8.0)]
 
 
 def frame_at(t: float) -> Image.Image:

@@ -25,13 +25,13 @@ It only suggests; it never follows, stars or forks anything for you. Free and op
 0:00 Intro
 0:06 The problem
 0:19 Meet myGeeKy
-0:25 What it does
-0:41 Step 1: Install
-1:05 Step 2: Configure
-1:26 Step 3: Join Signals (optional)
-1:42 Step 4: Your panel
-2:26 On your phone
-2:37 Get it
+0:25 Every feature, one by one (including Rising Skills, Protocols and Chances)
+0:48 Step 1: Install
+1:12 Step 2: Configure
+1:33 Step 3: Join Signals (optional)
+1:49 Step 4: Your panel (Grow, Protocols and Chances at 2:13)
+2:48 On your phone
+2:59 Get it
 
 🔗 Links
 GitHub: https://github.com/mygeeky/myGeeKy
