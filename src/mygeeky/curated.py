@@ -173,6 +173,11 @@ def refresh_if_due(force: bool = False, now: datetime | None = None, timeout: fl
         except (TypeError, ValueError):
             pass
     r = requests.get(REMOTE_URL, timeout=timeout, headers={"User-Agent": "mygeeky"})
+    if r.status_code == 404:        # nothing published yet: the lists shipped with myGeeKy are all there is
+        ensure_dirs()
+        write_json(CURATED_FILE, {**(cached if isinstance(cached, dict) else {}),
+                                  "checked_at": now.isoformat(timespec="seconds")})
+        return False
     r.raise_for_status()
     if len(r.content) > 2_000_000:
         raise ValueError("the curated lists are unexpectedly large")

@@ -950,6 +950,18 @@ def get_opportunities(cfg: MyGeekyConfig) -> dict[str, Any]:
     """Verified jobs, funding and conferences, matched to you here (no network)."""
     from .. import curated, interests
     data = curated.load()
+    if is_admin(cfg):              # the maker sees what they accepted at once, marked "not published yet"
+        try:
+            from .. import scout
+            pending = scout.candidates("accepted")
+        except Exception:
+            pending = []
+        if pending:
+            data = {**data, **{k: list(data.get(k, [])) for k in curated.DATED}}
+            have = {it["url"] for k in curated.DATED for it in data[k]}
+            for c in pending:
+                if c["kind"] in curated.DATED and c["item"]["url"] not in have:
+                    data[c["kind"]].append({**c["item"], "pending": True})
     weights = interests.profile_terms(cfg)
     return {kind: curated.ranked(cfg, kind, weights=weights, data=data) for kind in curated.DATED} | {
         "version": data.get("version", "")}

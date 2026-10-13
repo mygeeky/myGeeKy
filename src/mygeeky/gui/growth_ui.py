@@ -824,6 +824,9 @@ class OpportunityCard(QFrame):
         line = " · ".join(b for b in bits if b)
         if line:
             lay.addWidget(_label(line, _muted(theme, 10.5)))
+        if it.get("pending"):
+            lay.addWidget(_label("⏳ You accepted this: only you see it until you publish", f"color:{theme['warn']}; "
+                                 "font-size:10.5px; background:transparent;"))
         if it.get("who"):
             lay.addWidget(_label("Who can apply: " + it["who"], _muted(theme, 10.5)))
         if it.get("student"):

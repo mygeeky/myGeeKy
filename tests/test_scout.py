@@ -174,3 +174,20 @@ def test_the_key_must_look_like_one_and_stays_out_of_files(monkeypatch):
 def test_without_a_key_it_says_so():
     with pytest.raises(PermissionError):
         scout.find(MyGeekyConfig(), key="", session=FakeWeb(), post=fake_deepseek({}), sources=SOURCE)
+
+
+def test_not_published_yet_is_not_an_error(monkeypatch):
+    monkeypatch.setattr(curated.requests, "get", lambda *a, **k: FakeResponse("", curated.REMOTE_URL, 404))
+    assert curated.refresh_if_due(force=True) is False                      # no exception, nothing changed
+    assert curated.refresh_if_due() is False                                # and not asked again for a while
+
+
+def test_the_maker_sees_accepted_listings_before_publishing(monkeypatch):
+    from mygeeky.gui import app
+    run({"pick": {"picks": [{"n": 1}]}, "https://jobs.example.org/job/1/postdoc-statistical-genetics": GOOD})
+    [c] = scout.candidates(today=TODAY)
+    scout.set_status(c["id"], "accepted")
+    cfg = MyGeekyConfig(github_username="AlsammanAlsamman")
+    jobs = app.get_opportunities(cfg)["jobs"]["items"]
+    assert [j["title"] for j in jobs] == ["Postdoc in statistical genetics"] and jobs[0]["pending"]
+    assert app.get_opportunities(MyGeekyConfig(github_username="someone"))["jobs"]["items"] == []   # nobody else
