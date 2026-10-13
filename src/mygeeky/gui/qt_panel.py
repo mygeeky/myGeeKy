@@ -240,6 +240,19 @@ def _avatar_widget(username: str, avatar_url: str, size: int, loader: "AvatarLoa
     return label
 
 
+def dialog_css(theme: dict[str, Any]) -> str:
+    """Dialogs are windows of their own: the panel's see-through colours would sit on black there (and
+    the text kept the system's black), so they get solid colours that match the theme."""
+    dark = theme.get("dark", True)
+    bg, fg, field, btn, hover, edge = (("#1f1b2e", "#f0f0f5", "#2a2640", "#3a3456", "#4a4370", "#4a4466") if dark
+                                       else ("#f6f3ee", "#241f1a", "#ffffff", "#e4ded4", "#d6cec2", "#cfc6b8"))
+    return (f"QDialog, QMessageBox, QInputDialog {{ background:{bg}; }}"
+            f"QLabel, QRadioButton, QCheckBox {{ color:{fg}; background:transparent; font-size:12px; }}"
+            f"QLineEdit {{ background:{field}; color:{fg}; border:1px solid {edge}; border-radius:6px; padding:5px; }}"
+            f"QPushButton {{ background:{btn}; color:{fg}; border:none; border-radius:8px; padding:6px 14px; "
+            f"font-size:12px; min-width:64px; }} QPushButton:hover {{ background:{hover}; }}")
+
+
 def _clear_layout(layout) -> None:
     while layout.count():
         item = layout.takeAt(0)
@@ -4386,14 +4399,12 @@ class MyGeekyPanel(QWidget):
         if isinstance(result, dict) and result.get("id"):
             self._open_protocol = result["id"]          # the new one opens; the others fold
         if isinstance(result, dict) and result.get("error"):
-            QMessageBox.information(self, "Protocol", result["error"])
+            self._info("Protocol", result["error"])
         self._load_growth()
 
     def _protocol_act(self, pid: str, action: str, *args: Any) -> None:
         if action == "stop":
-            box = QMessageBox(self)
-            box.setWindowTitle("Stop this protocol")
-            box.setText("Stop this protocol? Your progress and your changes to it are removed.")
+            box = self._box("Stop this protocol", "Stop this protocol? Your progress and your changes to it are removed.")
             yes = box.addButton("Stop it", QMessageBox.DestructiveRole)
             box.addButton(QMessageBox.Cancel)
             box.exec()
@@ -4406,10 +4417,30 @@ class MyGeekyPanel(QWidget):
         self._editing_protocol = "" if self._editing_protocol == pid else pid
         self._render_grow()
 
-    def _ask_text(self, title: str, label: str, value: str = "") -> str:
+    def _dialog_css(self) -> str:
+        return dialog_css(THEMES[self._theme_name()])
+
+    def _box(self, title: str, text: str) -> QMessageBox:
+        box = QMessageBox(self)
+        box.setWindowTitle(title)
+        box.setText(text)
+        box.setStyleSheet(self._dialog_css())
+        return box
+
+    def _info(self, title: str, text: str) -> None:
+        box = self._box(title, text)
+        box.addButton(QMessageBox.Ok)
+        box.exec()
+
+    def _ask_text(self, title: str, label: str, value: str = "", echo=None) -> str:
         from PySide6.QtWidgets import QInputDialog
-        text, ok = QInputDialog.getText(self, title, label, QLineEdit.Normal, value)
-        return text.strip() if ok else ""
+        dlg = QInputDialog(self)
+        dlg.setWindowTitle(title)
+        dlg.setLabelText(label)
+        dlg.setTextValue(value)
+        dlg.setTextEchoMode(echo if echo is not None else QLineEdit.Normal)
+        dlg.setStyleSheet(self._dialog_css())
+        return dlg.textValue().strip() if dlg.exec() == QDialog.Accepted else ""
 
     def _on_rename_stage(self, pid: str, st: dict[str, Any]) -> None:
         title = self._ask_text("Rename stage", "New name:", st["title"])
@@ -4426,7 +4457,7 @@ class MyGeekyPanel(QWidget):
         if not url:
             return
         if not url.startswith("https://"):
-            QMessageBox.information(self, "Add a link", "Only https:// links can be added.")
+            self._info("Add a link", "Only https:// links can be added.")
             return
         title = self._ask_text("Add a link", "What is it? (a short title)") or url
         logic.protocol_action(self.cfg, "add_item", pid, sid, url, title)
@@ -4434,11 +4465,9 @@ class MyGeekyPanel(QWidget):
 
     def _on_level_check(self, pid: str, st: dict[str, Any]) -> None:
         """The level check for one stage: a short quiz if it has one, else 'I can do these'."""
-        theme = THEMES[self._theme_name()]
         dlg = QDialog(self)
         dlg.setWindowTitle(f"Check: {st['title']}")
-        dlg.setStyleSheet(f"QDialog {{ background:{theme['bg']}; }} QLabel, QRadioButton, QCheckBox "
-                          f"{{ color:{theme['text']}; font-size:11.5px; }}")
+        dlg.setStyleSheet(self._dialog_css())
         lay = QVBoxLayout(dlg)
         groups: list[list[QRadioButton]] = []
         boxes: list[QCheckBox] = []
@@ -4484,7 +4513,7 @@ class MyGeekyPanel(QWidget):
             answers = [next((i for i, rb in enumerate(g) if rb.isChecked()), -1) for g in groups]
             score = logic.protocol_action(self.cfg, "quiz", pid, st["id"], answers) or 0.0
             right = round(score * len(groups))
-            QMessageBox.information(self, "Check", f"{right} of {len(groups)} right." + (
+            self._info("Check", f"{right} of {len(groups)} right." + (
                 " You know this one: it's marked as known." if score >= 0.75 else
                 " Not yet: this stage stays on your list. The links below it are a good place to start."))
         elif boxes and all(cb.isChecked() for cb in boxes):
@@ -4492,9 +4521,7 @@ class MyGeekyPanel(QWidget):
         self._load_growth()
 
     def _on_publish_protocol(self, p: dict[str, Any]) -> None:
-        box = QMessageBox(self)
-        box.setWindowTitle("Publish this protocol")
-        box.setText(f"Send “{p['title']}” to myGeeKy, for everyone?\n\n"
+        box = self._box("Publish this protocol", f"Send “{p['title']}” to myGeeKy, for everyone?\n\n"
                     "This opens a public GitHub issue in mygeeky/myGeeKy-ideas, sent with your GitHub account "
                     "when you press Submit. It holds the protocol (its stages and links) and the links you "
                     "removed, so the maker can review it for everyone and improve the protocol model.\n\n"
@@ -4506,7 +4533,7 @@ class MyGeekyPanel(QWidget):
             out = logic.publish_protocol(self.cfg, p["id"])
             if out.get("clipboard"):
                 QApplication.clipboard().setText(out["clipboard"])
-                QMessageBox.information(self, "Publish this protocol",
+                self._info("Publish this protocol",
                                         "It's too long for a link, so myGeeKy copied it for you. On the GitHub page "
                                         "that opens, paste it (Ctrl+V / ⌘V) where it says, then press Submit.")
             if out.get("url"):
@@ -4531,9 +4558,7 @@ class MyGeekyPanel(QWidget):
 
     def _on_report(self, kind: str, item: dict[str, Any]) -> None:
         links = logic.report_links(kind, item)
-        box = QMessageBox(self)
-        box.setWindowTitle("Report a listing")
-        box.setText(f"Does “{item.get('title', '')}” look fake, or is it no longer real?\n\n"
+        box = self._box("Report a listing", f"Does “{item.get('title', '')}” look fake, or is it no longer real?\n\n"
                     "Tell myGeeKy's maker, who checks it and takes it down. A GitHub issue is public and "
                     "sent with your account; an email is private.")
         gh = box.addButton("Report on GitHub", QMessageBox.AcceptRole)
@@ -4679,13 +4704,12 @@ class MyGeekyPanel(QWidget):
         winproc.popen([python, "-m", "mygeeky.gui.setup_wizard"], close_fds=True, cwd=str(Path.home()))
 
     def _on_paste_token(self) -> None:
-        from PySide6.QtWidgets import QInputDialog, QLineEdit
+        from PySide6.QtWidgets import QLineEdit
         if not self._token_warnings:
             return
         target = self._token_warnings[0]
-        value, ok = QInputDialog.getText(self, "myGeeKy", f"Paste your new {target['label']}:",
-                                         QLineEdit.Password)
-        if not ok or not value.strip():
+        value = self._ask_text("myGeeKy", f"Paste your new {target['label']}:", echo=QLineEdit.Password)
+        if not value:
             return
         self.paste_token_btn.setEnabled(False)
         self.token_label.setText("Checking the new token…")

@@ -11,8 +11,8 @@ from __future__ import annotations
 import html
 from typing import Any, Callable
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtCore import QPoint, QRect, QSize, Qt
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QLayout, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 
 from .signals_ui import _button_style, _muted
 
@@ -55,33 +55,86 @@ def mode_style(theme: dict[str, Any], active: bool) -> str:
             f"font-size:11px; font-weight:{'700' if active else '400'}; }}")
 
 
-class FlowRow(QWidget):
-    """Mode buttons that wrap onto a second line instead of making the panel wider."""
+class FlowLayout(QLayout):
+    """Lays its widgets out left to right and starts a new line when the next one wouldn't fit, so a
+    row of buttons never makes the panel wider than it is (Qt's own flow-layout example)."""
 
-    PER_LINE = 3
+    def __init__(self, parent: QWidget | None = None, spacing: int = 4) -> None:
+        super().__init__(parent)
+        self._items: list = []
+        self._gap = spacing
+        self.setContentsMargins(0, 0, 0, 0)
+
+    def addItem(self, item) -> None:  # noqa: N802
+        self._items.append(item)
+
+    def count(self) -> int:
+        return len(self._items)
+
+    def itemAt(self, i: int):  # noqa: N802
+        return self._items[i] if 0 <= i < len(self._items) else None
+
+    def takeAt(self, i: int):  # noqa: N802
+        return self._items.pop(i) if 0 <= i < len(self._items) else None
+
+    def expandingDirections(self):  # noqa: N802
+        return Qt.Orientations(0)
+
+    def hasHeightForWidth(self) -> bool:  # noqa: N802
+        return True
+
+    def heightForWidth(self, width: int) -> int:  # noqa: N802
+        return self._place(QRect(0, 0, width, 0), move=False)
+
+    def setGeometry(self, rect) -> None:  # noqa: N802
+        super().setGeometry(rect)
+        self._place(rect, move=True)
+
+    def sizeHint(self):  # noqa: N802
+        return self.minimumSize()
+
+    def minimumSize(self):  # noqa: N802
+        size = QSize()
+        for item in self._items:                 # as narrow as its widest single button, never wider
+            size = size.expandedTo(item.minimumSize())
+        return size
+
+    def _place(self, rect, move: bool) -> int:
+        x, y, line = rect.x(), rect.y(), 0
+        for item in self._items:
+            hint = item.sizeHint()
+            w = min(hint.width(), rect.width())
+            if x + w > rect.x() + rect.width() and line > 0:
+                x, y = rect.x(), y + line + self._gap
+                line = 0
+            if move:
+                item.setGeometry(QRect(QPoint(x, y), QSize(w, hint.height())))
+            x += w + self._gap
+            line = max(line, hint.height())
+        return y + line - rect.y()
+
+
+class FlowRow(QWidget):
+    """Buttons (modes, reviewed protocols…) that wrap onto the next line instead of making the panel wider."""
 
     def __init__(self) -> None:
         super().__init__()
-        self._lines = QVBoxLayout(self)
-        self._lines.setContentsMargins(0, 0, 0, 0)
-        self._lines.setSpacing(4)
-        self._line: QHBoxLayout | None = None
-        self._count = 0
+        self._flow = FlowLayout(self)
+        sp = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sp.setHeightForWidth(True)
+        self.setSizePolicy(sp)
 
     def add(self, w: QWidget) -> None:
-        if self._line is None or self._count % self.PER_LINE == 0:
-            if self._line is not None:
-                self._line.addStretch(1)
-            self._line = QHBoxLayout()
-            self._line.setSpacing(4)
-            self._lines.addLayout(self._line)
-        self._line.addWidget(w)
-        self._count += 1
+        self._flow.addWidget(w)
 
     def finish(self) -> None:
-        """Keep the last line's buttons at their own size."""
-        if self._line is not None:
-            self._line.addStretch(1)
+        """Nothing left to do: lines are worked out from the width (kept so callers stay the same)."""
+
+    def hasHeightForWidth(self) -> bool:  # noqa: N802
+        return True
+
+    def heightForWidth(self, width: int) -> int:  # noqa: N802
+        return self._flow.heightForWidth(width)
 
 
 class ThumbBar(QWidget):
@@ -440,8 +493,8 @@ class ProtocolCard(QFrame):
         lay.addLayout(head)
         if step.why:
             lay.addWidget(_label(step.why, _muted(theme, 10.5)))
-        actions = QHBoxLayout()
-        actions.setSpacing(6)
+        actions = FlowRow()                     # wraps instead of widening a narrow panel
+        actions.addWidget = actions.add
         if step.can_check:
             actions.addWidget(_pill_button("🎓 I know this: check me", "A short quiz, or 'I can do these'", theme,
                                            lambda: self.on_check(stage)))
@@ -456,8 +509,7 @@ class ProtocolCard(QFrame):
         elif step.overruled or step.how == "self":
             actions.addWidget(_small_button("Undo", "Go back to what your work shows", theme,
                                             lambda: act("known", step.id, None)))
-        actions.addStretch(1)
-        lay.addLayout(actions)
+        lay.addWidget(actions)
         for res, it in zip(step.resources, stage["items"]):
             thumbs = None if res.kind == "search" else ThumbBar(self.vote_of(it), theme, self.vote_item(it),
                                                                 up_tip="Good to learn from", down_tip="Not helpful")
@@ -467,12 +519,15 @@ class ProtocolCard(QFrame):
         if on_select and len(steps) > 1:
             i = next(k for k, s in enumerate(steps) if s.id == step.id)
             nav = QHBoxLayout()
+
+            def short(t: str, n: int = 22) -> str:
+                return t if len(t) <= n else t[: n - 1].rstrip() + "…"
             if i > 0:
-                nav.addWidget(_small_button(f"← {steps[i - 1].title}", "The step before", theme,
+                nav.addWidget(_small_button(f"← {short(steps[i - 1].title)}", "The step before", theme,
                                             lambda: on_select(steps[i - 1].id)))
             nav.addStretch(1)
             if i < len(steps) - 1:
-                nav.addWidget(_small_button(f"{steps[i + 1].title} →", "The next step", theme,
+                nav.addWidget(_small_button(f"{short(steps[i + 1].title)} →", "The next step", theme,
                                             lambda: on_select(steps[i + 1].id)))
             lay.addLayout(nav)
         return box
