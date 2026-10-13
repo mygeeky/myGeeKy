@@ -354,3 +354,26 @@ def test_facts_are_kept_on_links_but_not_published():
     pid = protocols.start(cfg, p)
     payload = protocols.publish_payload(protocols.mine(cfg)[pid])
     assert set(payload["stages"][0]["items"][0]) == {"title", "url", "kind", "note"}
+
+
+def test_the_road_map_makes_room_for_the_chosen_step():
+    import os
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+    QApplication.instance() or QApplication([])
+    from mygeeky.gui.growth_ui import StepBar, qcolor
+    from mygeeky.gui.qt_panel import THEMES
+    cfg = MyGeekyConfig()
+    protocols.start(cfg, protocols.find_reviewed("GWAS"))
+    steps = protocols.views(cfg)[0]["steps"]
+    for chosen in ("basics", "project"):
+        bar = StepBar(steps, chosen, THEMES["midnight"], lambda sid: None)
+        bar.resize(340, 70)
+        cols = bar.columns()
+        widths = {s.id: w for s, (_, w) in zip(steps, cols)}
+        assert abs(sum(widths.values()) - 340) < 0.5                       # fills the width, never wider
+        assert widths[chosen] > max(w for sid, w in widths.items() if sid != chosen)
+        assert min(widths.values()) >= StepBar.MIN_COL - 0.01
+        assert all(abs(cols[i][0] + cols[i][1] - cols[i + 1][0]) < 0.01 for i in range(len(cols) - 1))
+    c = qcolor("rgba(255,255,255,51)")
+    assert (c.red(), c.alpha()) == (255, 51) and qcolor("#34d399").name() == "#34d399"

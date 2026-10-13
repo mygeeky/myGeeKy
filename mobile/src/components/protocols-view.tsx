@@ -94,28 +94,32 @@ const KIND_COLOR: Record<string, string> = { repo: '#a78bfa', article: '#38bdf8'
   tutorial: '#34d399', video: '#f472b6', website: '#94a3b8', search: '#94a3b8' };
 const statusColor = (status: string) => (status === 'done' || status === 'known' ? C.green : status === 'current' ? C.violet : C.muted);
 
-/** The steps as a line of numbered circles; tap one to show it. */
+/** The protocol as a road map: numbered circles on a line. The chosen step makes room for itself -- its
+ *  column stretches to show its whole name, in bold -- and the others close up around it with a short name. */
 function StepBar({ steps, selected, onSelect }: { steps: P.Step[]; selected: string; onSelect: (id: string) => void }) {
+  const done = (x: P.Step) => x.status === 'done' || x.status === 'known';
+  const n = steps.length;
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.stepBar}>
+    <View style={st.road}>
       {steps.map((x, i) => {
+        const chosen = x.id === selected;
         const on = x.status !== 'todo';
         return (
-          <View key={x.id} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-            {i > 0 ? <View style={[st.connector, { backgroundColor: steps[i - 1].status === 'done' || steps[i - 1].status === 'known' ? C.green : C.line }]} /> : null}
-            <Pressable onPress={() => onSelect(x.id)} style={st.stepCol} accessibilityLabel={`Step ${x.number}: ${x.title}, ${x.statusLabel}`}
-                       accessibilityState={{ selected: x.id === selected }}>
-              <View style={[st.ring, x.id === selected && { borderColor: C.text }]}>
-                <View style={[st.dot, { backgroundColor: on ? statusColor(x.status) : 'rgba(255,255,255,0.10)' }]}>
-                  <Text style={st.dotText}>{x.status === 'done' || x.status === 'known' ? '✓' : x.number}</Text>
-                </View>
+          <Pressable key={x.id} onPress={() => onSelect(x.id)} style={[st.stepCol, { flex: chosen ? Math.max(2.2, n / 2) : 1 }]}
+                     accessibilityLabel={`Step ${x.number}: ${x.title}, ${x.statusLabel}`} accessibilityState={{ selected: chosen }}>
+            {/* the road: the half before this circle, and the half after it */}
+            {i > 0 ? <View style={[st.roadHalf, { left: 0, backgroundColor: done(steps[i - 1]) ? C.green : 'rgba(255,255,255,0.14)' }]} /> : null}
+            {i < n - 1 ? <View style={[st.roadHalf, { right: 0, backgroundColor: done(x) ? C.green : 'rgba(255,255,255,0.14)' }]} /> : null}
+            <View style={[st.ring, chosen && { borderColor: C.text }]}>
+              <View style={[st.dot, { backgroundColor: on ? statusColor(x.status) : '#3a3a4a' }]}>
+                <Text style={st.dotText}>{done(x) ? '✓' : x.number}</Text>
               </View>
-              <Text style={[st.stepLabel, x.id === selected && { color: C.text }]} numberOfLines={2}>{x.title}</Text>
-            </Pressable>
-          </View>
+            </View>
+            <Text style={[st.stepLabel, chosen && st.stepLabelOn]} numberOfLines={chosen ? 2 : 1}>{x.title}</Text>
+          </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -419,13 +423,14 @@ const st = StyleSheet.create({
   stage: { marginTop: 10, padding: 8, borderRadius: 10 },
   stageNow: { backgroundColor: 'rgba(255,255,255,0.05)' },
   item: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, marginLeft: 10 },
-  stepBar: { paddingVertical: 10, paddingHorizontal: 2 },
-  stepCol: { width: 58, alignItems: 'center', paddingHorizontal: 2 },
-  connector: { width: 6, height: 3, marginTop: 18, borderRadius: 2 },
+  road: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 10 },
+  stepCol: { alignItems: 'center', paddingHorizontal: 2, minWidth: 0 },
+  roadHalf: { position: 'absolute', top: 18, width: '50%', height: 3 },
   ring: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   dot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   dotText: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  stepLabel: { color: C.muted, fontSize: 10.5, textAlign: 'center', marginTop: 4, lineHeight: 13 },
+  stepLabel: { color: C.muted, fontSize: 10.5, textAlign: 'center', marginTop: 4, lineHeight: 13, alignSelf: 'stretch' },
+  stepLabelOn: { color: C.text, fontWeight: '800', fontSize: 12, lineHeight: 15 },
   miniDot: { width: 9, height: 9, borderRadius: 5 },
   panel: { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10, marginTop: 4 },
   kicker: { color: C.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8 },

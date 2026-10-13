@@ -248,71 +248,117 @@ def _pill_button(text: str, tip: str, theme: dict[str, Any], on_click: Callable[
     return b
 
 
+def qcolor(css: str):
+    """A QColor from a theme colour. Themes use CSS "rgba(r, g, b, a)" (a 0-255), which QColor can't read
+    (it would paint black)."""
+    import re as _re
+    from PySide6.QtGui import QColor
+    m = _re.match(r"rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)", css or "")
+    if not m:
+        return QColor(css)
+    a = float(m.group(4)) if m.group(4) is not None else 255.0
+    return QColor(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(a if a > 1 else a * 255))
+
+
 def _status_color(theme: dict[str, Any], status: str) -> str:
     return {"done": theme["good"], "known": theme["good"], "current": theme["accent"]}.get(status, theme["muted"])
 
 
 class StepBar(QWidget):
-    """The protocol's steps as a line of numbered circles: green when done or known, the accent colour
-    where to start, grey still to do. The chosen step is ringed; click a circle to show that step."""
+    """The protocol as a road map: numbered circles joined by a line, green when done or known, the
+    accent colour where to start, grey still to do. The chosen step makes room for itself -- its column
+    stretches to show its whole name (bold, up to two lines) -- and the others close up around it with a
+    short name, or just their number when there's no room. Click a circle (or its name) to show that step."""
+
+    R = 11.0             # circle radius
+    MIN_COL = 30.0       # the narrowest a step's column gets (a circle and a little air)
+    LABEL_MIN = 40.0     # below this, an unchosen step shows its number only
 
     def __init__(self, steps: list[Any], selected: str, theme: dict[str, Any], on_select: Callable[[str], None]) -> None:
         super().__init__()
         self.steps, self.selected, self.theme, self.on_select = steps, selected, theme, on_select
-        self.setMinimumHeight(58)
-        self.setMouseTracking(True)
+        self.setMinimumHeight(70)
         self.setCursor(Qt.PointingHandCursor)
         self.setToolTip("Click a step to see it")
 
-    def _centres(self) -> list[float]:
-        n = max(len(self.steps), 1)
-        w = self.width()
-        pad = min(30.0, w / (2 * n))
-        return [pad + i * (w - 2 * pad) / max(n - 1, 1) for i in range(n)] if n > 1 else [w / 2]
+    def _fonts(self):
+        from PySide6.QtGui import QFont, QFontMetrics
+        small = QFont(self.font())
+        small.setPointSizeF(7.5)
+        bold = QFont(small)
+        bold.setBold(True)
+        bold.setPointSizeF(8.5)
+        return small, QFontMetrics(small), bold, QFontMetrics(bold)
+
+    def columns(self) -> list[tuple[float, float]]:
+        """(left, width) of each step's column: the chosen one as wide as its name needs (up to two lines),
+        the rest sharing what's left equally."""
+        n = len(self.steps)
+        if not n:
+            return []
+        w = float(max(self.width(), 1))
+        if n == 1:
+            return [(0.0, w)]
+        _, _, _, bfm = self._fonts()
+        chosen = next((i for i, s in enumerate(self.steps) if s.id == self.selected), 0)
+        room = w - (n - 1) * self.MIN_COL                      # the most the chosen one may take
+        even = w / n
+        want = bfm.horizontalAdvance(self.steps[chosen].title) + 12
+        if want > room:                                        # too long for one line: two lines, half as wide
+            want = max(want / 2 + 12, min(room, 120.0))
+        chosen_w = max(even, min(want, room))
+        other_w = (w - chosen_w) / (n - 1)
+        cols, x = [], 0.0
+        for i in range(n):
+            cw = chosen_w if i == chosen else other_w
+            cols.append((x, cw))
+            x += cw
+        return cols
 
     def paintEvent(self, event) -> None:  # noqa: N802
         from PySide6.QtCore import QRectF
-        from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
+        from PySide6.QtGui import QPainter, QPen
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        xs, y, r = self._centres(), 18.0, 11.0
-        t = self.theme
-        for i in range(len(xs) - 1):                         # the line between steps: green once the left one is done
-            left = self.steps[i].status in ("done", "known")
-            p.setPen(QPen(QColor(t["good"] if left else t["btn_bg"]), 3))
+        t, r, y = self.theme, self.R, 18.0
+        small, fm, bold, bfm = self._fonts()
+        cols = self.columns()
+        xs = [left + cw / 2 for left, cw in cols]
+        for i in range(len(xs) - 1):                       # the road between steps: green once the left one is done
+            left_done = self.steps[i].status in ("done", "known")
+            p.setPen(QPen(qcolor(t["good"] if left_done else t["btn_bg"]), 3))
             p.drawLine(int(xs[i] + r), int(y), int(xs[i + 1] - r), int(y))
-        f = QFont(self.font())
-        f.setPointSizeF(7.5)
-        fm = QFontMetrics(f)
-        col = (self.width() / max(len(xs), 1)) - 4
-        for x, st in zip(xs, self.steps):
-            c = QColor(_status_color(t, st.status))
-            if st.id == self.selected:
-                p.setPen(QPen(QColor(t["text"]), 2))
+        for (left, cw), x, st in zip(cols, xs, self.steps):
+            chosen = st.id == self.selected
+            c = qcolor(_status_color(t, st.status))
+            if chosen:
+                p.setPen(QPen(qcolor(t["text"]), 2))
                 p.setBrush(Qt.NoBrush)
                 p.drawEllipse(QRectF(x - r - 4, y - r - 4, 2 * r + 8, 2 * r + 8))
             p.setPen(Qt.NoPen)
-            p.setBrush(c if st.status != "todo" else QColor(t["btn_bg"]))
+            p.setBrush(c if st.status != "todo" else qcolor(t["btn_hover"]))
             p.drawEllipse(QRectF(x - r, y - r, 2 * r, 2 * r))
-            p.setPen(QColor("#ffffff" if st.status != "todo" else t["text"]))
-            bf = QFont(f)
-            bf.setBold(True)
-            bf.setPointSizeF(8.5)
-            p.setFont(bf)
-            mark = "✓" if st.status in ("done", "known") else str(st.number)
-            p.drawText(QRectF(x - r, y - r, 2 * r, 2 * r), Qt.AlignCenter, mark)
-            p.setFont(f)
-            p.setPen(QColor(t["text"] if st.id == self.selected else t["muted"]))
-            label = fm.elidedText(st.title, Qt.ElideRight, int(max(col, 30)))
-            p.drawText(QRectF(x - col / 2, y + r + 6, col, 16), Qt.AlignHCenter | Qt.AlignTop, label)
+            p.setPen(qcolor("#ffffff" if st.status != "todo" else t["text"]))
+            p.setFont(bold)
+            p.drawText(QRectF(x - r, y - r, 2 * r, 2 * r), Qt.AlignCenter,
+                       "✓" if st.status in ("done", "known") else str(st.number))
+            box = QRectF(left + 2, y + r + 7, cw - 4, 30)
+            if chosen:                                     # the whole name, bold, up to two lines
+                p.setFont(bold)
+                p.setPen(qcolor(t["text"]))
+                p.drawText(box, Qt.AlignHCenter | Qt.AlignTop | Qt.TextWordWrap, st.title)
+            elif cw >= self.LABEL_MIN:                     # a short name in the space left
+                p.setFont(small)
+                p.setPen(qcolor(t["muted"]))
+                p.drawText(box, Qt.AlignHCenter | Qt.AlignTop, fm.elidedText(st.title, Qt.ElideRight, int(cw - 6)))
         p.end()
 
     def mousePressEvent(self, event) -> None:  # noqa: N802
         x = event.position().x()
-        xs = self._centres()
-        if xs:
-            i = min(range(len(xs)), key=lambda k: abs(xs[k] - x))
-            self.on_select(self.steps[i].id)
+        for (left, cw), st in zip(self.columns(), self.steps):
+            if left <= x < left + cw:
+                self.on_select(st.id)
+                return
 
 
 class StepDots(QWidget):
@@ -324,12 +370,12 @@ class StepDots(QWidget):
         self.setFixedSize(12 * len(steps) + 2, 12)
 
     def paintEvent(self, event) -> None:  # noqa: N802
-        from PySide6.QtGui import QColor, QPainter
+        from PySide6.QtGui import QPainter
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         p.setPen(Qt.NoPen)
         for i, st in enumerate(self.steps):
-            p.setBrush(QColor(_status_color(self.theme, st.status) if st.status != "todo" else self.theme["btn_bg"]))
+            p.setBrush(qcolor(_status_color(self.theme, st.status) if st.status != "todo" else self.theme["btn_hover"]))
             p.drawEllipse(2 + 12 * i, 2, 8, 8)
         p.end()
 
