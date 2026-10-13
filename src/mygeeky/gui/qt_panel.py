@@ -249,6 +249,11 @@ def _clear_layout(layout) -> None:
             widget.setProperty("fresh_state", None)
             widget.hide()  # deleteLater only runs on a later event-loop turn
             widget.deleteLater()
+        elif item.layout() is not None:
+            # a row inside the list: its widgets belong to the list's own widget, so without this they'd
+            # stay on screen behind the next drawing (old boxes and buttons piling up on each redraw)
+            _clear_layout(item.layout())
+            item.layout().deleteLater()
 
 
 # --------------------------------------------------------------------------- freshness (see freshness.py)
@@ -3947,7 +3952,23 @@ class MyGeekyPanel(QWidget):
             self.grow_area.setContentsMargins(0, 0, 0, 0)
             self.grow_area.setSpacing(6)
             layout.addWidget(box)
-        return self._scroll_page(build)
+        scroll = self._scroll_page(build)
+        # Wrapped text is measured for the width it's drawn at. Cards drawn before the panel has its real
+        # width (at start, or while Grow is hidden) would keep the wrong heights, so draw again whenever
+        # the width they're shown at changes.
+        self._grow_scroll = scroll
+        self._grow_drawn_width = -1
+        self._grow_refit = QTimer(self)
+        self._grow_refit.setSingleShot(True)
+        self._grow_refit.setInterval(120)
+        self._grow_refit.timeout.connect(self._refit_grow)
+        scroll.viewport().installEventFilter(self)
+        return scroll
+
+    def _refit_grow(self) -> None:
+        width = self._grow_scroll.viewport().width()
+        if self._grow_scroll.isVisible() and abs(width - self._grow_drawn_width) > 4:
+            self._render_grow()
 
     def _build_chances_tab(self) -> QScrollArea:
         self._chance_mode = "jobs"
@@ -4075,6 +4096,7 @@ class MyGeekyPanel(QWidget):
         theme = THEMES[self._theme_name()]
         self._style_grow_switches()
         _clear_layout(self.grow_area)
+        self._grow_drawn_width = self._grow_scroll.viewport().width() if self._grow_scroll.isVisible() else -1
         data = self._growth
         if not self._growth_running:
             err = data.get("error") or ""
@@ -4261,6 +4283,8 @@ class MyGeekyPanel(QWidget):
         self.protocol_skill.setPlaceholderText("A skill, e.g. R, Nextflow, GWAS")
         self.protocol_goal = QLineEdit()
         self.protocol_goal.setPlaceholderText("for… (optional), e.g. data analysis")
+        for w in (self.protocol_skill, self.protocol_goal):
+            w.setMinimumWidth(0)
         style = (f"QLineEdit {{ background:{theme['card_bg']}; color:{theme['text']}; border:none; "
                  "border-radius:8px; padding:5px 8px; font-size:11px; }")
         for w in (self.protocol_skill, self.protocol_goal):
@@ -4271,8 +4295,9 @@ class MyGeekyPanel(QWidget):
         go.setCursor(Qt.PointingHandCursor)
         go.setStyleSheet(_button_style(theme, accent=True))
         go.clicked.connect(self._on_build_protocol)
-        new.addWidget(self.protocol_skill, 3)
-        new.addWidget(self.protocol_goal, 3)
+        # two lines, so both boxes stay readable in a narrow panel
+        self.grow_area.addWidget(self.protocol_skill)
+        new.addWidget(self.protocol_goal, 1)
         new.addWidget(go)
         self.grow_area.addLayout(new)
         if self._building_protocol:
@@ -5681,6 +5706,9 @@ class MyGeekyPanel(QWidget):
             self._dock(folded)
 
     def eventFilter(self, obj, event) -> bool:  # noqa: N802 -- Qt's own naming convention
+        grow = getattr(self, "_grow_scroll", None)
+        if grow is not None and obj is grow.viewport() and event.type() in (QEvent.Resize, QEvent.Show):
+            self._grow_refit.start()           # Grow's width changed (or it came into view): fit the cards again
         if obj is self.folded_widget and self.folded_widget.isVisible():
             if event.type() == QEvent.Enter:
                 self.setWindowOpacity(1.0)
