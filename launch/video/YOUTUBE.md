@@ -2,7 +2,7 @@
 
 **Published:** https://youtu.be/NTYDY7IGufw (current: planet dock, the phone app; replaces https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY)
 
-**File:** `launch/video/mygeeky-intro.mp4` (re-render: `python launch/video/make_video.py`)
+**File:** `launch/video/mygeeky-intro.mp4` (re-render: `python launch/video/make_video.py`). It opens with `intro/intro-source.mp4` (made with Gemini) from its 4th second; the soundtrack is original, composed in `make_video.py`, so it's free to use anywhere.
 **Thumbnail:** `launch/video/youtube-thumbnail.png` (1280×720)
 
 ## Title (≤ 100)
@@ -22,14 +22,16 @@ myGeeKy reads your CV, your repos, and your ORCID & Google Scholar papers, then 
 It only suggests; it never follows, stars or forks anything for you. Free and open source (MIT).
 
 ⏱ Chapters
-0:00 The problem
-0:13 Meet myGeeKy
-0:19 What it does
-0:35 Step 1: Install
-0:59 Step 2: Configure
-1:20 Step 3: Join Signals (optional)
-1:36 Step 4: Your panel
-2:10 Get it
+0:00 Intro
+0:06 The problem
+0:19 Meet myGeeKy
+0:25 What it does
+0:41 Step 1: Install
+1:05 Step 2: Configure
+1:26 Step 3: Join Signals (optional)
+1:42 Step 4: Your panel
+2:26 On your phone
+2:37 Get it
 
 🔗 Links
 GitHub: https://github.com/mygeeky/myGeeKy

@@ -1,5 +1,6 @@
-"""Render the myGeeKy intro / installation video (1080p, ~2.5 min) with an
-original synthesized soundtrack.
+"""Render the myGeeKy intro / installation video (1080p, ~2.75 min) with an
+original synthesized soundtrack. It opens with intro/intro-source.mp4 (the character opening the laptop,
+made with Gemini) from its 4th second to its end, then the story.
 
     pip install pillow numpy imageio-ffmpeg
     python launch/video/make_video.py            ->  launch/video/mygeeky-intro.mp4
@@ -526,7 +527,77 @@ def s_close(t: float) -> Image.Image:
     return im
 
 
-SCENES = [(s_hook, 13.0), (s_reveal, 6.0), (s_pillars, 16.5), (s_install, 23.6), (s_configure, 21.0),
+# --------------------------------------------------------------------------- the opening clip
+INTRO_SRC = OUT / "intro" / "intro-source.mp4"     # the character opening the laptop (made with Gemini)
+INTRO_FROM = 4.0                                  # seconds into it where ours starts
+INTRO_DUR = 6.0
+INTRO_FRAMES = OUT / "intro" / "frames"
+_intro_cache: dict[int, Image.Image] = {}
+
+
+def extract_intro() -> None:
+    """The clip from INTRO_FROM to its end, as 1080p frames at our frame rate, and its own sound."""
+    import imageio_ffmpeg
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    INTRO_FRAMES.mkdir(parents=True, exist_ok=True)
+    for old in INTRO_FRAMES.glob("*.jpg"):
+        old.unlink()
+    subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-ss", str(INTRO_FROM), "-i", str(INTRO_SRC),
+                    "-vf", f"scale={W}:{H}:flags=lanczos,fps={FPS}", "-q:v", "2", str(INTRO_FRAMES / "%04d.jpg")],
+                   check=True)
+    subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-ss", str(INTRO_FROM), "-i", str(INTRO_SRC), "-vn",
+                    "-ac", "2", "-ar", "44100", str(OUT / "intro" / "intro-sound.wav")], check=True)
+
+
+def s_intro(t: float) -> Image.Image:
+    """The clip, darker at the edges, with a glitch and a white flash into the story."""
+    files = sorted(INTRO_FRAMES.glob("*.jpg"))
+    i = min(int(t * FPS), len(files) - 1)
+    if i not in _intro_cache:
+        _intro_cache.clear()
+        _intro_cache[i] = Image.open(files[i]).convert("RGB")
+    im = _intro_cache[i].copy().convert("RGBA")
+    # cinematic bars that slide away as the screen lights up
+    bars = int(110 * (1 - ease((t - 4.2) / 1.2)))
+    if bars > 0:
+        d = ImageDraw.Draw(im)
+        d.rectangle((0, 0, W, bars), fill=(0, 0, 0, 255))
+        d.rectangle((0, H - bars, W, H), fill=(0, 0, 0, 255))
+    # the last half second glitches: slices of the picture jump sideways, colours split
+    g = ease((t - (INTRO_DUR - 0.55)) / 0.45)
+    if g > 0:
+        rnd = random.Random(int(t * FPS))
+        rgb = im.convert("RGB")
+        r, gg, b = rgb.split()
+        shift = int(18 * g)
+        rgb = Image.merge("RGB", (r.transform(r.size, Image.AFFINE, (1, 0, -shift, 0, 1, 0)), gg,
+                                  b.transform(b.size, Image.AFFINE, (1, 0, shift, 0, 1, 0))))
+        for _ in range(int(9 * g)):
+            y0 = rnd.randint(0, H - 40)
+            h = rnd.randint(8, 60)
+            dx = rnd.randint(-int(80 * g), int(80 * g))
+            strip = rgb.crop((0, y0, W, y0 + h))
+            rgb.paste(strip, (dx, y0))
+        im = rgb.convert("RGBA")
+    fade_in = 1 - ease(t / 0.5)
+    if fade_in > 0:
+        im.alpha_composite(Image.new("RGBA", im.size, (0, 0, 0, int(255 * fade_in))))
+    flash = ease((t - (INTRO_DUR - 0.25)) / 0.25)
+    if flash > 0:
+        im.alpha_composite(Image.new("RGBA", im.size, (255, 255, 255, int(235 * flash))))
+    return im
+
+
+def after_flash(im: Image.Image, t: float) -> Image.Image:
+    """The white flash from the intro fades out over the first moment of the next scene."""
+    k = 1 - ease(t / 0.45)
+    if k > 0:
+        im.alpha_composite(Image.new("RGBA", im.size, (255, 255, 255, int(235 * k))))
+    return im
+
+
+
+SCENES = [(s_intro, INTRO_DUR), (s_hook, 13.0), (s_reveal, 6.0), (s_pillars, 16.5), (s_install, 23.6), (s_configure, 21.0),
           (s_signals, 16.2), (s_tour, 44.0), (s_phone, 11.0), (s_close, 8.0)]
 
 
@@ -535,6 +606,8 @@ def frame_at(t: float) -> Image.Image:
     for scene, dur in SCENES:
         if t < start + dur:
             im = scene(t - start)
+            if scene is s_hook:
+                im = after_flash(im.convert("RGBA"), t - start)
             break
         start += dur
     else:
@@ -547,52 +620,198 @@ def frame_at(t: float) -> Image.Image:
 
 # --------------------------------------------------------------------------- soundtrack
 def soundtrack(path: Path, seconds: float, sr: int = 44100) -> None:
-    """Original ambient score: a low drone, slow pad chords (Am-F-C-G), a soft
-    arpeggio that enters after the reveal, a riser into the logo, and a swell at the end."""
+    """An original, dramatic synthwave/chiptune score (120 bpm, A minor: Am F C G), written here, so it's free to
+    use anywhere. It follows the story:
+      intro    a heartbeat, a low pad and a rising sweep under the clip; an impact on the cut;
+      hook     a muted bass pulse and ticking hats; the tension builds, a snare roll and a riser...
+      reveal   ...the drop: four-on-the-floor drums, a pulsing bass, a chiptune arpeggio and a lead melody;
+      steps    the groove carries on, lighter while things are explained;
+      signals  a breakdown (pad and arpeggio only), then a riser back in;
+      tour     everything again; close: a last big chord that rings out."""
+    from scipy.signal import butter, lfilter
     n = int(seconds * sr)
     t = np.arange(n) / sr
-    out = np.zeros(n)
+    L = np.zeros(n)
+    R = np.zeros(n)
+    bpm = 120
+    beat = 60 / bpm
+    bar = 4 * beat
+    starts, s = [], 0.0
+    for scene, dur in SCENES:
+        starts.append((scene.__name__, s))
+        s += dur
+    at = dict(starts)
+    t_cut, t_drop = at["s_hook"], at["s_reveal"]
+    t_break, t_back, t_close = at["s_signals"], at["s_tour"], at["s_close"]
 
-    def note(f):
-        return 440.0 * 2 ** ((f - 69) / 12)
+    def note(m):
+        return 440.0 * 2 ** ((m - 69) / 12)
 
-    def env(start, dur, attack=1.5, release=2.0):
-        e = np.clip((t - start) / attack, 0, 1) * np.clip((start + dur - t) / release, 0, 1)
-        return e * ((t >= start) & (t <= start + dur))
+    def add(start, sig, gain=1.0, pan=0.0):
+        i0 = int(start * sr)
+        if i0 >= n or i0 + len(sig) <= 0:
+            return
+        sig = sig[: n - i0]
+        L[i0:i0 + len(sig)] += sig * gain * (1 - max(pan, 0))
+        R[i0:i0 + len(sig)] += sig * gain * (1 + min(pan, 0))
 
-    out += 0.10 * np.sin(2 * np.pi * note(33) * t) * np.clip(t / 4, 0, 1)            # A1 drone
-    chords = [(57, 60, 64), (53, 57, 60), (48, 52, 55), (55, 59, 62)]                 # Am F C G
-    bar = 4.0
-    for b in range(int(seconds / bar) + 1):
-        start = b * bar
-        for m in chords[b % 4]:
-            f = note(m)
-            e = env(start, bar + 1.5, attack=1.2, release=1.8)
-            out += 0.035 * e * (np.sin(2 * np.pi * f * t) + 0.5 * np.sin(2 * np.pi * f * 1.003 * t)
-                                + 0.25 * np.sin(2 * np.pi * f * 2 * t))
-    arp_start = 19.0
-    step = 0.25
-    for k in range(int((seconds - arp_start - 6) / step)):
-        start = arp_start + k * step
-        b = int(start / bar) % 4
-        m = chords[b][k % 3] + 12 + (12 if k % 8 >= 6 else 0)
-        f = note(m)
-        idx = (t >= start) & (t < start + 1.2)
-        tt = t[idx] - start
-        out[idx] += 0.028 * np.sin(2 * np.pi * f * tt) * np.exp(-tt * 4.5)
-    riser = (t > 9) & (t < 13)
-    out[riser] += 0.05 * np.sin(2 * np.pi * (200 + (t[riser] - 9) ** 2 * 60) * t[riser]) * ((t[riser] - 9) / 4) ** 2
-    hit = (t >= 13) & (t < 17)
-    out[hit] += 0.18 * np.sin(2 * np.pi * note(45) * t[hit]) * np.exp(-(t[hit] - 13) * 1.5)
-    # a light "reverb": a few decaying echoes
-    wet = np.zeros(n)
-    for delay, g in ((0.12, 0.35), (0.23, 0.25), (0.41, 0.15)):
-        d = int(delay * sr)
-        wet[d:] += g * out[:-d]
-    out = out + wet
-    out *= np.clip((seconds - t) / 2.5, 0, 1)                                         # fade out
-    out /= max(1e-9, np.abs(out).max()) / 0.8
-    stereo = np.stack([out, np.roll(out, int(0.012 * sr))], axis=1)
+    def square(f, dur, duty=0.5):
+        tt = np.arange(int(dur * sr)) / sr
+        return np.where((tt * f) % 1 < duty, 1.0, -1.0), tt
+
+    def lp(sig, cut):
+        b, a = butter(2, min(cut / (sr / 2), 0.99))
+        return lfilter(b, a, sig)
+
+    def hp(sig, cut):
+        b, a = butter(2, min(cut / (sr / 2), 0.99), btype="high")
+        return lfilter(b, a, sig)
+
+    rng = np.random.default_rng(3)
+
+    def kick(gain=1.0):
+        tt = np.arange(int(0.35 * sr)) / sr
+        f = 45 + 110 * np.exp(-tt * 28)
+        return gain * np.sin(2 * np.pi * np.cumsum(f) / sr) * np.exp(-tt * 9)
+
+    def snare():
+        tt = np.arange(int(0.22 * sr)) / sr
+        return (hp(rng.standard_normal(len(tt)), 1200) * 0.7 + np.sin(2 * np.pi * 185 * tt) * 0.5) * np.exp(-tt * 18)
+
+    def hat(open_=False):
+        tt = np.arange(int((0.18 if open_ else 0.05) * sr)) / sr
+        return hp(rng.standard_normal(len(tt)), 7000) * np.exp(-tt * (14 if open_ else 70))
+
+    def riser(start, dur, gain=0.35):
+        tt = np.arange(int(dur * sr)) / sr
+        x = tt / dur
+        noise = hp(rng.standard_normal(len(tt)), 600) * x ** 2
+        sweep = np.sin(2 * np.pi * np.cumsum(220 + 1400 * x ** 2) / sr) * x ** 3 * 0.4
+        add(start, (noise * 0.6 + sweep) * gain)
+
+    def impact(start, gain=1.0):
+        tt = np.arange(int(3.0 * sr)) / sr
+        boom = np.sin(2 * np.pi * np.cumsum(38 + 60 * np.exp(-tt * 6)) / sr) * np.exp(-tt * 1.6)
+        crash = hp(rng.standard_normal(len(tt)), 3000) * np.exp(-tt * 2.2) * 0.35
+        add(start, (boom + crash) * gain)
+
+    chords = [(57, 60, 64), (53, 57, 60), (48, 52, 55), (55, 59, 62)]          # Am F C G
+    roots = [45, 41, 36, 43]
+
+    def chord_at(x):
+        return int(x / bar) % 4
+
+    # ---- the pad: detuned saws, low-passed, everywhere (darker in the intro)
+    pad = np.zeros(n)
+    for k in range(int(seconds / bar) + 1):
+        st0 = k * bar
+        seg = np.arange(int((bar + 0.6) * sr)) / sr
+        e = np.clip(seg / 0.4, 0, 1) * np.clip((bar + 0.6 - seg) / 0.6, 0, 1)
+        sig = np.zeros(len(seg))
+        for m in chords[k % 4]:
+            for det in (0.997, 1.0, 1.004):
+                f = note(m) * det
+                sig += 2 * ((seg * f) % 1) - 1
+        i0 = int(st0 * sr)
+        sig = sig[: max(0, n - i0)]
+        pad[i0:i0 + len(sig)] += sig * e[: len(sig)] / 9
+    cut = np.where(t < t_cut, 500, np.where((t > t_break) & (t < t_back), 1400, 2600))
+    pad = lp(pad, 1800) * 0.16 * np.where(t < t_cut, 0.8, 1.0) * (0.6 + 0.4 * (cut / 2600))
+    L += pad
+    R += np.roll(pad, int(0.009 * sr))
+
+    # ---- intro: a heartbeat under the clip, a riser, an impact on the cut
+    k = 0.6
+    while k < t_cut - 0.4:
+        add(k, kick(0.55))
+        add(k + 0.28, kick(0.35))
+        k += 1.0
+    riser(t_cut - 3.2, 3.2, 0.45)
+    impact(t_cut, 1.1)
+
+    # ---- the hook: a muted bass pulse, hats, then the build to the drop
+    for i in range(int((t_drop - t_cut) / (beat / 2))):
+        st0 = t_cut + i * beat / 2
+        sq, tt = square(note(roots[chord_at(st0)] - 12) * 2, beat / 2 * 0.9, 0.5)
+        add(st0, lp(sq, 380) * np.exp(-tt * 6) * 0.22)
+        if st0 > t_cut + 4:
+            add(st0, hat(), 0.10, pan=0.3)
+    roll_from = t_drop - 2.0
+    for i in range(16):
+        add(roll_from + i * 0.125, snare(), 0.12 + 0.03 * i)
+    riser(t_drop - 4.0, 4.0, 0.5)
+    impact(t_drop, 1.0)
+
+    # ---- from the drop on: drums, bass, arpeggio, lead (lighter in the middle, a breakdown at signals)
+    def level(x):
+        if x < t_drop or x >= t_close:
+            return 0.0
+        if t_break <= x < t_back:
+            return 0.0
+        return 1.0
+
+    lead_on = lambda x: (t_drop + 2 * bar <= x < at["s_install"] + 4 * bar) or (t_back + 2 * bar <= x < t_close)  # noqa: E731
+    melody = [76, 74, 72, 74, 76, 79, 76, 74, 72, 71, 72, 74, 72, 69, 67, 69]          # a simple hook, two bars
+    x = t_drop
+    i16 = 0
+    while x < t_close:
+        lv = level(x)
+        c = chord_at(x)
+        pos = i16 % 16
+        if lv:
+            if pos % 4 == 0:
+                add(x, kick(0.9))
+            if pos in (4, 12):
+                add(x, snare(), 0.45)
+            add(x, hat(open_=pos % 4 == 2), 0.16 if pos % 2 == 0 else 0.09, pan=0.25)
+            if pos % 2 == 0:                                       # the bass: 8th notes, octave jumps
+                sq, tt = square(note(roots[c] - 12 + (12 if pos % 4 == 2 else 0)), beat / 2 * 0.85, 0.5)
+                add(x, lp(sq, 900) * np.exp(-tt * 5) * 0.20)
+        if lv or (t_break <= x < t_back):                          # the chiptune arpeggio (also in the breakdown)
+            m = chords[c][pos % 3] + 12 + (12 if pos % 8 >= 6 else 0)
+            sq, tt = square(note(m), beat / 4 * 0.9, 0.25)
+            add(x, sq * np.exp(-tt * 14) * (0.055 if lv else 0.045), pan=-0.35 if pos % 2 else 0.35)
+        if lv and lead_on(x) and pos % 2 == 0:                    # the lead melody, 8th notes
+            m = melody[(i16 // 2) % len(melody)]
+            tt = np.arange(int(beat / 2 * 0.95 * sr)) / sr
+            phase = np.cumsum(note(m) * (1 + 0.006 * np.sin(2 * np.pi * 5.5 * tt))) / sr       # a little vibrato
+            tone = np.where(phase % 1 < 0.5, 1.0, -1.0)
+            add(x, lp(tone, 3500) * np.clip(tt / 0.01, 0, 1) * np.exp(-tt * 2.5) * 0.07)
+        x += beat / 4
+        i16 += 1
+    riser(t_back - 4.0, 4.0, 0.45)
+    impact(t_back, 0.8)
+
+    # ---- the close: one big chord that rings out
+    tt = np.arange(int((seconds - t_close) * sr)) / sr
+    big = np.zeros(len(tt))
+    for m in (45, 57, 60, 64, 69, 72):
+        big += np.sin(2 * np.pi * note(m) * tt) + 0.3 * np.sin(2 * np.pi * note(m) * 2.003 * tt)
+    add(t_close, big * np.exp(-tt * 0.45) * 0.07)
+    impact(t_close, 0.7)
+
+    # ---- the clip's own sound, softly, under the intro
+    try:
+        with wave.open(str(OUT / "intro" / "intro-sound.wav"), "rb") as wf:
+            clip = np.frombuffer(wf.readframes(wf.getnframes()), dtype=np.int16).reshape(-1, 2) / 32768.0
+        m = min(len(clip), int(t_cut * sr))
+        fadeout = np.clip((t_cut - t[:m]) / 0.4, 0, 1)
+        L[:m] += clip[:m, 0] * 2.2 * fadeout
+        R[:m] += clip[:m, 1] * 2.2 * fadeout
+    except (OSError, wave.Error):
+        pass
+
+    # ---- a room, a gentle squash, and out
+    for buf in (L, R):
+        wet = np.zeros(n)
+        for delay, g in ((0.083, 0.22), (0.161, 0.15), (0.297, 0.09)):
+            d = int(delay * sr)
+            wet[d:] += g * buf[:-d]
+        buf += wet
+    stereo = np.stack([L, R], axis=1)
+    stereo *= np.clip((seconds - t) / 2.5, 0, 1)[:, None]
+    stereo /= max(1e-9, np.abs(stereo).max()) / 1.6
+    stereo = np.tanh(stereo) * 0.92                                   # soft limiting: louder without clipping
     data = (stereo * 32767).astype(np.int16)
     with wave.open(str(path), "wb") as wf:
         wf.setnchannels(2)
@@ -605,9 +824,10 @@ def soundtrack(path: Path, seconds: float, sr: int = 44100) -> None:
 def main() -> None:
     import imageio_ffmpeg
     total = sum(d for _, d in SCENES)
+    extract_intro()
     if "--preview" in sys.argv:
-        for sec in (2, 6, 10, 16, 30, 44, 56, 72, 92, 104, 122, 134):
-            frame_at(sec).save(OUT / f"preview_{sec:03d}.png")
+        for sec in (1, 3, 5.6, 5.9, 6.2, 8, 22, 40, 90, 140):
+            frame_at(sec).save(OUT / f"preview_{sec:05.1f}.png")
         print("preview frames written")
         return
     audio = OUT / "soundtrack.wav"
