@@ -5,6 +5,7 @@
 // app asks ORCID once whose it is, keeps the iD and name, and forgets the token.
 import * as Crypto from 'expo-crypto';
 import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
 import { fetchT } from './net';
 
 // The public ORCID API client registered for myGeeKy ('' hides the button).
@@ -77,7 +78,15 @@ export function finishOrcidSignIn(answer: Record<string, string>): boolean {
   const p = pending;
   if (!p) return false;
   pending = null;
-  WebBrowser.dismissAuthSession();
+  // Only iOS can close the sign-in page from the app; on Android it is not available
+  // (calling it throws), and the page goes away as the app comes back to the front.
+  if (Platform.OS === 'ios') {
+    try {
+      WebBrowser.dismissAuthSession();
+    } catch {
+      // Already closed.
+    }
+  }
   void settle(p, answer);
   return true;
 }
