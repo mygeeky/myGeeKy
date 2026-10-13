@@ -746,6 +746,57 @@ def is_admin(cfg: MyGeekyConfig) -> bool:
     return admin.is_admin(cfg)
 
 
+# ---- the maker's listing scout (scout.py)
+def scout_state() -> dict[str, Any]:
+    from .. import scout
+    st = scout.load()
+    last = st.get("last_run") or {}
+    text = ""
+    if last.get("at"):
+        text = (f"Last look {last['at'][:16].replace('T', ' ')} UTC: {last.get('added', 0)} found, "
+                f"{last.get('dropped', 0)} dropped by the checks")
+    return {"has_key": bool(scout.get_key()), "new": scout.candidates("new"), "accepted": scout.candidates("accepted"),
+            "sources": st["sources"], "focus": st["focus"], "last_run_text": text}
+
+
+def scout_set_key(key: str) -> bool:
+    from .. import scout
+    return scout.set_key(key)
+
+
+def scout_set_sources(sources: list[dict[str, Any]], focus: str) -> None:
+    from .. import scout
+    scout.set_sources(sources)
+    scout.set_focus(focus)
+
+
+def scout_find(cfg: MyGeekyConfig) -> dict[str, Any]:
+    """Slow (reads sites and asks DeepSeek): off the UI thread. Errors come back as {"error"}."""
+    from .. import scout
+    try:
+        return scout.find(cfg)
+    except PermissionError as exc:
+        return {"error": str(exc)}
+    except Exception as exc:
+        from ..errors import describe
+        return {"error": f"Couldn't finish: {describe(exc)}"}
+
+
+def scout_set_status(cid: str, status: str, item: dict[str, Any] | None = None) -> bool:
+    from .. import scout
+    return scout.set_status(cid, status, item)
+
+
+def scout_publish() -> dict[str, Any]:
+    from .. import scout
+    try:
+        return scout.publish()
+    except FileNotFoundError as exc:
+        return {"error": str(exc)}
+    except Exception as exc:
+        return {"error": f"Couldn't publish: {exc}"}
+
+
 def admin_data(cfg: MyGeekyConfig) -> dict[str, Any]:
     """The admin tab from local state (no network)."""
     from .. import admin
@@ -1264,6 +1315,9 @@ def _curated_link(url: str) -> bool:
         from .. import curated
         data = curated.load()
         if any(url == it.get("url") for kind in curated.LISTS for it in data.get(kind, [])):
+            return True
+        from .. import scout             # a listing the scout found, for you to check
+        if any(url == c["item"]["url"] for c in scout.load()["candidates"].values()):
             return True
         from .. import protocols         # a link in a reviewed protocol, or in one of yours
         for p in protocols.reviewed(data) + [e["protocol"] for e in protocols.mine().values()]:

@@ -25,7 +25,9 @@ def _label(text: str, style: str, rich: bool = False, wrap: bool = True) -> QLab
     lbl = QLabel(text)
     lbl.setTextFormat(Qt.RichText if rich else Qt.PlainText)
     lbl.setWordWrap(wrap)
-    lbl.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+    # wrapping text may shrink to any width (it wraps); a one-line chip keeps its own width, or the layout
+    # squeezes it away to nothing
+    lbl.setSizePolicy(QSizePolicy.Ignored if wrap else QSizePolicy.Fixed, QSizePolicy.Preferred)
     lbl.setStyleSheet(style)
     return lbl
 

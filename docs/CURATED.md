@@ -143,6 +143,30 @@ To make a published protocol reviewed:
 
 Every harvested protocol also becomes training data for the next model (see `tools/protocol_model/README.md`).
 
+## Finding listings with DeepSeek (the admin tab)
+
+Instead of writing each item by hand, the maker's **🎯 Listings to review** section (in the admin tab) finds them:
+
+1. **🔑 Add DeepSeek key**, once. It's kept in the system's credential store, never in a file.
+2. **🌐 Sites and field.** The sites to look through, one per line (`jobs | jobs.ac.uk | https://…`), and what
+   counts as your field.
+3. **🔎 Find new listings.**
+   - myGeeKy reads each site's listing page. DeepSeek picks the links that are single, relevant, open listings, by
+     their number, so it can't invent a link.
+   - myGeeKy reads each listing's own page. DeepSeek extracts the fields and quotes the sentence that gives the
+     deadline.
+   - myGeeKy then checks DeepSeek's answer itself: the title is on the page, the quote is on the page and holds
+     the deadline's date, the deadline is at least 3 days away, it's on the site it was listed on, and it fits your
+     field.
+   - Hard failures are dropped. The rest are ranked by "% sure": DeepSeek's confidence × the checks passed.
+4. **Review.** ✓ Accept, ✏️ Edit (then accept), or ✕ Reject. Rejected ones are never offered again.
+5. **🚀 Publish.**
+   - It adds every accepted listing to `curated.json` on GitHub's **main** branch, in one commit, with your own
+     git login, from a fresh temporary copy. Your own checkouts aren't touched.
+   - Every myGeeKy shows them within a few hours. Each disappears after its deadline.
+
+Nothing goes online until you press Publish.
+
 ## When someone reports a listing
 
 Each card has a 🚩. It opens either:

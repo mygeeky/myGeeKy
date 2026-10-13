@@ -41,6 +41,7 @@ import mygeeky.wins  # noqa: F401
 import mygeeky.collab  # noqa: F401
 import mygeeky.protocols  # noqa: F401
 import mygeeky.protomodel  # noqa: F401
+import mygeeky.scout  # noqa: F401
 
 REAL_ROOTS = (Path(config_module.CONFIG_DIR), Path(config_module.DATA_DIR))
 

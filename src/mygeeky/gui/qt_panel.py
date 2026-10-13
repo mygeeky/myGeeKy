@@ -4772,6 +4772,13 @@ class MyGeekyPanel(QWidget):
         self.admin_funnel = QLabel("")
         self.admin_funnel.setWordWrap(True)
         layout.addWidget(self.admin_funnel)
+        self.admin_scout_header = QLabel("\U0001f3af LISTINGS TO REVIEW")
+        layout.addWidget(self.admin_scout_header)
+        scout_box = QWidget()
+        self.admin_scout = QVBoxLayout(scout_box)
+        self.admin_scout.setContentsMargins(0, 0, 0, 0)
+        self.admin_scout.setSpacing(6)
+        layout.addWidget(scout_box)
         layout.addWidget(self.admin_headers[1])
         inbox_box = QWidget()
         self.admin_inbox = QVBoxLayout(inbox_box)
@@ -4853,7 +4860,8 @@ class MyGeekyPanel(QWidget):
             self.admin_kw.setText(f"<span style='color:{theme['muted']}'>No unknown keywords yet. They come "
                                   "from beacons and from the suggest button.</span>")
         self.admin_kw.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; background:transparent;")
-        for lbl in self.admin_headers + [self.admin_kw_header]:
+        self._render_scout()
+        for lbl in self.admin_headers + [self.admin_kw_header, self.admin_scout_header]:
             lbl.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
                               "margin-top:6px; background:transparent;")
         for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated):
@@ -4864,6 +4872,213 @@ class MyGeekyPanel(QWidget):
         self.admin_undo_btn.setStyleSheet(
             f"QPushButton {{ background:transparent; color:{theme['link']}; border:none; padding:4px 6px; "
             f"font-size:11px; text-decoration:underline; }}")
+
+    # ---- 🎯 listings to review (scout.py): found with DeepSeek, checked, accepted by you, then published
+    SCOUT_EMOJI = {"jobs": "💼", "funding": "💶", "conferences": "🎤"}
+
+    def _render_scout(self) -> None:
+        from .growth_ui import FlowRow, _label, _muted, _pill_button, _small_button, deadline_text
+        theme = THEMES[self._theme_name()]
+        area = self.admin_scout
+        _clear_layout(area)
+        st = logic.scout_state()
+        tools = FlowRow()
+        key_ok = st["has_key"]
+        tools.add(_pill_button("🔑 DeepSeek key ✓" if key_ok else "🔑 Add DeepSeek key",
+                               "Kept in this computer's credential store, never in a file", theme, self._on_scout_key))
+        tools.add(_pill_button("🌐 Sites and field", "Which sites to look through, and your field", theme,
+                               self._on_scout_sites))
+        running = getattr(self, "_scout_running", False)
+        find = _pill_button("Looking…" if running else "🔎 Find new listings",
+                            "Reads the sites, asks DeepSeek, checks every answer (a few minutes)", theme,
+                            self._on_scout_find, accent=key_ok and not running)
+        find.setEnabled(key_ok and not running)
+        tools.add(find)
+        n_acc = len(st["accepted"])
+        pub = _pill_button(f"🚀 Publish {n_acc} to mygeeky.org" if n_acc else "🚀 Publish",
+                           "Adds what you accepted to everyone's lists", theme, self._on_scout_publish, accent=n_acc > 0)
+        pub.setEnabled(n_acc > 0 and not getattr(self, "_scout_publishing", False))
+        tools.add(pub)
+        area.addWidget(tools)
+        note = getattr(self, "_scout_note", "") or st.get("last_run_text", "")
+        if note:
+            area.addWidget(_label(note, _muted(theme, 10.5)))
+        if not key_ok:
+            area.addWidget(_label("Add your DeepSeek key to start. It reads job, funding and conference pages on the "
+                                  "sites you choose; myGeeKy checks every answer against the page; you accept what "
+                                  "goes online.", _muted(theme, 10.5)))
+        for c in st["accepted"]:
+            row = QHBoxLayout()
+            row.addWidget(_label(f"✅ {self.SCOUT_EMOJI.get(c['kind'], '')} {c['item']['title']}",
+                                 f"color:{theme['good']}; font-size:10.5px; background:transparent;"), 1)
+            row.addWidget(_small_button("Undo", "Back to the list to review", theme,
+                                        lambda cid=c["id"]: self._on_scout_status(cid, "new")))
+            area.addLayout(row)
+        for c in st["new"][:40]:
+            area.addWidget(self._scout_card(c, theme, _label, _muted, _pill_button, deadline_text))
+        if key_ok and not st["new"] and not running:
+            area.addWidget(_label("Nothing to review. Press 🔎 Find new listings.", _muted(theme, 10.5)))
+
+    def _scout_card(self, c, theme, _label, _muted, _pill_button, deadline_text) -> QFrame:
+        it = c["item"]
+        card = QFrame()
+        card.setObjectName("scoutCard")
+        card.setStyleSheet(f"QFrame#scoutCard {{ background:{theme['card_bg']}; border-radius:10px; }}")
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(10, 8, 10, 8)
+        lay.setSpacing(3)
+        sure = round(100 * c.get("score", 0))
+        color = theme["good"] if sure >= 70 else theme["warn"] if sure >= 45 else theme["bad"]
+        head = QHBoxLayout()
+        title = _label(f"<b>{self.SCOUT_EMOJI.get(c['kind'], '')} {html.escape(it['title'])}</b>",
+                       f"color:{theme['text']}; font-size:12px; background:transparent;", rich=True)
+        title.setCursor(Qt.PointingHandCursor)
+        title.setToolTip(it["url"])
+        title.mousePressEvent = lambda ev, u=it["url"]: logic.open_link(u)  # noqa: ARG005
+        head.addWidget(title, 1)
+        head.addWidget(_label(f"{sure}% sure", f"color:{color}; background:{color}22; border-radius:7px; "
+                                                "padding:1px 7px; font-size:10px; font-weight:700;", wrap=False), 0, Qt.AlignTop)
+        lay.addLayout(head)
+        facts = [it.get("org", ""), it.get("place", ""), deadline_text(c.get("days_left")),
+                 f"deadline {it.get('deadline', '')}", it.get("amount", ""), it.get("who", "")]
+        lay.addWidget(_label(" · ".join(f for f in facts if f), _muted(theme, 10.5)))
+        if it.get("summary"):
+            lay.addWidget(_label(it["summary"], f"color:{theme['text']}; font-size:10.5px; background:transparent;"))
+        if c.get("quote"):
+            lay.addWidget(_label(f"“{c['quote']}”", f"color:{theme['muted']}; font-size:10px; font-style:italic; "
+                                                    "background:transparent;"))
+        checks = "   ".join(("✓ " if ok else "✗ ") + t for ok, t in c.get("checks") or [])
+        lay.addWidget(_label(f"{checks}   · from {c.get('source', '')}", _muted(theme, 9.5)))
+        row = QHBoxLayout()
+        row.setSpacing(6)
+        row.addWidget(_pill_button("✓ Accept", "Goes online when you press Publish", theme,
+                                   lambda: self._on_scout_status(c["id"], "accepted"), accent=True))
+        row.addWidget(_pill_button("✏️ Edit", "Fix a field, then accept", theme, lambda: self._on_scout_edit(c)))
+        row.addWidget(_pill_button("✕ Reject", "Never offered again", theme,
+                                   lambda: self._on_scout_status(c["id"], "rejected")))
+        row.addStretch(1)
+        lay.addLayout(row)
+        return card
+
+    def _on_scout_key(self) -> None:
+        key = self._ask_text("DeepSeek key", "Paste your DeepSeek API key (it starts with sk-). It's kept in this "
+                             "computer's credential store, never in a file:", echo=QLineEdit.Password)
+        if key:
+            if not logic.scout_set_key(key):
+                self._info("DeepSeek key", "That doesn't look like a DeepSeek key (they start with sk-).")
+            self._render_scout()
+
+    def _on_scout_sites(self) -> None:
+        from PySide6.QtWidgets import QPlainTextEdit
+        st = logic.scout_state()
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Sites and field")
+        dlg.setStyleSheet(self._dialog_css() + "QPlainTextEdit { background:#2a2640; color:#f0f0f5; border-radius:6px; }")
+        dlg.resize(560, 460)
+        lay = QVBoxLayout(dlg)
+        lay.addWidget(QLabel("Your field (what counts as relevant):"))
+        focus = QLineEdit(st["focus"])
+        lay.addWidget(focus)
+        intro = QLabel("Sites, one per line: kind | name | link. Kind is jobs, funding or conferences. "
+                       "Put # in front of a line to skip that site.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+        box = QPlainTextEdit("\n".join(f"{'' if s.get('on', True) else '# '}{s['kind']} | {s['name']} | {s['url']}"
+                                       for s in st["sources"]))
+        lay.addWidget(box, 1)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        cancel, ok = QPushButton("Cancel"), QPushButton("Save")
+        cancel.clicked.connect(dlg.reject)
+        ok.clicked.connect(dlg.accept)
+        row.addWidget(cancel)
+        row.addWidget(ok)
+        lay.addLayout(row)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        sources = []
+        for line in box.toPlainText().splitlines():
+            on = not line.strip().startswith("#")
+            parts = [p.strip() for p in line.strip().lstrip("#").split("|")]
+            if len(parts) == 3:
+                sources.append({"kind": parts[0].lower(), "name": parts[1], "url": parts[2], "on": on})
+        logic.scout_set_sources(sources, focus.text())
+        self._render_scout()
+
+    def _on_scout_find(self) -> None:
+        self._scout_running = True
+        self._scout_note = "Reading the sites and checking every listing. This takes a few minutes…"
+        self._render_scout()
+        self._run_async(lambda: logic.scout_find(self.cfg), self._on_scout_found)
+
+    def _on_scout_found(self, out: Any) -> None:
+        self._scout_running = False
+        out = out if isinstance(out, dict) else {}
+        if out.get("error"):
+            self._scout_note = out["error"]
+        else:
+            self._scout_note = (f"Found {out.get('added', 0)} to review · {out.get('dropped', 0)} dropped by the checks"
+                                + (f" · couldn't read: {', '.join(out['errors'])}" if out.get("errors") else ""))
+        self._render_scout()
+
+    def _on_scout_status(self, cid: str, status: str) -> None:
+        logic.scout_set_status(cid, status)
+        self._render_scout()
+
+    def _on_scout_edit(self, c: dict[str, Any]) -> None:
+        it = c["item"]
+        fields = ["title", "org", "place", "deadline"] + {
+            "jobs": ["type"], "funding": ["who", "amount"], "conferences": ["starts", "ends", "student"]}[c["kind"]] + \
+            ["url", "summary"]
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Edit, then accept")
+        dlg.setStyleSheet(self._dialog_css())
+        dlg.resize(520, 0)
+        lay = QVBoxLayout(dlg)
+        edits = {}
+        for f in fields + ["keywords"]:
+            lay.addWidget(QLabel(f.capitalize() + (" (YYYY-MM-DD)" if f in ("deadline", "starts", "ends") else
+                                                   " (comma separated)" if f == "keywords" else "")))
+            e = QLineEdit(", ".join(it.get(f) or []) if f == "keywords" else str(it.get(f) or ""))
+            lay.addWidget(e)
+            edits[f] = e
+        row = QHBoxLayout()
+        row.addStretch(1)
+        cancel, ok = QPushButton("Cancel"), QPushButton("Accept")
+        cancel.clicked.connect(dlg.reject)
+        ok.clicked.connect(dlg.accept)
+        row.addWidget(cancel)
+        row.addWidget(ok)
+        lay.addLayout(row)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        changed = {f: e.text().strip() for f, e in edits.items()}
+        changed["keywords"] = [k.strip() for k in changed["keywords"].split(",") if k.strip()]
+        if not logic.scout_set_status(c["id"], "accepted", changed):
+            self._info("Edit", "Something isn't right: the link must start with https:// and dates look like 2026-12-31.")
+        self._render_scout()
+
+    def _on_scout_publish(self) -> None:
+        st = logic.scout_state()
+        box = self._box("Publish to mygeeky.org",
+                        f"Add {len(st['accepted'])} listing(s) to everyone's Chances?\n\n"
+                        "This makes one commit to the curated lists on GitHub (main), with your own git login. "
+                        "Every myGeeKy shows them within a few hours. Each one disappears after its deadline.")
+        go = box.addButton("Publish", QMessageBox.AcceptRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        if box.clickedButton() is not go:
+            return
+        self._scout_publishing = True
+        self._scout_note = "Publishing…"
+        self._render_scout()
+        self._run_async(logic.scout_publish, self._on_scout_published)
+
+    def _on_scout_published(self, out: Any) -> None:
+        self._scout_publishing = False
+        out = out if isinstance(out, dict) else {}
+        self._scout_note = out.get("error") or f"Published {out.get('summary', '')} (commit {out.get('commit', '')})."
+        self._render_scout()
 
     def _refresh_admin(self) -> None:
         if getattr(self, "_admin_running", False):
