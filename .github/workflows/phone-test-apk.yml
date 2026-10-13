@@ -1,0 +1,58 @@
+name: Phone test APK
+
+# A phone APK for testing, built on GitHub's machines (no Expo build used).
+# It is signed with Android's standard debug key, not the app's real key:
+# uninstall the Expo-built app before installing it, and never send it to Google Play.
+
+on:
+  push:
+    branches: ["phone-test-build"]
+    paths: ["mobile/**", ".github/workflows/phone-test-apk.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: phone-test-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install the app's packages
+        run: npm ci
+
+      - name: Generate the Android project
+        run: npx expo prebuild -p android --no-install
+
+      - name: Build the release APK (debug-signed)
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Name it by version
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          cp android/app/build/outputs/apk/release/app-release.apk "myGeeKy-${VERSION}-test.apk"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: myGeeKy-${{ env.VERSION }}-test-apk
+          path: mobile/myGeeKy-*-test.apk
+          retention-days: 30
