@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased: 🌱 Grow and 🎯 Chances
+## 0.23.0 (2026-10-13): 🌱 Grow, 🎯 Chances and protocols (phone app 1.7.0)
 
 - **🌱 Grow, a new planet.**
   - **📈 Rising Skills:** what's growing in your field and missing from your profile, CV, papers and repos, each with
@@ -17,6 +17,9 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
       (`tools/protocol_model`: about 400 KB, trained on 7,440 labelled examples across 55 skills; the same numbers on the computer and the phone).
     - Edit it (reorder, rename, add, remove), then 📤 publish it to the maker as a public issue. Published protocols
       become reviewed ones and training data for the next model.
+    - Shown as a road map: numbered circles that make room for the step you're on, one step at a time, and a card
+      per link (a repo with its stars and language, a paper with its year and citations, a book or course with its
+      site), each with one clear button.
   - **📚 Learn:** hand-picked learning resources, matched to you and your rising skills.
   - **🎉 Wins:** new stars, forks and citations, with the newest paper citing you.
   - **🤝 Collaborators:** fellow users whose skills complement yours, asked with the sealed, mutual-only 🤝.
@@ -25,7 +28,13 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
   ([docs/CURATED.md](docs/CURATED.md)), and a daily workflow removes what's past its deadline.
 - **👍 / 👎 everywhere in them.** They teach your model; the same thumb again takes a vote back. Votes stay on your
   devices (and your private sync repository).
-- **Phone app:** the same two planets on the rings: 🌱 Grow on your circle, 🎯 Chances on the world.
+- **Phone app:** the same two planets on the rings: 🌱 Grow on your circle, 🎯 Chances on the world. Sign in with
+  ORCID now finishes on Android too (1.6.1).
+- **Fixes in the panel:** rows of buttons wrap instead of making the panel wider; Grow fits from the start (no click
+  needed); old buttons no longer pile up behind redrawn ones; dialogs are readable in every theme; Collaborators
+  opens at once.
+- **For the maker:** a listing scout in the admin tab finds jobs, funding and conferences on chosen sites with
+  DeepSeek, checks every answer against its page, and publishes only what the maker accepts.
 
 ## 0.22.0 (2026-10-12): Sign in with ORCID, no GitHub needed, and where the panel lives (phone app 1.6.0)
 

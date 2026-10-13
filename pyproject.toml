@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mygeeky"
-version = "0.22.0"
+version = "0.23.0"
 description = "Find friends, collaborate, away from noise: your corner of GitHub for research. The people, projects, papers and pulse of your field, from your CV, repos and papers. Suggests only; never follows anyone for you."
 readme = "README.md"
 requires-python = ">=3.9"
