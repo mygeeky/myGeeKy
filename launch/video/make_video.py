@@ -115,13 +115,20 @@ def gradient_text(im: Image.Image, txt: str, y: int, fnt, alpha: float = 1.0) ->
     im.alpha_composite(grad, (int((W - w) / 2), y))
 
 
+def emoji_raw(chars: str) -> Image.Image:
+    """Emoji drawn whole: the font draws some glyphs above and left of where they're placed, so they get
+    room on every side before being cropped to what was actually drawn."""
+    chars = chars.replace(chr(0xFE0F), "")   # the emoji-style selector draws as an empty gap
+    pad = EMOJI.size
+    tmp = Image.new("RGBA", (2 * pad + int(EMOJI.size * 1.4) * len(chars), 2 * pad + int(EMOJI.size * 1.4)), (0, 0, 0, 0))
+    ImageDraw.Draw(tmp).text((pad, pad), chars, font=EMOJI, embedded_color=True)
+    return tmp.crop(tmp.getbbox())
+
+
 def emoji(im: Image.Image, chars: str, xy, size: int, alpha: float = 1.0) -> None:
     if alpha <= 0:
         return
-    chars = chars.replace(chr(0xFE0F), "")   # the emoji-style selector draws as an empty gap
-    tmp = Image.new("RGBA", (int(EMOJI.size * 1.3) * len(chars), int(EMOJI.size * 1.3)), (0, 0, 0, 0))
-    ImageDraw.Draw(tmp).text((0, 0), chars, font=EMOJI, embedded_color=True)
-    tmp = tmp.crop(tmp.getbbox())
+    tmp = emoji_raw(chars)
     k = size / EMOJI.size
     tmp = tmp.resize((max(1, int(tmp.width * k)), max(1, int(tmp.height * k))), Image.LANCZOS)
     if alpha < 1:
@@ -335,7 +342,7 @@ def s_reveal(t: float) -> Image.Image:
 
 
 FEATURES = [
-    ("👥", "People", "who share your research and will follow you back", CYAN),
+    ("🫂", "People", "who share your research and will follow you back", CYAN),
     ("🛠️", "Projects", "repos in your field that welcome your pull requests", GREEN),
     ("📈", "Pulse", "what's rising in your field, every day", AMBER),
     ("🔬", "Research", "papers gaining citations fastest, and their code", GREEN),
@@ -360,10 +367,7 @@ def emoji_image(chars: str, size: int) -> Image.Image:
     """An emoji as a picture (to spin and scale), cached."""
     key = (chars, size)
     if key not in _emoji_cache:
-        chars = chars.replace(chr(0xFE0F), "")
-        tmp = Image.new("RGBA", (int(EMOJI.size * 1.3) * len(chars), int(EMOJI.size * 1.3)), (0, 0, 0, 0))
-        ImageDraw.Draw(tmp).text((0, 0), chars, font=EMOJI, embedded_color=True)
-        tmp = tmp.crop(tmp.getbbox())
+        tmp = emoji_raw(chars)
         k = size / max(tmp.width, tmp.height)
         _emoji_cache[key] = tmp.resize((max(1, int(tmp.width * k)), max(1, int(tmp.height * k))), Image.LANCZOS)
     return _emoji_cache[key]
