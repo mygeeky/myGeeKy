@@ -57,6 +57,9 @@ SOURCES = [
     {"kind": "jobs", "name": "Nature Careers", "url": "https://www.nature.com/naturecareers/jobs/?keywords=bioinformatics"},
     {"kind": "jobs", "name": "EURAXESS (bioinformatics)", "url": "https://euraxess.ec.europa.eu/jobs/search?keywords=bioinformatics"},
     {"kind": "jobs", "name": "EURAXESS (genomics)", "url": "https://euraxess.ec.europa.eu/jobs/search?keywords=genomics"},
+    # the French bioinformatics society's board: a few hundred posts, each with its own page and a stated
+    # closing date. Many are in French, so a listing kept from here reaches people who read French.
+    {"kind": "jobs", "name": "SFBI (France)", "url": "https://www.sfbi.fr/en/emplois/offres-en-cours"},
     {"kind": "funding", "name": "EURAXESS funding", "url": "https://euraxess.ec.europa.eu/funding/search"},
     {"kind": "funding", "name": "EMBO fellowships", "url": "https://www.embo.org/funding/fellowships-grants-and-career-support/"},
     {"kind": "funding", "name": "Marie Skłodowska-Curie calls", "url": "https://marie-sklodowska-curie-actions.ec.europa.eu/calls"},
