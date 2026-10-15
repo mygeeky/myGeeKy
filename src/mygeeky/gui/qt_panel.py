@@ -81,7 +81,7 @@ from .. import freshness
 from . import app as logic
 from .app import THEME_NAMES, THEMES
 from .window_ui import SIDE_LABELS, LayerSwitch, ScreenPicker
-from ..config import AVATAR_CACHE_DIR, MyGeekyConfig
+from ..config import AVATAR_CACHE_DIR, MyGeekyConfig, profile_ready
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 SYNC_EVERY_MS = 15 * 60 * 1000   # how often the panel syncs your data between computers
@@ -3249,6 +3249,7 @@ class MyGeekyPanel(QWidget):
         self._last_activity_events: list[dict[str, Any]] = []
         self._expanded_actors: set[str] = set()  # kept across refreshes
         self._last_suggestions: list[dict[str, Any]] = []
+        self._picker: Any = None                 # the keyword picker, while somebody is part-way through it
         self._contrib_running = False
         self._market_running = False
         self._news_running = False
@@ -6903,18 +6904,34 @@ class MyGeekyPanel(QWidget):
         a keyword-only profile it is the nudge instead -- four times over three months and then silence,
         because myGeeKy never stops working for not having an account, and a thing that stopped working
         would be a trial."""
-        _clear_layout(self.start_layout)
         theme = THEMES[self._theme_name()]
         if not status.get("profile_ready"):
-            self.start_layout.addWidget(self._field_picker(theme))
+            # Never rebuild a picker somebody is in the middle of: a fresh one starts at round one with
+            # nothing picked, so anything that redraws the status would quietly throw their chips away.
+            if self._picker_alive():
+                self.start_holder.setVisible(True)
+                return
+            _clear_layout(self.start_layout)
+            self._picker = self._field_picker(theme)
+            self.start_layout.addWidget(self._picker)
             self.start_holder.setVisible(True)
             return
+        _clear_layout(self.start_layout)
+        self._picker = None
         ask = logic.account_nudge(self.cfg)
         if not ask.get("ask"):
             self.start_holder.setVisible(False)
             return
         self.start_layout.addWidget(self._nudge_card(theme, ask))
         self.start_holder.setVisible(True)
+
+    def _picker_alive(self) -> bool:
+        """Is a keyword picker already on screen? `deleteLater` runs on a later turn of the event loop,
+        so a cleared one is still a child for a while -- being in the layout is what counts."""
+        picker = getattr(self, "_picker", None)
+        if picker is None or not shiboken6.isValid(picker):
+            return False
+        return self.start_layout.indexOf(picker) >= 0
 
     def _field_picker(self, theme: dict[str, Any]):
         from .growth_ui import FieldPicker
@@ -6924,6 +6941,7 @@ class MyGeekyPanel(QWidget):
         if not picked:
             return
         logic.field_keep(self.cfg, picked)
+        self._picker = None                    # done with: _render_start may build a fresh one later
         self.start_holder.setVisible(False)
         self._load_status()
         self._switch_tab(getattr(self, "active_tab", "live"))      # the tabs have a field to work from now
@@ -7166,9 +7184,13 @@ class MyGeekyPanel(QWidget):
         so a card offering GitHub would be asking for something the part does not use."""
         if self.cfg.github_username or has_data:
             return False
-        if field_only and logic.get_status(self.cfg).get("profile_ready"):
+        if field_only and profile_ready(self.cfg):
             return False
-        logic.account_asked(self.cfg, wall=part)      # this wall has now explained itself; it won't nag
+        # Remember this wall explained itself, but ONLY when that is new: this runs on every repaint, and
+        # get_status() reads the keyring while account_asked() writes the config file. Neither belongs in
+        # a draw.
+        if part not in (getattr(self.cfg, "account_walls_asked", None) or []):
+            logic.account_asked(self.cfg, wall=part)
         theme = THEMES[self._theme_name()]
         _clear_layout(layout)
         card = QFrame()
@@ -8238,6 +8260,12 @@ class MyGeekyPanel(QWidget):
 
     # ------------------------------------------------------------------ tabs
     def _switch_tab(self, name: str) -> None:
+        # TABS is every tab there is; _tab_order is the ones this panel actually built -- Admin only
+        # exists for a maker. The tab buttons already filter on that, so this cannot be reached by
+        # clicking; it guards the two lists drifting apart, which would otherwise be a ValueError on a
+        # name straight out of the public table.
+        if name not in self._tab_order:
+            return
         previous = getattr(self, "active_tab", None)
         self.active_tab = name
         if previous and previous != name:

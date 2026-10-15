@@ -1639,7 +1639,7 @@ class FieldPicker(QFrame):
         take.setToolTip(f"{chip['label']} covers: {chip['means']}" if chip.get("means")
                         else "myGeeKy has no related terms for this one — it matches on itself")
         take.setStyleSheet(_button_style(theme))
-        take.clicked.connect(lambda: self._take(chip["topic"]))
+        take.clicked.connect(lambda: self._take(self._word_of(chip)))
         lay.addWidget(take)
         if not chip.get("from"):            # an OpenAlex suggestion has no neighbourhood to wave away
             away = QPushButton("✕")
@@ -1652,7 +1652,10 @@ class FieldPicker(QFrame):
         return holder
 
     def _taken(self, word: str) -> QPushButton:
-        b = QPushButton(f"✓ {word}")
+        # Shown the way people write it, kept the way the dictionary keys it: "machine-learning" is what
+        # lookup and expand need, and "machine learning" is what a person should read on a chip.
+        from .. import keywords as _kw
+        b = QPushButton(f"✓ {_kw.label_of(word) if _kw.known(word) else word}")
         b.setCursor(Qt.PointingHandCursor)
         b.setToolTip("Tap to take this back")
         b.setStyleSheet(_button_style(self._theme, accent=True))
@@ -1660,6 +1663,17 @@ class FieldPicker(QFrame):
         return b
 
     # ---------------------------------------------------------------- what the taps do
+    @staticmethod
+    def _word_of(chip: dict[str, Any]) -> str:
+        """What a tapped chip is worth keeping as.
+
+        Our own topics keep their dictionary form ("machine-learning"), because that is what lookup and
+        expand are keyed on. An OpenAlex suggestion keeps its DISPLAY NAME: its slug would be stored as
+        "genetic-mapping-and-diversity-in-plants", which matches nothing a page actually says."""
+        if chip.get("from") == "openalex":
+            return str(chip.get("label") or chip.get("topic") or "")
+        return str(chip.get("topic") or chip.get("label") or "")
+
     def _take(self, topic: str) -> None:
         if topic not in self.picked:
             self.picked.append(topic)

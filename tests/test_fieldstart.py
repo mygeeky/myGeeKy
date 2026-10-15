@@ -180,31 +180,44 @@ def test_keeping_remembers_when_the_keyword_start_happened():
 
 
 # --------------------------------------------------------------------------- the ask for an account
-def _begun(days_ago: int) -> MyGeekyConfig:
+START = date(2026, 1, 1)
+
+
+def _begun(asks_done: int = 0) -> MyGeekyConfig:
     cfg = MyGeekyConfig(keywords=["metagenomics"])
-    cfg.field_started_at = (date(2026, 1, 1)).isoformat()
-    cfg._today = date(2026, 1, 1) + timedelta(days=days_ago)      # noqa: SLF001 -- test convenience only
+    cfg.field_started_at = START.isoformat()
+    cfg.account_asks = asks_done
     return cfg
 
 
-@pytest.mark.parametrize("day, expected", [(0, False), (6, False), (7, True), (20, False), (21, True)])
-def test_the_ask_is_four_times_over_three_months_not_weekly(day, expected):
-    cfg = _begun(0)
-    today = date(2026, 1, 1) + timedelta(days=day)
-    for already in fs.ASK_ON_DAYS:
-        if already > day:
-            break
-        if already < day or (already == day and not expected):
-            continue
-    cfg.account_asks = sum(1 for d in fs.ASK_ON_DAYS if d < day and d not in (day,))
-    said = fs.nudge(cfg, today=today)
+@pytest.mark.parametrize("day, asks_done, expected", [
+    (0, 0, False),      # day one: say nothing
+    (6, 0, False),
+    (7, 0, True),       # the first ask
+    (8, 1, False),      # answered: quiet again
+    (20, 1, False),
+    (21, 1, True),      # the second
+    (44, 2, False),
+    (45, 2, True),      # the third
+    (89, 3, False),
+    (90, 3, True),      # the fourth and last
+])
+def test_the_ask_is_four_times_over_three_months_not_weekly(day, asks_done, expected):
+    """Weekly for three months is twelve interruptions about one decision. These are four."""
+    said = fs.nudge(_begun(asks_done), today=START + timedelta(days=day))
     assert said["ask"] is expected, said["reason"]
 
 
+def test_a_profile_that_predates_this_never_gets_asked_at_all():
+    """Somebody already running on keywords made their choice before myGeeKy could ask. No start date
+    means no asking, rather than a new nag appearing on an old install."""
+    old = MyGeekyConfig(keywords=["metagenomics"])
+    assert not fs.nudge(old, today=date(2030, 1, 1))["ask"]
+
+
 def test_after_three_months_it_stops_asking_and_keeps_working():
-    cfg = _begun(0)
-    cfg.account_asks = len(fs.ASK_ON_DAYS)
-    far_future = date(2026, 1, 1) + timedelta(days=5000)
+    cfg = _begun(len(fs.ASK_ON_DAYS))
+    far_future = START + timedelta(days=5000)
     said = fs.nudge(cfg, today=far_future)
     assert not said["ask"]
     assert "keeps working" in said["reason"]
@@ -212,9 +225,8 @@ def test_after_three_months_it_stops_asking_and_keeps_working():
 
 
 def test_the_last_ask_is_the_honest_one():
-    cfg = _begun(0)
-    cfg.account_asks = len(fs.ASK_ON_DAYS) - 1
-    said = fs.nudge(cfg, today=date(2026, 1, 1) + timedelta(days=fs.ASK_ON_DAYS[-1]))
+    cfg = _begun(len(fs.ASK_ON_DAYS) - 1)
+    said = fs.nudge(cfg, today=START + timedelta(days=fs.ASK_ON_DAYS[-1]))
     assert said["ask"] and said["last"]
     assert "survives a new laptop" in said["why"], "the real cost is backup, so say that and nothing else"
 
@@ -241,8 +253,8 @@ def test_signing_in_ends_the_asking_immediately():
 
 
 def test_days_left_counts_down_to_silence():
-    cfg = _begun(0)
-    assert fs.days_left(cfg, today=date(2026, 1, 1)) == fs.ASK_ON_DAYS[-1]
+    cfg = _begun()
+    assert fs.days_left(cfg, today=START) == fs.ASK_ON_DAYS[-1]
     assert fs.days_left(cfg, today=date(2027, 1, 1)) == 0
     assert fs.days_left(MyGeekyConfig()) is None
 
@@ -254,3 +266,71 @@ def test_the_summary_says_what_needs_an_account_and_nothing_more():
     assert said["keywords"] and not said["has_account"]
     assert said["asks_left"] == len(fs.ASK_ON_DAYS)
     assert set(said["needs_account"]) == {"signals", "collab", "followback", "activity", "phone"}
+
+
+# --------------------------------------------------------------------------- found by using it for real
+def test_every_offered_chip_is_a_real_dictionary_entry():
+    """A term can appear in another term's `related` list without being an entry itself -- only 21% are.
+    Offering one of those gave a chip with nothing to judge it by, no neighbourhood to wave away, and
+    nothing for `areas` to place it in. Driving the real picker is what caught it."""
+    terms = fs._terms()
+    for seed in (["machine-learning"], ["bioinformatics"], ["economics"], ["16s"], ["a11y"], ["robotics"]):
+        picked, shown = list(seed), []
+        for _ in range(6):
+            chips = fs.suggest(picked, shown=shown)
+            for chip in chips:
+                assert chip["topic"] in terms, f"{chip['topic']} is not a dictionary entry"
+                assert chip["means"], f"{chip['topic']} has nothing to judge it by"
+            shown += [c["topic"] for c in chips]
+            picked.append(chips[0]["topic"])
+
+
+def test_dismissing_any_offered_chip_really_removes_its_area():
+    """The consequence of the bug above: a chip with no entry has no neighbours, so waving it away did
+    nothing at all. Every chip must be dismissable in the way the button promises."""
+    picked = ["machine-learning", "deep-learning"]
+    for chip in fs.suggest(picked):
+        topic = chip["topic"]
+        after = {c["topic"] for c in fs.suggest(picked, dismissed=[topic])}
+        assert not (after & (fs._neighbours(topic) | {topic})), f"dismissing {topic} left its area behind"
+
+
+def test_a_short_word_is_not_matched_on_spelling_alone():
+    """"health" scores 0.727 against "wheat" -- they share h, e, a, t. Close enough for a fuzzy match,
+    nowhere near close enough to put in somebody's research profile. Found by running `mygeeky init`."""
+    assert "health" not in [a["topic"] for a in fs.alternatives("wheat")]
+    assert "metagenomics" in [a["topic"] for a in fs.alternatives("metagenomic")],         "tightening it must not break a real near-miss, which shares a whole word"
+
+
+def test_an_openalex_hint_is_cut_down_to_a_line(monkeypatch):
+    """They are whole paragraphs; a chip has one line, and the terminal printed a wall of text."""
+    class Said:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"results": [{"display_name": "Wheat and Barley Genetics",
+                                 "hint": "This cluster of papers focuses on the genetic diversity, "
+                                         "breeding, and genomics of wheat, with an emphasis on disease "
+                                         "resistance and yield. It covers many further topics besides."}]}
+
+    monkeypatch.setattr("requests.get", lambda *a, **k: Said())
+    means = fs.topics_like("wheat breeding")[0]["means"]
+    assert len(means) <= 111, means
+    assert "It covers" not in means, "more than the first sentence survived"
+
+
+def test_the_terminal_picker_splits_on_commas_not_spaces():
+    """"wheat breeding" became the two keywords "wheat" and "breeding", neither of which anybody meant.
+    A row of bare numbers is the one case where a space really is a separator."""
+    from mygeeky.cli import _pick_field  # noqa: F401 -- the parsing rule is what is under test
+
+    def parts(said: str) -> list[str]:
+        chunks = said.split() if all(p.strip("x").isdigit() for p in said.split()) else said.split(",")
+        return [p.strip() for p in chunks if p.strip()]
+
+    assert parts("wheat breeding") == ["wheat breeding"]
+    assert parts("1 4") == ["1", "4"]
+    assert parts("1,4") == ["1", "4"]
+    assert parts("x3") == ["x3"]
+    assert parts("single cell, wheat breeding") == ["single cell", "wheat breeding"]

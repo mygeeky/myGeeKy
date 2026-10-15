@@ -138,9 +138,16 @@ def suggest(picked: Iterable[str] = (), dismissed: Iterable[str] = (), shown: It
     # meant to be in one neighbourhood; running them through _spread left only one survivor, because
     # everything around "machine learning" is also around everything else there.
     strength: dict[str, float] = {}
+    known = _terms()
     for topic in mine:
-        for rel, weight in (_terms().get(topic) or {}).get("related") or []:
+        for rel, weight in (known.get(topic) or {}).get("related") or []:
             if rel in seen or rel in keywords.GENERIC:
+                continue
+            # Only terms the dictionary has an ENTRY for. A related term need not itself be an entry --
+            # only 21% are -- and offering one of those gave a chip with no meaning to judge it by, no
+            # neighbourhood to wave away, and nothing for `areas` to place it in. Every term's twelve
+            # neighbours include at least five real entries, and a round needs three.
+            if rel not in known:
                 continue
             strength[str(rel)] = max(strength.get(str(rel), 0.0), float(weight))
     near = sorted(strength, key=lambda t: (-strength[t], t))[:min(NEAR, want)]
@@ -230,10 +237,12 @@ def alternatives(typed: str, want: int = MAX_ALTERNATIVES) -> list[dict[str, Any
         text = f"{topic} {label}".lower()
         hit = sum(1.0 for p in parts if p in text)
         ratio = difflib.SequenceMatcher(None, word, topic.replace("-", " ")).ratio()
-        # A shared word, or a near-spelling of the whole phrase. A loose ratio alone offered "image
-        # classification" for "marker assisted selection" -- a wrong answer is worse than admitting we
-        # have nothing, because a wrong one gets picked and then ranks everything against it.
-        if hit or ratio >= 0.72:
+        # A shared word, or a near-spelling of the whole phrase. A wrong answer is worse than admitting
+        # we have nothing, because a wrong one gets picked and then ranks everything against it: a loose
+        # ratio offered "image classification" for "marker assisted selection", and "health" for "wheat"
+        # (0.727 -- they share h, e, a, t). Spelling alone has to be a near-identity, and only for a word
+        # long enough for that to mean something; a shared whole word is the honest signal.
+        if hit or (ratio >= 0.85 and len(word) >= 6):
             scored[topic] = hit * 2 + ratio
     best = sorted(scored, key=lambda t: (-scored[t], t))[:want]
     return [_chip(t) for t in best]
@@ -262,8 +271,13 @@ def topics_like(typed: str, want: int = MAX_ALTERNATIVES, timeout: float = 8.0) 
         name = str(item.get("display_name") or "").strip()
         if not name:
             continue
-        out.append({"topic": keywords.slug(name), "label": name, "related": [],
-                    "means": str(item.get("hint") or "").strip(), "from": "openalex"})
+        # OpenAlex hints are whole paragraphs. A chip needs a line: the first sentence, cut to fit.
+        hint = " ".join(str(item.get("hint") or "").split())
+        hint = hint.split(". ")[0]
+        if len(hint) > 110:
+            hint = hint[:107].rsplit(" ", 1)[0] + "…"
+        out.append({"topic": keywords.slug(name), "label": name, "related": [], "means": hint,
+                    "from": "openalex"})
     return out
 
 

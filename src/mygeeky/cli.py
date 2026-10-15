@@ -12,6 +12,7 @@ for machine-readable output.
 from __future__ import annotations
 
 import json
+import sys
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -138,9 +139,27 @@ def update(only_check: bool) -> None:
                "(or click Update in the panel).")
 
 
+def _printable() -> None:
+    """Never crash on a character the console cannot draw.
+
+    Windows consoles still default to a legacy code page in many locales (cp1252 here), and myGeeKy's
+    help and output are full of emoji. Printing one raised UnicodeEncodeError before anything useful
+    happened -- `mygeeky --help`, the first command anybody runs, died on a 🙏 in a docstring.
+
+    The console's own encoding is kept, so nothing turns into mojibake; only the errors policy changes,
+    and an undrawable character becomes "?" instead of ending the program."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if (getattr(stream, "encoding", "") or "").lower().replace("-", "") != "utf8":
+                stream.reconfigure(errors="replace")
+        except Exception:       # not a real console (piped, captured, embedded): nothing to fix
+            pass
+
+
 def entry() -> None:
     """The `mygeeky` command: main(), but an unexpected failure gets a clear
     sentence and a saved report instead of a raw traceback."""
+    _printable()
     try:
         main(prog_name="mygeeky")
     except KeyboardInterrupt:
@@ -210,7 +229,11 @@ def _pick_field() -> list[str]:
             nagged = True
             click.echo(f"  {state['need'].capitalize()} would sharpen it — Enter again to start anyway.")
             continue
-        for part in [p.strip() for p in said.replace(" ", ",").split(",") if p.strip()]:
+        # Commas separate; spaces do NOT. Splitting on spaces turned "wheat breeding" into two keywords,
+        # "wheat" and "breeding", neither of which is what anybody meant. A row of bare numbers ("1 4")
+        # is the one case where a space is a separator, and it cannot be confused with a phrase.
+        parts = said.split() if all(p.strip("x").isdigit() for p in said.split()) else said.split(",")
+        for part in [p.strip() for p in parts if p.strip()]:
             away = part.lower().startswith("x")
             raw = part[1:] if away else part
             chip = chips[int(raw) - 1] if raw.isdigit() and 1 <= int(raw) <= len(chips) else None
