@@ -4016,6 +4016,15 @@ class MyGeekyPanel(QWidget):
             actions.addWidget(self.chances_updated_label, 1)
             actions.addWidget(self.refresh_chances_btn)
             layout.addLayout(actions)
+            # Where in the world, ABOVE the four kinds, because it holds across all of them: choose
+            # Germany and it stays chosen through jobs, funding, conferences and seasons alike. Its
+            # choices are built from every list at once for the same reason -- a filter that applies to
+            # everything must not change its options as you move between tabs.
+            self.country_picker = QComboBox()
+            self.country_picker.setCursor(Qt.PointingHandCursor)
+            self.country_picker.currentIndexChanged.connect(self._on_country_pick)
+            self.country_picker.setVisible(False)
+            layout.addWidget(self.country_picker)
             self.chance_mode_buttons = self._mode_row(layout, self.CHANCE_MODES, self._set_chance_mode)
             # the drop box of periods: shown only for 🗓 Seasons, and starts on the one we are in
             self.season_picker = QComboBox()
@@ -4023,13 +4032,6 @@ class MyGeekyPanel(QWidget):
             self.season_picker.currentIndexChanged.connect(self._on_season_window)
             self.season_picker.setVisible(False)
             layout.addWidget(self.season_picker)
-            # where in the world: the choices are built from the listings themselves, so the filter can
-            # never offer a country with nothing behind it
-            self.country_picker = QComboBox()
-            self.country_picker.setCursor(Qt.PointingHandCursor)
-            self.country_picker.currentIndexChanged.connect(self._on_country_pick)
-            self.country_picker.setVisible(False)
-            layout.addWidget(self.country_picker)
             self.chances_hint = QLabel("")
             self.chances_hint.setWordWrap(True)
             layout.addWidget(self.chances_hint)
@@ -4253,6 +4255,13 @@ class MyGeekyPanel(QWidget):
         self.season_picker.setStyleSheet(css)
         self.country_picker.setStyleSheet(css)
 
+    def _nothing_here(self, said: str, theme: dict[str, Any]) -> QLabel:
+        """One way of saying a list is empty, so every reason for it reads the same."""
+        lbl = QLabel(said)
+        lbl.setWordWrap(True)
+        lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+        return lbl
+
     def _on_country_pick(self, index: int) -> None:
         """A country chosen. Nothing is fetched: the listings are already here, so this only redraws."""
         if index < 0:
@@ -4263,10 +4272,37 @@ class MyGeekyPanel(QWidget):
         self._country = want
         self._render_chances()
 
-    def _fill_countries(self, items: list[dict[str, Any]]) -> None:
-        """Offer every country these listings are actually in, and keep the one already chosen."""
+    def _everywhere(self) -> list[str]:
+        """Every country anything in 🎯 Chances is in, across all four kinds at once.
+
+        Built from all of them rather than the kind on screen, because the filter sits above the kinds and
+        holds across them: options that changed as you moved between tabs would make nonsense of that. A
+        season's country is where it leads -- Japan for MEXT -- which is the same question a job's place
+        answers. "Europe (or a third country, then Europe)" is not a country, so it resolves to none and
+        such a season is never filtered out."""
         from .. import curated as _curated
-        found = _curated.countries_in(items)
+        found = set()
+        for kind in ("jobs", "funding", "conferences"):
+            for it in (self._chances.get(kind) or {}).get("items") or []:
+                if it.get("country"):
+                    found.add(it["country"])
+        for window in (self._seasons.get("windows") or []):
+            for season in window["seasons"]:
+                going = _curated.country_of(season.get("goes_to"))
+                if going:
+                    found.add(going)
+        return sorted(found)
+
+    def _in_country(self, season: dict[str, Any]) -> bool:
+        """True if this season leads to the country chosen, or names no country at all."""
+        from .. import curated as _curated
+        if not self._country:
+            return True
+        going = _curated.country_of(season.get("goes_to"))
+        return not going or going == self._country
+
+    def _fill_countries(self, found: list[str]) -> None:
+        """Offer every country there is something in, and keep the one already chosen."""
         wanted = ["", *found]
         if [self.country_picker.itemData(i) or "" for i in range(self.country_picker.count())] == wanted:
             return
@@ -4315,7 +4351,12 @@ class MyGeekyPanel(QWidget):
         span.setWordWrap(True)
         span.setStyleSheet(f"color:{theme['muted']}; font-size:10px; background:transparent;")
         self.chances_area.addWidget(span)
-        for season in window["seasons"]:
+        showing = [s for s in window["seasons"] if self._in_country(s)]
+        if not showing:
+            self.chances_area.addWidget(self._nothing_here(
+                f"Nothing in this period leads to {self._country}. Try another period, or 🌍 Anywhere.",
+                theme))
+        for season in showing:
             self.chances_area.addWidget(SeasonCard(season, theme, logic.open_link,
                                                    unverified=season.get("unverified", False)))
         left = data.get("unverified", 0)
@@ -4335,6 +4376,14 @@ class MyGeekyPanel(QWidget):
         data = self._chances
         mode = self._chance_mode
         self.season_picker.setVisible(mode == "seasons")
+        if not self._seasons:
+            # loaded whichever kind is open, not only on 🗓 Seasons: a filter that covers everything has to
+            # know about everything from the start, or Japan would appear in it only after a visit there.
+            # It reads the lists already on this computer, so this costs nothing.
+            self._seasons = logic.get_seasons(self.cfg)
+        # filled once from every kind at once, so the options do not shift as the kinds are switched
+        self._fill_countries(self._everywhere())
+        self.country_picker.setVisible(self.country_picker.count() > 1)
         if mode == "seasons":
             self.chances_hint.setText(
                 "Scholarships, grants and programmes that come back every year. A window myGeeKy read on a "
@@ -4357,24 +4406,29 @@ class MyGeekyPanel(QWidget):
                                   "looks fake.")
         block = data.get(mode) or {}
         items = block.get("items") or []
-        self._fill_countries(items)
-        # funding listings carry no place, so there is nothing to filter them by and no filter is shown
-        self.country_picker.setVisible(bool(self.country_picker.count() > 1))
-        if self._country:
-            items = [it for it in items if it.get("country") == self._country]
         if not data:
             lbl = QLabel("Loading…")
             lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.chances_area.addWidget(lbl)
             return
+        held_back = 0
+        if self._country:
+            kept = [it for it in items if it.get("country") == self._country]
+            held_back = len(items) - len(kept)
+            items = kept
         if not items:
-            lbl = QLabel({"jobs": "No open verified jobs right now. New ones are added by hand as they're "
-                                  "checked; myGeeKy looks for them every few hours.",
-                          "funding": "No open funding calls right now. New ones show up here by themselves.",
-                          "conferences": "No upcoming conferences right now. New ones show up here by themselves."}[mode])
-            lbl.setWordWrap(True)
-            lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
-            self.chances_area.addWidget(lbl)
+            # a country was chosen and nothing here is in it: say so, rather than let the list look broken
+            if held_back:
+                self.chances_area.addWidget(self._nothing_here(
+                    f"None of the {held_back} here are in {self._country}. Pick another country, or "
+                    "🌍 Anywhere.", theme))
+            else:
+                self.chances_area.addWidget(self._nothing_here(
+                    {"jobs": "No open verified jobs right now. New ones are added by hand as they're "
+                             "checked; myGeeKy looks for them every few hours.",
+                     "funding": "No open funding calls right now. New ones show up here by themselves.",
+                     "conferences": "No upcoming conferences right now. New ones show up here by "
+                                    "themselves."}[mode], theme))
         vote_kind = {"jobs": "job", "funding": "funding", "conferences": "conference"}[mode]
         for it in items:
             self.chances_area.addWidget(OpportunityCard(

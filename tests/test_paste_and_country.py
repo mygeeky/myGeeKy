@@ -196,3 +196,84 @@ def test_the_sources_that_were_tested_are_the_ones_that_were_added():
                     "simplyhired.com", "careerbuilder.com", "successfactors"):
         assert blocked not in urls, f"{blocked} cannot be read by a robot, or forbids one"
     assert "jobs.sciencecareers.org" in urls and "bioinformatics.org" in urls
+
+
+# --------------------------------------------------------------------------- one filter, over everything
+def _panel(monkeypatch):
+    from tests.test_freshness import _quiet_panel
+    from mygeeky.config import MyGeekyConfig
+    monkeypatch.setattr("mygeeky.gui.app.growth_due", lambda cfg: False)
+    qapp, panel = _quiet_panel(monkeypatch, MyGeekyConfig(github_username="me"))
+    panel._switch_tab("chances")
+    for w in list(panel._workers):
+        w.wait(5000)
+    for _ in range(5):
+        qapp.processEvents()
+    return qapp, panel
+
+
+def test_the_country_filter_sits_above_the_four_kinds(qapp_offscreen, monkeypatch):
+    """It applies to all of them, so it belongs above them, not inside whichever one is open."""
+    pytest.importorskip("PySide6")
+    _, panel = _panel(monkeypatch)
+    try:
+        row = next(iter(panel.chance_mode_buttons.values())).parentWidget()
+        layout = panel.country_picker.parentWidget().layout()
+        assert layout.indexOf(panel.country_picker) < layout.indexOf(row), \
+            "the location filter must come before the kinds it applies to"
+        assert layout.indexOf(panel.country_picker) < layout.indexOf(panel.season_picker), \
+            "and before the period picker, which applies only to seasons"
+    finally:
+        panel.close()
+
+
+def test_the_chosen_country_is_kept_when_the_kind_is_switched(qapp_offscreen, monkeypatch):
+    """Choosing Germany and pressing 🎤 Conferences must not quietly reset to anywhere."""
+    pytest.importorskip("PySide6")
+    qapp, panel = _panel(monkeypatch)
+    try:
+        offered = [panel.country_picker.itemData(i) or ""
+                   for i in range(panel.country_picker.count())]
+        if len(offered) < 2:
+            pytest.skip("the shipped lists offer no country to choose")
+        panel.country_picker.setCurrentIndex(1)
+        chosen = offered[1]
+        assert panel._country == chosen
+        for mode in ("conferences", "funding", "seasons", "jobs"):
+            panel._set_chance_mode(mode)
+            qapp.processEvents()
+            assert panel._country == chosen, f"the country was lost on {mode}"
+    finally:
+        panel.close()
+
+
+def test_the_countries_offered_do_not_change_with_the_kind(qapp_offscreen, monkeypatch):
+    """A filter above the kinds must offer the same choices whichever kind is open."""
+    pytest.importorskip("PySide6")
+    qapp, panel = _panel(monkeypatch)
+    try:
+        seen = []
+        for mode in ("jobs", "funding", "conferences", "seasons"):
+            panel._set_chance_mode(mode)
+            qapp.processEvents()
+            seen.append([panel.country_picker.itemData(i) or ""
+                         for i in range(panel.country_picker.count())])
+        assert all(s == seen[0] for s in seen), "the options shifted between kinds"
+    finally:
+        panel.close()
+
+
+def test_a_season_that_leads_nowhere_in_particular_is_never_filtered_out(qapp_offscreen, monkeypatch):
+    """MSCA goes to "Europe (or a third country, then Europe)", which is not a country."""
+    pytest.importorskip("PySide6")
+    _, panel = _panel(monkeypatch)
+    try:
+        panel._country = "Japan"
+        assert panel._in_country({"goes_to": "Europe (or a third country, then Europe)"})
+        assert panel._in_country({"goes_to": ""})
+        assert panel._in_country({"goes_to": "Japan"})
+        assert not panel._in_country({"goes_to": "Germany"})
+        panel._country = ""
+        assert panel._in_country({"goes_to": "Germany"}), "anywhere means everything"
+    finally:
+        panel.close()
