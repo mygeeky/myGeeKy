@@ -55,14 +55,14 @@
      * travels across the height where the mantle narrows, and pops out beside his mouth -- which is
      * exactly what it looked like. Leaving downwards clears the body first; the curl does the
      * spreading afterwards, below the chin, where there is nothing to cross. */
-    { spot: -1.00, dir: 122, len: 196, w: 40, back: true },
-    { spot: -0.72, dir: 114, len: 206, w: 44, back: true },
-    { spot: -0.44, dir: 106, len: 198, w: 47, back: true },
-    { spot: -0.30, dir: 97, len: 172, w: 48, back: true },
-    { spot: 0.30, dir: 83, len: 172, w: 48, back: true },
-    { spot: 0.44, dir: 74, len: 198, w: 47, back: true },
-    { spot: 0.72, dir: 66, len: 206, w: 44, back: true },
-    { spot: 1.00, dir: 58, len: 196, w: 40, back: true },
+    { spot: -1.00, dir: 122, len: 196, w: 52, back: true },
+    { spot: -0.72, dir: 114, len: 206, w: 57, back: true },
+    { spot: -0.44, dir: 106, len: 198, w: 61, back: true },
+    { spot: -0.30, dir: 97, len: 172, w: 63, back: true },
+    { spot: 0.30, dir: 83, len: 172, w: 63, back: true },
+    { spot: 0.44, dir: 74, len: 198, w: 61, back: true },
+    { spot: 0.72, dir: 66, len: 206, w: 57, back: true },
+    { spot: 1.00, dir: 58, len: 196, w: 52, back: true },
   ];
 
   /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
@@ -206,22 +206,34 @@
     return { d: 'M' + left.map(say).join('L') + 'L' + cap.map(say).join('L') +
                 'L' + right.reverse().map(say).join('L') + 'Z',
              tip: tipP, spine: spine, norms: norms, widths: widths,
-             side: aim > 90 && aim < 270 ? 1 : -1 };
+             // which face of the arm the suckers ride on: the one pointing DOWN and outward, away from
+             // the curl, so they stay underneath however the arm hooks
+             side: aim > 90 && aim < 270 ? -1 : 1 };
   }
 
   /* The pale underside with its rings of suckers -- the single thing that says "octopus" fastest, and
    * the reason the reference art reads at a glance. It runs along one side of the spine, the side the
    * arm curls towards, so it stays visible however the arm turns. */
-  function underside(arm, skin) {
+  function underside(arm, skin, how) {
+    how = how || {};
+    var from = how.from != null ? how.from : 0.08;     // where the band starts, across the arm
+    var to = how.to != null ? how.to : 0.66;           // ...and where it ends
+    var every = how.every || 4;                        // a cup every N beads
+    var cup = how.cup != null ? how.cup : 0.34;        // how big a cup is, against the arm's half-width
+    // the band rides the face pointing DOWN and away from the curl -- the underside of the hook
+    var flip = how.flip === false ? 1 : -1;
     var inner = [], outer = [], dots = [], i;
     var N = arm.spine.length - 1;
     for (i = 0; i <= N; i++) {
-      var p = arm.spine[i], n = arm.norms[i], r = arm.widths[i], s = arm.side;
-      inner.push([p[0] + n[0] * r * 0.20 * s, p[1] + n[1] * r * 0.20 * s]);
-      outer.push([p[0] + n[0] * r * 0.74 * s, p[1] + n[1] * r * 0.74 * s]);
-      if (i > 2 && i % 2 === 0 && r > 4) {
-        dots.push({ cx: round(p[0] + n[0] * r * 0.47 * s), cy: round(p[1] + n[1] * r * 0.47 * s),
-                    r: round(r * 0.19) });
+      var p = arm.spine[i], n = arm.norms[i], r = arm.widths[i], s = arm.side * flip;
+      inner.push([p[0] + n[0] * r * from * s, p[1] + n[1] * r * from * s]);
+      outer.push([p[0] + n[0] * r * to * s, p[1] + n[1] * r * to * s]);
+      // fewer, bigger rings: a dense dotted line reads as texture, where an octopus should read as a
+      // row of distinct cups.
+      if (i > 2 && i % every === 0 && r > 5) {
+        var mid = (from + to) / 2;
+        dots.push({ cx: round(p[0] + n[0] * r * mid * s), cy: round(p[1] + n[1] * r * mid * s),
+                    r: round(r * cup) });
       }
     }
     var say = function (p) { return round(p[0]) + ' ' + round(p[1]); };
@@ -241,9 +253,14 @@
     face = typeof face === 'string' ? FACES[face] || FACES.happy : face || FACES[pose.face] || FACES.happy;
 
     // every size is a multiplier, so the dashboard can tune the whole character without touching a path
-    var headK = opts.head != null ? opts.head : HEAD;
-    var armK = opts.arm != null ? opts.arm : 1;
-    var thickK = opts.thick != null ? opts.thick : 1;
+    /* RATIO is the one knob that matters for how he reads: a big head on short arms is a baby, a
+     * small head on long arms is a spider. It scales the two against each other from a single number,
+     * so the silhouette stays balanced -- `head` and `arm` are still there underneath for anyone who
+     * wants to break that deliberately. 1 is the drawn proportion; above 1 is more head. */
+    var ratio = opts.ratio != null ? opts.ratio : 1;
+    var headK = (opts.head != null ? opts.head : HEAD) * Math.pow(ratio, 0.6);
+    var armK = (opts.arm != null ? opts.arm : 1) / Math.pow(ratio, 0.55);
+    var thickK = (opts.thick != null ? opts.thick : 1) * Math.pow(ratio, 0.25);
     var cx = BOX / 2, cy = 248;
     var breathe = opts.still ? 0 : Math.sin(t * 1.5) * 1;
 
@@ -390,11 +407,11 @@
   function head(cx, cy, k) {
     k = k || 1;
     var X = function (n) { return round(cx + n * k); }, Y = function (n) { return round(cy + n * k); };
-    return 'M' + X(0) + ' ' + Y(-132) + 'C' + X(78) + ' ' + Y(-132) + ' ' + X(124) + ' ' + Y(-70) +
-      ' ' + X(124) + ' ' + Y(6) + 'C' + X(124) + ' ' + Y(68) + ' ' + X(94) + ' ' + Y(110) +
-      ' ' + X(52) + ' ' + Y(126) + 'L' + X(-52) + ' ' + Y(126) + 'C' + X(-94) + ' ' + Y(110) +
-      ' ' + X(-124) + ' ' + Y(68) + ' ' + X(-124) + ' ' + Y(6) + 'C' + X(-124) + ' ' + Y(-70) +
-      ' ' + X(-78) + ' ' + Y(-132) + ' ' + X(0) + ' ' + Y(-132) + 'Z';
+    return 'M' + X(0) + ' ' + Y(-162) + 'C' + X(74) + ' ' + Y(-162) + ' ' + X(118) + ' ' + Y(-92) +
+      ' ' + X(118) + ' ' + Y(-6) + 'C' + X(118) + ' ' + Y(66) + ' ' + X(90) + ' ' + Y(114) +
+      ' ' + X(50) + ' ' + Y(132) + 'L' + X(-50) + ' ' + Y(132) + 'C' + X(-90) + ' ' + Y(114) +
+      ' ' + X(-118) + ' ' + Y(66) + ' ' + X(-118) + ' ' + Y(-6) + 'C' + X(-118) + ' ' + Y(-92) +
+      ' ' + X(-74) + ' ' + Y(-162) + ' ' + X(0) + ' ' + Y(-162) + 'Z';
   }
 
   /* Everything the picture needs, as plain values ready to bind into markup -- no HTML string anywhere.
@@ -433,7 +450,7 @@
     // the pale undersides and their sucker rings, one per arm, in the same order as the arms
     var stripes = [], suckers = [], backStripes = [], frontStripes = [], backSuckers = [], frontSuckers = [];
     g.arms.slice().sort(function (p, q) { return Math.abs(q.spot) - Math.abs(p.spot); }).forEach(function (arm) {
-      var u = underside(arm, s);
+      var u = underside(arm, s, opts.band);
       var band = { d: u.d, fill: u.fill, back: arm.back };
       stripes.push(band);
       backStripes.push(band);
@@ -531,7 +548,8 @@
     var o = this.opts;
     dt = Math.min(dt || 1 / 60, 0.05);
     this.t += dt;
-    var want = build({ pose: pose, face: face, t: this.t, arm: o.arm, thick: o.thick, head: o.head });
+    var want = build({ pose: pose, face: face, t: this.t, arm: o.arm, thick: o.thick,
+                       head: o.head, ratio: o.ratio, band: o.band });
     var k = dt * 60;                                   // everything below is tuned per 60fps frame
     var self = this;
 
@@ -603,6 +621,7 @@
   Life.prototype.parts = function (pose, face) {
     var o = this.opts;
     return parts({ pose: pose, face: face, t: this.t, arm: o.arm, thick: o.thick, head: o.head,
+                   ratio: o.ratio, band: o.band,
                    spines: this.chains && this.chains.map(function (chain) {
                      return chain.map(function (b) { return [b.x, b.y]; });
                    }) });
