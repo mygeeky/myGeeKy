@@ -1,5 +1,5 @@
 {
- "version": "2026-10-15T02:12:05Z",
+ "version": "2026-10-15T04:54:03Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -453,6 +453,244 @@
    "org": "ASSOCIAÇÃO BIOPOLIS",
    "place": "Lisboa, Portugal",
    "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "institut-des-sciences-de-l-evolution-de-montpellier-equipe-p-2026",
+   "title": "Postdoc in evolution and public health - Pennings' lab",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202610050825-cdd-postdoc-in-evolution-and-public-health-pennings-lab",
+   "keywords": [
+    "bioinformatics",
+    "population genomics",
+    "statistics",
+    "drug resistance",
+    "evolution",
+    "machine learning"
+   ],
+   "summary": "A 23-month postdoc position in the Pennings' lab at the Institut des Sciences de l'Evolution de Montpellier, starting Nov 23, 2026, to study the dynamics of drug resistance in pathogens using modeling and genomic data.",
+   "deadline": "2026-10-25",
+   "org": "Institut des Sciences de l'Evolution de Montpellier - Equipe Phylogénie Evolution Moléculaire",
+   "place": "Montpellier, France",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "imperial-college-london-postdoc-in-artificial-intelligence-f-2026",
+   "title": "Postdoc in Artificial Intelligence for Antifungal Drug Discovery",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202609301228-cdd-postdoc-in-artificial-intelligence-for-antifungal-drug-discovery",
+   "keywords": [
+    "artificial intelligence",
+    "drug discovery",
+    "machine learning",
+    "genomics",
+    "chemoproteomics",
+    "bioinformatics"
+   ],
+   "summary": "A 24-month postdoctoral Research Associate position in the Ballester group at Imperial College London, building an integrated AI-driven functional genomic and chemoproteomic platform to improve antifungal drug discovery targeting Candida auris.",
+   "deadline": "2026-10-28",
+   "org": "Imperial College London",
+   "place": "London, United Kingdom",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "inrae-hybrid-mechanistic-ai-modeling-of-microbiomes-2026",
+   "title": "Hybrid Mechanistic & AI Modeling of Microbiomes",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202610070820-cdd-hybrid-mechanistic-ai-modeling-of-microbiomes",
+   "keywords": [
+    "microbiome",
+    "metabolic modeling",
+    "deep learning",
+    "flux balance analysis",
+    "neural odes",
+    "pinns",
+    "genome-scale metabolic models"
+   ],
+   "summary": "A 24-month postdoc position at INRAE to build a multi-scale modeling framework combining genome-scale metabolic models, flux balance analysis, and hybrid deep-learning models for food-fermentation microbial communities. The role involves constructing GEMs, running flux balance analyses, and embedding metabolic descriptors into compositional Neural ODEs and PINNs.",
+   "deadline": "2026-10-30",
+   "org": "INRAE",
+   "place": "Jouy-en-Josas, France",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "inria-d-universit-c-te-d-azur-explainable-ai-for-protein-lan-2026",
+   "title": "Explainable AI for Protein Language Models & Physics-Based Generative Folding",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202610121128-cdd-explainable-ai-for-protein-language-models-physics-based-generative-folding",
+   "keywords": [
+    "protein language models",
+    "explainability",
+    "protein structure prediction",
+    "interpretability",
+    "transformers",
+    "protein evolution"
+   ],
+   "summary": "A 12-month postdoc position (renewable) at Inria Sophia Antipolis to lead an explainability study of protein language model failures and contribute to flow-matching-based protein structure predictors. Start date 4 January 2027, salary from 2200€ per month.",
+   "deadline": "2026-10-31",
+   "org": "Inria d'Université Côte d'Azur",
+   "place": "Sophia Antipolis, France",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "toulouse-biotechnology-institute-tbi-18-month-postdoctoral-p-2026",
+   "title": "18-Month Postdoctoral Position in AI/ML & Structural Bioinformatics (Biocomputing) - TBI, Toulouse",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202609050609-cdd-18-month-postdoctoral-position-in-aiml-structural-bioinformatics-biocomputing-tbi-toulouse",
+   "keywords": [
+    "structural bioinformatics",
+    "machine learning",
+    "deep learning",
+    "computational biology",
+    "enzymes",
+    "proteins",
+    "molecular modeling",
+    "biocatalysis"
+   ],
+   "summary": "An 18-month postdoctoral position in AI/ML and structural bioinformatics at Toulouse Biotechnology Institute (TBI), funded by INSA Toulouse, to develop computational approaches combining AI and structural bioinformatics to analyze and predict enzyme synergies in lignocellulosic biomass deconstruction.",
+   "deadline": "2026-10-31",
+   "org": "Toulouse Biotechnology Institute (TBI)",
+   "place": "Toulouse, France",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "tagc-inserm-u1090-aix-marseille-universit-postdoctorat-en-bi-2026",
+   "title": "Postdoctorat en bioinformatique et génomique régulatrice",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202609110221-concours-postdoctorat-en-bioinformatique-et-genomique-regulatrice",
+   "keywords": [
+    "bioinformatics",
+    "regulatory genomics",
+    "transcriptomics",
+    "non-coding rna",
+    "omics data integration",
+    "statistics",
+    "dimensionality reduction",
+    "gene regulation"
+   ],
+   "summary": "A postdoctoral position in bioinformatics and regulatory genomics at TAGC, Inserm U1090 / Aix-Marseille Université, funded by the A*Midex 'Post-Doc Handicap' call specifically for scientists with disabilities. The project concerns integrative characterization of RNAPII-occupied intergenic regions, based on large-scale transcriptomics and functional genomics data analysis.",
+   "deadline": "2026-10-31",
+   "org": "TAGC, Inserm U1090 / Aix-Marseille Université",
+   "place": "Marseille 09, France",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "umr1107-neuro-dol-inserm-universit-clermont-auvergne-post-do-2026",
+   "title": "Post-doctorant en bioinformatique et intelligence artificielle appliquées aux données multi-omiques",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202607231147-cdd-post-doctorant-en-bioinformatique-et-intelligence-artificielle-appliquees-aux-donnees-multi-omiques",
+   "keywords": [
+    "bioinformatics",
+    "machine learning",
+    "multi-omics",
+    "microbiome",
+    "metagenomics",
+    "biostatistics",
+    "biomarkers",
+    "translational research"
+   ],
+   "summary": "A 36-month postdoctoral position in bioinformatics and artificial intelligence applied to multi-omics data (microbiota, metagenomics, transcriptomics, metabolomics, lipidomics) at UMR1107 Neuro-Dol in Clermont-Ferrand, starting October/November 2026. The project focuses on identifying microbial and metabolic biomarkers of chronic pain, including chemotherapy-induced peripheral neuropathies.",
+   "deadline": "2026-10-31",
+   "org": "UMR1107 Neuro-Dol INSERM/Université Clermont Auvergne",
+   "place": "Clermont-Ferrand, France",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "laboratoire-de-biom-trie-et-biologie-evolutive-ing-nieur-de-2026",
+   "title": "Ingénieur de recherche en bioinformatique au LBBE (Lyon): génomique comparative",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202610121100-cdd-ingenieur-de-recherche-en-bioinformatique-au-lbbe-lyon-genomique-comparative",
+   "keywords": [
+    "bioinformatics",
+    "comparative genomics",
+    "population genetics",
+    "polymorphism",
+    "transposable elements",
+    "nematodes"
+   ],
+   "summary": "A 2-year fixed-term research engineer position in bioinformatics is available at the LBBE (université Lyon 1) to work on population genetics and comparative genomics of nematodes undergoing programmed DNA elimination.",
+   "deadline": "2026-11-02",
+   "org": "Laboratoire de Biométrie et Biologie Evolutive",
+   "place": "Villeurbanne, France",
+   "type": "engineer",
+   "remote": false
+  },
+  {
+   "id": "imperial-college-london-national-heart-lung-institute-bioinf-2026",
+   "title": "Bioinformatics Research Associate",
+   "url": "https://www.jobs.ac.uk/job/DTG666/bioinformatics-research-associate",
+   "keywords": [
+    "bioinformatics",
+    "multi-omics",
+    "single-cell",
+    "genomics",
+    "computational biology",
+    "immunology",
+    "machine learning"
+   ],
+   "summary": "A Bioinformatics Research Associate position at Imperial College London's National Heart & Lung Institute, supporting the ARIA-funded M2M programme by integrating and analysing large-scale multi-omics datasets to uncover innate immune mechanisms against respiratory viral infections.",
+   "deadline": "2026-11-10",
+   "org": "Imperial College London - National Heart & Lung Institute",
+   "place": "London, United Kingdom",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "university-of-oxford-nuffield-department-of-medicine-postdoc-2026",
+   "title": "Postdoctoral Research Scientist – Epitranscriptomics",
+   "url": "https://www.jobs.ac.uk/job/DTG782/postdoctoral-research-scientist-epitranscriptomics",
+   "keywords": [
+    "epitranscriptomics",
+    "rna biology",
+    "pseudouridine",
+    "next-generation sequencing",
+    "bioinformatics",
+    "cancer diagnostics",
+    "cell-free rna"
+   ],
+   "summary": "Two Postdoctoral Research Scientists in Epitranscriptomics are sought to join Dr Chunxiao Song's research group at the Target Discovery Institute, Nuffield Department of Medicine, investigating the role of pseudouridine and pseudouridine synthases in cancer and clinical applications of pseudouridine in circulating cell-free RNA for cancer diagnostics.",
+   "deadline": "2026-11-11",
+   "org": "University of Oxford - Nuffield Department of Medicine",
+   "place": "Oxford, United Kingdom",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "hub-bioinformatique-et-biostatistique-institut-pasteur-ing-n-2026",
+   "title": "Ingénieur·e bioinformaticien·ne en génomique computationnelle et logiciels scientifiques H/F/X",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202610021234-cdi-ingenieure-bioinformaticienne-en-genomique-computationnelle-et-logiciels-scientifiques-hfx",
+   "keywords": [
+    "bioinformatics",
+    "computational genomics",
+    "scientific software",
+    "algorithm",
+    "omics",
+    "biostatistics"
+   ],
+   "summary": "A permanent (CDI) research engineer position in computational genomics and scientific software at the Bioinformatics and Biostatistics Hub, Institut Pasteur, Paris. 80% of the time will be spent in the 'Algorithms for Biological Sequences' team led by Dr Rayan Chikhi, with 20% for technical contributions and training.",
+   "deadline": "2026-10-25",
+   "org": "Hub Bioinformatique et Biostatistique, Institut Pasteur",
+   "place": "Paris, France",
+   "type": "engineer",
+   "remote": false
+  },
+  {
+   "id": "uppsala-university-phd-student-position-in-bioinformatics-ev-2026",
+   "title": "PhD student position in Bioinformatics/Evolutionary Microbiology",
+   "url": "https://www.sfbi.fr/en/emplois/offre/202610051200-cdd-phd-student-position-in-bioinformaticsevolutionary-microbiology",
+   "keywords": [
+    "bioinformatics",
+    "evolutionary microbiology",
+    "metagenomics",
+    "molecular evolution",
+    "microbial ecology",
+    "high-performance computing",
+    "molecular biology"
+   ],
+   "summary": "A 48-month PhD student position (CDD, Thèse) in Bioinformatics/Evolutionary Microbiology at the Department of Medical Biochemistry and Microbiology (IMBIM), Uppsala University, Sweden.",
+   "deadline": "2026-10-26",
+   "org": "Uppsala University",
+   "place": "Uppsala, Sweden",
+   "type": "phd",
    "remote": false
   }
  ],
