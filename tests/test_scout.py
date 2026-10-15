@@ -188,6 +188,10 @@ def test_the_maker_sees_accepted_listings_before_publishing(monkeypatch):
     [c] = scout.candidates(today=TODAY)
     scout.set_status(c["id"], "accepted")
     cfg = MyGeekyConfig(github_username="AlsammanAlsamman")
+    # the maker's own copy of the list may already hold published jobs, so look for this one among them
     jobs = app.get_opportunities(cfg)["jobs"]["items"]
-    assert [j["title"] for j in jobs] == ["Postdoc in statistical genetics"] and jobs[0]["pending"]
-    assert app.get_opportunities(MyGeekyConfig(github_username="someone"))["jobs"]["items"] == []   # nobody else
+    mine = [j for j in jobs if j["title"] == "Postdoc in statistical genetics"]
+    assert len(mine) == 1 and mine[0]["pending"], "the maker sees it, marked as not published yet"
+    theirs = app.get_opportunities(MyGeekyConfig(github_username="someone"))["jobs"]["items"]
+    assert not [j for j in theirs if j["title"] == "Postdoc in statistical genetics"]   # nobody else
+    assert not [j for j in theirs if j.get("pending")]                                  # and nothing pending
