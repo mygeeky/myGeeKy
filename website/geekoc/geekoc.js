@@ -63,14 +63,14 @@
      * the outer pair is long and sweeps. Nothing runs alongside anything. */
     /* The two in the middle used to leave four degrees apart, so they never parted and read as one
      * forked arm. Every neighbour now differs by at least fourteen. */
-    { spot: -1.00, dir: 146, len: 212, w: 46, back: true },
-    { spot: -0.70, dir: 131, len: 218, w: 50, back: true },
-    { spot: -0.40, dir: 117, len: 200, w: 53, back: true },
-    { spot: -0.14, dir: 103, len: 164, w: 55, back: true },
-    { spot: 0.14, dir: 77, len: 164, w: 55, back: true },
-    { spot: 0.40, dir: 63, len: 200, w: 53, back: true },
-    { spot: 0.70, dir: 49, len: 218, w: 50, back: true },
-    { spot: 1.00, dir: 34, len: 212, w: 46, back: true },
+    { spot: -1.00, dir: 146, len: 192, w: 46, back: true },
+    { spot: -0.70, dir: 131, len: 198, w: 50, back: true },
+    { spot: -0.40, dir: 117, len: 182, w: 53, back: true },
+    { spot: -0.14, dir: 103, len: 150, w: 55, back: true },
+    { spot: 0.14, dir: 77, len: 150, w: 55, back: true },
+    { spot: 0.40, dir: 63, len: 182, w: 53, back: true },
+    { spot: 0.70, dir: 49, len: 198, w: 50, back: true },
+    { spot: 1.00, dir: 34, len: 192, w: 46, back: true },
   ];
 
   /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
