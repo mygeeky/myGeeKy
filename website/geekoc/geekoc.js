@@ -220,12 +220,27 @@
     var to = how.to != null ? how.to : 0.66;           // ...and where it ends
     var every = how.every || 4;                        // a cup every N beads
     var cup = how.cup != null ? how.cup : 0.34;        // how big a cup is, against the arm's half-width
-    // the band rides the face pointing DOWN and away from the curl -- the underside of the hook
-    var flip = how.flip === false ? 1 : -1;
+    var flip = how.flip ? -1 : 1;                      // true puts the band on top instead
     var inner = [], outer = [], dots = [], i;
     var N = arm.spine.length - 1;
+
+    /* WHICH FACE IS UNDERNEATH is decided PER BEAD, not once for the whole arm.
+     *
+     * An arm that curls through half a turn has its underside swap sides along its own length: the face
+     * that points down near the body points up once the tip has hooked over. Choosing from the arm's
+     * starting direction -- which is what this did -- put the suckers on top of six arms out of eight.
+     *
+     * So at each bead take whichever normal points DOWN the screen. Near the top of a hook both normals
+     * are nearly horizontal and the choice would flutter from bead to bead, tearing the band in half,
+     * so when a normal is flatter than this the previous bead's choice is carried forward. */
+    var sides = [], carry = 1;
     for (i = 0; i <= N; i++) {
-      var p = arm.spine[i], n = arm.norms[i], r = arm.widths[i], s = arm.side * flip;
+      var ny = arm.norms[i][1];
+      if (Math.abs(ny) > 0.34) carry = ny > 0 ? 1 : -1;
+      sides.push(carry * flip);
+    }
+    for (i = 0; i <= N; i++) {
+      var p = arm.spine[i], n = arm.norms[i], r = arm.widths[i], s = sides[i];
       inner.push([p[0] + n[0] * r * from * s, p[1] + n[1] * r * from * s]);
       outer.push([p[0] + n[0] * r * to * s, p[1] + n[1] * r * to * s]);
       // fewer, bigger rings: a dense dotted line reads as texture, where an octopus should read as a
