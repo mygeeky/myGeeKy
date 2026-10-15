@@ -93,6 +93,40 @@ def _words(values: Any, n: int = 12) -> list[str]:
     return out[:n]
 
 
+# Words that give a language away. A listing board may be in any language -- the French bioinformatics
+# society's is -- but what reaches people here is in English, so anything else is left on its own site.
+_ENGLISH = {"the", "and", "for", "with", "from", "this", "that", "will", "your", "you", "are", "our", "has",
+            "in", "of", "at", "on", "to", "an", "by", "is", "we", "as", "it", "or", "be", "its",
+            "have", "who", "what", "about", "within", "under", "into", "position", "research", "researcher",
+            "fellowship", "grant", "funding", "university", "institute", "school", "department", "deadline",
+            "applications", "apply", "candidate", "candidates", "postdoc", "postdoctoral", "student",
+            "phd", "scientist", "engineer", "conference", "workshop", "meeting", "closing", "date", "years"}
+_OTHER = {  # French, German, Spanish, Italian, Portuguese, Dutch -- the function words, which are everywhere
+    "de", "en", "au", "le", "la", "les", "des", "du", "une", "pour", "dans", "avec", "sur", "aux", "par",
+    "chez", "sont", "ses", "ont", "dont", "sein", "recrute",
+    "nous", "vous", "leur", "cette", "poste", "stage", "emploi", "offre", "candidature", "laboratoire",
+    "und", "für", "mit", "der", "die", "das", "den", "dem", "ein", "eine", "einen", "bei", "nicht", "sind",
+    "para", "con", "los", "las", "del", "por", "una", "como", "sobre", "investigación", "plaza",
+    "della", "delle", "degli", "nel", "sono", "questo", "ricerca", "borsa",
+    "para", "pelo", "pela", "dos", "das", "não", "sao",
+    "van", "het", "een", "voor", "met", "zijn"}
+
+
+def english_enough(*parts: Any) -> bool:
+    """True if this reads as English. Used on every listing, whatever route it came in by.
+
+    It counts function words rather than guessing from accents: a London post at the Université de Paris is
+    still English, while a French listing is full of "de", "pour", "la". When nothing marks either language
+    (a short title like "Explainable AI for Protein Folding"), it is taken as English rather than dropped."""
+    import re as _re
+    words = _re.findall(r"[a-zà-öø-ÿ']+", " ".join(str(p or "") for p in parts).lower())
+    if not words:
+        return False
+    english = sum(1 for w in words if w in _ENGLISH)
+    other = sum(1 for w in words if w in _OTHER)
+    return english >= other
+
+
 def clean_item(kind: str, raw: Any) -> dict[str, Any] | None:
     """One checked item, or None if it isn't usable."""
     if not isinstance(raw, dict) or not _ID.match(str(raw.get("id", ""))):
@@ -101,6 +135,8 @@ def clean_item(kind: str, raw: Any) -> dict[str, Any] | None:
             "keywords": _words(raw.get("keywords")), "summary": _text(raw.get("summary"), 400)}
     if not item["title"] or not item["url"]:
         return None
+    if kind in DATED and not english_enough(item["title"], item["summary"], raw.get("who"), raw.get("org")):
+        return None           # the boards may be in any language; what people are shown is in English
     if kind in DATED:
         item["deadline"] = _day(raw.get("deadline"))
         if not item["deadline"]:

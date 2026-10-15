@@ -25,6 +25,21 @@ Then the daily **Curated lists** workflow (`.github/workflows/curated-lists.yml`
 - **removes anything past its deadline** (the apps already hide it the day after);
 - keeps the phone app's copy (`mobile/src/data/curated.json`) the same.
 
+## English only (jobs, funding, conferences)
+
+A listing is shown to people in **English**, whatever language the board it came from is in. The French
+bioinformatics society's board, for instance, is read for its English posts and its French ones are left
+where they are.
+
+The test counts function words rather than guessing from accented letters, so a post written in English at
+the *Université de Paris* still counts as English, while one full of *de*, *pour*, *la* does not. A short
+title that marks neither language ("Computational Biologist") is kept rather than thrown away.
+
+It is enforced in `curated.clean_item`, which every route goes through — the scout, this file edited by
+hand, and anything else — so a non-English listing cannot reach the lists by any path. The scout says
+"not in English" when it drops one, rather than dropping it silently. **Learning resources are not
+filtered this way**: a good course in another language is still a good course.
+
 ## The four lists
 
 **Rules for every item:**

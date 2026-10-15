@@ -257,6 +257,8 @@ def check(kind: str, ans: dict[str, Any], detail: dict[str, Any], listing_url: s
     title = curated._text(ans.get("title"), 140)
     if not ans.get("is_listing") or not title:
         return {"hard_fail": "not a single open listing", "checks": checks, "score": 0.0}
+    if not curated.english_enough(title, ans.get("summary"), ans.get("who"), ans.get("org")):
+        return {"hard_fail": "not in English", "checks": checks, "score": 0.0}
     words = [w for w in _norm(title).split() if len(w) > 2]
     on_page = sum(1 for w in words if w in text) / max(len(words), 1)
     checks.append((on_page >= 0.7, "title is on the page"))
