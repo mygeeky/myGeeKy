@@ -5532,6 +5532,13 @@ class MyGeekyPanel(QWidget):
                              "the text", theme, self._on_scout_paste)
         paste.setEnabled(key_ok and not getattr(self, "_scout_running", False))
         tools.add(paste)
+        box = logic.scout_mailbox()
+        ready = bool(box.get("address")) and box.get("has_password")
+        alerts = _pill_button("📧 Read my alerts" if ready else "📧 Set up my alerts",
+                              "Reads the job-alert emails in one folder of your mailbox, read-only",
+                              theme, self._on_scout_alerts)
+        alerts.setEnabled(key_ok and not getattr(self, "_scout_running", False))
+        tools.add(alerts)
         running = getattr(self, "_scout_running", False)
         find = _pill_button("Looking…" if running else "🔎 Find new listings",
                             "Reads the sites, asks DeepSeek, checks every answer (a few minutes)", theme,
@@ -5648,6 +5655,134 @@ class MyGeekyPanel(QWidget):
                 sources.append({"kind": parts[0].lower(), "name": parts[1], "url": parts[2], "on": on})
         logic.scout_set_sources(sources, focus.text())
         self._render_scout()
+
+    def _on_scout_alerts(self) -> None:
+        """Read the alerts, or ask for the mailbox first if it has not been set up."""
+        box = logic.scout_mailbox()
+        if not box.get("address") or not box.get("has_password"):
+            self._on_scout_mailbox()
+            return
+        kind = self._ask_kind("Read my alerts", "Which kind of listing are these alerts about?")
+        if not kind:
+            return
+        self._scout_running = True
+        self._scout_note = f"Reading the alerts in {box.get('folder', 'INBOX')}…"
+        self._render_scout()
+        self._run_async(lambda: logic.scout_from_alerts(self.cfg, kind), self._on_scout_alerted)
+
+    def _on_scout_alerted(self, out: Any) -> None:
+        self._scout_running = False
+        out = out if isinstance(out, dict) else {}
+        if out.get("error"):
+            self._scout_note = out["error"]
+        else:
+            said = (f"{out.get('messages', 0)} alert(s) · read {out.get('read', 0)} listing(s) · "
+                    f"{out.get('added', 0)} to review · {out.get('dropped', 0)} dropped by the checks")
+            if out.get("why"):
+                said += " — " + "; ".join(out["why"][:3])
+            self._scout_note = said
+        self._render_scout()
+
+    def _on_scout_mailbox(self) -> None:
+        """Where the alerts are, and the password to get at them.
+
+        myGeeKy opens ONE folder, read-only. The point of the folder is that a mail filter decides what
+        lands in it: if the filter is wrong myGeeKy sees nothing, rather than everything."""
+        box = logic.scout_mailbox()
+        dlg = QDialog(self)
+        dlg.setWindowTitle("My job alerts")
+        dlg.setStyleSheet(self._dialog_css())
+        dlg.resize(540, 400)
+        lay = QVBoxLayout(dlg)
+        intro = QLabel("Nature Careers, Science Careers, jobs.ac.uk and EURAXESS will email you their "
+                       "listings — and so will LinkedIn, Indeed and Glassdoor, which won't let myGeeKy "
+                       "read their sites. Subscribe to their alerts, then:\n\n"
+                       "1. Make a mail filter that sends those alerts to their own label or folder.\n"
+                       "2. Point myGeeKy at that folder. It opens nothing else, and only ever reads — it "
+                       "cannot mark, move or delete your mail.\n"
+                       "3. For Gmail, make an App Password (Google Account → Security → App passwords). "
+                       "Your everyday password will not work, and an App Password can be revoked on its "
+                       "own.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+        lay.addWidget(QLabel("Your email address:"))
+        address = QLineEdit(box.get("address", ""))
+        address.setPlaceholderText("you@gmail.com")
+        lay.addWidget(address)
+        lay.addWidget(QLabel("The folder or label the alerts land in:"))
+        folder = QLineEdit(box.get("folder", "INBOX"))
+        folder.setPlaceholderText("myGeeKy-alerts")
+        lay.addWidget(folder)
+        lay.addWidget(QLabel("Mail server (left empty, myGeeKy works it out):"))
+        host = QLineEdit(box.get("host", ""))
+        host.setPlaceholderText(box.get("guessed_host", "") or "imap.example.com")
+        lay.addWidget(host)
+        note = QLabel("Password: kept in this computer's credential store, never in a file."
+                      if not box.get("has_password") else
+                      "Password: already kept in this computer's credential store.")
+        note.setWordWrap(True)
+        lay.addWidget(note)
+        row = QHBoxLayout()
+        pw = QPushButton("Change the password" if box.get("has_password") else "Add the password")
+        pw.clicked.connect(lambda: self._ask_mail_password(note))
+        row.addWidget(pw)
+        if box.get("has_password"):
+            forget = QPushButton("Forget it")
+            forget.clicked.connect(lambda: (logic.scout_forget_mail_password(),
+                                            note.setText("Password: forgotten.")))
+            row.addWidget(forget)
+        row.addStretch(1)
+        shut = QPushButton("Cancel")
+        shut.clicked.connect(dlg.reject)
+        save = QPushButton("Save")
+        save.setDefault(True)
+        save.clicked.connect(dlg.accept)
+        row.addWidget(shut)
+        row.addWidget(save)
+        lay.addLayout(row)
+        if dlg.exec() == QDialog.Accepted:
+            logic.scout_mailbox(address.text().strip(), host.text().strip(), folder.text().strip())
+            self._render_scout()
+
+    def _ask_mail_password(self, note: QLabel) -> None:
+        got = self._ask_text("Mailbox password", "For Gmail this is an App Password, not your everyday "
+                             "one. It is kept in this computer's credential store:",
+                             echo=QLineEdit.Password)
+        if got:
+            ok = logic.scout_set_mail_password(got)
+            note.setText("Password: kept in this computer's credential store." if ok else
+                         "That looks too short to be a password.")
+
+    def _ask_kind(self, title: str, question: str) -> str:
+        """Which list something belongs to. The checks differ by kind, so it cannot be guessed."""
+        dlg = QDialog(self)
+        dlg.setWindowTitle(title)
+        dlg.setStyleSheet(self._dialog_css())
+        lay = QVBoxLayout(dlg)
+        label = QLabel(question)
+        label.setWordWrap(True)
+        lay.addWidget(label)
+        picker = QComboBox()
+        for value, said in (("jobs", "💼 Jobs, PhD places and postdocs"), ("funding", "💶 Funding and grants"),
+                            ("conferences", "🎤 Conferences and courses")):
+            picker.addItem(said, value)
+        picker.setStyleSheet(self._combo_css())
+        lay.addWidget(picker)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        shut = QPushButton("Cancel")
+        shut.clicked.connect(dlg.reject)
+        go = QPushButton("Read them")
+        go.setDefault(True)
+        go.clicked.connect(dlg.accept)
+        row.addWidget(shut)
+        row.addWidget(go)
+        lay.addLayout(row)
+        return str(picker.currentData()) if dlg.exec() == QDialog.Accepted else ""
+
+    def _combo_css(self) -> str:
+        from .growth_ui import combo_style
+        return combo_style(THEMES[self._theme_name()])
 
     def _on_scout_paste(self) -> None:
         """A page the maker copied out of their browser, read as if myGeeKy had fetched it.

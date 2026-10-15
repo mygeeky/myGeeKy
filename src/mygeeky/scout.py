@@ -246,6 +246,136 @@ def read(key: str, kind: str, detail: dict[str, Any], focus: str, today: date, p
                f"PAGE: {detail['url']}\n\nTEXT:\n{detail['text'][:PAGE_CHARS]}", post)
 
 
+# --------------------------------------------------------------------------- the alerts in your mailbox
+# A third way in, BESIDE the sites myGeeKy reads and the pages the maker pastes -- none of them replaces
+# another. Nature Careers, Science Careers, jobs.ac.uk and EURAXESS will email their listings to anyone who
+# asks, and so will LinkedIn, Indeed and Glassdoor, which refuse a robot on their own sites. Subscribing is
+# therefore the way to reach exactly the boards that cannot be read.
+#
+# The email is the DISCOVERY step and not the evidence. An alert wraps its links so the sender can count
+# clicks, and a deadline quoted out of an email is not a deadline quoted from the employer -- so each link
+# is unwrapped, the employer's own page is fetched, and that page is what `read` and `check` are held
+# against, exactly as for a site myGeeKy found by itself. When a page truly cannot be fetched, the email's
+# own words stand in for it, the way a pasted page does: weaker evidence, and the maker sees which it was.
+def resolve_link(url: str, session: requests.Session | None = None) -> str:
+    """Where a tracking link actually leads. Follows redirects without downloading the page."""
+    s = session or requests
+    try:
+        r = s.head(url, allow_redirects=True, timeout=15, headers=UA)
+        if getattr(r, "status_code", 500) < 400 and getattr(r, "url", ""):
+            return str(r.url)
+    except requests.RequestException:
+        pass
+    return url
+
+
+def from_alerts(cfg_kind: str = "jobs", key: str | None = None, today: date | None = None,
+                progress: Callable[[str], None] | None = None,
+                session: requests.Session | None = None, post=None, mailbox=None) -> dict[str, Any]:
+    """Listings out of the alert emails in the maker's chosen folder.
+
+    Everything goes through the same `read`, `check` and `to_item` as any other route, and lands in the
+    same review queue, so an emailed listing is held to the standard a fetched one is. Messages already
+    looked at are remembered, because the folder is opened read-only and myGeeKy will not mark anybody's
+    mail as read."""
+    from . import mailbox as mail
+    key = key or get_key()
+    if not key:
+        raise PermissionError("Add your DeepSeek key first")
+    if cfg_kind not in KINDS:
+        raise ValueError(f"kind must be one of {KINDS}")
+    today = today or date.today()
+    say = progress or (lambda m: None)
+    state = load()
+    box = state.get("mailbox") or {}
+    if not box.get("address"):
+        raise PermissionError("Tell myGeeKy which mailbox and folder to read first")
+    password = mail.get_password()
+    if not password:
+        raise PermissionError("Add your mailbox password first (for Gmail, an App Password)")
+    session = session or requests.Session()
+    focus = state.get("focus") or DEFAULT_FOCUS
+    done = set(state.setdefault("mail_seen", []))
+    known = {c["item"]["url"] for c in state["candidates"].values()}
+    known |= {it["url"] for k in KINDS for it in curated.load().get(k, [])}
+    opened = mailbox or mail.Mailbox(box["address"], password, box.get("host", ""),
+                                     box.get("folder", "INBOX"))
+    added, dropped, read_count, errors, why = 0, 0, 0, [], []
+    with opened as inbox:
+        messages = inbox.recent()
+        say(f"{len(messages)} alert(s) in {box.get('folder', 'INBOX')}; "
+            f"{sum(1 for mid, _ in messages if mid in done)} already looked at")
+        for mid, message in messages:
+            if mid in done:
+                continue
+            about = mail.describe(message)
+            say(f"Reading: {about['subject'][:58]}")
+            found = mail.links(message, resolve=lambda u: resolve_link(u, session))
+            for url in found[:MAX_PICKS]:
+                if url in known:
+                    continue
+                try:
+                    detail = page(url, session)
+                except PermissionError:
+                    raise
+                except Exception:
+                    # the employer's page cannot be had: the email's own words stand in for it
+                    detail = {"url": url, "text": mail.text_of(message), "links": []}
+                try:
+                    answer = read(key, cfg_kind, detail, focus, today, post)
+                    out = check(cfg_kind, answer, detail, url, today)
+                except PermissionError:
+                    raise
+                except Exception as exc:
+                    errors.append(f"{type(exc).__name__}")
+                    continue
+                read_count += 1
+                if out["hard_fail"]:
+                    dropped += 1
+                    why.append(f"{curated._text(answer.get('title_en') or answer.get('title'), 44)}: "
+                               f"{out['hard_fail']}")
+                    continue
+                item = to_item(cfg_kind, answer, url)
+                if not item or item["url"] in known:
+                    dropped += 1
+                    continue
+                state["candidates"][item["id"]] = {
+                    "kind": cfg_kind, "item": item, "score": out["score"], "checks": out["checks"],
+                    "status": "new", "from": "emailed", "source": url,
+                    "alert": about["subject"][:120], "seen": today.isoformat()}
+                known.add(item["url"])
+                added += 1
+            done.add(mid)
+    state["mail_seen"] = sorted(done)[-400:]
+    save(state)
+    return {"added": added, "dropped": dropped, "read": read_count, "messages": len(messages),
+            "why": why[:10], "errors": sorted(set(errors))}
+
+
+def mailbox_settings(address: str = "", host: str = "", folder: str = "") -> dict[str, Any]:
+    """Read, or change, which mailbox and folder the alerts are read from.
+
+    Kept in scout.json, which never leaves this computer and is never committed -- the same file the
+    sources and the review queue live in."""
+    from . import mailbox as mail
+    state = load()
+    box = dict(state.get("mailbox") or {})
+    if address or host or folder:
+        if address:
+            box["address"] = curated._text(address, 200).strip()
+            box.setdefault("host", "")
+        if host:
+            box["host"] = curated._text(host, 200).strip()
+        if folder:
+            box["folder"] = curated._text(folder, 120).strip()
+        state["mailbox"] = box
+        save(state)
+    box.setdefault("folder", "INBOX")
+    box.setdefault("host", "")
+    return {**box, "guessed_host": mail.host_for(box.get("address", "")),
+            "has_password": bool(mail.get_password())}
+
+
 # --------------------------------------------------------------------------- a page somebody pasted in
 # Most of the big job boards cannot be read by a robot, and should not be: Indeed, SimplyHired, Monster,
 # ZipRecruiter and CareerBuilder all answer a plain fetch with 403, and LinkedIn and Glassdoor answer but

@@ -995,6 +995,38 @@ def growth_due(cfg: MyGeekyConfig) -> bool:
     return profile_ready(cfg) and wins.due(wins.load())
 
 
+def scout_mailbox(address: str = "", host: str = "", folder: str = "") -> dict[str, Any]:
+    """Which mailbox and folder the job alerts are read from. Nothing here is the password."""
+    from .. import scout
+    return scout.mailbox_settings(address, host, folder)
+
+
+def scout_set_mail_password(password: str) -> bool:
+    """Keep the mailbox password in this computer's credential store, and nowhere else."""
+    from .. import mailbox
+    return mailbox.set_password(password)
+
+
+def scout_forget_mail_password() -> None:
+    from .. import mailbox
+    mailbox.forget_password()
+
+
+def scout_from_alerts(cfg: MyGeekyConfig, kind: str) -> dict[str, Any]:
+    """Read the alert emails in the chosen folder and queue what checks out.
+
+    A third way in beside the sites myGeeKy reads and the pages the maker pastes: the boards that refuse a
+    robot will gladly email their listings to anyone who subscribes. Maker-only, like the rest of the
+    scout -- it is the maker's own mailbox, read-only, and users only ever see what gets published."""
+    from .. import scout
+    try:
+        return scout.from_alerts(kind)
+    except (PermissionError, ValueError) as exc:
+        return {"error": str(exc)}
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
+
 def scout_from_paste(cfg: MyGeekyConfig, kind: str, text: str, url: str) -> dict[str, Any]:
     """Read listings out of a page the maker copied by hand.
 
