@@ -16,12 +16,20 @@ cost is the testing rule below — which is the long pole of the whole job, so s
 |---|---|
 | Google account | The Gmail account you already keep and can recover. The account you sign in with is **not** what buyers see, so there is no need to make a new one. |
 | Account type | **Personal** |
-| Developer name | `myGeeKy` — this is the public one, shown under the app. Changeable later. |
+| Developer name | **Your own name** (`Alsamman Alsamman`), *not* `myGeeKy`. It is account-wide: every app you ever publish is shown under it, so a tool-specific name reads wrongly under the next one. |
 | Fee | **US$25, once**, by card. Not refundable, and it covers every app you ever publish. |
 | Identity | A government ID and a selfie, through Google's verifier. The name must match the ID. |
 | Address, phone | Verified by code. Not shown publicly. |
-| Public contact email | `support@mygeeky.org` — it is shown on the listing, so not a private address. |
+| Public profile email | Account-wide too, so **not** `support@mygeeky.org`: use an address that suits every tool. Each app sets its own **support email** separately, which is where `support@mygeeky.org` belongs. |
 | About you | "I have an app ready to publish." No company, no D-U-N-S. |
+
+**One account, every tool.** The $25 and the identity check happen once, and this account can publish
+LYNXgwas, SciWeave or anything later. That is why the name and the public email are chosen to fit all of
+them, not just myGeeKy: both can be changed afterwards, but they change for every app at once and can
+send you back through verification.
+
+Also check before typing it: the public email is verified by a code, and `support@mygeeky.org` is a
+Cloudflare forward rather than a mailbox. Send a test to it from another account first.
 
 Then wait for verification. Nothing can be submitted until it passes; everything in `LISTING.md` can be
 prepared while it runs.
