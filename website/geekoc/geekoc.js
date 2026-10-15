@@ -61,14 +61,16 @@
      * across the other's band. So each step inwards is a real step: the roots are spread, the headings
      * differ by at least ten degrees, and the inner pair is SHORTER and hangs almost straight, where
      * the outer pair is long and sweeps. Nothing runs alongside anything. */
-    { spot: -1.00, dir: 126, len: 206, w: 52, back: true },
-    { spot: -0.70, dir: 114, len: 212, w: 57, back: true },
-    { spot: -0.40, dir: 102, len: 196, w: 61, back: true },
-    { spot: -0.16, dir: 92, len: 150, w: 63, back: true },
-    { spot: 0.16, dir: 88, len: 150, w: 63, back: true },
-    { spot: 0.40, dir: 78, len: 196, w: 61, back: true },
-    { spot: 0.70, dir: 66, len: 212, w: 57, back: true },
-    { spot: 1.00, dir: 54, len: 206, w: 52, back: true },
+    /* The two in the middle used to leave four degrees apart, so they never parted and read as one
+     * forked arm. Every neighbour now differs by at least fourteen. */
+    { spot: -1.00, dir: 146, len: 212, w: 46, back: true },
+    { spot: -0.70, dir: 131, len: 218, w: 50, back: true },
+    { spot: -0.40, dir: 117, len: 200, w: 53, back: true },
+    { spot: -0.14, dir: 103, len: 164, w: 55, back: true },
+    { spot: 0.14, dir: 77, len: 164, w: 55, back: true },
+    { spot: 0.40, dir: 63, len: 200, w: 53, back: true },
+    { spot: 0.70, dir: 49, len: 218, w: 50, back: true },
+    { spot: 1.00, dir: 34, len: 212, w: 46, back: true },
   ];
 
   /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
@@ -258,7 +260,10 @@
      */
     var fade = [];
     for (i = 0; i <= N; i++) {
-      var f = Math.min(1, (N - i) / 2.5);              // ...to nothing at the very tip
+      // ...and from nothing at the root, so the band STARTS below the body instead of being sliced off
+      // square by it. The first beads of every arm are buried inside the mantle, and a band that runs
+      // up into them reads as a striped tube pushed under a bowl.
+      var f = Math.min((i - 6.5) / 3, (N - i) / 2.5);
       for (var j = 1; j <= N; j++) {
         if (sides[j] !== sides[j - 1]) f = Math.min(f, Math.abs(i - j + 0.5) / 2.5);
       }
@@ -274,7 +279,9 @@
       if (i > 2 && i % every === 0 && r > 5 && fade[i] > 0.85) {
         var mid = (from + to) / 2;
         dots.push({ cx: round(p[0] + n[0] * r * mid * s), cy: round(p[1] + n[1] * r * mid * s),
-                    r: round(r * cup) });
+                    // capped: a third of the half-width is a saucer where the arm is thickest, and the
+                    // reference keeps its rings near enough one size the whole way down
+                    r: round(Math.min(r * cup, 7.5)) });
       }
     }
     var say = function (p) { return round(p[0]) + ' ' + round(p[1]); };
@@ -316,13 +323,13 @@
        * The start is then pushed 34 units back INSIDE the body. The join is what was ugly: an arm that
        * begins exactly on the rim shows its own outline as a dark seam across the edge. Beginning it
        * well inside, and drawing the mantle over the top, hides every join under the body. */
-      var ax = cx + base.spot * 68 * headK;
+      var ax = cx + base.spot * 78 * headK;
       var ay = cy + (146 - Math.abs(base.spot) * 22) * headK;
       var into = rad(base.dir + (pose.swing[i] || 0));
-      ax -= Math.cos(into) * 48 * headK;
-      ay -= Math.sin(into) * 48 * headK;
+      ax -= Math.cos(into) * 104 * headK;
+      ay -= Math.sin(into) * 104 * headK;
       var spine = (opts.spines && opts.spines[i])
-        || walk(ax, ay, ang, (base.len + 48) * (pose.len || 1) * armK, pose.curl[i] || 0,
+        || walk(ax, ay, ang, (base.len + 104) * (pose.len || 1) * armK, pose.curl[i] || 0,
                 opts.still ? 0 : 1, t * 1.6 + i * 0.8);
       var arm = skin(spine, base.w * thickK);
       /* EVERY arm is drawn behind the mantle. Two of them used to be in front, and they began at
