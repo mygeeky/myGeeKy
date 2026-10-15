@@ -55,14 +55,20 @@
      * travels across the height where the mantle narrows, and pops out beside his mouth -- which is
      * exactly what it looked like. Leaving downwards clears the body first; the curl does the
      * spreading afterwards, below the chin, where there is nothing to cross. */
-    { spot: -1.00, dir: 122, len: 196, w: 52, back: true },
-    { spot: -0.72, dir: 114, len: 206, w: 57, back: true },
-    { spot: -0.44, dir: 106, len: 198, w: 61, back: true },
-    { spot: -0.30, dir: 97, len: 192, w: 63, back: true },
-    { spot: 0.30, dir: 83, len: 192, w: 63, back: true },
-    { spot: 0.44, dir: 74, len: 198, w: 61, back: true },
-    { spot: 0.72, dir: 66, len: 206, w: 57, back: true },
-    { spot: 1.00, dir: 58, len: 196, w: 52, back: true },
+    /* The eight have to SEPARATE, not just fan. Two arms that leave from nearly the same place in
+     * nearly the same direction travel side by side for their whole length, and because each carries
+     * its own outline the overlap reads as damage rather than as depth -- one arm's dark edge cutting
+     * across the other's band. So each step inwards is a real step: the roots are spread, the headings
+     * differ by at least ten degrees, and the inner pair is SHORTER and hangs almost straight, where
+     * the outer pair is long and sweeps. Nothing runs alongside anything. */
+    { spot: -1.00, dir: 126, len: 206, w: 52, back: true },
+    { spot: -0.70, dir: 114, len: 212, w: 57, back: true },
+    { spot: -0.40, dir: 102, len: 196, w: 61, back: true },
+    { spot: -0.16, dir: 92, len: 150, w: 63, back: true },
+    { spot: 0.16, dir: 88, len: 150, w: 63, back: true },
+    { spot: 0.40, dir: 78, len: 196, w: 61, back: true },
+    { spot: 0.70, dir: 66, len: 212, w: 57, back: true },
+    { spot: 1.00, dir: 54, len: 206, w: 52, back: true },
   ];
 
   /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
@@ -107,19 +113,19 @@
   };
 
   var POSES = {
-    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [148, 130, 108, 70, -70, -108, -130, -148],
+    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [152, 124, 96, 34, -34, -96, -124, -152],
                len: 1, face: 'happy' },
-    wave:    { swing: [0, 0, 0, 0, 0, -6, -18, -44], curl: [148, 130, 108, 70, -70, -100, -96, -74],
+    wave:    { swing: [0, 0, 0, 0, 0, -6, -18, -44], curl: [152, 124, 96, 34, -34, -92, -92, -72],
                len: 1, face: 'excited' },
-    point:   { swing: [0, 0, 0, 0, 0, -4, -12, 14], curl: [148, 130, 108, 70, -70, -98, -84, -30],
+    point:   { swing: [0, 0, 0, 0, 0, -4, -12, 14], curl: [152, 124, 96, 34, -34, -90, -80, -28],
                len: 1, face: 'curious' },
-    think:   { swing: [0, 0, 0, 0, 0, -8, -24, -38], curl: [148, 130, 108, 70, -70, -112, -126, -150],
+    think:   { swing: [0, 0, 0, 0, 0, -8, -24, -38], curl: [152, 124, 96, 34, -34, -104, -120, -150],
                len: 0.97, face: 'thinking' },
-    cheer:   { swing: [24, 15, 5, 0, 0, -5, -15, -24], curl: [142, 126, 106, 72, -72, -106, -126, -142],
+    cheer:   { swing: [24, 15, 5, 0, 0, -5, -15, -24], curl: [146, 120, 94, 36, -36, -94, -120, -146],
                len: 1.05, face: 'excited' },
-    sleep:   { swing: [-22, -14, -5, 0, 0, 5, 14, 22], curl: [112, 100, 86, 58, -58, -86, -100, -112],
+    sleep:   { swing: [-22, -14, -5, 0, 0, 5, 14, 22], curl: [116, 96, 78, 28, -28, -78, -96, -116],
                len: 0.92, face: 'sleepy' },
-    present: { swing: [5, 3, 0, 0, 0, 0, -3, -5], curl: [116, 104, 88, 58, -58, -88, -104, -116],
+    present: { swing: [5, 3, 0, 0, 0, 0, -3, -5], curl: [120, 100, 80, 30, -30, -80, -100, -120],
                len: 1.05, face: 'proud' },
   };
 
