@@ -340,3 +340,46 @@ def test_a_season_card_draws_on_its_own(qapp_offscreen):
     s = seasons.clean_season(_season(seen=[_seen(opens="2026-10-01", closes="2026-11-15")]))
     card = SeasonCard({**s, "when": seasons.when(s, date(2026, 10, 15))}, THEMES["midnight"], lambda u: None)
     assert card is not None, "a season draws without a window around it"
+
+
+# --------------------------------------------------------------------------- the drop boxes are readable
+def test_every_theme_gives_the_drop_box_an_opaque_list():
+    """A combo's list is drawn in a window of its own. A translucent colour there goes black, and black on
+    black is what the maker actually saw: a filter whose contents could not be read at all."""
+    from mygeeky.gui.app import THEMES
+    for name, theme in THEMES.items():
+        assert theme["solid_bg"].startswith("#"), f"{name}: the popup surface must be opaque, not rgba"
+        assert theme["solid_text"].startswith("#"), name
+        assert theme["solid_bg"] != theme["solid_text"], f"{name}: text the same colour as its background"
+
+
+def test_the_drop_box_style_sets_a_colour_for_the_list_and_not_only_the_box():
+    from mygeeky.gui.app import THEMES
+    from mygeeky.gui.growth_ui import combo_style
+    for name, theme in THEMES.items():
+        css = combo_style(theme)
+        assert "QComboBox QAbstractItemView" in css, name
+        assert theme["solid_bg"] in css and theme["solid_text"] in css, name
+        assert theme["text"] in css, f"{name}: the closed box needs its colour too"
+        assert "image:none" in css, f"{name}: the native arrow belongs to neither theme"
+
+
+def test_both_drop_boxes_are_actually_styled_when_the_panel_draws(qapp_offscreen, monkeypatch):
+    """Styling them once at build time would leave them wrong after the theme is changed, so the panel
+    restyles them every time it draws."""
+    from tests.test_freshness import _quiet_panel      # the panel other widget tests already use
+    from mygeeky.config import MyGeekyConfig
+    monkeypatch.setattr("mygeeky.gui.app.growth_due", lambda cfg: False)
+    qapp, panel = _quiet_panel(monkeypatch, MyGeekyConfig(github_username="me"))
+    try:
+        panel._switch_tab("chances")
+        for w in list(panel._workers):
+            w.wait(5000)
+        for _ in range(5):
+            qapp.processEvents()
+        for picker in (panel.season_picker, panel.country_picker):
+            css = picker.styleSheet()
+            assert "QAbstractItemView" in css, "the list has no colours of its own"
+            assert css.count("color:") >= 2
+    finally:
+        panel.close()

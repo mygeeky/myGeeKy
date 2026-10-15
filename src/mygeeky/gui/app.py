@@ -64,6 +64,10 @@ THEME_NAMES = ("midnight", "frosted", "aurora")
 
 THEMES: dict[str, dict[str, Any]] = {
     "midnight": {
+        # A drop box's list is drawn in its own window, where a translucent colour goes black.
+        # These two are the only opaque surface in the theme, and exist for exactly that.
+        "solid_bg": "#1c1c2a",
+        "solid_text": "#f0f0f5",
         "bg": "qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 rgba(28,28,42,158), stop:1 rgba(12,12,20,107))",
         "border": "rgba(255,255,255,31)",
         "text": "#f0f0f5",
@@ -81,6 +85,10 @@ THEMES: dict[str, dict[str, Any]] = {
         "on_accent": "#15151f", "explore": "#9b87ff", "dark": True,
     },
     "frosted": {
+        # A drop box's list is drawn in its own window, where a translucent colour goes black.
+        # These two are the only opaque surface in the theme, and exist for exactly that.
+        "solid_bg": "#f6f1ea",
+        "solid_text": "#241f1a",
         "bg": "qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 rgba(255,255,255,140), stop:1 rgba(255,255,255,71))",
         "border": "rgba(255,255,255,153)",
         "text": "#241f1a",
@@ -98,6 +106,10 @@ THEMES: dict[str, dict[str, Any]] = {
         "on_accent": "#ffffff", "explore": "#6d28d9", "dark": False,
     },
     "aurora": {
+        # A drop box's list is drawn in its own window, where a translucent colour goes black.
+        # These two are the only opaque surface in the theme, and exist for exactly that.
+        "solid_bg": "#241a33",
+        "solid_text": "#ffffff",
         # an opaque aurora: the panel paints its background solid (the Transparency slider sees to the
         # glass), and the old near-transparent white turned into a white panel under white text
         "bg": "qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #3a1d5e, stop:0.55 #272463, stop:1 #10385f)",

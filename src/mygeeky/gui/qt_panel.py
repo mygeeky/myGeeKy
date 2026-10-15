@@ -4246,6 +4246,13 @@ class MyGeekyPanel(QWidget):
         if data.get("hidden"):
             self._hidden_note(self.grow_area, data["hidden"], "collaborator", theme)
 
+    def _style_pickers(self, theme: dict[str, Any]) -> None:
+        """Both drop boxes follow the theme, and follow it again when it is changed."""
+        from .growth_ui import combo_style
+        css = combo_style(theme)
+        self.season_picker.setStyleSheet(css)
+        self.country_picker.setStyleSheet(css)
+
     def _on_country_pick(self, index: int) -> None:
         """A country chosen. Nothing is fetched: the listings are already here, so this only redraws."""
         if index < 0:
@@ -4323,6 +4330,7 @@ class MyGeekyPanel(QWidget):
         from .growth_ui import OpportunityCard
         theme = THEMES[self._theme_name()]
         self._style_grow_switches()
+        self._style_pickers(theme)
         _clear_layout(self.chances_area)
         data = self._chances
         mode = self._chance_mode

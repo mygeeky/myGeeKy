@@ -1444,3 +1444,28 @@ class SeasonCard(QFrame):
                            "font-size:10px; text-align:left; padding:1px 0; }")
         page.clicked.connect(lambda: on_open(last["url"]))
         lay.addWidget(page)
+
+
+def combo_style(theme: dict[str, Any]) -> str:
+    """A drop box that belongs to the theme it is sitting in.
+
+    Qt styles a combo box black-on-grey by default, and its list is drawn in a window of its own -- where
+    the theme's translucent colours go black and the text disappears. So the list is given the theme's one
+    opaque surface, and the arrow is drawn here rather than left to the platform, which otherwise paints a
+    native triangle that belongs to neither theme."""
+    return (
+        f"QComboBox {{ background:{theme['btn_bg']}; color:{theme['text']}; border:1px solid "
+        f"{theme['border']}; border-radius:8px; padding:4px 8px; font-size:11px; }}"
+        f"QComboBox:hover {{ background:{theme['btn_hover']}; }}"
+        f"QComboBox:focus {{ border:1px solid {theme['accent']}; }}"
+        "QComboBox::drop-down { border:none; width:18px; }"
+        f"QComboBox::down-arrow {{ image:none; border-left:4px solid transparent; "
+        f"border-right:4px solid transparent; border-top:5px solid {theme['text']}; "
+        "width:0; height:0; margin-right:6px; }"
+        # the list: its own window, so nothing translucent and nothing inherited
+        f"QComboBox QAbstractItemView {{ background:{theme['solid_bg']}; color:{theme['solid_text']}; "
+        f"border:1px solid {theme['border']}; border-radius:8px; padding:3px; outline:none; "
+        f"selection-background-color:{theme['section_btn']}; selection-color:{theme['solid_text']}; }}"
+        f"QComboBox QAbstractItemView::item {{ padding:5px 7px; border-radius:5px; min-height:20px; }}"
+        f"QComboBox QAbstractItemView::item:hover {{ background:{theme['btn_hover']}; }}"
+    )
