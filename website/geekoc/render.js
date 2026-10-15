@@ -9,6 +9,10 @@
  * simulation is stepped at a fixed 1/60 regardless of how long a frame takes to write, the film is
  * identical every time it is rendered.
  *
+ * All of this is the FLAT renderer. geekoc3d.js draws the same rig in three dimensions with three.js,
+ * which needs a browser and a WebGL context, so it has no part here: a film of the 3D version is
+ * captured from the page rather than written from Node.
+ *
  * The frames are a pure function of time, so the same command always produces the same film -- and a
  * frame can be re-rendered on its own without replaying what came before it.
  *
