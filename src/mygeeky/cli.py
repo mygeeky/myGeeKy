@@ -173,6 +173,67 @@ def uninstall_window() -> None:
 
 
 # --------------------------------------------------------------------------- init
+def _pick_field() -> list[str]:
+    """Build a profile out of nothing but what somebody works on.
+
+    "Type ten keywords" is a blank page, and a blank page at the door is why people leave. So myGeeKy
+    offers five, learns from whichever are taken, and offers five more -- three near what was picked and
+    two deliberately elsewhere, because all-near would funnel one tap into a cul-de-sac. A word we have
+    never heard of is kept exactly as typed; see fieldstart.py."""
+    from . import fieldstart as fs
+
+    click.echo("\nSo: what do you work on? Type the NUMBERS of any that fit (e.g. 1,4), a word of your")
+    click.echo("own, 'x3' to wave one away for good, or Enter when it looks right.")
+    picked: list[str] = []
+    dismissed: list[str] = []
+    shown: list[str] = []
+    nagged = False
+    while True:
+        chips = fs.suggest(picked, dismissed, shown)
+        if not chips:
+            break
+        shown += [c["topic"] for c in chips]
+        click.echo("")
+        for n, chip in enumerate(chips, 1):
+            click.echo(f"  {n}. {click.style(chip['label'], bold=True)}"
+                       + (f"  — {chip['means']}" if chip["means"] else ""))
+        state = fs.ready(picked)
+        bar = "█" * int(state["bar"] * 20) + "·" * (20 - int(state["bar"] * 20))
+        click.echo(f"\n  [{bar}] {state['picks']} keyword(s), {state['areas']} area(s)"
+                   + (f" — {state['need']}" if state["need"] else " — that's a good profile"))
+        said = click.prompt("  Your pick", default="", show_default=False).strip()
+        if not said:
+            # An empty answer stops, always. It may only say so twice: nothing here is a gate, and holding
+            # somebody at the door until the bar is full would be the one thing this screen must not do.
+            if state["ok"] or not picked or nagged:
+                break
+            nagged = True
+            click.echo(f"  {state['need'].capitalize()} would sharpen it — Enter again to start anyway.")
+            continue
+        for part in [p.strip() for p in said.replace(" ", ",").split(",") if p.strip()]:
+            away = part.lower().startswith("x")
+            raw = part[1:] if away else part
+            chip = chips[int(raw) - 1] if raw.isdigit() and 1 <= int(raw) <= len(chips) else None
+            word = chip["topic"] if chip else part
+            if away:
+                dismissed.append(word)
+                continue
+            if chip is None:                      # their own word: say what we know, and keep it either way
+                offer = fs.offer_for(word, online=True)
+                if offer["alternatives"]:
+                    click.echo(f"  {offer['note']}")
+                    for alt in offer["alternatives"][:3]:
+                        click.echo(f"     · {alt['label']}" + (f" — {alt['means']}" if alt["means"] else ""))
+                elif not offer["known"]:
+                    click.echo(f"  {offer['note']}")
+                word = offer["keep"]
+            if word not in picked:
+                picked.append(word)
+    if picked:
+        click.echo(f"\n  Your field: {', '.join(picked)}")
+    return picked
+
+
 @main.command()
 def init() -> None:
     """Interactive setup: your GitHub username, CV, and what you're looking for."""
@@ -180,9 +241,12 @@ def init() -> None:
 
     click.echo("Let's set myGeeKy up. Press Enter to accept any default shown in [brackets].\n")
 
-    click.echo("No GitHub account? Leave the username blank: Chances, Grow, News, Research, the market\n"
-               "board and repos to improve all work without it, from your ORCID or a few keywords.\n"
-               "You can add GitHub any time.")
+    click.secho("You do not need an account of any kind -- not GitHub, not ORCID, not with us.", bold=True)
+    click.echo("Press Enter past both and myGeeKy will ask what you work on instead. From keywords alone:\n"
+               "  verified jobs, funding, conferences and seasons   rising skills, protocols, the quiz\n"
+               "  news and papers for your field                    the market board and repos to improve\n"
+               "Nothing is a trial and nothing expires. An account only adds the parts that read an\n"
+               "account -- who'd follow you back, Activity, Signals, Collab -- and syncing to your phone.\n")
     cfg.github_username = click.prompt("Your GitHub username", default=cfg.github_username or "",
                                        show_default=bool(cfg.github_username)).strip().lstrip("@")
 
@@ -243,6 +307,10 @@ def init() -> None:
     if cfg.orcid_id or cfg.scholar_id:
         _refresh_scholar(cfg)
 
+    picked_now: list[str] = []
+    if not (cfg.github_username or cfg.orcid_id or cfg.scholar_id or cfg.cv_path):
+        picked_now = _pick_field()    # no account and no CV: the keywords ARE the profile, so help build them
+
     click.echo("\nWhat kind of geeks are you looking for? (comma-separated, blank to skip any)")
     langs = click.prompt("Programming languages", default=", ".join(cfg.languages) or "", show_default=False)
     topics = click.prompt("Topics/interests (e.g. bioinformatics, llm, game-dev)",
@@ -256,6 +324,9 @@ def init() -> None:
     cfg.topics = [s.strip() for s in topics.split(",") if s.strip()]
     cfg.keywords = [s.strip() for s in keywords.split(",") if s.strip()]
     cfg.locations = [s.strip() for s in locations.split(",") if s.strip()]
+    if picked_now:                    # merged, never replaced: rounds of picking must not be wiped
+        from . import fieldstart
+        fieldstart.keep(cfg, picked_now)
 
     if cfg.github_username:                 # how People finds GitHub accounts: only with GitHub
         click.echo(

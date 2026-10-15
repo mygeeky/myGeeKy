@@ -1489,3 +1489,206 @@ def combo_style(theme: dict[str, Any]) -> str:
         f"QComboBox QAbstractItemView::item {{ padding:5px 7px; border-radius:5px; min-height:20px; }}"
         f"QComboBox QAbstractItemView::item:hover {{ background:{theme['btn_hover']}; }}"
     )
+
+
+# --------------------------------------------------------------------------- starting from keywords alone
+class FieldPicker(QFrame):
+    """What do you work on? -- asked five chips at a time, for somebody with no account of any kind.
+
+    A blank "type ten keywords" box is why people leave at the door, so this offers five, learns from
+    whichever are taken, and offers five more. Three of each five are near what has been picked and two
+    are deliberately elsewhere: all-near would turn one tap into a cul-de-sac with no way back. Waving a
+    chip away (its X) rules out its whole neighbourhood, not just the word.
+
+    The bar fills towards ten because ten is a good profile, but `ready` opens at six across three areas:
+    six keywords from three corners of a field rank better than ten from one, and ten taps is a long door.
+    """
+
+    def __init__(self, logic: Any, theme: dict[str, Any], on_done: Callable[[list[str]], Any],
+                 on_skip: Callable[[], Any] | None = None) -> None:
+        super().__init__()
+        self._logic = logic
+        self._theme = theme
+        self._on_done = on_done
+        self._on_skip = on_skip
+        self.picked: list[str] = []
+        self.dismissed: list[str] = []
+        self.shown: list[str] = []
+        self._note = ""
+        self._offered: list[dict[str, Any]] = []
+        self.setObjectName("fieldPicker")
+        self.setStyleSheet(f"QFrame#fieldPicker {{ background:{theme['card_bg']}; border:1px solid "
+                           f"{theme['border']}; border-radius:12px; }} QLabel {{ background:transparent; "
+                           f"color:{theme['text']}; }}")
+        self._lay = QVBoxLayout(self)
+        self._lay.setContentsMargins(14, 12, 14, 12)
+        self._lay.setSpacing(8)
+        self._draw()
+
+    # ---------------------------------------------------------------- drawing
+    def _draw(self) -> None:
+        while self._lay.count():
+            item = self._lay.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+        theme = self._theme
+        title = QLabel("<b>What do you work on?</b>")
+        title.setTextFormat(Qt.RichText)
+        self._lay.addWidget(title)
+        why = QLabel("No account needed — not GitHub, not ORCID, not with us. Tap whatever fits; "
+                     "✕ means never show me this kind of thing.")
+        why.setWordWrap(True)
+        why.setStyleSheet(_muted(theme))
+        self._lay.addWidget(why)
+
+        if self._note:
+            said = QLabel(self._note)
+            said.setWordWrap(True)
+            said.setStyleSheet(_muted(theme))
+            self._lay.addWidget(said)
+
+        chips = self._offered or self._logic.field_suggest(self.picked, self.dismissed, self.shown)
+        self._offered = []
+        self.shown += [c["topic"] for c in chips if c["topic"] not in self.shown]
+        row = FlowRow()
+        for chip in chips:
+            row.add(self._chip(chip))
+        row.finish()
+        self._lay.addWidget(row)
+        hint = QLabel("Hover a keyword to see what it covers — “16s” says little, "
+                      "“microbiome, metagenomics, dada2” says everything.")
+        hint.setWordWrap(True)
+        hint.setStyleSheet(_muted(theme))
+        self._lay.addWidget(hint)
+
+        if self.picked:
+            yours = QLabel("Your field so far — tap one to take it back:")
+            yours.setStyleSheet(_muted(theme))
+            self._lay.addWidget(yours)
+            mine = FlowRow()
+            for word in self.picked:
+                mine.add(self._taken(word))
+            mine.finish()
+            self._lay.addWidget(mine)
+
+        state = self._logic.field_ready(self.picked)
+        self._lay.addWidget(self._bar(state))
+
+        # A flow row, not an HBox: side-by-side buttons set the panel's minimum width between them, and
+        # this panel is a 380px dock. Wrapping costs a line; not wrapping cost 60px of screen.
+        buttons = FlowRow()
+        own = QPushButton("＋ my own word")
+        own.setCursor(Qt.PointingHandCursor)
+        own.setStyleSheet(_button_style(theme))
+        own.setToolTip("Anything myGeeKy has never heard of still counts — it just matches on itself")
+        own.clicked.connect(lambda: self._ask_own())
+        buttons.add(own)
+        if self._on_skip is not None:
+            later = QPushButton("Later")
+            later.setCursor(Qt.PointingHandCursor)
+            later.setStyleSheet(_button_style(theme))
+            later.clicked.connect(lambda: self._on_skip())
+            buttons.add(later)
+        go = QPushButton("Start" if state["ok"] else "Start anyway")
+        go.setCursor(Qt.PointingHandCursor)
+        go.setStyleSheet(_button_style(theme, accent=state["ok"]))
+        go.setEnabled(bool(self.picked))
+        go.setToolTip("" if state["ok"] else "It will work — a wider field just ranks better")
+        go.clicked.connect(lambda: self._on_done(list(self.picked)))
+        buttons.add(go)
+        buttons.finish()
+        self._lay.addWidget(buttons)
+
+    def _bar(self, state: dict[str, Any]) -> QWidget:
+        theme = self._theme
+        holder = QWidget()
+        lay = QVBoxLayout(holder)
+        lay.setContentsMargins(0, 2, 0, 0)
+        lay.setSpacing(3)
+        full = int(round(state["bar"] * 20))
+        track = QLabel("█" * full + "·" * (20 - full))
+        track.setStyleSheet(f"color:{theme['accent'] if state['ok'] else theme['muted']}; "
+                            f"font-family:Consolas,monospace; font-size:11px; background:transparent;")
+        lay.addWidget(track)
+        said = (f"{state['picks']} keyword{'s' if state['picks'] != 1 else ''} across "
+                f"{state['areas']} area{'s' if state['areas'] != 1 else ''} → "
+                f"{state['terms']} things to match on")
+        note = QLabel(said + (f" · {state['need']}" if state["need"] else " · that's a good profile"))
+        note.setWordWrap(True)
+        note.setStyleSheet(_muted(theme))
+        lay.addWidget(note)
+        return holder
+
+    def _chip(self, chip: dict[str, Any]) -> QWidget:
+        """One offered keyword: its name, what it means here, and a way to refuse its whole area.
+
+        The meaning matters. Nobody can say whether "16s" is them; everybody can say whether
+        "microbiome, metagenomics, dada2" is. The dictionary holds related terms rather than definitions,
+        which reads better for exactly this."""
+        theme = self._theme
+        holder = QWidget()
+        lay = QHBoxLayout(holder)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+        # The label alone, with the meaning in the tooltip. Spelling the related terms out on the button
+        # made the widest chip set the panel's minimum width, and the panel is a narrow dock: one long
+        # chip pushed it off the side of the screen.
+        take = QPushButton(chip["label"])
+        take.setCursor(Qt.PointingHandCursor)
+        take.setToolTip(f"{chip['label']} covers: {chip['means']}" if chip.get("means")
+                        else "myGeeKy has no related terms for this one — it matches on itself")
+        take.setStyleSheet(_button_style(theme))
+        take.clicked.connect(lambda: self._take(chip["topic"]))
+        lay.addWidget(take)
+        if not chip.get("from"):            # an OpenAlex suggestion has no neighbourhood to wave away
+            away = QPushButton("✕")
+            away.setCursor(Qt.PointingHandCursor)
+            away.setToolTip("Not my field — and don't offer anything like it again")
+            away.setStyleSheet(_button_style(theme))
+            away.setFixedWidth(26)
+            away.clicked.connect(lambda: self._wave_away(chip["topic"]))
+            lay.addWidget(away)
+        return holder
+
+    def _taken(self, word: str) -> QPushButton:
+        b = QPushButton(f"✓ {word}")
+        b.setCursor(Qt.PointingHandCursor)
+        b.setToolTip("Tap to take this back")
+        b.setStyleSheet(_button_style(self._theme, accent=True))
+        b.clicked.connect(lambda: self._drop(word))
+        return b
+
+    # ---------------------------------------------------------------- what the taps do
+    def _take(self, topic: str) -> None:
+        if topic not in self.picked:
+            self.picked.append(topic)
+        self._note = ""
+        self._draw()
+
+    def _drop(self, word: str) -> None:
+        self.picked = [w for w in self.picked if w != word]
+        self._draw()
+
+    def _wave_away(self, topic: str) -> None:
+        if topic not in self.dismissed:
+            self.dismissed.append(topic)
+        self._note = ""
+        self._draw()
+
+    def _ask_own(self) -> None:
+        """Their own word. Kept whether or not myGeeKy knows it -- an unknown keyword matches on itself,
+        so typing something we have never heard of costs nothing. If we have nothing close, OpenAlex is
+        asked for the research-side name, which is exactly where our software-shaped dictionary is thin."""
+        from PySide6.QtWidgets import QInputDialog
+        said, ok = QInputDialog.getText(self, "A word of your own", "What do you work on?")
+        word = " ".join(str(said or "").split())
+        if not ok or not word:
+            return
+        offer = self._logic.field_offer(word, True)
+        keep = offer.get("keep") or word
+        if keep not in self.picked:
+            self.picked.append(keep)
+        self._note = offer.get("note") or ""
+        self._offered = list(offer.get("alternatives") or [])
+        self._draw()

@@ -86,6 +86,13 @@ class MyGeekyConfig:
     topics: list[str] = field(default_factory=list)         # e.g. ["bioinformatics", "llm"]
     keywords: list[str] = field(default_factory=list)       # extra free-text interests
     locations: list[str] = field(default_factory=list)      # optional, e.g. ["Cairo", "Remote"]
+    # Starting from keywords alone, with no ORCID and no GitHub (see fieldstart.py). The date is when that
+    # start happened, and the counters are how often myGeeKy has brought up making a real account: four
+    # times over three months and then never again. Nothing is ever withdrawn for not having one.
+    field_started_at: str = ""                              # ISO date, "" if never started this way
+    account_asks: int = 0                                   # scheduled asks already made (max 4)
+    account_asked_at: str = ""                              # ISO date of the last scheduled ask
+    account_walls_asked: list[str] = field(default_factory=list)   # parts already explained once, by name
     # What kind of work you mostly do: "code" (you mostly build software), "analysis" (you mostly analyse
     # data), "both", or "" (not said). It only sets the starting balance of what myGeeKy suggests -- your
     # model still learns from what you like. Changeable any time.
@@ -280,7 +287,11 @@ DEFAULTS = MyGeekyConfig()
 
 def profile_ready(cfg: MyGeekyConfig) -> bool:
     """Enough to know your field: a GitHub username, an ORCID iD, topics, keywords or a CV.
-    GitHub is optional: without it, the GitHub parts (People, Activity, Signals...) wait."""
+
+    Keywords alone are a real profile, not a lesser one: Chances, Grow, News, Research, Market, Repos and
+    the field half of People all match a field against public pages and never look you up. What needs an
+    account is only what reads your account -- who would follow you back, Activity, Signals, Collab -- and
+    carrying your data to a second device."""
     return bool(cfg.github_username or cfg.orcid_id or cfg.topics or cfg.keywords or cfg.cv_path)
 
 
@@ -357,7 +368,8 @@ def _migrate(values: dict[str, Any], version: int) -> dict[str, Any]:
 
 
 # settings that are painful to lose: a save that drops any of them keeps a backup first
-_PRECIOUS = ("beacon_enabled", "sync_repo", "orcid_id", "scholar_id", "cv_path")
+_PRECIOUS = ("beacon_enabled", "sync_repo", "orcid_id", "scholar_id", "cv_path", "keywords",
+             "field_started_at")
 
 
 def save_config(cfg: MyGeekyConfig) -> None:

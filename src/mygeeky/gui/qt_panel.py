@@ -3429,6 +3429,14 @@ class MyGeekyPanel(QWidget):
         self.status_label = QLabel("Loading…")
         self.status_label.setWordWrap(True)
         panel_layout.addWidget(self.status_label)
+        # Nothing set up yet, or a keyword-only profile being asked (four times over three months, then
+        # never again) whether it wants a real account. Hidden the rest of the time.
+        self.start_holder = QWidget()
+        self.start_layout = QVBoxLayout(self.start_holder)
+        self.start_layout.setContentsMargins(0, 0, 0, 0)
+        self.start_layout.setSpacing(6)
+        self.start_holder.setVisible(False)
+        panel_layout.addWidget(self.start_holder)
         self.badge_strip = QFrame()
         self.badge_strip.setCursor(Qt.PointingHandCursor)
         self.badge_strip.setToolTip("Your badges: click to see them all")
@@ -6884,7 +6892,83 @@ class MyGeekyPanel(QWidget):
             self.status_label.setText(f"Using {who}, without GitHub. Add GitHub for who'd follow "
                                       "you back, Activity, Signals and 🤝 Collab.")
         else:
-            self.status_label.setText("Run `mygeeky init` in a terminal to get started.")
+            self.status_label.setText("myGeeKy doesn't know your field yet — no account needed.")
+        self._render_start(status)
+
+    # ------------------------------------------------------------------ starting from keywords alone
+    def _render_start(self, status: dict[str, Any]) -> None:
+        """The door, and the only thing ever said about making an account.
+
+        With no profile at all this is the whole way in: five keywords at a time, no account anywhere. With
+        a keyword-only profile it is the nudge instead -- four times over three months and then silence,
+        because myGeeKy never stops working for not having an account, and a thing that stopped working
+        would be a trial."""
+        _clear_layout(self.start_layout)
+        theme = THEMES[self._theme_name()]
+        if not status.get("profile_ready"):
+            self.start_layout.addWidget(self._field_picker(theme))
+            self.start_holder.setVisible(True)
+            return
+        ask = logic.account_nudge(self.cfg)
+        if not ask.get("ask"):
+            self.start_holder.setVisible(False)
+            return
+        self.start_layout.addWidget(self._nudge_card(theme, ask))
+        self.start_holder.setVisible(True)
+
+    def _field_picker(self, theme: dict[str, Any]):
+        from .growth_ui import FieldPicker
+        return FieldPicker(logic, theme, self._on_field_picked)
+
+    def _on_field_picked(self, picked: list[str]) -> None:
+        if not picked:
+            return
+        logic.field_keep(self.cfg, picked)
+        self.start_holder.setVisible(False)
+        self._load_status()
+        self._switch_tab(getattr(self, "active_tab", "live"))      # the tabs have a field to work from now
+
+    def _nudge_card(self, theme: dict[str, Any], ask: dict[str, Any]) -> QFrame:
+        """Said once, plainly, and never twice.
+
+        The last of the four asks is the honest one: the only thing a keyword-only profile truly cannot do
+        is survive this computer. Everything else on the panel already works."""
+        card = QFrame()
+        card.setObjectName("nudgeCard")
+        card.setStyleSheet(f"QFrame#nudgeCard {{ background:{theme['card_bg']}; border:1px dashed "
+                           f"{theme['border']}; border-radius:10px; }} QLabel {{ background:transparent; "
+                           f"color:{theme['text']}; }}")
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(12, 10, 12, 10)
+        lay.setSpacing(6)
+        said = QLabel(ask.get("why", ""))
+        said.setWordWrap(True)
+        said.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+        lay.addWidget(said)
+        row = QHBoxLayout()
+        add = QPushButton("Add an account…")
+        add.setCursor(Qt.PointingHandCursor)
+        add.setStyleSheet(f"QPushButton {{ background:{theme['accent']}; color:{theme['on_accent']}; "
+                          f"border:none; border-radius:8px; padding:5px 12px; font-weight:700; }}")
+        add.clicked.connect(self._open_setup_window)
+        row.addWidget(add)
+        shut = QPushButton("No thanks")
+        shut.setCursor(Qt.PointingHandCursor)
+        shut.setStyleSheet(f"QPushButton {{ background:transparent; color:{theme['muted']}; border:none; "
+                           f"padding:5px 8px; }}")
+        shut.clicked.connect(self._on_nudge_dismissed)
+        row.addWidget(shut)
+        row.addStretch(1)
+        if ask.get("last"):
+            final = QLabel("myGeeKy won't bring this up again.")
+            final.setStyleSheet(f"color:{theme['muted']}; font-size:10px; background:transparent;")
+            row.addWidget(final)
+        lay.addLayout(row)
+        return card
+
+    def _on_nudge_dismissed(self) -> None:
+        logic.account_asked(self.cfg)
+        self.start_holder.setVisible(False)
 
     def _load_live_stats(self) -> None:
         stats = logic.get_friend_stats(self.cfg)
@@ -7084,6 +7168,7 @@ class MyGeekyPanel(QWidget):
             return False
         if field_only and logic.get_status(self.cfg).get("profile_ready"):
             return False
+        logic.account_asked(self.cfg, wall=part)      # this wall has now explained itself; it won't nag
         theme = THEMES[self._theme_name()]
         _clear_layout(layout)
         card = QFrame()

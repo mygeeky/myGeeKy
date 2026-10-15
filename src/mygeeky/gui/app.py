@@ -146,7 +146,60 @@ def get_status(cfg: MyGeekyConfig) -> dict[str, Any]:
         "configured": bool(cfg.github_username),
         "profile_ready": profile_ready(cfg),
         "orcid_id": cfg.orcid_id,
+        "from_keywords": bool(not cfg.github_username and not cfg.orcid_id and (cfg.keywords or cfg.topics)),
     }
+
+
+# --------------------------------------------------------------------------- starting from keywords alone
+def field_opening() -> list[dict[str, Any]]:
+    """The first five keywords to offer somebody with no account of any kind."""
+    from .. import fieldstart
+    return fieldstart.opening()
+
+
+def field_suggest(picked: list[str], dismissed: list[str] | None = None,
+                  shown: list[str] | None = None) -> list[dict[str, Any]]:
+    """The next five: three near what they picked, two deliberately elsewhere."""
+    from .. import fieldstart
+    return fieldstart.suggest(picked or [], dismissed or [], shown or [])
+
+
+def field_ready(picked: list[str]) -> dict[str, Any]:
+    """Whether the picks describe a field well enough to start, and how full the bar is."""
+    from .. import fieldstart
+    return fieldstart.ready(picked or [])
+
+
+def field_offer(typed: str, online: bool = False) -> dict[str, Any]:
+    """What myGeeKy can say about a word somebody typed, known to it or not."""
+    from .. import fieldstart
+    return fieldstart.offer_for(typed, online=online)
+
+
+def field_keep(cfg: MyGeekyConfig, picked: list[str]) -> dict[str, Any]:
+    """Save the picked keywords onto the profile, merged with whatever is already there."""
+    from .. import fieldstart
+    fieldstart.keep(cfg, picked or [])
+    save_config(cfg)
+    return fieldstart.summary(cfg)
+
+
+def account_nudge(cfg: MyGeekyConfig, wall: str = "") -> dict[str, Any]:
+    """Whether to bring up making an ORCID or GitHub account, and what to say about it."""
+    from .. import fieldstart
+    return fieldstart.nudge(cfg, wall=wall)
+
+
+def account_asked(cfg: MyGeekyConfig, wall: str = "") -> None:
+    """Remember the ask happened, so the same thing is never said twice."""
+    from .. import fieldstart
+    fieldstart.asked(cfg, wall=wall)
+    save_config(cfg)
+
+
+def field_summary(cfg: MyGeekyConfig) -> dict[str, Any]:
+    from .. import fieldstart
+    return fieldstart.summary(cfg)
 
 
 def set_theme(cfg: MyGeekyConfig, theme: str) -> bool:
