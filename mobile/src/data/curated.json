@@ -1,9 +1,790 @@
 {
- "version": "2026-10-14T19:20:33Z",
+ "version": "2026-10-15T02:12:05Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
- "jobs": [],
- "funding": [],
- "conferences": [],
+ "jobs": [
+  {
+   "id": "the-francis-crick-institute-the-malanchi-lab-computational-b-2026",
+   "title": "Computational Biologist",
+   "url": "https://www.jobs.ac.uk/job/DTA518/computational-biologist",
+   "keywords": [
+    "bioinformatics",
+    "genomics",
+    "transcriptomics",
+    "single-cell",
+    "atac-seq",
+    "multi-omics",
+    "computational biology"
+   ],
+   "summary": "A Computational Biologist position in the Malanchi Lab at the Francis Crick Institute, part of a five-year ERC Synergy-funded research programme, to analyse and integrate complex genomic, transcriptomic and epigenetic datasets.",
+   "deadline": "2026-10-17",
+   "org": "The Francis Crick Institute - The Malanchi Lab",
+   "place": "London, United Kingdom",
+   "type": "job",
+   "remote": false
+  },
+  {
+   "id": "human-technopole-postdoc-in-statistical-genetics-casale-grou-2026",
+   "title": "Postdoc in Statistical Genetics - Casale Group",
+   "url": "https://www.nature.com/naturecareers/job/12864992/postdoc-in-statistical-genetics-casale-group/?LinkSource=PremiumListing",
+   "keywords": [
+    "statistical genetics",
+    "machine learning",
+    "human genetics",
+    "single-cell",
+    "spatial transcriptomics",
+    "biobanks",
+    "gwas",
+    "bioinformatics"
+   ],
+   "summary": "Human Technopole is recruiting a Postdoc in Statistical Genetics to develop computational methods connecting human genetic variation to biological function using population-scale human genetics and multimodal molecular data.",
+   "deadline": "2026-11-04",
+   "org": "Human Technopole",
+   "place": "Milan, Italy",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "ucl-bioinformatics-group-research-software-engineer-in-bioin-2026",
+   "title": "Research Software Engineer in Bioinformatics",
+   "url": "https://www.jobs.ac.uk/job/DTD428/research-software-engineer-in-bioinformatics",
+   "keywords": [
+    "bioinformatics",
+    "machine learning",
+    "protein structure",
+    "software engineering",
+    "python",
+    "web platform"
+   ],
+   "summary": "The UCL Bioinformatics Group is hiring a Research Software Engineer to lead its portion of the BBSRC funded IntegraTED project, integrating the PSIPRED workbench, CATH-Gene3D and the Encyclopaedia of Domains into a single web platform. The role involves improving ML workflows, building a new web interface and working on the TED data generation pipeline.",
+   "deadline": "2026-10-16",
+   "org": "UCL - Bioinformatics Group",
+   "place": "London, United Kingdom",
+   "type": "engineer",
+   "remote": false
+  },
+  {
+   "id": "leibniz-institut-f-r-analytische-wissenschaften-isas-e-v-phd-2026",
+   "title": "PhD Candidate (m/f/d)",
+   "url": "https://www.nature.com/naturecareers/job/12864688/phd-candidate-m-f-d-/?LinkSource=PremiumListing",
+   "keywords": [
+    "bioinformatics",
+    "machine learning",
+    "omics",
+    "image analysis",
+    "biomarkers",
+    "precision medicine",
+    "cardio-oncology"
+   ],
+   "summary": "PhD position in the Bioanalytics department, Multidimensional OMICS Data Analysis research group, part of the Leibniz Science Campus 'Cardio-Oncology Campus for Precision Medicine', focusing on analysis and development of biomarker profiles for personalized assessment of cardiovascular risks associated with cancer therapy.",
+   "deadline": "2026-10-17",
+   "org": "Leibniz-Institut für Analytische Wissenschaften – ISAS – e.V.",
+   "place": "Dortmund, Nordrhein-Westfalen (DE)",
+   "type": "phd",
+   "remote": false
+  },
+  {
+   "id": "university-of-oxford-oxford-vaccine-group-centre-for-clinica-2026",
+   "title": "Senior Postdoctoral Researcher in Computational Biology",
+   "url": "https://www.jobs.ac.uk/job/DTE988/senior-postdoctoral-researcher-in-computational-biology",
+   "keywords": [
+    "computational biology",
+    "bioinformatics",
+    "systems immunology",
+    "multi-omics",
+    "machine learning",
+    "vaccine",
+    "statistics"
+   ],
+   "summary": "A senior postdoctoral position at the University of Oxford's Oxford Vaccine Group to lead computational biology and bioinformatics research, integrating clinical, immunological and multi-omic datasets from vaccine studies and controlled human infection models.",
+   "deadline": "2026-10-21",
+   "org": "University of Oxford - Oxford Vaccine Group, Centre for Clinical Vaccinology and Tropical Medicine /",
+   "place": "Oxford, United Kingdom",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "university-of-exeter-public-health-and-sport-sciences-penryn-2026",
+   "title": "PhD Studentship - How Pathogens Emerge: Integrating Large Language Models with Comparative Genomics to Uncover the Zoonotic Potential of Bac",
+   "url": "https://www.jobs.ac.uk/job/DSX301/phd-studentship-how-pathogens-emerge-integrating-large-language-models-with-comparative-genomics-to-uncover-the-zoonotic-potential-of-bacteria",
+   "keywords": [
+    "bioinformatics",
+    "comparative genomics",
+    "large language models",
+    "data science",
+    "microbiology",
+    "zoonotic",
+    "pathogens"
+   ],
+   "summary": "A four-year MRC-funded PhD studentship combining AI Large Language Models with comparative bacterial genomics to identify molecular signatures of host switches and zoonotic emergence. Offers training in bioinformatics, data science and microbiology.",
+   "deadline": "2026-10-21",
+   "org": "University of Exeter - Public Health and Sport Sciences, Penryn Campus",
+   "place": "Cornwall, Penryn",
+   "type": "phd",
+   "remote": false
+  },
+  {
+   "id": "university-of-exeter-phd-studentship-from-x-to-y-decoding-se-2026",
+   "title": "PhD Studentship: From X to Y: Decoding Sex Chromosome Effects in the Human Brain",
+   "url": "https://www.jobs.ac.uk/job/DSX328/phd-studentship-from-x-to-y-decoding-sex-chromosome-effects-in-the-human-brain",
+   "keywords": [
+    "bioinformatics",
+    "sex chromosomes",
+    "gene expression",
+    "epigenetics",
+    "single-cell",
+    "multi-omics",
+    "neuroscience"
+   ],
+   "summary": "A four-year MRC-funded PhD studentship in the GW4 BioMed3 Doctoral Landscape Programme at the University of Exeter, starting October 2027. The bioinformatics project investigates how sex chromosomes shape gene expression and epigenetic regulation in the human brain across development and aging.",
+   "deadline": "2026-10-21",
+   "org": "University of Exeter",
+   "place": "Devon, Exeter",
+   "type": "phd",
+   "remote": false
+  },
+  {
+   "id": "the-university-of-texas-md-anderson-cancer-center-postdoctor-2026",
+   "title": "Postdoctoral Fellowships in Computational Biology",
+   "url": "https://www.nature.com/naturecareers/job/12862160/postdoctoral-fellowships-in-computational-biology-/?LinkSource=PremiumListing",
+   "keywords": [
+    "computational biology",
+    "cancer genomics",
+    "tumor evolution",
+    "bioinformatics",
+    "statistics",
+    "sequencing data"
+   ],
+   "summary": "Postdoctoral fellowships in computational biology in the Cancer Genomics and Evolution Laboratory of Peter Van Loo at the University of Texas MD Anderson Cancer Center, focused on large-scale cancer genomics and evolution.",
+   "deadline": "2026-10-27",
+   "org": "The University of Texas MD Anderson Cancer Center",
+   "place": "Houston, Texas (US)",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "ucl-professor-jasmin-fisher-s-laboratory-cancer-institute-se-2026",
+   "title": "(Senior) Research Fellow in Artificial Intelligence for Cancer Digital Twins",
+   "url": "https://www.jobs.ac.uk/job/DTB354/senior-research-fellow-in-artificial-intelligence-for-cancer-digital-twins",
+   "keywords": [
+    "artificial intelligence",
+    "computational biology",
+    "bioinformatics",
+    "genomics",
+    "multi-omics",
+    "cancer",
+    "machine learning",
+    "statistical analysis"
+   ],
+   "summary": "A Senior Research Fellow position in Professor Jasmin Fisher's laboratory at the UCL Cancer Institute, focused on using AI to generate digital tumour twins. The role involves developing transparent, interpretable and trustworthy AI technologies integrating machine learning, mechanistic modelling, formal verification and large-scale biomedical data.",
+   "deadline": "2026-10-28",
+   "org": "UCL - Professor Jasmin Fisher's laboratory / Cancer Institute",
+   "place": "London, United Kingdom",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "university-of-oxford-big-data-institute-li-ka-shing-centre-f-2026",
+   "title": "Postdoctoral Scientist",
+   "url": "https://www.jobs.ac.uk/job/DTC975/postdoctoral-scientist",
+   "keywords": [
+    "genomics",
+    "bioinformatics",
+    "biostatistics",
+    "transcriptomics",
+    "rare disease",
+    "statistical analysis",
+    "r",
+    "python"
+   ],
+   "summary": "A Postdoctoral Scientist position at the University of Oxford's Big Data Institute to lead research into biomarkers and disease mechanisms for RNUopathies, including ReNU syndrome, analysing large-scale genomic and transcriptomic datasets.",
+   "deadline": "2026-10-29",
+   "org": "University of Oxford - Big Data Institute - Li Ka Shing Centre for Health and Information Discovery",
+   "place": "Oxford, United Kingdom",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "university-of-cambridge-department-of-applied-mathematics-an-2026",
+   "title": "Postdoctoral Research Associate in Mathematical and Statistical Methods for Genome Privacy (Fixed Term)",
+   "url": "https://www.jobs.ac.uk/job/DTE231/postdoctoral-research-associate-in-mathematical-and-statistical-methods-for-genome-privacy-fixed-term",
+   "keywords": [
+    "genome privacy",
+    "differential privacy",
+    "statistics",
+    "computational genomics",
+    "pangenome",
+    "bioinformatics",
+    "graph algorithms",
+    "optimization"
+   ],
+   "summary": "A postdoctoral research associate position in the Department of Applied Mathematics and Theoretical Physics at the University of Cambridge, working on mathematical and computational methods for privacy-preserving human pangenome references.",
+   "deadline": "2026-10-31",
+   "org": "University of Cambridge - Department of Applied Mathematics and Theoretical Physics",
+   "place": "Cambridge, United Kingdom",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "aarhus-university-department-of-animal-and-veterinary-scienc-2026",
+   "title": "PhD Position: Tracking Microbes Across Borders using Genomics to Uncover Biomass-to-Biogas Transmission Pathways",
+   "url": "https://www.jobs.ac.uk/job/DTD392/phd-position-tracking-microbes-across-borders-using-genomics-to-uncover-biomass-to-biogas-transmission-pathways",
+   "keywords": [
+    "genomics",
+    "metagenomics",
+    "bioinformatics",
+    "microbiology",
+    "biogas",
+    "biosecurity"
+   ],
+   "summary": "A PhD fellowship at Aarhus University within the Animal and Veterinary Sciences programme, combining targeted PCR/RT-qPCR surveillance with long-read shotgun metagenomics to track microbial transmission pathways in the Danish biogas sector. The position is available from 1st January 2027 or later.",
+   "deadline": "2026-11-01",
+   "org": "Aarhus University - Department of Animal and Veterinary Sciences",
+   "place": "Aarhus, Denmark",
+   "type": "phd",
+   "remote": false
+  },
+  {
+   "id": "aithyra-gmbh-research-institute-for-biomedical-artificial-in-2026",
+   "title": "The AITHYRA International PhD Program Call in AI for Biomedicine (all genders)",
+   "url": "https://www.nature.com/naturecareers/job/12864324/the-aithyra-international-phd-program-call-in-ai-for-biomedicine-all-genders-/?LinkSource=PromotedJob",
+   "keywords": [
+    "machine learning",
+    "biomedicine",
+    "life sciences",
+    "artificial intelligence",
+    "phd",
+    "bioinformatics"
+   ],
+   "summary": "Fully funded PhD positions at AITHYRA in Vienna at the intersection of machine learning, experimental biology, chemistry, and medicine, starting September 2027. The program is run with TU Wien, Uni Wien and Meduni Wien.",
+   "deadline": "2026-11-01",
+   "org": "AITHYRA GmbH - Research Institute for Biomedical Artificial Intelligence of the Austrian Academy of",
+   "place": "Vienna, Austria",
+   "type": "phd",
+   "remote": false
+  },
+  {
+   "id": "human-technopole-postdoc-in-ai-for-biomedicine-casale-group-2026",
+   "title": "Postdoc in AI for Biomedicine - Casale Group",
+   "url": "https://www.nature.com/naturecareers/job/12864996/postdoc-in-ai-for-biomedicine-casale-group/?LinkSource=PremiumListing",
+   "keywords": [
+    "machine learning",
+    "computational biology",
+    "human genetics",
+    "single-cell",
+    "spatial transcriptomics",
+    "multimodal data",
+    "ai"
+   ],
+   "summary": "The Casale Group in the Health Data Science Centre at Human Technopole is recruiting a Postdoc in AI for Biomedicine to develop next-generation computational approaches to understand cellular and tissue biology from single-cell, spatial, imaging, and multimodal molecular data, connecting these representations to mechanisms of human disease.",
+   "deadline": "2026-11-04",
+   "org": "Human Technopole",
+   "place": "Milan, Italy",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "earlham-institute-senior-postdoctoral-research-scientist-2026",
+   "title": "(Senior) Postdoctoral Research Scientist",
+   "url": "https://www.jobs.ac.uk/job/DTE706/senior-postdoctoral-research-scientist",
+   "keywords": [
+    "bioinformatics",
+    "metagenomics",
+    "statistics",
+    "machine learning",
+    "microbiome",
+    "computational biology"
+   ],
+   "summary": "A postdoctoral research scientist position in the High-Resolution Microbiomics group at the Earlham Institute to develop computational and mathematical methods to study the soil microbiome using long read metagenomics and metatranscriptomics.",
+   "deadline": "2026-11-13",
+   "org": "Earlham Institute",
+   "place": "Norwich, UK",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "nibio-norwegian-institute-of-bioeconomy-research-researcher-2026",
+   "title": "Researcher - AI for Forestry",
+   "url": "https://euraxess.ec.europa.eu/jobs/472462",
+   "keywords": [
+    "artificial intelligence",
+    "deep learning",
+    "computer vision",
+    "lidar",
+    "forestry",
+    "remote sensing"
+   ],
+   "summary": "NIBIO seeks a Research Scientist to lead development and implementation of AI models for forestry, including deep learning for LiDAR, imagery and multimodal sensor data. The permanent full-time position is based at NIBIO's headquarters in Ås, Norway.",
+   "deadline": "2026-11-30",
+   "org": "NIBIO - Norwegian Institute of Bioeconomy Research",
+   "place": "Ås, Norway",
+   "type": "job",
+   "remote": false
+  },
+  {
+   "id": "university-of-california-los-angeles-postdoctoral-scholar-in-2026",
+   "title": "Postdoctoral Scholar in Visual System Neurobiology & Multi-Omics",
+   "url": "https://www.nature.com/naturecareers/job/12864661/postdoctoral-scholar-in-visual-system-neurobiology-and-multi-omics/?LinkSource=PremiumListing",
+   "keywords": [
+    "single-cell multiomics",
+    "spatial transcriptomics",
+    "bioinformatics",
+    "functional genomics",
+    "neuroscience",
+    "computational modeling"
+   ],
+   "summary": "A fully funded Postdoctoral Scholar position supported by recent NIH awards is available in the The Peng Lab (Department of Ophthalmology, UCLA). The lab combines single-cell multiomics, cell-surface proteomics, viral vector engineering, and computational modeling to decode the development, circuit organization, and degeneration of the visual system.",
+   "deadline": "2026-12-15",
+   "org": "University of California Los Angeles",
+   "place": "Los Angeles, California",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "university-of-essex-phd-studentship-virome-dynamics-and-vira-2026",
+   "title": "PhD Studentship: Virome Dynamics and Viral Discovery in Rehabilitated Bats Revealed by Longitudinal Metagenomics",
+   "url": "https://www.jobs.ac.uk/job/DTG073/phd-studentship-virome-dynamics-and-viral-discovery-in-rehabilitated-bats-revealed-by-longitudinal-metagenomics",
+   "keywords": [
+    "metagenomics",
+    "virome",
+    "viral genomics",
+    "bioinformatics",
+    "ecology",
+    "wildlife"
+   ],
+   "summary": "A fully-funded ARIES PhD studentship at the University of Essex providing a longitudinal view of virome dynamics during bat rehabilitation using shotgun metagenomic sequencing and bioinformatic and ecological analyses.",
+   "deadline": "2026-12-16",
+   "org": "University of Essex",
+   "place": "Essex, United Kingdom",
+   "type": "phd",
+   "remote": false
+  },
+  {
+   "id": "memorial-sloan-kettering-cancer-center-postdoctoral-fellow-c-2026",
+   "title": "Postdoctoral Fellow, Computational Immuno-Oncology and Immune-Related Adverse Events",
+   "url": "https://www.nature.com/naturecareers/job/12865115/postdoctoral-fellow-computational-immuno-oncology-and-immune-related-adverse-events-/?LinkSource=PremiumListing",
+   "keywords": [
+    "computational biology",
+    "immuno-oncology",
+    "cancer genomics",
+    "statistical genetics",
+    "natural language processing",
+    "gwas",
+    "bioinformatics"
+   ],
+   "summary": "A postdoctoral fellow position in the Reznik Laboratory within MSK's Computational Oncology Service, investigating immune-related adverse events from cancer immunotherapy using large-scale multimodal datasets including clinical text, germline genetics, and outcomes.",
+   "deadline": "2026-12-27",
+   "org": "Memorial Sloan Kettering Cancer Center",
+   "place": "New York City, New York (US)",
+   "type": "postdoc",
+   "remote": false
+  },
+  {
+   "id": "institute-for-research-in-biomedicine-bellinzona-bioimage-an-2026",
+   "title": "Bioimage Analyst (100%) for Microscopy Facility",
+   "url": "https://euraxess.ec.europa.eu/jobs/472460",
+   "keywords": [
+    "bioimage analysis",
+    "computer vision",
+    "deep learning",
+    "microscopy",
+    "python",
+    "image analysis"
+   ],
+   "summary": "A Bioimage Analyst position is available in the Microscopy Facility at the Institute for Research in Biomedicine (IRB), Bellinzona Institutes of Science (Bios+), in Bellinzona, Switzerland, to develop custom, state-of-the-art image analysis solutions for our research community spanning immunology, oncology, and translational research.",
+   "deadline": "2026-11-12",
+   "org": "Institute for Research in Biomedicine (Bellinzona)",
+   "place": "Bellinzona, Switzerland",
+   "type": "job",
+   "remote": false
+  },
+  {
+   "id": "china-national-center-for-bioinformation-china-national-cent-2027",
+   "title": "China National Center for Bioinformation Announces Global Recruitment for High-Level Talents",
+   "url": "https://www.nature.com/naturecareers/job/12860964/china-national-center-for-bioinformation-announces-global-recruitment-for-high-level-talents/?LinkSource=PremiumListing",
+   "keywords": [
+    "bioinformatics",
+    "genomics",
+    "artificial intelligence",
+    "multi-omics",
+    "data science",
+    "computational biology"
+   ],
+   "summary": "The China National Center for Bioinformation (CNCB) is recruiting high-level professionals worldwide in biological big data, tools and algorithms, and artificial intelligence. Positions include Distinguished Researcher/Senior Scientist, Young Scientist, Postdoctoral Fellow, and other roles such as data scientists and senior engineers.",
+   "deadline": "2027-06-23",
+   "org": "China National Center for Bioinformation",
+   "place": "Beijing, China",
+   "type": "job",
+   "remote": false
+  },
+  {
+   "id": "wroc-aw-university-of-environmental-and-life-sciences-resear-2026",
+   "title": "Research-Technical Employee in the Department of Biochemistry and Molecular Biology (PACMAN Project – Vacancy 3) (M/F/X)",
+   "url": "https://euraxess.ec.europa.eu/jobs/472444",
+   "keywords": [
+    "veterinary",
+    "oncology",
+    "immunology",
+    "antibody-drug conjugates",
+    "animal models",
+    "molecular biology"
+   ],
+   "summary": "A research-technical employee position at the Department of Biochemistry and Molecular Biology, Wrocław University of Environmental and Life Sciences, within the PACMAN project on personalized antibody-drug conjugates activated by matrix metalloproteinases for solid tumors. The role involves preclinical in vivo research on animal models, including testing therapeutic antibodies and conjugates in p",
+   "deadline": "2026-10-26",
+   "org": "WROCŁAW UNIVERSITY OF ENVIRONMENTAL AND LIFE SCIENCES",
+   "place": "Wrocław, Poland",
+   "type": "job",
+   "remote": false
+  },
+  {
+   "id": "associa-o-biopolis-junior-researcher-2026",
+   "title": "Junior Researcher",
+   "url": "https://euraxess.ec.europa.eu/jobs/472457",
+   "keywords": [
+    "biology",
+    "ornithology",
+    "data analysis",
+    "r",
+    "gis",
+    "tracking",
+    "fieldwork"
+   ],
+   "summary": "BIOPOLIS Association opens an international selection procedure for a Junior Researcher to carry out research activities on the ontogeny of migratory behavior of birds in response to environmental change, under a 12-month fixed-term contract.",
+   "deadline": "2026-11-15",
+   "org": "ASSOCIAÇÃO BIOPOLIS",
+   "place": "Lisboa, Portugal",
+   "type": "postdoc",
+   "remote": false
+  }
+ ],
+ "funding": [
+  {
+   "id": "maynooth-university-maynooth-university-phd-scholarship-depa-2026",
+   "title": "Maynooth University PhD Scholarship - Department of Biology & Kathleen Lonsdale Institute for Human Health Research",
+   "url": "https://euraxess.ec.europa.eu/jobs/funding/maynooth-university-phd-scholarship-department-biology-kathleen-lonsdale-institute",
+   "keywords": [
+    "antimicrobial resistance",
+    "genomics",
+    "microbiology",
+    "data analysis",
+    "one health",
+    "bacteriology"
+   ],
+   "summary": "A fully funded four-year PhD scholarship at Maynooth University's Department of Biology & Kathleen Lonsdale Institute for Human Health Research, commencing January 2027. The project investigates antimicrobial resistance (AMR) across the animal-environmental nexus within One Health research.",
+   "deadline": "2026-11-06",
+   "org": "Maynooth University",
+   "who": "Applicants with minimum first class or 2.1 honours in their BSc degree in microbiology, molecular biology or related subject or an MSc in microbiology, molecula",
+   "amount": "A student stipend of €25,000 per annum. Paid Annual Tuition "
+  },
+  {
+   "id": "kungliga-vetenskapsakademien-kva-the-royal-swedish-academy-o-2026",
+   "title": "JSPS international fellowships for research in Japan (short-term | social science, natural science, humanities | Sweden)",
+   "url": "https://euraxess.ec.europa.eu/jobs/funding/jsps-international-fellowships-research-japan-short-term-social-science-natural",
+   "keywords": [
+    "jsps",
+    "fellowship",
+    "japan",
+    "research",
+    "natural sciences",
+    "social sciences",
+    "humanities"
+   ],
+   "summary": "The JSPS international fellowships for research in Japan (short-term) from the Kungliga Vetenskapsakademien (KVA), The Royal Swedish Academy of Sciences, in collaboration with the Japan Society for the Promotion of Science (JSPS), support Swedish pre-/post-doctoral researchers to conduct cooperative research under the guidance of their hosts cooperative research with leading research groups in uni",
+   "deadline": "2026-11-30",
+   "org": "Kungliga Vetenskapsakademien (KVA), The Royal Swedish Academy of Sciences",
+   "who": "Swedish pre-/post-doctoral researchers",
+   "amount": "stipend of up to 362,000 JPY/month for up to 12 months, plus"
+  },
+  {
+   "id": "embo-postdoctoral-fellowships-2027",
+   "title": "Postdoctoral Fellowships",
+   "url": "https://www.embo.org/funding/fellowships-grants-and-career-support/postdoctoral-fellowships/",
+   "keywords": [
+    "postdoctoral",
+    "fellowship",
+    "mobility",
+    "life sciences",
+    "europe",
+    "research"
+   ],
+   "summary": "EMBO Postdoctoral Fellowships support excellent postdoctoral researchers throughout Europe and the world for a period of up to two years. International mobility is a key requirement.",
+   "deadline": "2027-01-22",
+   "org": "EMBO",
+   "who": "postdoctoral researchers",
+   "amount": "salary or stipend, a relocation allowance and support for fe"
+  },
+  {
+   "id": "embo-maria-leptin-embo-science-journalism-fellowships-2026",
+   "title": "Maria Leptin|EMBO Science Journalism Fellowships",
+   "url": "https://www.embo.org/funding/fellowships-grants-and-career-support/maria-leptin-embo-science-journalism-fellowships/",
+   "keywords": [
+    "science journalism",
+    "life sciences",
+    "fellowship",
+    "placement",
+    "newsroom",
+    "research institutions"
+   ],
+   "summary": "The scheme supports science journalism by providing journalists with funded placements (sabbaticals) at research institutions, and researchers wishing to transition full time to science journalism with funded placements in media newsrooms.",
+   "deadline": "2026-10-30",
+   "org": "EMBO",
+   "who": "life scientists pursuing a career in science journalism and science journalists who wish to further their scientific education",
+   "amount": ""
+  },
+  {
+   "id": "alexander-von-humboldt-foundation-international-climate-prot-2027",
+   "title": "International Climate Protection Fellowship (for postdocs from LMICs to research in Germany)",
+   "url": "https://euraxess.ec.europa.eu/jobs/funding/international-climate-protection-fellowship-postdocs-lmics-research-germany",
+   "keywords": [
+    "climate protection",
+    "resource conservation",
+    "postdoctoral",
+    "germany",
+    "developing countries",
+    "fellowship"
+   ],
+   "summary": "The International Climate Protection Fellowship from the Alexander von Humboldt Foundation provides fellowship funding for postdoctoral fellows to conduct research on climate protection or climate-related resource conservation in Germany for 12-24 months.",
+   "deadline": "2027-02-10",
+   "org": "Alexander von Humboldt Foundation",
+   "who": "postdocs from LMICs",
+   "amount": "3,000 EUR per month + additional benefits"
+  },
+  {
+   "id": "wenner-gren-stiftelserna-postdoktorstipendier-f-r-utbildning-2027",
+   "title": "Postdoktorstipendier för utbildning i Sverige | Postdoctoral fellowships for international researchers (all disciplines | Sweden)",
+   "url": "https://euraxess.ec.europa.eu/jobs/funding/postdoktorstipendier-utbildning-i-sverige-postdoctoral-fellowships-international",
+   "keywords": [
+    "postdoctoral",
+    "fellowship",
+    "sweden",
+    "international",
+    "all disciplines",
+    "phd"
+   ],
+   "summary": "The Postdoctoral fellowships from Wenner-Gren Stiftelserna support non-Swedish postdoctoral researchers for postdoctoral training in Sweden. Applications are open to the host institution and not the proposed candidate directly.",
+   "deadline": "2027-10-01",
+   "org": "Wenner-Gren Stiftelserna",
+   "who": "non-Swedish postdoctoral researchers; candidate must have completed their PhD within the past 5 years",
+   "amount": "up to 24 months of funding support"
+  }
+ ],
+ "conferences": [
+  {
+   "id": "elixir-3d-bioinfo-community-and-iscb-3dsig-cosi-locally-orga-2026",
+   "title": "The ELIXIR 3D-BioInfo Annual General Meeting (AGM) | ISCB 3DSig 2026",
+   "url": "https://www.iscb.org/3dbioinfo2026/home",
+   "keywords": [
+    "structural bioinformatics",
+    "computational biology",
+    "machine learning",
+    "ai",
+    "cryo-electron microscopy",
+    "3d-bioinfo",
+    "3dsig"
+   ],
+   "summary": "The ELIXIR 3D-BioInfo Annual General Meeting (AGM) | ISCB 3DSig 2026 is a joint conference of the ELIXIR 3D-BioInfo and ISCB 3DSIG Communities, held 25-27 November 2026 in Rome, Italy. It brings together structural bioinformatics researchers for networking and to exchange ideas on workflows and resources for new developments in data and methods.",
+   "deadline": "2026-11-01",
+   "place": "Rome, Italy",
+   "starts": "2026-11-25",
+   "ends": "2026-11-27",
+   "student": ""
+  },
+  {
+   "id": "embl-ebi-training-introduction-to-rna-seq-and-functional-int-2026",
+   "title": "Introduction to RNA-seq and functional interpretation 2027",
+   "url": "https://www.ebi.ac.uk/training/events/introduction-rna-seq-and-functional-interpretation-2027/",
+   "keywords": [
+    "rna-seq",
+    "transcriptomics",
+    "bioinformatics",
+    "gene expression",
+    "nextflow",
+    "long read",
+    "functional interpretation"
+   ],
+   "summary": "A five-day virtual course guiding participants through the core technology, data analysis approaches, tools, and resources used in RNA sequencing (RNA-seq) and transcriptomics. It combines pre-recorded lectures, live presentations, trainer Q&A sessions, and computational practicals.",
+   "deadline": "2026-11-22",
+   "place": "online",
+   "starts": "2027-02-22",
+   "ends": "2027-02-26",
+   "student": "Financial assistance is available to a limited number of participants attending this course."
+  },
+  {
+   "id": "embl-ebi-training-introduction-to-multi-omics-data-integrati-2026",
+   "title": "Introduction to multi-omics data integration and visualisation 2027",
+   "url": "https://www.ebi.ac.uk/training/events/introduction-multi-omics-data-integration-and-visualisation-2027/",
+   "keywords": [
+    "multi-omics",
+    "data integration",
+    "visualisation",
+    "bioinformatics",
+    "cytoscape",
+    "mofa",
+    "cosmos",
+    "omnipath"
+   ],
+   "summary": "This introductory course will highlight the challenges that researchers face in integrating multi-omics datasets. The course will focus on biological examples in a practice oriented way, using public data resources and open access tools, with an emphasis on visualisation.",
+   "deadline": "2026-11-22",
+   "place": "Hinxton, United Kingdom",
+   "starts": "2027-03-08",
+   "ends": "2027-03-12",
+   "student": "Financial assistance is available to a limited number of participants attending this course. For full details, please refer to our dedicated support page for in"
+  },
+  {
+   "id": "embl-ebi-training-single-cell-rna-seq-analysis-with-python-2-2027",
+   "title": "Single-cell RNA-seq analysis with Python 2027",
+   "url": "https://www.ebi.ac.uk/training/events/single-cell-rna-seq-analysis-python-2027/",
+   "keywords": [
+    "single-cell",
+    "rna-seq",
+    "python",
+    "bioinformatics",
+    "transcriptomics",
+    "data analysis"
+   ],
+   "summary": "A virtual five-day EMBL-EBI Training course covering the analysis of single-cell RNA sequencing data using Python and command-line tools, from raw reads to cell clusters. It includes live sessions, practicals, and a group challenge.",
+   "deadline": "2027-01-10",
+   "place": "online",
+   "starts": "2027-04-12",
+   "ends": "2027-04-16",
+   "student": "Financial assistance is available to a limited number of participants attending this course."
+  },
+  {
+   "id": "embl-ebi-training-proteomics-bioinformatics-2027-2027",
+   "title": "Proteomics bioinformatics 2027",
+   "url": "https://www.ebi.ac.uk/training/events/proteomics-bioinformatics-2027/",
+   "keywords": [
+    "proteomics",
+    "bioinformatics",
+    "mass spectrometry",
+    "data analysis",
+    "proteogenomics",
+    "protein interaction"
+   ],
+   "summary": "This course provides hands-on training in the basics of mass spectrometry (MS) and proteomics bioinformatics. The practical elements of the course will take raw data from a proteomics experiment and analyse it.",
+   "deadline": "2027-03-14",
+   "place": "European Bioinformatics Institute, United Kingdom",
+   "starts": "2027-07-12",
+   "ends": "2027-07-16",
+   "student": ""
+  },
+  {
+   "id": "embl-ebi-training-exploring-microbial-communities-through-me-2027",
+   "title": "Exploring microbial communities through metagenomics bioinformatics 2027",
+   "url": "https://www.ebi.ac.uk/training/events/metagenomics-bioinformatics-2027/",
+   "keywords": [
+    "metagenomics",
+    "bioinformatics",
+    "microbial communities",
+    "assembly",
+    "mag",
+    "annotation",
+    "training"
+   ],
+   "summary": "A virtual EMBL-EBI training course providing a practical introduction to metagenomics bioinformatics, focusing on assembly-based approaches and metagenome-assembled genomes (MAGs). It covers quality control, decontamination, assembly, functional annotation, and public resources such as MGnify, ENA, HMMER, and InterPro.",
+   "deadline": "2027-03-28",
+   "place": "Online",
+   "starts": "2027-06-27",
+   "ends": "2027-07-01",
+   "student": ""
+  },
+  {
+   "id": "embl-ebi-training-methods-for-infectious-disease-modelling-u-2027",
+   "title": "Methods for infectious disease modelling using genomics",
+   "url": "https://www.ebi.ac.uk/training/events/methods-infectious-disease-modelling-using-genomics-2027/",
+   "keywords": [
+    "infectious disease modelling",
+    "genomics",
+    "phylodynamics",
+    "pathogen evolution",
+    "compartmental models",
+    "phylogenetics",
+    "biostatistics"
+   ],
+   "summary": "A live training course at EMBL-EBI teaching concepts, methods, and tools for infectious disease modelling using genomics, including compartmental models, pathogen evolution models, and phylodynamics. It is aimed at early-stage researchers and professionals in infectious diseases or pathogen evolution.",
+   "deadline": "2027-06-27",
+   "place": "European Bioinformatics Institute, United Kingdom",
+   "starts": "2027-10-11",
+   "ends": "2027-10-15",
+   "student": ""
+  },
+  {
+   "id": "embl-ebi-training-genome-bioinformatics-from-short-to-long-r-2027",
+   "title": "Genome bioinformatics: from short- to long-read sequencing 2027",
+   "url": "https://www.ebi.ac.uk/training/events/genome-bioinformatics-short-long-read-sequencing-2027/",
+   "keywords": [
+    "genome bioinformatics",
+    "long-read sequencing",
+    "short-read sequencing",
+    "variant calling",
+    "next-generation sequencing",
+    "human genetic research"
+   ],
+   "summary": "A live training course at EMBL-EBI covering the technology, analysis workflows, tools, and resources for next-generation sequencing data analysis, focusing on sequence informatics, re-sequencing, differences between short- and long-read sequencing, and variant calling. It is currently in development, with applications opening on 4 May 2027.",
+   "deadline": "2027-08-01",
+   "place": "European Bioinformatics Institute, United Kingdom",
+   "starts": "2027-11-15",
+   "ends": "2027-11-19",
+   "student": ""
+  },
+  {
+   "id": "embl-ebi-training-data-science-for-life-scientists-2027",
+   "title": "Data science for life scientists",
+   "url": "https://www.ebi.ac.uk/training/events/data-science-life-scientists-2027/",
+   "keywords": [
+    "machine learning",
+    "python",
+    "data science",
+    "life sciences",
+    "deep learning",
+    "large language models"
+   ],
+   "summary": "This course introduces you to practical data-science skills that are increasingly essential in modern life-science research. Using Python, you'll learn how to prepare, process, and visualise key biological data types, and you gain hands-on experience training and evaluating machine-learning models with real, publicly available datasets.",
+   "deadline": "2027-02-28",
+   "place": "European Bioinformatics Institute, United Kingdom",
+   "starts": "2027-06-14",
+   "ends": "2027-06-18",
+   "student": ""
+  },
+  {
+   "id": "embl-ebi-training-structural-bioinformatics-2027-2027",
+   "title": "Structural bioinformatics 2027",
+   "url": "https://www.ebi.ac.uk/training/events/structural-bioinformatics-2027/",
+   "keywords": [
+    "structural bioinformatics",
+    "macromolecular structure",
+    "protein structure",
+    "ai-predicted structure",
+    "bioinformatics tools",
+    "data resources"
+   ],
+   "summary": "A virtual EMBL-EBI Training course providing a guide to commonly used methods and tools in structural bioinformatics to analyse and interpret experimentally determined and AI-predicted macromolecular structure data. Applications open 2 March 2027.",
+   "deadline": "2027-06-13",
+   "place": "online",
+   "starts": "2027-09-13",
+   "ends": "2027-09-17",
+   "student": ""
+  },
+  {
+   "id": "embl-ebi-training-interpreting-the-effects-of-genetic-varian-2027",
+   "title": "Interpreting the effects of genetic variants on protein structure and function",
+   "url": "https://www.ebi.ac.uk/training/events/interpreting-effects-genetic-variants-2027/",
+   "keywords": [
+    "genetic variants",
+    "protein structure",
+    "protein function",
+    "ensembl",
+    "vep",
+    "uniprot",
+    "alphafolddb"
+   ],
+   "summary": "This six-hour virtual workshop will provide participants with an opportunity to gain hands-on experience of using EMBL-EBI tools and resources to assess the effects of genetic variants on the structure and function of proteins in a common workflow.",
+   "deadline": "2027-09-23",
+   "place": "online",
+   "starts": "",
+   "ends": "",
+   "student": ""
+  }
+ ],
  "resources": [
   {
    "id": "software-carpentry",
