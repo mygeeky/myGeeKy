@@ -10,37 +10,73 @@ Everything here is a draft to paste into the Play Console. Lines marked **(you d
 | `feature-graphic.png` | Feature graphic | 1024 × 500 |
 | `screenshot-1.png` … `screenshot-6.png` | Phone screenshots (2–8) | 1080 × 1920 |
 
+> **The screenshots are from 12 October and show the app before 🌱 Grow, 🎯 Chances and 🏆 Quiz.**
+> Retake them before the listing goes up: Grow → Protocols, a quiz question mid-attempt, Chances →
+> Funding, Skills, Badges. No device frame around them, or Play rejects them.
+
 ## Store listing
 
 **App name** (max 30): `myGeeKy`
 
 **Short description** (max 80):
-`Your research field on your phone: papers, tools, AI models, people. No tracking.`
+`Grow your skills, find real chances, and keep your research moving. No tracking.`
 
 **Full description** (max 4000):
 
 ```
-myGeeKy keeps you close to your field without the noise of social media.
+myGeeKy is a quiet companion for people who work at a computer: developers and computer
+scientists, bioinformaticians and data scientists, and researchers who analyse their own
+experiments.
 
-Tell it your GitHub username (and, if you like, your ORCID iD and a few keywords). It learns what you work on, on your phone, and brings you what matters to that work:
+GROW
+Pick a skill and follow a reviewed protocol: a short path of steps, each pointing at a real
+tutorial, repository, paper or course that somebody checked by hand. Fourteen of them so far,
+from Git and GitHub teamwork to statistics for experiments, from a first web app to
+single-cell RNA-seq, from algorithms for interviews to turning images into numbers.
 
-• News: AI labs, journals and the tech press, ranked by your interests
-• Papers: rising papers in your field, gaining citations fastest
-• Repos: the popular, active tools your field runs on
-• AI models: trending on Hugging Face, your field first
-• Launches: new tools on Product Hunt
-• People and activity: who builds the tools of your field, and who follows you
-• Badges: small milestones as you read and explore
+PROVE IT
+Every protocol has a quiz. Each question quotes a sentence that is really on one of that
+protocol's own sources, so any answer can be checked against the page it came from. Ten
+questions an attempt, a mix of easy, applied and the real pitfalls. Only your best score
+counts, one attempt a day, and you can flag a question you think is wrong.
 
-Signals (optional): private thank-yous between myGeeKy users. "Thanks", "I learned from your work", "I used your tool". Each one is encrypted so only the person it's for can read it, and no reply is ever expected. You can also invite people whose skills fit to help with one of your projects; each person's own myGeeKy decides whether your call fits their work, on their own device.
+FIND YOUR CHANCES
+Jobs, funding calls and conferences, each one read and verified before it is listed, ranked
+by how well it fits what you actually work on. Deadlines are checked, and anything past its
+date disappears by itself.
 
-Private by design:
-• No myGeeKy account, no myGeeKy server, no analytics, no ads
+KEEP UP WITHOUT THE NOISE
+Rising papers in your field, the tools your field runs on, trending AI models, new launches,
+and who builds what. Badges for the things you got done.
+
+Signals (optional): private thank-yous between myGeeKy users. Each one is encrypted so only
+the person it is for can read it, and no reply is ever expected.
+
+PRIVATE BY DESIGN
+• No myGeeKy account and no myGeeKy server: you sign in with GitHub or ORCID
+• No analytics, no ads, no tracking
 • What it learns about you stays on your phone
 • Your GitHub token is kept in the phone's secure storage and only ever sent to GitHub
 • It only reads public data. It never follows, stars or posts anything for you
 
-myGeeKy is free and open source (MIT). It also runs on Windows, macOS and Linux: mygeeky.org
+Pair it with the desktop app by scanning a QR code, and the two show the same things.
+
+myGeeKy is free and open source (MIT). The code, the reviewed protocols and every quiz
+question are public at github.com/mygeeky/myGeeKy. It also runs on Windows, macOS and
+Linux: mygeeky.org
+```
+
+**What's new** (max 500), for the first release:
+
+```
+The first release on Google Play.
+
+Grow: 14 reviewed protocols with every link checked by hand.
+Quizzes: 258 questions, each quoting the sentence on its own source that proves the answer.
+Chances: jobs, funding and conferences, verified and matched to your work.
+Pair with the desktop app by scanning a QR code.
+
+No account, no adverts, no tracking. Free and open source.
 ```
 
 **App category** (you decide): Productivity (or Education)
