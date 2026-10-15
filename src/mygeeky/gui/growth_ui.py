@@ -1363,3 +1363,84 @@ class OpportunityCard(QFrame):
         foot.addWidget(report)
         lay.addLayout(foot)
         self.setStyleSheet(_card_style("chanceCard", theme))
+
+
+class SeasonCard(QFrame):
+    """A scholarship that comes back every year: where it stands, and what to have ready before it does.
+
+    The honest part is the wording. A window myGeeKy read on a page and that is still running says "open
+    now"; everything else says "expected", and the card shows how many years of evidence stand behind that
+    expectation. Below it, the sentence that was actually found, with a link to the page it was found on --
+    so nobody has to take myGeeKy's word for any of it."""
+
+    STATE = {"open": ("🟢", "good"), "soon": ("🟡", "warn"), "later": ("⚪", "muted"),
+             "unknown": ("⚪", "muted")}
+
+    def __init__(self, season: dict[str, Any], theme: dict[str, Any], on_open: Callable[[str], Any],
+                 unverified: bool = False) -> None:
+        super().__init__()
+        from ..seasons import notice_text, prepare_now
+        self.setObjectName("seasonCard")
+        state = season.get("when") or {}
+        emoji, colour = self.STATE.get(state.get("state", "later"), ("⚪", "muted"))
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(10, 8, 10, 8)
+        lay.setSpacing(3)
+        title = _label(f"{emoji} <b>{html.escape(season.get('title', ''))}</b>",
+                       f"color:{theme['text']}; font-size:12px; background:transparent;", rich=True)
+        title.setCursor(Qt.PointingHandCursor)
+        url = season.get("url", "")
+        title.mousePressEvent = lambda ev: on_open(url)  # noqa: ARG005
+        lay.addWidget(title)
+        by = season.get("org", "")
+        if season.get("through"):
+            by = f"{by} · through {season['through']}" if by else f"through {season['through']}"
+        if by:
+            lay.addWidget(_label(by, _muted(theme, 10.5)))
+        # where it stands, and how much to trust that
+        years = state.get("years", 0)
+        bits = [notice_text(state)]
+        if state.get("opens") and not state.get("confirmed"):
+            bits.append(f"{state['opens']} → {state['closes']}")
+        bits.append("no history yet" if not years else
+                    f"{years} year of evidence" if years == 1 else f"{years} years of evidence")
+        lay.addWidget(_label(" · ".join(bits), f"color:{theme[colour]}; font-size:11px; "
+                             "background:transparent;"))
+        who = ", ".join(season.get("for") or []) or "anyone"
+        going = season.get("goes_to", "")
+        levels = "/".join(season.get("levels") or [])
+        lay.addWidget(_label(" · ".join(x for x in [f"for {who}", f"→ {going}" if going else "", levels] if x),
+                             _muted(theme, 10.5)))
+        if unverified:
+            lay.addWidget(_label("⏳ Not confirmed against its own page yet: only you see it",
+                                 f"color:{theme['warn']}; font-size:10.5px; background:transparent;"))
+        if season.get("summary"):
+            lay.addWidget(_label(season["summary"], f"color:{theme['text']}; font-size:10.5px; "
+                                 "background:transparent;"))
+        # the part that makes somebody ready rather than merely informed
+        weeks = season.get("prepare_weeks", 4)
+        now = prepare_now(season)
+        lay.addWidget(_label(f"{'⚠ Start preparing now' if now else 'Start preparing'} — it wants about "
+                             f"{weeks} weeks:", f"color:{theme['warn'] if now else theme['muted']}; "
+                             "font-size:10.5px; background:transparent;"))
+        for step in season.get("prepare") or []:
+            lay.addWidget(_label(f"□ {html.escape(step)}", _muted(theme, 10), rich=True))
+        self._evidence(lay, season, theme, on_open)
+        self.setStyleSheet(_card_style("seasonCard", theme))
+
+    def _evidence(self, lay: QVBoxLayout, season: dict[str, Any], theme: dict[str, Any],
+                  on_open: Callable[[str], Any]) -> None:
+        """The sentence myGeeKy found, and where. Without this a season is only a rumour."""
+        seen = [s for s in (season.get("seen") or []) if s.get("checked")]
+        if not seen:
+            return
+        last = seen[0]
+        lay.addWidget(_label(f"✓ seen open {last.get('opens') or '?'} → {last['closes']}",
+                             f"color:{theme['good']}; font-size:10px; background:transparent;"))
+        lay.addWidget(_label(f"<i>“{html.escape(last['quote'][:160])}”</i>", _muted(theme, 10), rich=True))
+        page = QPushButton("Open the page it was found on ↗")
+        page.setCursor(Qt.PointingHandCursor)
+        page.setStyleSheet(f"QPushButton {{ color:{theme['link']}; background:transparent; border:none; "
+                           "font-size:10px; text-align:left; padding:1px 0; }")
+        page.clicked.connect(lambda: on_open(last["url"]))
+        lay.addWidget(page)

@@ -311,3 +311,109 @@ def horizon(seasons: list[dict[str, Any]], today: date | None = None) -> date:
     today = today or date.today()
     most = max((s.get("prepare_weeks", 4) * 7 for s in seasons), default=LEAST_NOTICE)
     return today + timedelta(days=max(LEAST_NOTICE, most))
+
+
+# --------------------------------------------------------------------------- the periods people step through
+TOGETHER = 45          # programmes opening within this many days of each other belong to one period
+_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def occurrences(season: dict[str, Any], today: date | None = None, back: int = 1,
+                ahead: int = 2) -> list[dict[str, Any]]:
+    """Every window this season is believed to have had, or to be about to have, over a span of years.
+
+    A window myGeeKy read on a page comes back marked `confirmed`; the rest are worked out from the
+    pattern and are expectations, nothing more."""
+    today = today or date.today()
+    open_md, close_md, _ = pattern(season)
+    if not close_md:
+        return []
+    known = {s["closes"]: s for s in season.get("seen") or [] if s.get("checked")}
+    out = []
+    for year in range(today.year - back, today.year + ahead + 1):
+        closes = _on(year, close_md)
+        opens = _on(year, open_md) if open_md else None
+        if not closes:
+            continue
+        if opens and opens > closes:
+            opens = _on(year - 1, open_md)
+        seen = known.get(closes.isoformat())
+        out.append({"opens": (opens or closes).isoformat(), "closes": closes.isoformat(),
+                    "confirmed": bool(seen), "quote": (seen or {}).get("quote", ""),
+                    "url": (seen or {}).get("url", "")})
+    return sorted(out, key=lambda o: o["opens"])
+
+
+def _label(start: date, end: date, today: date) -> str:
+    """How a period is named in the drop box: short, and honest about which one we are in."""
+    if start.year == end.year:
+        span = _MONTHS[start.month - 1] if start.month == end.month else \
+            f"{_MONTHS[start.month - 1]}/{_MONTHS[end.month - 1]}" if end.month - start.month == 1 else \
+            f"{_MONTHS[start.month - 1]}–{_MONTHS[end.month - 1]}"
+        return f"{span} {start.year}"
+    return f"{_MONTHS[start.month - 1]} {start.year} – {_MONTHS[end.month - 1]} {end.year}"
+
+
+def windows(seasons_in: list[dict[str, Any]], today: date | None = None, nationality: str = "",
+            levels: list[str] | None = None, only_evidenced: bool = True) -> list[dict[str, Any]]:
+    """The periods worth stepping through, in time order, each holding what falls in it.
+
+    Only periods that actually have something in them: an empty month is not a season, and a drop box full
+    of nothing teaches people the feature is empty. The period we are in is marked `now`, and the one
+    before it is kept so there is always a step backwards -- a programme that closed last week is the one
+    most worth seeing, because it says when to be ready next time."""
+    today = today or date.today()
+    rows = []
+    for season in seasons_in:
+        if not fits(season, nationality):
+            continue
+        if levels and season.get("levels") and not set(levels) & set(season["levels"]):
+            continue
+        if only_evidenced and not evidenced(season):
+            continue
+        for o in occurrences(season, today):
+            rows.append((o, season))
+    rows.sort(key=lambda r: r[0]["opens"])
+    groups: list[list[tuple[dict[str, Any], dict[str, Any]]]] = []
+    for row in rows:
+        if groups and days_between(groups[-1][-1][0]["opens"], row[0]["opens"]) <= TOGETHER:
+            groups[-1].append(row)
+        else:
+            groups.append([row])
+    out = []
+    for group in groups:
+        start = min(date.fromisoformat(o["opens"]) for o, _ in group)
+        end = max(date.fromisoformat(o["closes"]) for o, _ in group)
+        # named by when things OPEN, which is what groups them and what people act on. Naming it by the
+        # whole span would read "Oct 2026 - Feb 2027" next to a "Jan/Feb 2027" that overlaps it.
+        last_open = max(date.fromisoformat(o["opens"]) for o, _ in group)
+        out.append({
+            "id": f"{start.isoformat()}-{end.isoformat()}",
+            "label": _label(start, last_open, today),
+            "from": start.isoformat(), "to": end.isoformat(), "opens_to": last_open.isoformat(),
+            "now": start <= today <= end,
+            "past": end < today,
+            "seasons": [{**s, "occurrence": o, "when": when(s, today)} for o, s in group],
+        })
+    return out
+
+
+def current(wins: list[dict[str, Any]], today: date | None = None) -> int:
+    """Which period the drop box should start on: the one we are in, else the next one coming."""
+    today = today or date.today()
+    for i, w in enumerate(wins):
+        if w["now"]:
+            return i
+    for i, w in enumerate(wins):
+        if not w["past"]:
+            return i
+    return max(len(wins) - 1, 0)
+
+
+def around(wins: list[dict[str, Any]], today: date | None = None, back: int = 1,
+           ahead: int = 3) -> list[dict[str, Any]]:
+    """The periods to offer: the one we are in, one behind, and a few ahead. Not the whole calendar."""
+    if not wins:
+        return []
+    i = current(wins, today)
+    return wins[max(0, i - back):i + ahead + 1]

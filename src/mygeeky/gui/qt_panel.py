@@ -55,6 +55,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
+    QComboBox,
     QCompleter,
     QProgressBar,
     QDialog,
@@ -3914,7 +3915,8 @@ class MyGeekyPanel(QWidget):
     # ------------------------------------------------------------------ 🌱 Grow and 🎯 Chances
     GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("quiz", "🏆 Quiz"), ("learn", "📚 Learn"),
                   ("wins", "🎉 Wins"), ("collab", "🤝 Collaborators"))
-    CHANCE_MODES = (("jobs", "💼 Jobs"), ("funding", "💶 Funding"), ("conferences", "🎤 Conferences"))
+    CHANCE_MODES = (("seasons", "🗓 Seasons"), ("jobs", "💼 Jobs"), ("funding", "💶 Funding"),
+                    ("conferences", "🎤 Conferences"))
 
     def _scroll_page(self, build: Callable[[QVBoxLayout], None]) -> QScrollArea:
         page = QWidget()
@@ -3997,8 +3999,12 @@ class MyGeekyPanel(QWidget):
             self._render_grow()
 
     def _build_chances_tab(self) -> QScrollArea:
+        # 🗓 Seasons sits first in the row, but Chances still opens on Jobs: until more seasons have a
+        # sentence found on their own page, landing there would show two cards and look empty.
         self._chance_mode = "jobs"
         self._chances: dict[str, Any] = {}
+        self._seasons: dict[str, Any] = {}
+        self._season_window = 0
 
         def build(layout: QVBoxLayout) -> None:
             actions = QHBoxLayout()
@@ -4010,6 +4016,12 @@ class MyGeekyPanel(QWidget):
             actions.addWidget(self.refresh_chances_btn)
             layout.addLayout(actions)
             self.chance_mode_buttons = self._mode_row(layout, self.CHANCE_MODES, self._set_chance_mode)
+            # the drop box of periods: shown only for 🗓 Seasons, and starts on the one we are in
+            self.season_picker = QComboBox()
+            self.season_picker.setCursor(Qt.PointingHandCursor)
+            self.season_picker.currentIndexChanged.connect(self._on_season_window)
+            self.season_picker.setVisible(False)
+            layout.addWidget(self.season_picker)
             self.chances_hint = QLabel("")
             self.chances_hint.setWordWrap(True)
             layout.addWidget(self.chances_hint)
@@ -4226,6 +4238,52 @@ class MyGeekyPanel(QWidget):
         if data.get("hidden"):
             self._hidden_note(self.grow_area, data["hidden"], "collaborator", theme)
 
+    def _on_season_window(self, index: int) -> None:
+        """A different period chosen in the drop box. Nothing is fetched: it is all already here."""
+        if index < 0 or index == self._season_window:
+            return
+        self._season_window = index
+        if self._chance_mode == "seasons":
+            self._render_chances()
+
+    def _render_seasons(self, theme: dict[str, Any]) -> None:
+        """🗓 Seasons: one period's worth of scholarships, and what to get ready for each."""
+        from .growth_ui import SeasonCard
+        data = self._seasons or logic.get_seasons(self.cfg)
+        self._seasons = data
+        windows = data.get("windows") or []
+        if self.season_picker.count() != len(windows):
+            self.season_picker.blockSignals(True)      # filling it must not count as the user choosing
+            self.season_picker.clear()
+            for w in windows:
+                note = " (now)" if w["now"] else " (just gone)" if w["past"] else ""
+                self.season_picker.addItem(f"{w['label']}{note}")
+            self._season_window = min(data.get("at", 0), max(len(windows) - 1, 0))
+            self.season_picker.setCurrentIndex(self._season_window)
+            self.season_picker.blockSignals(False)
+        if not windows:
+            lbl = QLabel("No seasons yet. They arrive with the lists, which myGeeKy checks every few hours.")
+            lbl.setWordWrap(True)
+            lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
+            self.chances_area.addWidget(lbl)
+            return
+        window = windows[min(self._season_window, len(windows) - 1)]
+        span = QLabel(f"Opening {window['from']} to {window['opens_to']} · "
+                      f"everything in it closed by {window['to']}")
+        span.setWordWrap(True)
+        span.setStyleSheet(f"color:{theme['muted']}; font-size:10px; background:transparent;")
+        self.chances_area.addWidget(span)
+        for season in window["seasons"]:
+            self.chances_area.addWidget(SeasonCard(season, theme, logic.open_link,
+                                                   unverified=season.get("unverified", False)))
+        left = data.get("unverified", 0)
+        if left and logic.is_admin(self.cfg):
+            note = QLabel(f"{left} season(s) have no sentence found on their own page yet, so only you see "
+                          "them. Run the season check to confirm or drop them.")
+            note.setWordWrap(True)
+            note.setStyleSheet(f"color:{theme['warn']}; font-size:10px; background:transparent;")
+            self.chances_area.addWidget(note)
+
     def _render_chances(self) -> None:
         from .growth_ui import OpportunityCard
         theme = THEMES[self._theme_name()]
@@ -4233,6 +4291,14 @@ class MyGeekyPanel(QWidget):
         _clear_layout(self.chances_area)
         data = self._chances
         mode = self._chance_mode
+        self.season_picker.setVisible(mode == "seasons")
+        if mode == "seasons":
+            self.chances_hint.setText(
+                "Scholarships, grants and programmes that come back every year. A window myGeeKy read on a "
+                "page says \"open now\"; anything still to come says \"expected\", because no page can yet "
+                "say when next year's round opens. The point is the weeks before it: start preparing early.")
+            self._render_seasons(theme)
+            return
         if not getattr(self, "_chances_running", False):
             self.chances_updated_label.setText(data.get("error") or "")
         hints = {
@@ -4244,7 +4310,8 @@ class MyGeekyPanel(QWidget):
             "conferences": "Conferences in your field, with the abstract deadline and what students get. "
                            "Each one disappears after its deadline.",
         }
-        self.chances_hint.setText(hints[mode] + " 👍 / 👎 teach your model; 🚩 tells the maker one looks fake.")
+        self.chances_hint.setText(hints.get(mode, "") + " 👍 / 👎 teach your model; 🚩 tells the maker one "
+                                  "looks fake.")
         block = data.get(mode) or {}
         items = block.get("items") or []
         if not data:

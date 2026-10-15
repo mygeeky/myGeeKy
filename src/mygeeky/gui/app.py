@@ -983,6 +983,32 @@ def growth_due(cfg: MyGeekyConfig) -> bool:
     return profile_ready(cfg) and wins.due(wins.load())
 
 
+def get_seasons(cfg: MyGeekyConfig, today: Any = None) -> dict[str, Any]:
+    """The scholarships that come back every year, grouped into the periods people step through.
+
+    {"windows": [...], "at": index of the period we are in, "unverified": n}
+
+    Only seasons with a sentence found on their own page reach anybody; the rest are shown to the maker
+    alone, marked, exactly as an accepted-but-unpublished listing is. No network: the periods are worked
+    out from the lists already on this computer."""
+    from .. import curated, seasons as _seasons
+    everything = curated.load().get("seasons") or []
+    # eligibility matters more here than anywhere else: MEXT-through-Cairo is for Egyptians and is noise to
+    # everyone else. Nobody is made to say where they are from -- an empty answer is shown everything.
+    nationality = str(getattr(cfg, "country", "") or "")
+    maker = is_admin(cfg)
+    windows = _seasons.windows(everything, today, nationality=nationality, only_evidenced=not maker)
+    for w in windows:
+        for s in w["seasons"]:
+            s["unverified"] = not _seasons.evidenced(s)
+    offered = _seasons.around(windows, today)
+    at = next((i for i, w in enumerate(offered) if w["now"]),
+              next((i for i, w in enumerate(offered) if not w["past"]), 0))
+    return {"windows": offered, "at": at,
+            "unverified": sum(1 for s in everything if not _seasons.evidenced(s)),
+            "total": len(everything)}
+
+
 def get_opportunities(cfg: MyGeekyConfig) -> dict[str, Any]:
     """Verified jobs, funding and conferences, matched to you here (no network)."""
     from .. import curated, interests

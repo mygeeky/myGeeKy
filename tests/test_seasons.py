@@ -270,3 +270,73 @@ def test_the_page_wins_when_it_disagrees_with_what_was_written_down():
 def test_a_date_that_is_not_a_date_is_refused(field):
     out = scout.check_season(TURKIYE, _answer(**{field: "sometime in spring"}), PAGE)
     assert out["seen"] is None or not out["seen"][field]
+
+
+# --------------------------------------------------------------------------- the periods in the drop box
+def test_the_drop_box_only_offers_periods_with_something_in_them():
+    """An empty month is not a season. A drop box full of nothing teaches people the feature is empty."""
+    now = date(2026, 10, 15)
+    autumn = seasons.clean_season(_season(id="autumn-one", opens_about="10-01", closes_about="11-15",
+                                         seen=[_seen(opens="2026-10-01", closes="2026-11-15")]))
+    spring = seasons.clean_season(_season(id="spring-one", opens_about="04-01", closes_about="05-15",
+                                         seen=[_seen(opens="2026-04-01", closes="2026-05-15")]))
+    wins = seasons.windows([autumn, spring], now)
+    assert wins, "there are periods"
+    assert all(w["seasons"] for w in wins), "never an empty one"
+
+
+def test_programmes_opening_near_each_other_share_a_period():
+    now = date(2026, 10, 15)
+    a = seasons.clean_season(_season(id="opens-oct", opens_about="10-01", closes_about="11-15", seen=[]))
+    b = seasons.clean_season(_season(id="opens-nov", opens_about="11-01", closes_about="12-15", seen=[]))
+    far = seasons.clean_season(_season(id="opens-may", opens_about="05-01", closes_about="06-15", seen=[]))
+    wins = seasons.windows([a, b, far], now, only_evidenced=False)
+    together = [w for w in wins if w["now"]]
+    assert len(together) == 1
+    assert {s["id"] for s in together[0]["seasons"]} == {"opens-oct", "opens-nov"}
+
+
+def test_a_period_is_named_by_when_things_open():
+    """Naming it by the whole span would read 'Oct 2026 - Feb 2027' beside an overlapping 'Jan 2027'."""
+    now = date(2026, 10, 15)
+    s = seasons.clean_season(_season(id="long-one", opens_about="10-01", closes_about="02-14", seen=[]))
+    w = [x for x in seasons.windows([s], now, only_evidenced=False) if x["now"]][0]
+    assert w["label"] == "Oct 2026"
+    assert w["to"] > w["opens_to"], "it closes long after the last thing opens"
+
+
+def test_the_drop_box_starts_on_the_period_we_are_in_and_keeps_one_step_back():
+    """A programme that closed last week is the one most worth seeing: it says when to be ready next."""
+    now = date(2026, 10, 15)
+    s = seasons.clean_season(_season(opens_about="10-01", closes_about="11-15",
+                                     seen=[_seen(opens="2026-10-01", closes="2026-11-15")]))
+    wins = seasons.windows([s], now)
+    offered = seasons.around(wins, now)
+    at = seasons.current(offered, now)
+    assert offered[at]["now"] is True
+    assert at >= 1 and offered[at - 1]["past"] is True, "there is always a step backwards"
+
+
+def test_only_seasons_with_a_page_behind_them_reach_other_people():
+    now = date(2026, 10, 15)
+    claim = seasons.clean_season(_season(id="unchecked-one", seen=[_seen(checked=False)]))
+    assert seasons.windows([claim], now, only_evidenced=True) == []
+    assert seasons.windows([claim], now, only_evidenced=False), "the maker still sees it"
+
+
+def test_the_seasons_view_starts_on_the_period_we_are_in(monkeypatch):
+    from mygeeky.config import MyGeekyConfig
+    from mygeeky.gui import app as logic
+    out = logic.get_seasons(MyGeekyConfig(github_username="me"), date(2026, 10, 15))
+    assert out["windows"], "something is offered"
+    assert out["windows"][out["at"]]["now"] or not out["windows"][out["at"]]["past"]
+
+
+def test_a_season_card_draws_on_its_own(qapp_offscreen):
+    """It has to survive being built outside a period, because that is how the admin tab will show one."""
+    pytest.importorskip("PySide6")
+    from mygeeky.gui.growth_ui import SeasonCard
+    from mygeeky.gui.qt_panel import THEMES
+    s = seasons.clean_season(_season(seen=[_seen(opens="2026-10-01", closes="2026-11-15")]))
+    card = SeasonCard({**s, "when": seasons.when(s, date(2026, 10, 15))}, THEMES["midnight"], lambda u: None)
+    assert card is not None, "a season draws without a window around it"
