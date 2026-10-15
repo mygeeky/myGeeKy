@@ -4,6 +4,7 @@
 // nobody learns what matched or that you looked. Anything with a deadline
 // disappears the day after it.
 import bundled from '../data/curated.json';
+import { countryOf } from './countries';
 import { match, Weights } from './interests';
 import { fetchT } from './net';
 import { cleanProtocol, type Protocol } from './protocol-shape';
@@ -31,10 +32,12 @@ export type Item = {
   original_title?: string; language?: string;
   // the same listing to read in other languages, each entry carrying its own name and direction
   translations?: Record<string, Said>;
+  // the country `place` names, worked out here so a filter never has to guess twice
+  country?: string;
 };
 export type Said = { name: string; rtl: boolean; title: string; summary?: string; who?: string;
   amount?: string; student?: string };
-export type Lists = { version: string; protocols: Protocol[] } & Record<ListName, Item[]>;
+export type Lists = { version: string; protocols: Protocol[]; seasons: unknown[] } & Record<ListName, Item[]>;
 export type Ranked = Item & { score: number; match: string[]; daysLeft: number | null; vote: number };
 
 const text = (v: unknown, n: number) => (typeof v === 'string' || typeof v === 'number' ? String(v).split(/\s+/).join(' ').trim().slice(0, n) : '');
@@ -95,10 +98,12 @@ export function cleanItem(kind: ListName, raw: any): Item | null {
   if (kind === 'jobs') {
     const t = String(raw.type ?? 'job').toLowerCase();
     Object.assign(it, { org: text(raw.org, 100), place: text(raw.place, 80), type: t in JOB_TYPES ? t : 'job', remote: !!raw.remote });
+    it.country = countryOf(it.place);
   } else if (kind === 'funding') {
     Object.assign(it, { org: text(raw.org, 100), who: text(raw.who, 160), amount: text(raw.amount, 60) });
   } else if (kind === 'conferences') {
     Object.assign(it, { place: text(raw.place, 80), starts: day(raw.starts), ends: day(raw.ends), student: text(raw.student, 160) });
+    it.country = countryOf(it.place);
   } else {
     const t = String(raw.type ?? 'website').toLowerCase();
     const lv = String(raw.level ?? '').toLowerCase();
@@ -109,7 +114,9 @@ export function cleanItem(kind: ListName, raw: any): Item | null {
 }
 
 export function clean(data: any): Lists {
-  const out = { version: text(data?.version, 40), protocols: [] as Protocol[] } as Lists;
+  // `seasons` is passed through raw and cleaned by seasons.ts, the way protocols are by protocol-shape.ts
+  const out = { version: text(data?.version, 40), protocols: [] as Protocol[],
+    seasons: Array.isArray(data?.seasons) ? data.seasons.slice(0, 300) : [] } as Lists;
   const pids = new Set<string>();
   for (const raw of (Array.isArray(data?.protocols) ? data.protocols : []).slice(0, 200)) {
     const p = cleanProtocol(raw, true);                 // reviewed protocols: a skill as ordered stages (protocols.ts)
