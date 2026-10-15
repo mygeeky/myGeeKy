@@ -4005,6 +4005,7 @@ class MyGeekyPanel(QWidget):
         self._chances: dict[str, Any] = {}
         self._seasons: dict[str, Any] = {}
         self._season_window = 0
+        self._country = ""              # "" means anywhere
 
         def build(layout: QVBoxLayout) -> None:
             actions = QHBoxLayout()
@@ -4022,6 +4023,13 @@ class MyGeekyPanel(QWidget):
             self.season_picker.currentIndexChanged.connect(self._on_season_window)
             self.season_picker.setVisible(False)
             layout.addWidget(self.season_picker)
+            # where in the world: the choices are built from the listings themselves, so the filter can
+            # never offer a country with nothing behind it
+            self.country_picker = QComboBox()
+            self.country_picker.setCursor(Qt.PointingHandCursor)
+            self.country_picker.currentIndexChanged.connect(self._on_country_pick)
+            self.country_picker.setVisible(False)
+            layout.addWidget(self.country_picker)
             self.chances_hint = QLabel("")
             self.chances_hint.setWordWrap(True)
             layout.addWidget(self.chances_hint)
@@ -4238,6 +4246,33 @@ class MyGeekyPanel(QWidget):
         if data.get("hidden"):
             self._hidden_note(self.grow_area, data["hidden"], "collaborator", theme)
 
+    def _on_country_pick(self, index: int) -> None:
+        """A country chosen. Nothing is fetched: the listings are already here, so this only redraws."""
+        if index < 0:
+            return
+        want = self.country_picker.itemData(index) or ""
+        if want == self._country:
+            return
+        self._country = want
+        self._render_chances()
+
+    def _fill_countries(self, items: list[dict[str, Any]]) -> None:
+        """Offer every country these listings are actually in, and keep the one already chosen."""
+        from .. import curated as _curated
+        found = _curated.countries_in(items)
+        wanted = ["", *found]
+        if [self.country_picker.itemData(i) or "" for i in range(self.country_picker.count())] == wanted:
+            return
+        self.country_picker.blockSignals(True)      # filling it must not count as the user choosing
+        self.country_picker.clear()
+        self.country_picker.addItem("🌍 Anywhere", "")
+        for name in found:
+            self.country_picker.addItem(name, name)
+        if self._country not in found:
+            self._country = ""
+        self.country_picker.setCurrentIndex(max(0, wanted.index(self._country)))
+        self.country_picker.blockSignals(False)
+
     def _on_season_window(self, index: int) -> None:
         """A different period chosen in the drop box. Nothing is fetched: it is all already here."""
         if index < 0 or index == self._season_window:
@@ -4314,6 +4349,11 @@ class MyGeekyPanel(QWidget):
                                   "looks fake.")
         block = data.get(mode) or {}
         items = block.get("items") or []
+        self._fill_countries(items)
+        # funding listings carry no place, so there is nothing to filter them by and no filter is shown
+        self.country_picker.setVisible(bool(self.country_picker.count() > 1))
+        if self._country:
+            items = [it for it in items if it.get("country") == self._country]
         if not data:
             lbl = QLabel("Loading…")
             lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
@@ -5393,6 +5433,10 @@ class MyGeekyPanel(QWidget):
                                "Kept in this computer's credential store, never in a file", theme, self._on_scout_key))
         tools.add(_pill_button("🌐 Sites and field", "Which sites to look through, and your field", theme,
                                self._on_scout_sites))
+        paste = _pill_button("📋 Paste a page", "For a site myGeeKy can't read: open it yourself and paste "
+                             "the text", theme, self._on_scout_paste)
+        paste.setEnabled(key_ok and not getattr(self, "_scout_running", False))
+        tools.add(paste)
         running = getattr(self, "_scout_running", False)
         find = _pill_button("Looking…" if running else "🔎 Find new listings",
                             "Reads the sites, asks DeepSeek, checks every answer (a few minutes)", theme,
@@ -5508,6 +5552,85 @@ class MyGeekyPanel(QWidget):
             if len(parts) == 3:
                 sources.append({"kind": parts[0].lower(), "name": parts[1], "url": parts[2], "on": on})
         logic.scout_set_sources(sources, focus.text())
+        self._render_scout()
+
+    def _on_scout_paste(self) -> None:
+        """A page the maker copied out of their browser, read as if myGeeKy had fetched it.
+
+        Indeed, SimplyHired, Monster, ZipRecruiter and CareerBuilder all refuse a robot outright; LinkedIn
+        and Glassdoor answer but forbid it; SuccessFactors portals answer with an empty shell. This is how
+        a listing from any of them gets in, without myGeeKy pretending to be a browser."""
+        from PySide6.QtWidgets import QPlainTextEdit
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Paste a page")
+        dlg.setStyleSheet(self._dialog_css()
+                          + "QPlainTextEdit { background:#2a2640; color:#f0f0f5; border-radius:6px; }")
+        dlg.resize(600, 520)
+        lay = QVBoxLayout(dlg)
+        intro = QLabel("For a site myGeeKy can't read by itself. Open the page in your browser, select "
+                       "all of it, copy, and paste it below. One listing's own page works much better "
+                       "than a page of search results.\n\nNothing is fetched, so nothing can block it — "
+                       "and the checks are unchanged: the deadline sentence still has to be in what you "
+                       "paste, word for word.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+        lay.addWidget(QLabel("What is it?"))
+        kind = QComboBox()
+        for value, label in (("jobs", "💼 A job, PhD place or postdoc"), ("funding", "💶 Funding or a grant"),
+                             ("conferences", "🎤 A conference or course")):
+            kind.addItem(label, value)
+        lay.addWidget(kind)
+        lay.addWidget(QLabel("The page's link (so each listing has somewhere to point at):"))
+        url = QLineEdit()
+        url.setPlaceholderText("https://…")
+        lay.addWidget(url)
+        lay.addWidget(QLabel("The page, pasted:"))
+        body = QPlainTextEdit()
+        body.setPlaceholderText("Paste the whole page here…")
+        lay.addWidget(body, 1)
+        note = QLabel("")
+        note.setWordWrap(True)
+        lay.addWidget(note)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        shut = QPushButton("Cancel")
+        shut.clicked.connect(dlg.reject)
+        read = QPushButton("Read it")
+        read.setDefault(True)
+
+        def go() -> None:
+            text, link = body.toPlainText().strip(), url.text().strip()
+            if len(text) < 200:
+                note.setText("That looks too short to be a page. Copy the whole listing and paste it again.")
+                return
+            if not link.startswith("https://"):
+                note.setText("Paste the page's https link too, so each listing has somewhere to point at.")
+                return
+            dlg.accept()
+            self._scout_running = True
+            self._scout_note = "Reading what you pasted and checking every listing against it…"
+            self._render_scout()
+            chosen = kind.currentData()
+            self._run_async(lambda: logic.scout_from_paste(self.cfg, chosen, text, link),
+                            self._on_scout_pasted)
+
+        read.clicked.connect(go)
+        row.addWidget(shut)
+        row.addWidget(read)
+        lay.addLayout(row)
+        dlg.exec()
+
+    def _on_scout_pasted(self, out: Any) -> None:
+        self._scout_running = False
+        out = out if isinstance(out, dict) else {}
+        if out.get("error"):
+            self._scout_note = out["error"]
+        else:
+            said = (f"Found {out.get('found', 0)} in what you pasted · {out.get('added', 0)} to review · "
+                    f"{out.get('dropped', 0)} dropped by the checks")
+            if out.get("why"):
+                said += " — " + "; ".join(out["why"][:3])
+            self._scout_note = said
         self._render_scout()
 
     def _on_scout_find(self) -> None:

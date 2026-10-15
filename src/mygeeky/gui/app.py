@@ -983,6 +983,23 @@ def growth_due(cfg: MyGeekyConfig) -> bool:
     return profile_ready(cfg) and wins.due(wins.load())
 
 
+def scout_from_paste(cfg: MyGeekyConfig, kind: str, text: str, url: str) -> dict[str, Any]:
+    """Read listings out of a page the maker copied by hand.
+
+    The way in for everything a robot cannot have: the aggregators that answer 403 or forbid it in their
+    terms, and the university portals that answer with an empty shell because their listings arrive later
+    by JavaScript. A person reading a page in their browser and copying it is doing none of that, and the
+    checking is unharmed -- the pasted text stands in for the page, so a quote must still be found in it
+    word for word."""
+    from .. import scout
+    try:
+        return scout.from_paste(kind, text, url)
+    except (PermissionError, ValueError) as exc:
+        return {"error": str(exc)}
+    except Exception as exc:                       # a network or DeepSeek failure, said plainly
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
+
 def get_seasons(cfg: MyGeekyConfig, today: Any = None) -> dict[str, Any]:
     """The scholarships that come back every year, grouped into the periods people step through.
 

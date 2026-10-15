@@ -60,6 +60,12 @@ SOURCES = [
     # the French bioinformatics society's board: a few hundred posts, each with its own page and a stated
     # closing date. Many are in French, so a listing kept from here reaches people who read French.
     {"kind": "jobs", "name": "SFBI (France)", "url": "https://www.sfbi.fr/en/emplois/offres-en-cours"},
+    # Tested before adding: these two answer a plain fetch with real HTML. The big aggregators
+    # (Indeed, LinkedIn, Glassdoor, Monster, ZipRecruiter...) either refuse a robot outright or forbid one
+    # in their terms, and university portals built on SuccessFactors answer with an empty shell. For all of
+    # those there is "Paste a page" in the admin tab instead: a person opens it and copies the text.
+    {"kind": "jobs", "name": "Science Careers", "url": "https://jobs.sciencecareers.org/jobs/bioinformatics/"},
+    {"kind": "jobs", "name": "Bioinformatics.org", "url": "https://www.bioinformatics.org/jobs/"},
     {"kind": "funding", "name": "EURAXESS funding", "url": "https://euraxess.ec.europa.eu/funding/search"},
     {"kind": "funding", "name": "EMBO fellowships", "url": "https://www.embo.org/funding/fellowships-grants-and-career-support/"},
     {"kind": "funding", "name": "Marie Skłodowska-Curie calls", "url": "https://marie-sklodowska-curie-actions.ec.europa.eu/calls"},
@@ -189,7 +195,8 @@ Answer as JSON with exactly these keys:
  "translations": {{"ar": {{"title": "", "summary": "", "who": "", "amount": "", "student": ""}},
                   "fr": {{...}}, "de": {{...}}, "es": {{...}}, "zh": {{...}}}},
  "org": "the organisation offering it",
- "place": "city, country (or online)",
+ "place": "city, country -- ALWAYS end with the country, spelled out in English, even where the page
+          gives only a region, a state or a two-letter code. 'online' if it is not anywhere",
  "remote": true only if the page says it can be done remotely,
  "type": "one of: phd, postdoc, master, job, internship, fellowship, faculty, engineer (jobs only, else '')",
  "deadline": "YYYY-MM-DD: the last day to apply (jobs, funding) or to submit an abstract or register (conferences)",
@@ -237,6 +244,117 @@ def pick(key: str, kind: str, listing: dict[str, Any], focus: str, today: date, 
 def read(key: str, kind: str, detail: dict[str, Any], focus: str, today: date, post=None) -> dict[str, Any]:
     return ask(key, READ_SYSTEM.format(what=WHAT[kind], kind_word=KIND_WORD[kind], focus=focus, today=today.isoformat()),
                f"PAGE: {detail['url']}\n\nTEXT:\n{detail['text'][:PAGE_CHARS]}", post)
+
+
+# --------------------------------------------------------------------------- a page somebody pasted in
+# Most of the big job boards cannot be read by a robot, and should not be: Indeed, SimplyHired, Monster,
+# ZipRecruiter and CareerBuilder all answer a plain fetch with 403, and LinkedIn and Glassdoor answer but
+# forbid it in their terms. University portals built on SuccessFactors answer with an empty shell, because
+# the listings arrive later by JavaScript. Between them that is most of the web's jobs.
+#
+# A person opening one of those pages in a browser and copying the text is doing none of that. So this is
+# the way in: the maker pastes what they are looking at, says which page it came from, and DeepSeek reads
+# it. Nothing is fetched, so nothing is blocked -- and the checking is unharmed, because the pasted text
+# IS the page. The quote still has to be found in it, word for word, exactly as for a page myGeeKy read
+# itself. What the paste cannot carry is each listing's own link, so a board full of titles gives thin
+# results; one listing's own page gives a good one.
+PASTE_SYSTEM = """You read text that somebody copied out of ONE web page, for myGeeKy's maker.
+Today is {today}. The field is: {focus}.
+Find every {what} in it that is open now. There may be one, several, or none.
+Use ONLY what is in the text. Never guess, and never add a listing that is not there.
+Answer as JSON:
+{{
+ "listings": [
+   {{
+    "title": "its title EXACTLY as written in the text, word for word",
+    "language": "the language the text is written in, in English",
+    "title_en": "the title in English (repeat it unchanged if it is already English)",
+    "summary_en": "one or two plain sentences on what it is, in English",
+    "org": "the organisation offering it",
+    "place": "city, country -- ALWAYS end with the country, spelled out in English. 'online' if nowhere",
+    "remote": true only if the text says it can be done remotely,
+    "type": "one of: phd, postdoc, master, job, internship, fellowship, faculty, engineer (jobs only)",
+    "deadline": "YYYY-MM-DD: the last day to apply",
+    "deadline_quote": "the exact sentence or phrase from the text giving that deadline, word for word",
+    "link": "the listing's own full https link IF the text contains one, else ''",
+    "who": "who can apply, in a few words (funding only)",
+    "amount": "how much (funding only)",
+    "starts": "YYYY-MM-DD it starts (conferences only)",
+    "ends": "YYYY-MM-DD it ends (conferences only)",
+    "student": "student discounts or travel awards (conferences only)",
+    "keywords": ["3 to 8 lowercase topic words"],
+    "relevance": a number 0-1: how well it fits the field,
+    "confidence": a number 0-1: how sure you are it is real, open, and every field above is right
+   }}
+ ]
+}}
+
+Leave out anything with no closing date in the text: myGeeKy cannot publish a listing it cannot date.
+"title" and "deadline_quote" stay in the text's own language, word for word, because myGeeKy checks them
+against the pasted text itself."""
+
+
+def read_paste(key: str, kind: str, text: str, focus: str, today: date, post=None) -> list[dict[str, Any]]:
+    """Every listing DeepSeek can find in text somebody pasted in."""
+    out = ask(key, PASTE_SYSTEM.format(what=WHAT[kind], focus=focus, today=today.isoformat()),
+              "TEXT:\n" + text[:PAGE_CHARS], post)
+    found = out.get("listings")
+    return [a for a in (found if isinstance(found, list) else [])[:40] if isinstance(a, dict)]
+
+
+def from_paste(kind: str, text: str, url: str, key: str | None = None, focus: str | None = None,
+               today: date | None = None, post=None,
+               progress: Callable[[str], None] | None = None) -> dict[str, Any]:
+    """Listings out of a pasted page, checked and queued for the maker exactly like any the scout found.
+
+    `url` is the page it was copied from, and is used for any listing that did not carry its own link --
+    so a reader can always get back to something real. Everything goes through the same `check` and the
+    same `to_item`, so a pasted listing is held to the standard a fetched one is, and lands in the same
+    accepted/rejected queue rather than straight onto the lists."""
+    key = key or get_key()
+    if not key:
+        raise PermissionError("Add your DeepSeek key first")
+    if kind not in KINDS:
+        raise ValueError(f"kind must be one of {KINDS}")
+    text = (text or "").strip()
+    if len(text) < 200:
+        raise ValueError("That looks too short to be a page. Copy the whole listing and paste it again.")
+    page_url = curated._https(url)
+    if not page_url:
+        raise ValueError("Paste the page's https link too, so each listing has somewhere to point at.")
+    today = today or date.today()
+    say = progress or (lambda m: None)
+    state = load()
+    focus = focus or state.get("focus") or DEFAULT_FOCUS
+    known = {c["item"]["url"] for c in state["candidates"].values()}
+    known |= {it["url"] for k in KINDS for it in curated.load().get(k, [])}
+    # the pasted text stands in for the page, for the checks and for the quote
+    pretend = {"url": page_url, "text": text, "links": []}
+    say("Reading what you pasted…")
+    answers = read_paste(key, kind, text, focus, today, post)
+    say(f"{len(answers)} listing(s) found; checking each against what you pasted…")
+    added, dropped, why = 0, 0, []
+    for ans in answers:
+        link = curated._https(ans.get("link")) or page_url
+        # being in the "listings" array IS the claim that this is one, so it is not asked for twice. The
+        # checks that matter are untouched: the title and the quote must still be found in the text.
+        ans.setdefault("is_listing", True)
+        out = check(kind, ans, pretend, page_url, today)
+        if out["hard_fail"]:
+            dropped += 1
+            why.append(f"{curated._text(ans.get('title_en') or ans.get('title'), 50)}: {out['hard_fail']}")
+            continue
+        item = to_item(kind, ans, link)
+        if not item or item["url"] in known:
+            dropped += 1
+            continue
+        state["candidates"][item["id"]] = {"kind": kind, "item": item, "score": out["score"],
+                                           "checks": out["checks"], "status": "new", "from": "pasted",
+                                           "source": page_url, "seen": today.isoformat()}
+        known.add(item["url"])
+        added += 1
+    save(state)
+    return {"added": added, "dropped": dropped, "why": why[:10], "found": len(answers)}
 
 
 # --------------------------------------------------------------------------- seasons: confirming the past

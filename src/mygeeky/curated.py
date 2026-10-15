@@ -164,6 +164,87 @@ def languages_of(item: dict[str, Any]) -> list[str]:
     return sorted(tr, key=lambda c: (known.index(c) if c in known else len(known), c))
 
 
+# Where a listing is, in a form something can filter on. The place DeepSeek reads off a page is written
+# the way people write it -- "Lyon, France", "Cambridge, UK", "Doha, Qatar" -- so the country is the last
+# part of it that is actually a country. A place that names only a city, or says "remote", has no country,
+# and that is the right answer rather than a guess.
+_COUNTRY_ALIAS = {
+    "uk": "United Kingdom", "u.k.": "United Kingdom", "england": "United Kingdom",
+    "scotland": "United Kingdom", "wales": "United Kingdom", "britain": "United Kingdom",
+    "great britain": "United Kingdom", "northern ireland": "United Kingdom",
+    "usa": "United States", "u.s.a.": "United States", "us": "United States", "u.s.": "United States",
+    "america": "United States", "united states of america": "United States",
+    "uae": "United Arab Emirates", "ksa": "Saudi Arabia", "korea": "South Korea",
+    "republic of korea": "South Korea", "czechia": "Czech Republic", "holland": "Netherlands",
+    "the netherlands": "Netherlands", "deutschland": "Germany", "espana": "Spain", "turkey": "Türkiye",
+    "turkiye": "Türkiye", "swiss": "Switzerland", "russia": "Russian Federation", "ivory coast": "Côte d'Ivoire",
+}
+COUNTRIES = (
+    "Algeria", "Argentina", "Australia", "Austria", "Bahrain", "Bangladesh", "Belgium", "Brazil", "Bulgaria",
+    "Canada", "Chile", "China", "Colombia", "Croatia", "Cyprus", "Czech Republic", "Côte d'Ivoire",
+    "Denmark", "Egypt", "Estonia", "Ethiopia", "Finland", "France", "Germany", "Ghana", "Greece", "Hong Kong",
+    "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Japan",
+    "Jordan", "Kenya", "Kuwait", "Latvia", "Lebanon", "Libya", "Lithuania", "Luxembourg", "Malaysia",
+    "Mexico", "Morocco", "Netherlands", "New Zealand", "Nigeria", "Norway", "Oman", "Pakistan", "Palestine",
+    "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russian Federation", "Rwanda",
+    "Saudi Arabia", "Senegal", "Serbia", "Singapore", "Slovakia", "Slovenia", "South Africa", "South Korea",
+    "Spain", "Sudan", "Sweden", "Switzerland", "Syria", "Taiwan", "Tanzania", "Thailand", "Tunisia",
+    "Türkiye", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay",
+    "Uzbekistan", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
+)
+_BY_NAME = {c.lower(): c for c in COUNTRIES}
+_NOWHERE = {"remote", "online", "anywhere", "worldwide", "virtual", "hybrid", "europe", "eu", "global"}
+# Boards write the country as a two-letter code in brackets -- "Dortmund, Nordrhein-Westfalen (DE)" --
+# and American ones leave it off entirely, naming only the state. Both are common enough to be worth
+# reading rather than losing.
+_CODES = {"de": "Germany", "us": "United States", "gb": "United Kingdom", "uk": "United Kingdom",
+          "fr": "France", "nl": "Netherlands", "ch": "Switzerland", "se": "Sweden", "no": "Norway",
+          "dk": "Denmark", "fi": "Finland", "at": "Austria", "be": "Belgium", "es": "Spain", "it": "Italy",
+          "pt": "Portugal", "ie": "Ireland", "pl": "Poland", "cz": "Czech Republic", "cn": "China",
+          "jp": "Japan", "kr": "South Korea", "sg": "Singapore", "au": "Australia", "nz": "New Zealand",
+          "ca": "Canada", "il": "Israel", "ae": "United Arab Emirates", "sa": "Saudi Arabia",
+          "qa": "Qatar", "eg": "Egypt", "za": "South Africa", "in": "India", "br": "Brazil", "tr": "Türkiye"}
+_US_STATES = {
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware",
+    "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky",
+    "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri",
+    "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "ohio",
+    "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee",
+    "texas", "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming",
+}
+_TAIL_CODE = re.compile(r"\(([A-Za-z]{2})\)\s*$")
+
+
+def country_of(place: Any) -> str:
+    """The country a place names, or '' when it names none.
+
+    Read from the end, because that is where people put the country: "Lyon, France" and
+    "Cambridge, Cambridgeshire, UK" both give the right answer, and "Lyon" alone gives nothing rather
+    than inventing a country called Lyon."""
+    text = _text(place, 120)
+    if not text or text.lower().strip() in _NOWHERE:
+        return ""
+    tail = _TAIL_CODE.search(text)          # "... (DE)" -- the country, written as a code
+    if tail and tail.group(1).lower() in _CODES:
+        return _CODES[tail.group(1).lower()]
+    for part in reversed([p.strip(" .") for p in _TAIL_CODE.sub("", text).split(",")]):
+        low = part.lower()
+        if low in _BY_NAME:
+            return _BY_NAME[low]
+        if low in _COUNTRY_ALIAS:
+            return _COUNTRY_ALIAS[low]
+        if low in _US_STATES:               # an American board naming only the state
+            return "United States"
+    return ""
+
+
+def countries_in(items: list[dict[str, Any]]) -> list[str]:
+    """Every country these listings are actually in, in order, for a filter to offer.
+
+    Built from the listings themselves, so the filter can never offer a country with nothing behind it."""
+    return sorted({it.get("country", "") for it in items if it.get("country")})
+
+
 def clean_item(kind: str, raw: Any) -> dict[str, Any] | None:
     """One checked item, or None if it isn't usable."""
     if not isinstance(raw, dict) or not _ID.match(str(raw.get("id", ""))):
@@ -189,12 +270,13 @@ def clean_item(kind: str, raw: Any) -> dict[str, Any] | None:
     if kind == "jobs":
         t = str(raw.get("type", "job")).lower()
         item.update(org=_text(raw.get("org"), 100), place=_text(raw.get("place"), 80),
-                    type=t if t in JOB_TYPES else "job", remote=bool(raw.get("remote")))
+                    type=t if t in JOB_TYPES else "job", remote=bool(raw.get("remote")),
+                    country=country_of(raw.get("place")))
     elif kind == "funding":
         item.update(org=_text(raw.get("org"), 100), who=_text(raw.get("who"), 160), amount=_text(raw.get("amount"), 60))
     elif kind == "conferences":
         item.update(place=_text(raw.get("place"), 80), starts=_day(raw.get("starts")), ends=_day(raw.get("ends")),
-                    student=_text(raw.get("student"), 160))
+                    student=_text(raw.get("student"), 160), country=country_of(raw.get("place")))
     elif kind == "resources":
         t = str(raw.get("type", "website")).lower()
         level = str(raw.get("level", "")).lower()
