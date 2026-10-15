@@ -3936,17 +3936,33 @@ class MyGeekyPanel(QWidget):
         return scroll
 
     def _mode_row(self, layout: QVBoxLayout, modes, on_pick: Callable[[str], None]) -> dict[str, QPushButton]:
-        from .growth_ui import FlowRow
-        row = FlowRow()
+        """One row of sections: each is its icon, and the one you are in also says its name.
+
+        The panel is 380px wide. Six sections written out as pills wrapped onto three lines and ate about
+        96px of a height there is never enough of; as icons they sit in one row of about 36px. The open one
+        keeps its words, so nobody has to decode a small picture to know where they are, and every section
+        stays one press away -- which is what a drop box would have taken in exchange for the same space.
+
+        The label is split on its first space, so the sections stay written as "🗓 Seasons" in one place."""
+        holder = QWidget()
+        holder.setObjectName("modeRow")
+        row = QHBoxLayout(holder)
+        row.setContentsMargins(3, 3, 3, 3)
+        row.setSpacing(3)
         buttons: dict[str, QPushButton] = {}
         for mode, label in modes:
-            b = QPushButton(label)
+            icon, _, name = str(label).partition(" ")
+            b = QPushButton()
+            b.setProperty("icon_only", icon)
+            b.setProperty("full_name", name or icon)
             b.setCursor(Qt.PointingHandCursor)
+            b.setToolTip(name or icon)              # the icon alone must still be able to say what it is
+            b.setAccessibleName(name or icon)
+            b.setMinimumHeight(30)
             b.clicked.connect(lambda checked=False, m=mode: on_pick(m))
             buttons[mode] = b
-            row.add(b)
-        row.finish()
-        layout.addWidget(row)
+            row.addWidget(b)
+        layout.addWidget(holder)
         return buttons
 
     def _build_grow_tab(self) -> QScrollArea:
@@ -4042,13 +4058,30 @@ class MyGeekyPanel(QWidget):
             layout.addWidget(box)
         return self._scroll_page(build)
 
+    def _style_mode_row(self, buttons: dict[str, QPushButton], open_mode: str,
+                        theme: dict[str, Any]) -> None:
+        """The open section says its name and takes the room for it; the rest share what is left.
+
+        Done here rather than at build time because it has to be redone every time the section changes,
+        and again when the theme does."""
+        from .growth_ui import segment_style, segment_track
+        for mode, b in buttons.items():
+            open_now = mode == open_mode
+            icon = b.property("icon_only") or ""
+            name = b.property("full_name") or ""
+            b.setText(f"{icon}  {name}" if open_now else icon)
+            b.setSizePolicy(QSizePolicy.Preferred if open_now else QSizePolicy.Expanding,
+                            QSizePolicy.Fixed)
+            b.setStyleSheet(segment_style(theme, open_now))
+        if buttons:
+            holder = next(iter(buttons.values())).parentWidget()
+            if holder is not None:
+                holder.setStyleSheet(segment_track(theme))
+
     def _style_grow_switches(self) -> None:
-        from .growth_ui import mode_style
         theme = THEMES[self._theme_name()]
-        for mode, b in getattr(self, "grow_mode_buttons", {}).items():
-            b.setStyleSheet(mode_style(theme, mode == self._grow_mode))
-        for mode, b in getattr(self, "chance_mode_buttons", {}).items():
-            b.setStyleSheet(mode_style(theme, mode == self._chance_mode))
+        self._style_mode_row(getattr(self, "grow_mode_buttons", {}), self._grow_mode, theme)
+        self._style_mode_row(getattr(self, "chance_mode_buttons", {}), self._chance_mode, theme)
         btn = (f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
                f"border-radius:8px; padding:6px 10px; font-size:11.5px; }}")
         muted = f"color:{theme['muted']}; font-size:10.5px; background:transparent;"

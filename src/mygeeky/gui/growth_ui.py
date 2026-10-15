@@ -52,9 +52,29 @@ def deadline_text(days: int | None) -> str:
 
 
 def mode_style(theme: dict[str, Any], active: bool) -> str:
+    """A written-out section pill. Kept for rows that still name every section, such as 🛒 Market's three."""
     return (f"QPushButton {{ background:{theme['tab_active'] if active else theme['card_bg']}; "
             f"color:{theme['text']}; border:none; border-radius:8px; padding:4px 10px; "
             f"font-size:11px; font-weight:{'700' if active else '400'}; }}")
+
+
+def segment_track(theme: dict[str, Any]) -> str:
+    """The sunken strip the sections sit in, so the row reads as one control rather than loose buttons."""
+    return f"QWidget#modeRow {{ background:{theme['card_bg']}; border-radius:11px; }}"
+
+
+def segment_style(theme: dict[str, Any], active: bool) -> str:
+    """One section in that strip: its icon, and its name too when it is the one you are in.
+
+    The ones you are not in are left transparent -- the strip behind them is what groups them -- and dimmed
+    with the muted text colour rather than an opacity, so they stay legible in the light theme as well."""
+    shape = "border:none; border-radius:9px; font-size:11px; text-align:center;"
+    if active:
+        return (f"QPushButton {{ {shape} background:{theme['tab_active']}; color:{theme['text']}; "
+                "padding:5px 11px; font-weight:700; }")
+    return (f"QPushButton {{ {shape} background:transparent; color:{theme['muted']}; padding:5px 8px; }}"
+            f"QPushButton:hover {{ {shape} background:{theme['btn_hover']}; color:{theme['text']}; "
+            "padding:5px 8px; }")
 
 
 class FlowLayout(QLayout):
