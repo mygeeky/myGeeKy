@@ -51,14 +51,14 @@
    * straight down. Tying the two together is what made the first attempt splay like a starfish.
    * `w` is the width at the root; the two middle arms are fattest because they are nearest the viewer. */
   var ARMS = [
-    { at: 166, dir: 196, len: 176, w: 40, back: true },
-    { at: 146, dir: 174, len: 190, w: 44, back: true },
-    { at: 126, dir: 152, len: 186, w: 47 },
-    { at: 104, dir: 116, len: 160, w: 48 },
-    { at: 76, dir: 64, len: 160, w: 48 },
-    { at: 54, dir: 28, len: 186, w: 47 },
-    { at: 34, dir: 6, len: 190, w: 44, back: true },
-    { at: 14, dir: -16, len: 176, w: 40, back: true },
+    { spot: -1.00, dir: 154, len: 182, w: 40, back: true },
+    { spot: -0.72, dir: 141, len: 194, w: 44, back: true },
+    { spot: -0.44, dir: 127, len: 188, w: 47, back: true },
+    { spot: -0.26, dir: 97, len: 168, w: 48 },
+    { spot: 0.26, dir: 83, len: 168, w: 48 },
+    { spot: 0.44, dir: 53, len: 188, w: 47, back: true },
+    { spot: 0.72, dir: 39, len: 194, w: 44, back: true },
+    { spot: 1.00, dir: 26, len: 182, w: 40, back: true },
   ];
 
   /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
@@ -103,19 +103,19 @@
   };
 
   var POSES = {
-    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [152, 132, 104, 78, -78, -104, -132, -152],
+    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [118, 106, 92, 64, -64, -92, -106, -118],
                len: 1, face: 'happy' },
-    wave:    { swing: [0, 0, 0, 0, 0, -8, -26, -62], curl: [152, 132, 104, 78, -78, -96, -96, -74],
+    wave:    { swing: [0, 0, 0, 0, 0, -6, -20, -48], curl: [118, 106, 92, 64, -64, -86, -82, -64],
                len: 1, face: 'excited' },
-    point:   { swing: [0, 0, 0, 0, 0, -4, -14, 14], curl: [152, 132, 104, 78, -78, -92, -84, -26],
+    point:   { swing: [0, 0, 0, 0, 0, -4, -12, 10], curl: [118, 106, 92, 64, -64, -84, -72, -24],
                len: 1, face: 'curious' },
-    think:   { swing: [0, 0, 0, 0, 0, -10, -34, -52], curl: [152, 132, 104, 78, -78, -104, -118, -150],
-               len: 0.96, face: 'thinking' },
-    cheer:   { swing: [40, 24, 6, 0, 0, -6, -24, -40], curl: [140, 128, 110, 86, -86, -110, -128, -140],
+    think:   { swing: [0, 0, 0, 0, 0, -8, -26, -42], curl: [118, 106, 92, 64, -64, -94, -104, -128],
+               len: 0.97, face: 'thinking' },
+    cheer:   { swing: [28, 18, 6, 0, 0, -6, -18, -28], curl: [112, 102, 90, 66, -66, -90, -102, -112],
                len: 1.04, face: 'excited' },
-    sleep:   { swing: [-40, -26, -10, 0, 0, 10, 26, 40], curl: [104, 96, 82, 62, -62, -82, -96, -104],
-               len: 0.9, face: 'sleepy' },
-    present: { swing: [8, 4, 0, 0, 0, 0, -4, -8], curl: [104, 92, 78, 58, -58, -78, -92, -104],
+    sleep:   { swing: [-26, -16, -6, 0, 0, 6, 16, 26], curl: [84, 78, 70, 52, -52, -70, -78, -84],
+               len: 0.92, face: 'sleepy' },
+    present: { swing: [6, 3, 0, 0, 0, 0, -3, -6], curl: [86, 80, 70, 50, -50, -70, -80, -86],
                len: 1.04, face: 'proud' },
   };
 
@@ -149,16 +149,17 @@
   // --------------------------------------------------------------------- one tentacle
   /* Walk a spine, turning `curl` degrees in total along the way, then wrap it in an outline that tapers
    * from `w` to a point. `wobble` is a travelling sine so a resting arm breathes instead of freezing. */
-  function tentacle(x0, y0, deg, len, curl, w, wobble, phase) {
-    var N = 22, a = rad(deg), step = len / N;
-    /* The turn is NOT spread evenly down the arm. Weighting it towards the tip is what makes a tentacle
-     * curl into a spiral instead of bending like a banana -- an octopus arm is near-straight where it
-     * leaves the body and tightest at the very end. The weights are k^2, normalised so `curl` still
-     * means the total turn in degrees however many steps there are. */
-    var weights = [], total = 0, i;
+  var SEGS = 22;
+
+  /* WALK: the shape an arm WANTS to be, worked out from the numbers. The turn is weighted towards the
+   * tip (k^2, normalised so `curl` still means total degrees), which is what makes a tentacle coil into
+   * a spiral rather than bend like a banana: an octopus arm is near-straight where it leaves the body
+   * and tightest at the very end. */
+  function walk(x0, y0, deg, len, curl, wobble, phase) {
+    var N = SEGS, a = rad(deg), step = len / N, i;
+    var weights = [], total = 0;
     for (i = 1; i <= N; i++) {
-      var k = i / N;
-      var wgt = 0.25 + k * k * 2.2;
+      var k = i / N, wgt = 0.25 + k * k * 2.2;
       weights.push(wgt);
       total += wgt;
     }
@@ -169,36 +170,39 @@
       y += step * Math.sin(a);
       spine.push([x, y]);
     }
+    return spine;
+  }
 
-    // the outline, offset either side of the spine by a width that tapers to a round tip
-    var left = [], right = [], norms = [], widths = [];
+  /* SKIN: an outline around a spine, whatever produced it. Splitting this from `walk` is what lets the
+   * physics below drive the same arms -- it hands over a spine and gets the same octopus back. */
+  function skin(spine, w) {
+    var N = spine.length - 1, left = [], right = [], norms = [], widths = [], i;
     for (i = 0; i <= N; i++) {
       var p = spine[i];
       var ahead = spine[Math.min(i + 1, N)], behind = spine[Math.max(i - 1, 0)];
       var dx = ahead[0] - behind[0], dy = ahead[1] - behind[1];
       var m = Math.hypot(dx, dy) || 1;
-      var nx = -dy / m, ny = dx / m;
-      var kk = i / N;
-      // ends at 18% of its root width rather than at nothing: a needle point reads as a spike, and the
-      // reference art this follows has arms that stay round right to the curl
+      var nx = -dy / m, ny = dx / m, kk = i / N;
+      // ends at 18% of its root width: a needle point reads as a spike, not a tentacle
       var r = (w * (1 - 0.82 * kk * kk)) / 2;
       norms.push([nx, ny]);
       widths.push(r);
       left.push([p[0] + nx * r, p[1] + ny * r]);
       right.push([p[0] - nx * r, p[1] - ny * r]);
     }
-    // round the tip off with a half-circle rather than meeting the two sides in a point
-    var tipN = norms[N], tipR = widths[N], tipP = spine[N];
-    var cap = [];
+    var tipN = norms[N], tipR = widths[N], tipP = spine[N], cap = [];
     var base = Math.atan2(tipN[1], tipN[0]);
     for (i = 1; i < 8; i++) {
       var ang = base - Math.PI * i / 8;
       cap.push([tipP[0] + Math.cos(ang) * tipR, tipP[1] + Math.sin(ang) * tipR]);
     }
-    var say = function (p) { return round(p[0]) + ' ' + round(p[1]); };
-    var d = 'M' + left.map(say).join('L') + 'L' + cap.map(say).join('L') +
-            'L' + right.reverse().map(say).join('L') + 'Z';
-    return { d: d, tip: tipP, spine: spine, norms: norms, widths: widths, side: deg > 90 && deg < 270 ? 1 : -1 };
+    var say = function (q) { return round(q[0]) + ' ' + round(q[1]); };
+    var head2 = spine[0], aim = Math.atan2(spine[1][1] - head2[1], spine[1][0] - head2[0]) * 180 / Math.PI;
+    if (aim < 0) aim += 360;
+    return { d: 'M' + left.map(say).join('L') + 'L' + cap.map(say).join('L') +
+                'L' + right.reverse().map(say).join('L') + 'Z',
+             tip: tipP, spine: spine, norms: norms, widths: widths,
+             side: aim > 90 && aim < 270 ? 1 : -1 };
   }
 
   /* The pale underside with its rings of suckers -- the single thing that says "octopus" fastest, and
@@ -243,10 +247,22 @@
     for (i = 0; i < 8; i++) {
       var base = ARMS[i];
       var ang = base.dir + (pose.swing[i] || 0);
-      var ax = cx + Math.cos(rad(base.at)) * 122 * headK;
-      var ay = cy + Math.sin(rad(base.at)) * 106 * headK;
-      var arm = tentacle(ax, ay, ang, base.len * (pose.len || 1) * armK, pose.curl[i] || 0,
-                         base.w * thickK, opts.still ? 0 : 1, t * 1.6 + i * 0.8);
+      /* Where an arm leaves the body: along the SKIRT, under the mantle -- not at its widest point,
+       * which made them read as arms growing out of his cheeks. `spot` is -1 (far left) to 1 (far
+       * right) across the underside, and the ends ride a little higher because the belly curves up.
+       *
+       * The start is then pushed 34 units back INSIDE the body. The join is what was ugly: an arm that
+       * begins exactly on the rim shows its own outline as a dark seam across the edge. Beginning it
+       * well inside, and drawing the mantle over the top, hides every join under the body. */
+      var ax = cx + base.spot * 104 * headK;
+      var ay = cy + (112 - Math.abs(base.spot) * 26) * headK;
+      var into = rad(base.dir + (pose.swing[i] || 0));
+      ax -= Math.cos(into) * 34 * headK;
+      ay -= Math.sin(into) * 34 * headK;
+      var spine = (opts.spines && opts.spines[i])
+        || walk(ax, ay, ang, (base.len + 34) * (pose.len || 1) * armK, pose.curl[i] || 0,
+                opts.still ? 0 : 1, t * 1.6 + i * 0.8);
+      var arm = skin(spine, base.w * thickK);
       arms.push({ d: arm.d, tip: arm.tip, spine: arm.spine, norms: arm.norms, widths: arm.widths,
                   side: arm.side, back: !!base.back, i: i,
                   fill: base.back ? SKIN.deep : SKIN.dark });
@@ -272,7 +288,7 @@
     return {
       arms: arms, eyes: eyes, lids: lids, breathe: breathe, pose: pose, face: face,
       head: { cx: cx, cy: cy + breathe, k: headK },
-      mouth: mouthPath(face.mouth, cx, cy + 68 * headK + breathe, headK),
+      mouth: mouthPath(face.mouth, cx, cy + 58 * headK + breathe, headK),
       brow: face.brow || 0,
       skin: opts.skin || SKIN,
       holding: opts.holding || [],
@@ -470,6 +486,119 @@
       (opts.label || 'GeekOc, a friendly octopus in thick glasses') + '">' + markup(g, opts) + '</svg>';
   }
 
+  // --------------------------------------------------------------------- making him alive
+  /* A tentacle with WEIGHT.
+   *
+   * The same bargain d3-force strikes in brainny's graph: every node is pulled towards where it ought
+   * to be (forceX/forceY), held at a distance from its neighbours (forceLink), and damped so the whole
+   * thing settles instead of ringing (velocityDecay). Here the "nodes" are the beads of a tentacle, the
+   * "link" is a fixed segment length, and the place each bead ought to be is the posed shape `walk`
+   * works out. That is the entire trick, and it is what the posed-only version could never do:
+   *
+   *   - the arms LAG when he moves, and overshoot when he stops, because they carry momentum;
+   *   - they can be pulled at, and crawl back;
+   *   - they reach for the pointer, so the page feels like it noticed you;
+   *   - and he still cannot leave the pose, because the spring always wins in the end.
+   *
+   * Verlet rather than a spring solver: position-based integration cannot explode, which matters for a
+   * thing that runs unattended on a landing page for an hour.
+   */
+  function Life(opts) {
+    opts = opts || {};
+    this.opts = opts;
+    this.stiff = opts.stiff != null ? opts.stiff : 0.22;    // how hard the pose pulls the arms back
+    this.damp = opts.damp != null ? opts.damp : 0.86;       // velocityDecay, in d3's language
+    this.droop = opts.droop != null ? opts.droop : 0.22;    // a little gravity, so arms hang
+    this.reach = opts.reach != null ? opts.reach : 140;     // how near the pointer has to be to be felt
+    this.pull = opts.pull != null ? opts.pull : 0.5;        // ...and how much they lean towards it
+    this.t = 0;
+    this.chains = null;
+    this.at = null;                                          // where the pointer is, if anywhere
+  }
+
+  /* One step. `dt` in seconds; anything above a twentieth of a second is treated as a twentieth, so a
+   * backgrounded tab that wakes after a minute does not fling the arms off the page. */
+  Life.prototype.step = function (pose, face, dt) {
+    var o = this.opts;
+    dt = Math.min(dt || 1 / 60, 0.05);
+    this.t += dt;
+    var want = build({ pose: pose, face: face, t: this.t, arm: o.arm, thick: o.thick, head: o.head });
+    var k = dt * 60;                                   // everything below is tuned per 60fps frame
+    var self = this;
+
+    if (!this.chains) {                                // first frame: start settled, not falling in
+      this.chains = want.arms.map(function (a) {
+        return a.spine.map(function (p) { return { x: p[0], y: p[1], px: p[0], py: p[1] }; });
+      });
+    }
+
+    this.chains.forEach(function (chain, ai) {
+      var target = want.arms[ai].spine, n = chain.length, i;
+      for (i = 1; i < n; i++) {
+        var b = chain[i], tgt = target[i];
+        var vx = (b.x - b.px) * self.damp, vy = (b.y - b.py) * self.damp;
+        b.px = b.x;
+        b.py = b.y;
+        // the further down the arm, the looser the hold: a tip should flick, a root should not
+        var hold = self.stiff * (1 - 0.55 * (i / n)) * k;
+        b.x += vx + (tgt[0] - b.x) * hold;
+        b.y += vy + (tgt[1] - b.y) * hold + self.droop * (i / n) * k;
+
+        if (self.at) {                                  // lean towards the pointer, tips most of all
+          var dx = self.at[0] - b.x, dy = self.at[1] - b.y;
+          var d = Math.hypot(dx, dy);
+          if (d < self.reach && d > 1) {
+            var f = (1 - d / self.reach) * self.pull * (i / n) * k;
+            b.x += dx / d * f * 12;
+            b.y += dy / d * f * 12;
+          }
+        }
+      }
+      // hold the segments at their length, root outwards, twice: cheap and enough
+      for (var pass = 0; pass < 2; pass++) {
+        chain[0].x = target[0][0];
+        chain[0].y = target[0][1];
+        for (i = 1; i < n; i++) {
+          var a0 = chain[i - 1], b0 = chain[i];
+          var want0 = Math.hypot(target[i][0] - target[i - 1][0], target[i][1] - target[i - 1][1]);
+          var dx0 = b0.x - a0.x, dy0 = b0.y - a0.y;
+          var d0 = Math.hypot(dx0, dy0) || 1;
+          var fix = (d0 - want0) / d0;
+          b0.x -= dx0 * fix;
+          b0.y -= dy0 * fix;
+        }
+      }
+    });
+    return this;
+  };
+
+  /* Where the pointer is, in the character's own 620-unit coordinates. Pass nothing when it leaves. */
+  Life.prototype.notice = function (x, y) {
+    this.at = (x == null || y == null) ? null : [x, y];
+    return this;
+  };
+
+  /* Give an arm a shove -- a click, a drag, a dropped tool. */
+  Life.prototype.poke = function (arm, dx, dy) {
+    var chain = this.chains && this.chains[arm];
+    if (!chain) return this;
+    for (var i = 1; i < chain.length; i++) {
+      var f = i / chain.length;
+      chain[i].px -= dx * f;
+      chain[i].py -= dy * f;
+    }
+    return this;
+  };
+
+  /* The character as it stands right now, ready to draw -- the same shape `parts` always returns. */
+  Life.prototype.parts = function (pose, face) {
+    var o = this.opts;
+    return parts({ pose: pose, face: face, t: this.t, arm: o.arm, thick: o.thick, head: o.head,
+                   spines: this.chains && this.chains.map(function (chain) {
+                     return chain.map(function (b) { return [b.x, b.y]; });
+                   }) });
+  };
+
   /* Play a sequence of poses, easing between them. Returns a stop function. The page passes a callback
    * that takes markup -- so the same loop drives a DOM node, a canvas, or a frame dump for video. */
   function play(steps, draw, opts) {
@@ -501,5 +630,6 @@
 
   root.GeekOc = { POSES: POSES, FACES: FACES, ARMS: ARMS, SKIN: SKIN, HEAD: HEAD, BOX: BOX,
                   build: build, parts: parts, markup: markup, svg: svg,
-                  mix: mix, mixFace: mixFace, play: play, tentacle: tentacle, head: head };
+                  mix: mix, mixFace: mixFace, play: play, walk: walk, skin: skin, Life: Life,
+                  alive: function (o) { return new Life(o); }, head: head };
 })(typeof window !== 'undefined' ? window : globalThis);
