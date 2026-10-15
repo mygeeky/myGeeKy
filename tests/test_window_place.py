@@ -51,6 +51,19 @@ def _wait(qapp, seconds=0.5):
         qapp.processEvents()
 
 
+def _settled(qapp, panel, seconds=5.0):
+    """Pump until the panel has finished moving, rather than for a fixed stretch.
+
+    A fixed wait is a race: the animation is 220ms, but a busy shared runner can starve its timer for
+    longer than that, and the test then fails for being early rather than for being wrong."""
+    end = time.time() + seconds
+    while time.time() < end:
+        qapp.processEvents()
+        if not panel._dock_moving():
+            break
+    _wait(qapp, 0.05)                       # let the frame swap that ends the move land
+
+
 def test_a_bottom_corner_folds_into_the_corner_and_opens_in_the_middle():
     from PySide6.QtCore import QRect
     screen = QRect(0, 0, 1920, 1040)
@@ -81,7 +94,7 @@ def test_opening_from_a_corner_rises_to_the_middle_and_folding_sinks_back(qapp, 
         area = panel.screen().availableGeometry()
         panel.show()
         panel.fold()
-        _wait(qapp)
+        _settled(qapp, panel)
         g = panel.geometry()
         assert panel.folded_widget.isVisible()
         assert (g.right(), g.bottom()) == (area.right(), area.bottom())                 # icon in the corner
@@ -89,14 +102,14 @@ def test_opening_from_a_corner_rises_to_the_middle_and_folding_sinks_back(qapp, 
         panel.unfold()
         start = panel.geometry()
         assert start.bottom() == area.bottom() and panel._dock_moving()                # opens at the bottom...
-        _wait(qapp)
+        _settled(qapp, panel)
         end = panel.geometry()
         assert not panel._dock_moving()
         assert abs(end.center().y() - area.center().y()) <= 1 and end.right() == area.right()   # ...risen to the middle
 
         panel.fold()
         assert panel.panel_frame.isVisible() and panel._dock_moving()                  # sinks first
-        _wait(qapp)
+        _settled(qapp, panel)
         g = panel.geometry()
         assert panel.folded_widget.isVisible() and (g.right(), g.bottom()) == (area.right(), area.bottom())
     finally:
