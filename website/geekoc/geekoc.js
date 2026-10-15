@@ -228,8 +228,8 @@
    * arm curls towards, so it stays visible however the arm turns. */
   function underside(arm, skin, how) {
     how = how || {};
-    var from = how.from != null ? how.from : 0.08;     // where the band starts, across the arm
-    var to = how.to != null ? how.to : 0.66;           // ...and where it ends
+    var from = how.from != null ? how.from : 0.04;     // where the band starts, across the arm
+    var to = how.to != null ? how.to : 0.80;           // ...and where it ends
     var every = how.every || 4;                        // a cup every N beads
     var cup = how.cup != null ? how.cup : 0.34;        // how big a cup is, against the arm's half-width
     var flip = how.flip ? -1 : 1;                      // true puts the band on top instead
@@ -262,12 +262,28 @@
      * The last beads fade too. At the tip the arm's half-width is about five units while the outline is
      * six wide, so a band drawn to full width there has nowhere to hide and spills past the rounded cap.
      */
+    /* THE BAND GROWS OUT OF THE BODY, it does not start at a cut.
+     *
+     * Fading it in by bead number was close but not right: how far along an arm is when it clears the
+     * mantle depends on the arm, the pose and the head-to-arm ratio, so on four arms of eight the band
+     * was already at nearly full width the instant it appeared, and showed a flat square end against
+     * the rim. Fading by DISTANCE FROM THE BODY instead is true whatever the pose: `body.t` is 1 on the
+     * mantle's edge, so the band is still a point as it comes out and has opened a tenth of a radius
+     * further on -- long enough to lose the square cut, short enough that the band still has presence.
+     * Eased, not linear, so there is no corner where it starts. */
+    var body = how.body;
+    var ease = function (u) { return u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u); };
+
     var fade = [];
     for (i = 0; i <= N; i++) {
-      // ...and from nothing at the root, so the band STARTS below the body instead of being sliced off
-      // square by it. The first beads of every arm are buried inside the mantle, and a band that runs
-      // up into them reads as a striped tube pushed under a bowl.
-      var f = Math.min((i - 6.5) / 3, (N - i) / 2.5);
+      var f = (N - i) / 2.5;
+      if (body) {
+        var q = arm.spine[i];
+        var t = Math.hypot((q[0] - body.cx) / body.rx, (q[1] - body.cy) / body.ry);
+        f = Math.min(f, ease((t - 1.00) / 0.11));
+      } else {
+        f = Math.min(f, (i - 6.5) / 3);
+      }
       for (var j = 1; j <= N; j++) {
         if (sides[j] !== sides[j - 1]) f = Math.min(f, Math.abs(i - j + 0.5) / 2.5);
       }
@@ -519,7 +535,9 @@
     // the pale undersides and their sucker rings, one per arm, in the same order as the arms
     var stripes = [], suckers = [], backStripes = [], frontStripes = [], backSuckers = [], frontSuckers = [];
     g.arms.slice().sort(function (p, q) { return Math.abs(q.spot) - Math.abs(p.spot); }).forEach(function (arm) {
-      var u = underside(arm, s, opts.band);
+      var u = underside(arm, s, Object.assign({
+        body: { cx: cx, cy: cy + 12 * k, rx: 136 * k, ry: 152 * k },
+      }, opts.band));
       var band = { d: u.d, fill: u.fill, back: arm.back };
       stripes.push(band);
       backStripes.push(band);
