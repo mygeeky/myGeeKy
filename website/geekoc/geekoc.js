@@ -66,8 +66,8 @@
     { spot: -1.00, dir: 146, len: 192, w: 46, back: true },
     { spot: -0.70, dir: 131, len: 198, w: 50, back: true },
     { spot: -0.40, dir: 117, len: 182, w: 53, back: true },
-    { spot: -0.14, dir: 103, len: 150, w: 55, back: true },
-    { spot: 0.14, dir: 77, len: 150, w: 55, back: true },
+    { spot: -0.14, dir: 103, len: 176, w: 55, back: true },
+    { spot: 0.14, dir: 77, len: 176, w: 55, back: true },
     { spot: 0.40, dir: 63, len: 182, w: 53, back: true },
     { spot: 0.70, dir: 49, len: 198, w: 50, back: true },
     { spot: 1.00, dir: 34, len: 192, w: 46, back: true },
@@ -115,19 +115,19 @@
   };
 
   var POSES = {
-    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [152, 124, 96, 34, -34, -96, -124, -152],
+    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [152, 124, 96, 69, -69, -96, -124, -152],
                len: 1, face: 'happy' },
-    wave:    { swing: [0, 0, 0, 0, 0, -6, -18, -44], curl: [152, 124, 96, 34, -34, -92, -92, -72],
+    wave:    { swing: [0, 0, 0, 0, 0, -6, -18, -44], curl: [152, 124, 96, 69, -69, -92, -92, -72],
                len: 1, face: 'excited' },
-    point:   { swing: [0, 0, 0, 0, 0, -4, -12, 14], curl: [152, 124, 96, 34, -34, -90, -80, -28],
+    point:   { swing: [0, 0, 0, 0, 0, -4, -12, 14], curl: [152, 124, 96, 69, -69, -90, -80, -28],
                len: 1, face: 'curious' },
-    think:   { swing: [0, 0, 0, 0, 0, -8, -24, -38], curl: [152, 124, 96, 34, -34, -104, -120, -150],
+    think:   { swing: [0, 0, 0, 0, 0, -8, -24, -38], curl: [152, 124, 96, 69, -69, -104, -120, -150],
                len: 0.97, face: 'thinking' },
-    cheer:   { swing: [24, 15, 5, 0, 0, -5, -15, -24], curl: [146, 120, 94, 36, -36, -94, -120, -146],
+    cheer:   { swing: [24, 15, 5, 0, 0, -5, -15, -24], curl: [146, 120, 94, 67, -67, -94, -120, -146],
                len: 1.05, face: 'excited' },
-    sleep:   { swing: [-22, -14, -5, 0, 0, 5, 14, 22], curl: [116, 96, 78, 28, -28, -78, -96, -116],
+    sleep:   { swing: [-22, -14, -5, 0, 0, 5, 14, 22], curl: [116, 96, 78, 56, -56, -78, -96, -116],
                len: 0.92, face: 'sleepy' },
-    present: { swing: [5, 3, 0, 0, 0, 0, -3, -5], curl: [120, 100, 80, 30, -30, -80, -100, -120],
+    present: { swing: [5, 3, 0, 0, 0, 0, -3, -5], curl: [120, 100, 80, 57, -57, -80, -100, -120],
                len: 1.05, face: 'proud' },
   };
 
@@ -195,8 +195,12 @@
       var dx = ahead[0] - behind[0], dy = ahead[1] - behind[1];
       var m = Math.hypot(dx, dy) || 1;
       var nx = -dy / m, ny = dx / m, kk = i / N;
-      // ends at 18% of its root width: a needle point reads as a spike, not a tentacle
-      var r = (w * (1 - 0.82 * kk * kk)) / 2;
+      /* A STEADY taper, not a square one. `1 - 0.82k^2` keeps almost the full width until four fifths
+       * of the way along and then drops away fast, which reads fine on a long curling arm and reads as
+       * a CLUB on a short straight one -- blunt for most of its length, then a sudden point, with the
+       * pale band pooling in the end of it. Taking most of the width off linearly and the rest by the
+       * square narrows the arm the whole way down. */
+      var r = (w * Math.max(0.10, 1 - 0.56 * kk - 0.34 * kk * kk)) / 2;
       norms.push([nx, ny]);
       widths.push(r);
       left.push([p[0] + nx * r, p[1] + ny * r]);
