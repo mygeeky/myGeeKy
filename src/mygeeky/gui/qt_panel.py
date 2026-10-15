@@ -5394,34 +5394,73 @@ class MyGeekyPanel(QWidget):
         note = getattr(self, "_quizwriter_note", "")
         if note:
             area.addWidget(_label(note, _muted(theme, 10.5)))
+        # Only what wants doing. Every protocol used to get its own row and its own button, so once they
+        # all had enough -- fourteen here -- the tab became fourteen identical "More questions" buttons
+        # sitting under a heading that said there was nothing to do. The settled ones fold into one line.
+        waiting, settled = [], []
         for p in self._reviewed_protocols():
-            pid = p["id"]
-            have = st["per_protocol"].get(pid) or {}
-            n = sum(have.values())
-            batch = (st["batches"] or {}).get(pid) or {}
-            mix = " · ".join(f"{have.get(lv, 0)} {lv}" for lv in ("easy", "medium", "tricky") if have.get(lv))
-            # ✓ it can be taken (enough for an attempt), ✦ a good bank, ○ not enough yet
-            mark, colour = ("○", theme["muted"]) if n < st["ready"] else \
-                (("✓", theme["good"]) if n < st["good"] else ("✦", theme["good"]))
-            row = FlowRow()
-            row.add(_label(f"{mark} {_short(p['title'], 34)}",
-                           f"color:{colour if n < st['ready'] else theme['text']}; font-size:10.5px; "
-                           "background:transparent;"))
-            row.add(_label(f"{n} questions" + (f" ({mix})" if mix else ""), _muted(theme, 10)))
-            if batch.get("questions") and not batch.get("verdict"):
-                row.add(_pill_button(f"👀 Spot-check {len(batch['spot_check'])}",
-                                     "Read a few questions; one 👎 rewrites the batch", theme,
-                                     lambda pid=pid: self._on_quiz_spot_check(pid), accent=True))
-            else:
-                write = _pill_button("Writing…" if running == pid else
-                                     ("📝 Write questions" if n < st["ready"] else "➕ More questions"),
-                                     "Asks DeepSeek, then checks every question (a few minutes). "
-                                     "Optional once a protocol has enough to be taken.", theme,
-                                     lambda pid=pid: self._on_quizwriter_run(pid))
-                write.setEnabled(not running)
-                row.add(write)
-            row.finish()
-            area.addWidget(row)
+            n = sum((st["per_protocol"].get(p["id"]) or {}).values())
+            batch = (st["batches"] or {}).get(p["id"]) or {}
+            spot_check_due = bool(batch.get("questions") and not batch.get("verdict"))
+            (waiting if n < st["ready"] or spot_check_due else settled).append(p)
+        for p in waiting:
+            area.addWidget(self._quiz_row(p, st, running, theme))
+        if settled:
+            area.addWidget(self._quiz_settled_line(settled, st, theme))
+            if getattr(self, "_quiz_show_settled", False):
+                for p in settled:
+                    area.addWidget(self._quiz_row(p, st, running, theme))
+
+    def _quiz_settled_line(self, settled: list[dict[str, Any]], st: dict[str, Any], theme: dict[str, Any]):
+        """One line standing in for every protocol that needs nothing, with a way to open them anyway."""
+        from .growth_ui import FlowRow, _label, _muted, _pill_button
+        good = sum(1 for p in settled
+                   if sum((st["per_protocol"].get(p["id"]) or {}).values()) >= st["good"])
+        open_ = getattr(self, "_quiz_show_settled", False)
+        row = FlowRow()
+        row.add(_label(f"✅ {len(settled)} already have enough" + (f", {good} a good bank" if good else ""),
+                       _muted(theme, 10.5), wrap=False))
+        row.add(_pill_button("Hide them" if open_ else "Show them",
+                             "These need nothing — open them only to write more questions anyway",
+                             theme, self._on_quiz_toggle_settled))
+        row.finish()
+        return row
+
+    def _on_quiz_toggle_settled(self) -> None:
+        self._quiz_show_settled = not getattr(self, "_quiz_show_settled", False)
+        self._render_quizwriter()
+
+    def _quiz_row(self, p: dict[str, Any], st: dict[str, Any], running: str, theme: dict[str, Any]):
+        from .growth_ui import FlowRow, _label, _muted, _pill_button
+        pid = p["id"]
+        have = st["per_protocol"].get(pid) or {}
+        n = sum(have.values())
+        batch = (st["batches"] or {}).get(pid) or {}
+        mix = " · ".join(f"{have.get(lv, 0)} {lv}" for lv in ("easy", "medium", "tricky") if have.get(lv))
+        # ✓ it can be taken (enough for an attempt), ✦ a good bank, ○ not enough yet
+        mark, colour = ("○", theme["muted"]) if n < st["ready"] else \
+            (("✓", theme["good"]) if n < st["good"] else ("✦", theme["good"]))
+        row = FlowRow()
+        # wrap=False, or the flow layout gives a wrapping label the whole line and the count and the
+        # button are pushed off it -- these are short chips meant to sit side by side.
+        row.add(_label(f"{mark} {_short(p['title'], 34)}",
+                       f"color:{colour if n < st['ready'] else theme['text']}; font-size:10.5px; "
+                       "background:transparent;", wrap=False))
+        row.add(_label(f"{n} questions" + (f" ({mix})" if mix else ""), _muted(theme, 10), wrap=False))
+        if batch.get("questions") and not batch.get("verdict"):
+            row.add(_pill_button(f"👀 Spot-check {len(batch['spot_check'])}",
+                                 "Read a few questions; one 👎 rewrites the batch", theme,
+                                 lambda pid=pid: self._on_quiz_spot_check(pid), accent=True))
+        else:
+            write = _pill_button("Writing…" if running == pid else
+                                 ("📝 Write questions" if n < st["ready"] else "➕ More"),
+                                 "Asks DeepSeek, then checks every question (a few minutes). "
+                                 "Optional once a protocol has enough to be taken.", theme,
+                                 lambda pid=pid: self._on_quizwriter_run(pid))
+            write.setEnabled(not running)
+            row.add(write)
+        row.finish()
+        return row
 
     def _reviewed_protocols(self) -> list[dict[str, Any]]:
         from .. import curated, protocols

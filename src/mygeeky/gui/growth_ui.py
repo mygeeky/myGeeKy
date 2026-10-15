@@ -126,13 +126,22 @@ class FlowLayout(QLayout):
         for item in self._items:
             hint = item.sizeHint()
             w = min(hint.width(), rect.width())
-            if x + w > rect.x() + rect.width() and line > 0:
+            h = hint.height()
+            if w <= 0:
+                # Wrapping text asks for no width at all (QSizePolicy.Ignored, see `_label`), so laying it
+                # out by its hint made it nought wide: present, never drawn. A label that quietly vanishes
+                # is the worst way to fail, so text that will wrap is given the rest of the line instead.
+                w = rect.width() - (x - rect.x())
+                if w < rect.width() // 3 and line > 0:          # too little left to read on: next line
+                    x, y, line, w = rect.x(), y + line + self._gap, 0, rect.width()
+                h = item.heightForWidth(w) if item.hasHeightForWidth() else h
+            elif x + w > rect.x() + rect.width() and line > 0:
                 x, y = rect.x(), y + line + self._gap
                 line = 0
             if move:
-                item.setGeometry(QRect(QPoint(x, y), QSize(w, hint.height())))
+                item.setGeometry(QRect(QPoint(x, y), QSize(w, h)))
             x += w + self._gap
-            line = max(line, hint.height())
+            line = max(line, h)
         return y + line - rect.y()
 
 
