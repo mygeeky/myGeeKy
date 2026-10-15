@@ -58,8 +58,8 @@
     { spot: -1.00, dir: 122, len: 196, w: 52, back: true },
     { spot: -0.72, dir: 114, len: 206, w: 57, back: true },
     { spot: -0.44, dir: 106, len: 198, w: 61, back: true },
-    { spot: -0.30, dir: 97, len: 172, w: 63, back: true },
-    { spot: 0.30, dir: 83, len: 172, w: 63, back: true },
+    { spot: -0.30, dir: 97, len: 192, w: 63, back: true },
+    { spot: 0.30, dir: 83, len: 192, w: 63, back: true },
     { spot: 0.44, dir: 74, len: 198, w: 61, back: true },
     { spot: 0.72, dir: 66, len: 206, w: 57, back: true },
     { spot: 1.00, dir: 58, len: 196, w: 52, back: true },
@@ -275,8 +275,8 @@
        * The start is then pushed 34 units back INSIDE the body. The join is what was ugly: an arm that
        * begins exactly on the rim shows its own outline as a dark seam across the edge. Beginning it
        * well inside, and drawing the mantle over the top, hides every join under the body. */
-      var ax = cx + base.spot * 84 * headK;
-      var ay = cy + (128 - Math.abs(base.spot) * 14) * headK;
+      var ax = cx + base.spot * 68 * headK;
+      var ay = cy + (146 - Math.abs(base.spot) * 22) * headK;
       var into = rad(base.dir + (pose.swing[i] || 0));
       ax -= Math.cos(into) * 48 * headK;
       ay -= Math.sin(into) * 48 * headK;
@@ -407,12 +407,29 @@
   function head(cx, cy, k) {
     k = k || 1;
     var X = function (n) { return round(cx + n * k); }, Y = function (n) { return round(cy + n * k); };
-    return 'M' + X(0) + ' ' + Y(-162) + 'C' + X(74) + ' ' + Y(-162) + ' ' + X(118) + ' ' + Y(-92) +
-      ' ' + X(118) + ' ' + Y(-6) + 'C' + X(118) + ' ' + Y(66) + ' ' + X(90) + ' ' + Y(114) +
-      ' ' + X(50) + ' ' + Y(132) + 'L' + X(-50) + ' ' + Y(132) + 'C' + X(-90) + ' ' + Y(114) +
-      ' ' + X(-118) + ' ' + Y(66) + ' ' + X(-118) + ' ' + Y(-6) + 'C' + X(-118) + ' ' + Y(-92) +
-      ' ' + X(-74) + ' ' + Y(-162) + ' ' + X(0) + ' ' + Y(-162) + 'Z';
-  }
+    /* A wide DOME that flares at the hem, not an egg that tapers to one.
+     *
+     * The mantle is 268 across and 296 tall -- near enough square, where the old one was a fifth taller
+     * than wide. Two things make it read as a dome rather than an egg: the top is one broad arc (the
+     * first control point sits far out at 86, so the crown is round instead of pinched), and the bottom
+     * does NOT narrow to a neck. It stays wide, 92 either side at the hem, so the body opens out into
+     * the arms the way a real mantle does. A narrow hem is what made it look like it was balanced on
+     * its tentacles instead of growing them. */
+    /* A wide dome, widest at the CHEEKS and tapering below them.
+     *
+     * Three things separate this from the egg it was. The crown is one broad arc, so the top is round
+     * rather than pinched. The widest point sits at eye level -- 136 either side at y=0 -- and the body
+     * then narrows to 76 at the hem, roughly half, which is the proportion the reference keeps. And the
+     * hem itself is a shallow curve, never a straight line: a flat edge made him look like a dome set
+     * down on a shelf, where a mantle should swell into its arms with no seam anywhere.
+     *
+     * 272 across by 304 tall -- a ratio of 1.12, against the reference's 1.11. */
+    return 'M' + X(0) + ' ' + Y(-140) + 'C' + X(80) + ' ' + Y(-140) + ' ' + X(136) + ' ' + Y(-84) +
+      ' ' + X(136) + ' ' + Y(0) + 'C' + X(136) + ' ' + Y(62) + ' ' + X(116) + ' ' + Y(112) +
+      ' ' + X(76) + ' ' + Y(142) +
+      'C' + X(40) + ' ' + Y(164) + ' ' + X(-40) + ' ' + Y(164) + ' ' + X(-76) + ' ' + Y(142) +
+      'C' + X(-116) + ' ' + Y(112) + ' ' + X(-136) + ' ' + Y(62) + ' ' + X(-136) + ' ' + Y(0) +
+      'C' + X(-136) + ' ' + Y(-84) + ' ' + X(-80) + ' ' + Y(-140) + ' ' + X(0) + ' ' + Y(-140) + 'Z';  }
 
   /* Everything the picture needs, as plain values ready to bind into markup -- no HTML string anywhere.
    *
