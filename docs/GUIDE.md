@@ -816,8 +816,9 @@ later:
 - Your CV (a file path, pasted text, or skip)
 - Your ORCID iD (type `signin` to sign in with ORCID in your browser) and your Google Scholar profile URL (each optional)
 
-Any one of the username, the ORCID iD or a few topics is enough. Without GitHub, News, Research, AI models and
-Launches work for your field; People, Repos, Activity and Signals show what adding GitHub would unlock.
+Any one of the username, the ORCID iD or a few topics is enough. Without GitHub: Chances, Grow, News, Research,
+Market, Repos to improve and the field half of People all work. An account is needed for who'd follow you back,
+Activity, Signals, Collab, and for syncing to your phone.
 - Languages / topics / keywords / locations you're looking for
 - Optional extra candidate sources: well-known accounts in your field, relevant repos
 - Follower-count range, `max_following`, minimum repo count, how many suggestions per run

@@ -1,5 +1,7 @@
-"""myGeeKy without a GitHub account: the setup skips the GitHub pages, and the
-GitHub-only parts of the panel say what adding GitHub would unlock."""
+"""myGeeKy without a GitHub account: the setup skips the GitHub pages, and the parts that genuinely
+read your account say what adding GitHub would unlock -- while the parts that only need a FIELD draw
+normally. Repos and Market search public repos against your own keywords and never look your account up,
+so an "Add GitHub" card there would be asking for something they do not use."""
 import pytest
 
 pytest.importorskip("PySide6", reason="PySide6 (the 'gui' extra) is not installed")
@@ -20,9 +22,11 @@ def test_the_github_parts_show_an_add_github_card(qapp, monkeypatch, no_save):
         panel._render_suggestions({"followback": [], "domain_highlights": []})
         panel._render_contributions([])
         panel._on_activity_ready({"events": []})
-        for area in (panel.followback_area, panel.repos_area, panel.activity_area):
+        for area in (panel.followback_area, panel.activity_area):    # these are scored against YOUR account
             buttons = cards(area)
             assert len(buttons) == 1
+        # Repos is picked by searching your field: an ORCID is a field, so it draws rather than asking.
+        assert not cards(panel.repos_area)
         buttons[0].click()
         assert opened                                                # opens setup, to sign in with GitHub
         panel._load_status()
@@ -52,3 +56,25 @@ def test_setup_without_github_skips_the_github_pages(qapp, monkeypatch):
                         {"ok": True, "orcid": "0000-0002-1825-0097", "name": "Josiah Carberry"})
     profile._orcid_done(sw.api(None, "orcid_login"))
     assert profile.orcid.text() == "0000-0002-1825-0097" and "Josiah Carberry" in profile.orcid_note.text()
+
+
+def test_the_field_half_of_people_draws_without_an_account(qapp, monkeypatch, no_save):
+    """The domain-fit list is people found by searching your field. It used to vanish along with the
+    follow-back list, hiding people from exactly the users who have no GitHub to find them any other way."""
+    panel = _panel(monkeypatch, orcid_id="0000-0002-1825-0097")
+    try:
+        found = [{"username": "ada", "profile_url": "https://github.com/ada", "avatar_url": "",
+                  "domain_fit": 0.8, "score": 0.1, "followers": 40, "following": 20, "public_repos": 9,
+                  "bio": "metagenomics", "sources": ["domain_repo_owner:lab/tool"], "n_sources": 1}]
+        panel._render_suggestions({"followback": [], "domain_highlights": found})
+        said = _text_of(panel.domain_area)
+        assert "ada" in said, "the field half of People was hidden with the follow-back half"
+    finally:
+        _close(panel)
+
+
+def _text_of(area) -> str:
+    from PySide6.QtWidgets import QLabel
+    parent = area.parentWidget()
+    return " ".join(lbl.text() for lbl in parent.findChildren(QLabel)
+                    if not lbl.parentWidget().isHidden())

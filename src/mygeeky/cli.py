@@ -26,6 +26,7 @@ from .config import (
     MyGeekyConfig,
     config_summary,
     load_config,
+    profile_ready,
     save_config,
 )
 from .github_client import GitHubClient, build_search_queries
@@ -179,8 +180,9 @@ def init() -> None:
 
     click.echo("Let's set myGeeKy up. Press Enter to accept any default shown in [brackets].\n")
 
-    click.echo("No GitHub account? Leave the username blank: News, Research, AI models and Launches\n"
-               "work without it, from your ORCID or a few topics. You can add GitHub any time.")
+    click.echo("No GitHub account? Leave the username blank: Chances, Grow, News, Research, the market\n"
+               "board and repos to improve all work without it, from your ORCID or a few keywords.\n"
+               "You can add GitHub any time.")
     cfg.github_username = click.prompt("Your GitHub username", default=cfg.github_username or "",
                                        show_default=bool(cfg.github_username)).strip().lstrip("@")
 
@@ -283,9 +285,12 @@ def init() -> None:
     if not cfg.github_username:
         click.echo(
             "All set, without GitHub. Try:\n"
-            "  mygeeky gui              # the panel: news, research and AI models for your field\n"
+            "  mygeeky gui              # the panel: chances, grow, news, research and the market board\n"
+            "  mygeeky market           # rising tools in your field (public repos, no account needed)\n"
+            "  mygeeky contribute       # repos where your skills would be welcome\n"
             "  mygeeky trends           # what's rising in your field, and who is behind it\n"
-            "Add GitHub later (run `mygeeky init` again) to unlock People, Repos, Activity and Signals.\n"
+            "Add GitHub later (run `mygeeky init` again) for who'd follow you back, Activity, Signals\n"
+            "and Collab -- and to sync to your phone.\n"
         )
         return
 
@@ -584,7 +589,10 @@ def _load_cv_text() -> str:
 
 
 def _self_profile(client: GitHubClient, cfg: MyGeekyConfig):
-    """You, as myGeeKy sees you: GitHub repos + CV text + ORCID/OpenAlex publications."""
+    """You, as myGeeKy sees you: GitHub repos + CV text + ORCID/OpenAlex publications.
+
+    Without a GitHub username the repo half is simply empty and the rest still stands: your keywords, your
+    CV and your papers are enough to say what your field is, which is all Market and Repos ever needed."""
     return build_self_profile(client, cfg.github_username, _load_cv_text(), cfg.keywords,
                               scholar_text=scholar.scholar_corpus(scholar.load_scholar_profile()))
 
@@ -640,8 +648,8 @@ def _gather_candidates(client: GitHubClient, cfg: MyGeekyConfig, exclude: set[st
         except Exception as exc:
             click.echo(f"[mygeeky] seed_repos '{repo}' failed: {exc}", err=True)
 
-    # 4. Stargazers of your own most-starred repos
-    if cfg.include_own_stargazers:
+    # 4. Stargazers of your own most-starred repos (needs an account: without one there are no own repos)
+    if cfg.include_own_stargazers and cfg.github_username:
         own_repos = client.list_repos(cfg.github_username, max_pages=2)
         top_repos = sorted(own_repos, key=lambda r: r.get("stargazers_count", 0), reverse=True)[:10]
         for r in top_repos:
@@ -748,17 +756,24 @@ def _plausible_followback(r: dict, cfg: MyGeekyConfig) -> bool:
 
 
 def _run_suggestions(cfg: MyGeekyConfig) -> dict[str, list[dict]]:
-    if not cfg.github_username:
+    if not profile_ready(cfg):
         raise click.ClickException("Run `mygeeky init` first.")
     client = _client_for(cfg)
+    # Two lists, two different requirements. The DOMAIN list is people found by searching your field, so it
+    # needs nothing but a field. The FOLLOW-BACK list is scored against your own account -- who follows you,
+    # who you follow, how like you a candidate is -- so without an account there is nothing to score, and it
+    # is left out rather than filled with a number that means nothing.
+    mine = bool(cfg.github_username)
 
     self_profile = _self_profile(client, cfg)
     vocabulary = keywords.enrich_vocabulary(build_domain_vocabulary(self_profile.corpus, cfg.domain_vocab_size), cfg)
 
-    following = set(client.list_following(cfg.github_username))
-    save_following_snapshot(following)  # baseline for the next `learn` run, if none exists yet
-    excluded = {u.lower() for u in load_excluded()} | {cfg.github_username.lower()} \
-        | {u.lower() for u in cfg.exclude_users}
+    following = set(client.list_following(cfg.github_username)) if mine else set()
+    if mine:
+        save_following_snapshot(following)  # baseline for the next `learn` run, if none exists yet
+    excluded = {u.lower() for u in load_excluded()} | {u.lower() for u in cfg.exclude_users}
+    if mine:
+        excluded.add(cfg.github_username.lower())
     if cfg.exclude_already_following:
         excluded |= {u.lower() for u in following}
 
@@ -822,15 +837,19 @@ def _run_suggestions(cfg: MyGeekyConfig) -> dict[str, list[dict]]:
 
     activity_cache: dict[str, bool] = {}
 
-    followback_ranked = sorted((r for r in scored if r["score"] >= cfg.similarity_threshold
-                                and _plausible_followback(r, cfg)),
-                                key=lambda r: r["score"], reverse=True)
-    # keep some places for people outside your usual circle ("new territory");
-    # the domain-fit list below stays a pure match to your field
-    explored = interests.mix(followback_ranked, cfg.max_suggestions_returned, cfg)
-    chosen = {r["username"] for r in explored}
-    followback_ranked = explored + [dict(r, explore=False) for r in followback_ranked if r["username"] not in chosen]
-    followback_kept = _apply_activity_qc(client, cfg, followback_ranked, cfg.max_suggestions_returned, activity_cache)
+    followback_kept: list[dict] = []
+    if mine:
+        followback_ranked = sorted((r for r in scored if r["score"] >= cfg.similarity_threshold
+                                    and _plausible_followback(r, cfg)),
+                                    key=lambda r: r["score"], reverse=True)
+        # keep some places for people outside your usual circle ("new territory");
+        # the domain-fit list below stays a pure match to your field
+        explored = interests.mix(followback_ranked, cfg.max_suggestions_returned, cfg)
+        chosen = {r["username"] for r in explored}
+        followback_ranked = explored + [dict(r, explore=False) for r in followback_ranked
+                                        if r["username"] not in chosen]
+        followback_kept = _apply_activity_qc(client, cfg, followback_ranked,
+                                             cfg.max_suggestions_returned, activity_cache)
 
     # Domain-fit highlights: ranked purely by match to your CV/repos, independent
     # of follow-back likelihood -- a niche domain expert who follows almost no
@@ -1077,7 +1096,7 @@ def pipeline() -> None:
 def _run_contribute(cfg: MyGeekyConfig) -> list[dict]:
     from .contribute import suggest_repositories
     from .storage import log_contributions
-    if not cfg.github_username:
+    if not profile_ready(cfg):      # public repos matched to your field; your own account is not consulted
         raise click.ClickException("Run `mygeeky init` first.")
     client = _client_for(cfg)
     self_profile = _self_profile(client, cfg)
@@ -1149,7 +1168,9 @@ def _market_terms(client: GitHubClient, cfg: MyGeekyConfig) -> list[str]:
 
 def _run_market(cfg: MyGeekyConfig, force: bool = False, log=lambda m: None) -> list[dict]:
     from .market import compute_board, refresh_market
-    if not cfg.github_username:
+    # The board is PUBLIC repos picked from your own field terms: it never reads your GitHub account, so a
+    # username was never the right thing to ask for. A profile of any kind -- keywords, a CV, an ORCID -- is.
+    if not profile_ready(cfg):
         raise click.ClickException("Run `mygeeky init` first.")
     client = _client_for(cfg)
     state = refresh_market(client, cfg, lambda: _market_terms(client, cfg), force=force, log=log)

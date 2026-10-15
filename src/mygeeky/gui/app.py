@@ -364,9 +364,10 @@ def suggestions_auto_refresh_due(cfg: MyGeekyConfig, now: datetime | None = None
     `gui_suggestions_auto_refresh_hours` (0 turns this off)."""
     from .. import freshness
     hours = cfg.gui_suggestions_auto_refresh_hours
-    if not cfg.github_username or hours <= 0:
+    if not profile_ready(cfg) or hours <= 0:
         return False
-    shown = get_suggestions(cfg)["followback"]
+    # Without an account there is no follow-back list at all, so the domain-fit list is what "empty" means.
+    shown = get_suggestions(cfg)["followback" if cfg.github_username else "domain_highlights"]
     if shown and not freshness.running_low(shown, cfg.max_suggestions_returned):
         return False
     if shown:                                   # running low on new faces: top up, but gently
@@ -455,8 +456,11 @@ def mark_suggestion_seen(username: str) -> None:
 
 
 def refresh_suggestions(cfg: MyGeekyConfig) -> dict[str, Any]:
-    """Runs a real `mygeeky run` -- only ever called from an explicit button click."""
-    if not cfg.github_username:
+    """Runs a real `mygeeky run` -- only ever called from an explicit button click.
+
+    Without a GitHub account only the domain-fit list comes back: people found by searching your field. The
+    follow-back list is scored against your own account, so there is nothing to score."""
+    if not profile_ready(cfg):
         return {"error": "Run `mygeeky init` in a terminal first."}
     try:
         return _run_suggestions(cfg)
@@ -482,7 +486,7 @@ def contributions_top_up_due(cfg: MyGeekyConfig, now: datetime | None = None) ->
     from .. import freshness
     from ..storage import read_jsonl
     from ..config import CONTRIBUTE_LOG
-    if not cfg.github_username or cfg.fresh_repos_topup_hours <= 0:
+    if not profile_ready(cfg) or cfg.fresh_repos_topup_hours <= 0:
         return False
     shown = get_contributions(cfg)
     if shown and not freshness.running_low(shown, cfg.contribute_max_returned):
@@ -539,7 +543,7 @@ def repo_people(cfg: MyGeekyConfig, repo: str) -> list[dict[str, Any]]:
 
 def refresh_contributions(cfg: MyGeekyConfig) -> list[dict[str, Any]] | dict[str, Any]:
     """Runs a real `mygeeky contribute` -- only ever called from an explicit button click."""
-    if not cfg.github_username:
+    if not profile_ready(cfg):      # public repos matched to your field; your own account is not consulted
         return {"error": "Run `mygeeky init` in a terminal first."}
     try:
         return _run_contribute(cfg)
@@ -1389,7 +1393,7 @@ def market_refresh_due(cfg: MyGeekyConfig, now: datetime | None = None) -> bool:
 
 
 def refresh_market(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
-    if not cfg.github_username:
+    if not profile_ready(cfg):      # the board is public repos in YOUR field, not anything about your account
         return {"rows": [], "error": "Run `mygeeky init` in a terminal first."}
     try:
         from ..cli import _run_market

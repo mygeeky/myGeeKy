@@ -335,6 +335,10 @@ SEEN_EARLIER_MAX = 4        # a read-once list you've finished still shows this 
 GITHUB_UNLOCKS = {
     "people": "Researchers in your field share their code on GitHub. myGeeKy finds the ones you'd enjoy "
               "following, and who'd likely follow you back. Until then, 📈 Market → Research shows who is publishing in your field.",
+    # The follow-back list is scored against your own account: who follows you, who you follow, how like you
+    # someone is. There is nothing to score without an account, so this half is the only part that waits.
+    "followback": "Who would likely follow you back — scored against your own account, so this half needs "
+                  "GitHub. The people below it are found by searching your field, and need nothing.",
     "repos": "Repos in your field where your skills would be welcome, with open starter issues.",
     "activity": "What people in your field are building, as it happens.",
     "signals": "Thank the people whose code you use, and invite collaborators, without words.",
@@ -6877,8 +6881,8 @@ class MyGeekyPanel(QWidget):
             self.status_label.setText(f"Signed in as {status['github_username']}{extra}")
         elif status["profile_ready"]:
             who = f"ORCID {status['orcid_id']}" if status["orcid_id"] else "your topics"
-            self.status_label.setText(f"Using {who}, without GitHub. Add GitHub "
-                                      "to unlock People, Activity and Signals.")
+            self.status_label.setText(f"Using {who}, without GitHub. Add GitHub for who'd follow "
+                                      "you back, Activity, Signals and 🤝 Collab.")
         else:
             self.status_label.setText("Run `mygeeky init` in a terminal to get started.")
 
@@ -7069,10 +7073,16 @@ class MyGeekyPanel(QWidget):
             return
         self._render_suggestions(data)
 
-    def _github_card(self, layout, part: str, has_data: bool = False) -> bool:
+    def _github_card(self, layout, part: str, has_data: bool = False, field_only: bool = False) -> bool:
         """No GitHub username yet (and nothing to show): say what this part would show, with a
-        way to add GitHub. True when the card was shown (the caller has nothing else to draw)."""
+        way to add GitHub. True when the card was shown (the caller has nothing else to draw).
+
+        `field_only` marks a part that is picked by searching your FIELD and never reads your account --
+        Market and Repos. Those ask for a profile of any kind (keywords, a CV, an ORCID), not a username,
+        so a card offering GitHub would be asking for something the part does not use."""
         if self.cfg.github_username or has_data:
+            return False
+        if field_only and logic.get_status(self.cfg).get("profile_ready"):
             return False
         theme = THEMES[self._theme_name()]
         _clear_layout(layout)
@@ -7109,13 +7119,21 @@ class MyGeekyPanel(QWidget):
         return True
 
     def _render_suggestions(self, data: dict[str, Any] | None) -> None:
+        """Two lists with two different requirements.
+
+        The domain-fit list is people found by searching your field: it draws whether or not you have a
+        GitHub account. The follow-back list is scored against your own account, so without one it is
+        replaced by the card that says so -- rather than the whole tab being replaced, which hid people
+        from the very users who have no GitHub to find them any other way."""
         theme = THEMES[self._theme_name()]
-        if self._github_card(self.followback_area, "people",
-                             bool((data or {}).get("followback") or (data or {}).get("domain_highlights"))):
-            _clear_layout(self.domain_area)
-            return
         followback = (data or {}).get("followback") or []
         domain = (data or {}).get("domain_highlights") or []
+        if self._github_card(self.followback_area, "followback", bool(followback)):
+            self._set_card_list(self.domain_area, domain, "domain_fit", theme)
+            self._last_suggestions = []
+            self._update_live_ticker()
+            self._update_fresh_counts()
+            return
         self._set_card_list(self.followback_area, followback, "score", theme)
         self._set_card_list(self.domain_area, domain, "domain_fit", theme)
         self._last_suggestions = followback
@@ -7420,7 +7438,7 @@ class MyGeekyPanel(QWidget):
 
     def _render_contributions(self, items: list[dict[str, Any]] | None) -> None:
         theme = THEMES[self._theme_name()]
-        if self._github_card(self.repos_area, "repos", bool(items)):
+        if self._github_card(self.repos_area, "repos", bool(items), field_only=True):
             return
         _clear_layout(self.repos_area)
         if not items:

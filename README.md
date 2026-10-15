@@ -395,9 +395,16 @@ until you do, and no token passes through myGeeKy. Issues there are public, so l
 
 ## 🎓 No GitHub account? Start with ORCID
 
-GitHub is optional. In setup, on the computer or the phone, **Sign in with ORCID** (or type your ORCID iD, or a few
-keywords): News, Research, AI models and Launches work straight away for your field. People, Repos, Activity and Signals
-live on GitHub, so they show what adding GitHub would unlock, with a one-click way to add it whenever you like.
+GitHub is optional, and it is not the smaller half. In setup, on the computer or the phone, **Sign in with ORCID**
+(or type your ORCID iD, or a few keywords), and these work straight away for your field: **🎯 Chances** (verified
+jobs, funding, conferences and seasons), **🌱 Grow** (rising skills, protocols, the quiz), **📰 News**,
+**📄 Research**, **📈 Market** and **📦 Repos to improve** -- the last two search public repos
+against your field and never read your account, which is why they need no GitHub.
+
+What does need an account: **who'd follow you back** (it is scored against your own account), **🕒 Activity**
+(the feed of people you follow), **📡 Signals** and **🤝 Collab** -- plus **syncing to your phone**,
+which travels through your own private GitHub repo. The *other* half of 👥 People -- researchers found by
+searching your field -- works without it.
 Signing in with ORCID only confirms your iD: myGeeKy never sees your ORCID password and keeps no ORCID token.
 
 **If myGeeKy hits an error**, it saves a crash report on your computer and offers to send it. You see exactly

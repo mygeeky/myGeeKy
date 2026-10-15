@@ -48,6 +48,8 @@ def _repo_facets(repos: list[dict[str, Any]]) -> tuple[Counter, Counter, list[st
 
 
 def build_profile_from_github(client: GitHubClient, username: str, max_repo_pages: int = 3) -> Profile | None:
+    if not username:
+        return None          # no GitHub account: the caller falls back to the CV, keywords and publications
     user = client.get_user(username)
     if not user:
         return None

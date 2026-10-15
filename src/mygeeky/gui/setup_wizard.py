@@ -750,7 +750,8 @@ class ProfilePage(Page):
     def __init__(self) -> None:
         super().__init__("About you", "myGeeKy learns your field from any of these. One is enough: your GitHub "
                                       "username, your ORCID, or a few topics. No GitHub account? Sign in with "
-                                      "ORCID: News, Research, AI models and Launches all work without GitHub.")
+                                      "ORCID: Chances, Grow, News, Research, Market and Repos all work "
+                                      "without GitHub.")
         form = QFormLayout()
         form.setSpacing(8)
         self.username = QLineEdit()
