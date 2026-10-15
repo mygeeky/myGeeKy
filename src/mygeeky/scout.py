@@ -239,6 +239,158 @@ def read(key: str, kind: str, detail: dict[str, Any], focus: str, today: date, p
                f"PAGE: {detail['url']}\n\nTEXT:\n{detail['text'][:PAGE_CHARS]}", post)
 
 
+# --------------------------------------------------------------------------- seasons: confirming the past
+# A season (seasons.py) claims a scholarship comes back every year, and offers the next one as an
+# expectation. The expectation is only worth as much as the history behind it, so DeepSeek is not asked
+# when the next round opens -- no page can say that. It is asked to open the page of a round that has
+# ALREADY happened and find the sentence that gave its dates. myGeeKy then checks that sentence against
+# the page itself, exactly as it does for a listing's deadline. That is a small, cheap job on a page that
+# exists, rather than a search across the web.
+SEASON_SYSTEM = """You read ONE web page about a scholarship, grant or funding programme for myGeeKy.
+The page is said to be about a round that has already happened. Find what the page says about WHEN that
+round opened and closed.
+Use ONLY what is written on the page. Never guess a date, and never work one out from another year.
+Answer as JSON with exactly these keys:
+{{
+ "found": true if this page really is about this programme and gives its dates, else false,
+ "recurring": true if the page shows this comes back regularly (yearly, "annual", "every year", a round
+              number such as 2026/2027, or a named past round), else false,
+ "opens": "YYYY-MM-DD the day applications opened, or '' if the page gives only a closing date",
+ "closes": "YYYY-MM-DD the last day to apply",
+ "quote": "the exact sentence or phrase from the page that gives those dates, copied word for word",
+ "cycle": "the award year the round was for, as four digits, or ''",
+ "note": "at most 15 words: anything a reader must know, such as each course setting its own deadline"
+}}
+
+The quote must be on the page, word for word, in the page's own language. myGeeKy checks it against the
+page and throws the answer away if it is not there."""
+
+
+def read_season(key: str, season: dict[str, Any], detail: dict[str, Any], post=None) -> dict[str, Any]:
+    """What one page says about a round of this season that has already been and gone."""
+    asked = (f"PROGRAMME: {season.get('title', '')}\n"
+             f"OFFERED BY: {season.get('org', '')}\n\nPAGE: {detail['url']}\n\nTEXT:\n"
+             f"{detail['text'][:PAGE_CHARS]}")
+    return ask(key, SEASON_SYSTEM, asked, post)
+
+
+def check_season(season: dict[str, Any], ans: dict[str, Any], detail: dict[str, Any]) -> dict[str, Any]:
+    """myGeeKy's own checks on what DeepSeek read. {"ok", "why", "checks", "seen"}.
+
+    `seen` is the occurrence to keep if it passes -- taken from the PAGE, not from what the maker wrote
+    down. Where the two disagree the page wins and the record is corrected, because the page is the only
+    thing either of them can point at."""
+    from . import seasons as _seasons
+    checks: list[tuple[bool, str]] = []
+    text = _norm(detail["text"])
+    if not ans.get("found"):
+        return {"ok": False, "why": "the page does not give this programme's dates", "checks": checks,
+                "seen": None}
+    closes = curated._day(ans.get("closes"))
+    if not closes:
+        return {"ok": False, "why": "no closing date on the page", "checks": checks, "seen": None}
+    quote = curated._text(ans.get("quote"), 400)
+    quoted = bool(quote) and _norm(quote) in text
+    checks.append((quoted, "the sentence is on the page"))
+    if not quoted:
+        return {"ok": False, "why": "the sentence it quoted is not on the page", "checks": checks,
+                "seen": None}
+    checks.append((date_in(quote, closes), "that sentence holds the closing date"))
+    opens = curated._day(ans.get("opens"))
+    if opens:
+        checks.append((date_in(quote, opens) or opens <= closes, "the opening date fits the same sentence"))
+    same_site = (urlsplit(detail["url"]).netloc.split(".")[-2:]
+                 == urlsplit(season.get("url", "")).netloc.split(".")[-2:])
+    checks.append((same_site, "on the programme's own site"))
+    checks.append((bool(ans.get("recurring")), "the page shows it comes back"))
+    if not all(ok for ok, _ in checks[:2]):
+        return {"ok": False, "why": "the dates and the sentence do not agree", "checks": checks, "seen": None}
+    seen = _seasons.clean_seen([{"cycle": ans.get("cycle") or closes[:4], "opens": opens, "closes": closes,
+                                 "url": detail["url"], "quote": quote, "checked": True}])
+    if not seen:
+        return {"ok": False, "why": "what came back was not a usable occurrence", "checks": checks,
+                "seen": None}
+    return {"ok": True, "why": "", "checks": checks, "seen": seen[0]}
+
+
+def confirm_seasons(seasons_in: list[dict[str, Any]], key: str | None = None,
+                    progress: Callable[[str], None] | None = None,
+                    session: requests.Session | None = None, post=None) -> dict[str, Any]:
+    """Open the page behind every unchecked occurrence and either confirm it or throw it away.
+
+    This is the only thing that turns a season the maker wrote down into one anybody else is shown. It
+    costs one page and one short DeepSeek answer per occurrence, so the whole list is pennies."""
+    key = key or get_key()
+    if not key:
+        raise PermissionError("Add your DeepSeek key first")
+    say = progress or (lambda m: None)
+    session = session or requests.Session()
+    confirmed, refused, errors = 0, 0, []
+    for season in seasons_in:
+        for i, occurrence in enumerate(season.get("seen") or []):
+            if occurrence.get("checked"):
+                continue
+            say(f"Checking {season.get('title', season.get('id'))}…")
+            try:
+                detail = page(occurrence["url"], session)
+                ans = read_season(key, season, detail, post)
+                out = check_season(season, ans, detail)
+            except PermissionError:
+                raise
+            except Exception as exc:
+                errors.append(f"{season.get('id')}: {type(exc).__name__}")
+                continue
+            if out["ok"]:
+                season["seen"][i] = out["seen"]
+                confirmed += 1
+                say(f"  confirmed {out['seen']['opens'] or '?'} to {out['seen']['closes']}")
+            else:
+                refused += 1
+                say(f"  refused: {out['why']}")
+    return {"confirmed": confirmed, "refused": refused, "errors": errors}
+
+
+# --------------------------------------------------------------------------- seasons: finding a few more
+SEASON_PICK_SYSTEM = """You help myGeeKy's maker find scholarships and funding that come back EVERY YEAR.
+You get a page's text and its links, numbered. Pick the links that each lead to ONE programme that
+recurs -- a government or embassy scholarship, a national grant scheme, a funded Master's or PhD
+programme with a yearly intake.
+Rules:
+- Pick a programme, never a news item, a list of many, a login page or a past-results page.
+- A recurring programme only. Skip anything that happens once.
+- At most {max_picks} links, best first.
+- Answer as JSON: {{"links": [numbers]}} and nothing else."""
+
+
+def pick_seasons(key: str, listing: dict[str, Any], post=None) -> list[str]:
+    """The links on a page that each look like a programme coming back every year."""
+    links = listing["links"][:MAX_LINKS]
+    numbered = "\n".join(f"[{i}] {label} -> {url}" for i, (label, url) in enumerate(links, 1))
+    out = ask(key, SEASON_PICK_SYSTEM.format(max_picks=MAX_PICKS),
+              f"PAGE: {listing['url']}\n\nTEXT:\n{listing['text'][:PAGE_CHARS]}\n\nLINKS:\n{numbered}",
+              post)
+    picked = []
+    for n in (out.get("links") or [])[:MAX_PICKS]:
+        try:
+            picked.append(links[int(n) - 1][1])
+        except (TypeError, ValueError, IndexError):
+            continue
+    return list(dict.fromkeys(picked))
+
+
+SEASON_SOURCES = [
+    {"name": "DAAD scholarship database", "url": "https://www2.daad.de/deutschland/stipendium/datenbank/en/"
+                                                 "21148-scholarship-database/"},
+    {"name": "Erasmus Mundus Joint Masters catalogue",
+     "url": "https://www.eacea.ec.europa.eu/scholarships/emjmd-catalogue_en"},
+    {"name": "Commonwealth Scholarship Commission",
+     "url": "https://cscuk.fcdo.gov.uk/scholarships/"},
+    {"name": "Swiss Government Excellence Scholarships",
+     "url": "https://www.sbfi.admin.ch/sbfi/en/home/education/scholarships-and-grants/"
+            "swiss-government-excellence-scholarships.html"},
+]
+
+
 # --------------------------------------------------------------------------- saying it in other languages
 SAY_LANGUAGES = {"ar": "Arabic", "fr": "French", "de": "German", "es": "Spanish", "zh": "Chinese (Simplified)"}
 SAY_FIELDS = ("title", "summary", "who", "amount", "student")

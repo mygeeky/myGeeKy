@@ -4998,5 +4998,351 @@
    "by": "",
    "based_on": ""
   }
+ ],
+ "seasons": [
+  {
+   "id": "mext-research-students-egypt",
+   "title": "MEXT Scholarship for Research Students (Master's and PhD)",
+   "url": "https://www.eg.emb-japan.go.jp/itpr_en/11_000001_00151.html",
+   "org": "Ministry of Education, Culture, Sports, Science and Technology (Japan)",
+   "through": "Embassy of Japan in Egypt",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Egypt"
+   ],
+   "goes_to": "Japan",
+   "opens_about": "04-22",
+   "closes_about": "05-14",
+   "prepare_weeks": 10,
+   "prepare": [
+    "a field of study and research plan (the hardest part: start early)",
+    "two recommendation letters, one from your current or last supervisor",
+    "degree certificate and transcripts, certified and apostilled",
+    "English or Japanese certificate (IELTS 6.0+, TOEFL iBT 79+, or JLPT N2+)",
+    "a medical certificate on the embassy's own form",
+    "check the age limit: under 35 on 1 April of the award year"
+   ],
+   "summary": "Fully funded Master's and PhD study in Japan, applied for through the Embassy of Japan in Cairo, with a written exam and an interview for those shortlisted. Covers tuition, a monthly stipend and airfare.",
+   "keywords": [
+    "japan",
+    "mext",
+    "monbukagakusho",
+    "scholarship",
+    "master",
+    "phd",
+    "egypt"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2026-04-22",
+     "closes": "2026-05-14",
+     "url": "https://www.eg.emb-japan.go.jp/itpr_en/11_000001_00151.html",
+     "quote": "All required documents must be sent by email to mext-r@ca.mofa.go.jp from April 22, 2026 until May 14, 2026 at 2:00 pm",
+     "checked": false
+    }
+   ]
+  },
+  {
+   "id": "chevening-scholarships",
+   "title": "Chevening Scholarships (one-year Master's in the UK)",
+   "url": "https://www.chevening.org/scholarships/",
+   "org": "Foreign, Commonwealth and Development Office (UK)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "United Kingdom",
+   "opens_about": "08-04",
+   "closes_about": "10-06",
+   "prepare_weeks": 10,
+   "prepare": [
+    "four essays: leadership, networking, choice of course, career plan",
+    "two referees who have agreed in advance",
+    "three UK Master's courses chosen and checked as eligible",
+    "two years of work experience evidenced (about 2,800 hours)",
+    "degree transcripts; the English certificate is only needed if shortlisted"
+   ],
+   "summary": "A fully funded one-year Master's anywhere in the UK, for people with work experience and a plan to go home afterwards. Open to most countries outside the UK.",
+   "keywords": [
+    "chevening",
+    "uk",
+    "master",
+    "scholarship",
+    "leadership"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2026-08-04",
+     "closes": "2026-10-06",
+     "url": "https://www.chevening.org/scholarships/",
+     "quote": "Applications for the Chevening Scholarship 2027-2028 opened on 4 August 2026 at 11:00 UTC and close on 6 October 2026 at 11:00 UTC",
+     "checked": false
+    }
+   ]
+  },
+  {
+   "id": "daad-epos-development-courses",
+   "title": "DAAD EPOS: development-related Master's and PhD in Germany",
+   "url": "https://www2.daad.de/deutschland/stipendium/datenbank/en/21148-scholarship-database/",
+   "org": "DAAD (German Academic Exchange Service)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Germany",
+   "opens_about": "10-01",
+   "closes_about": "11-15",
+   "prepare_weeks": 8,
+   "prepare": [
+    "pick the course first: each one runs its own deadline, from 30 September to 15 December",
+    "two years of professional experience after your first degree",
+    "degree certificates and transcripts, translated and certified",
+    "English (IELTS/TOEFL) or German (TestDaF) certificate, depending on the course",
+    "a letter of motivation written for that course, not a general one"
+   ],
+   "summary": "Scholarships for Master's and PhD places on a fixed list of development-related courses in Germany, for professionals from developing countries. You apply to the course, not to DAAD, so the deadline is the course's own.",
+   "keywords": [
+    "daad",
+    "germany",
+    "epos",
+    "development",
+    "master",
+    "phd",
+    "scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2025-10-01",
+     "closes": "2025-11-15",
+     "url": "https://static.daad.de/media/daad_de/pdfs_nicht_barrierefrei/in-deutschland-studieren-forschen-lehren/daad_programmbroschuere_epos_2026-27.pdf",
+     "quote": "the application period is October 1 - November 15, 2025 for the winter term 2026/2027",
+     "checked": false
+    }
+   ]
+  },
+  {
+   "id": "turkiye-burslari",
+   "title": "Türkiye Bursları (Türkiye Scholarships)",
+   "url": "https://www.turkiyeburslari.gov.tr/",
+   "org": "Presidency for Turks Abroad and Related Communities (YTB)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd",
+    "undergraduate"
+   ],
+   "for": [],
+   "goes_to": "Türkiye",
+   "opens_about": "01-10",
+   "closes_about": "02-20",
+   "prepare_weeks": 6,
+   "prepare": [
+    "one application covers up to twelve university and programme choices",
+    "degree certificate and transcripts",
+    "a letter of intent, and a research proposal for PhD applicants",
+    "passport or national ID, and a photograph",
+    "note that Turkish citizens and former Türkiye Bursları holders cannot apply"
+   ],
+   "summary": "A fully funded undergraduate, Master's or PhD place in Türkiye: tuition, accommodation, a monthly stipend, health insurance, flights and a year of Turkish language teaching. One application, up to twelve choices.",
+   "keywords": [
+    "turkiye",
+    "turkey",
+    "ytb",
+    "scholarship",
+    "master",
+    "phd"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-01-10",
+     "closes": "2026-02-20",
+     "url": "https://www.turkiyeburslari.gov.tr/announcements/turkiye-scholarships-2026-applications-121",
+     "quote": "Application Dates: 10 January – 20 February 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "fulbright-egyptian-student-masters",
+   "title": "Fulbright Egyptian Student Program (Master's in the USA)",
+   "url": "https://fulbright-egypt.org/program/js/",
+   "org": "Binational Fulbright Commission in Egypt",
+   "through": "Binational Fulbright Commission, Cairo",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [
+    "Egypt"
+   ],
+   "goes_to": "United States",
+   "opens_about": "03-01",
+   "closes_about": "05-31",
+   "prepare_weeks": 10,
+   "prepare": [
+    "TOEFL or IELTS, and the GRE for most fields: book the test early",
+    "three recommendation letters",
+    "a study objective and a personal statement",
+    "degree certificate and transcripts",
+    "Egyptian nationality and residence in Egypt at the time of applying"
+   ],
+   "summary": "A fully funded Master's degree in the United States for Egyptian graduates, placed and supported by the Binational Fulbright Commission in Cairo -- one of the oldest and largest Fulbright programmes anywhere.",
+   "keywords": [
+    "fulbright",
+    "usa",
+    "egypt",
+    "master",
+    "scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2028,
+     "opens": "",
+     "closes": "2026-05-31",
+     "url": "https://fulbright-egypt.org/program/js/",
+     "quote": "The deadline for this program is May 31, 2026",
+     "checked": false
+    }
+   ]
+  },
+  {
+   "id": "fulbright-egypt-phd-joint-supervision",
+   "title": "Fulbright Egypt: PhD Joint Supervision",
+   "url": "https://fulbright-egypt.org/program/js/",
+   "org": "Binational Fulbright Commission in Egypt",
+   "through": "Binational Fulbright Commission, Cairo",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [
+    "Egypt"
+   ],
+   "goes_to": "United States",
+   "opens_about": "07-01",
+   "closes_about": "10-10",
+   "prepare_weeks": 10,
+   "prepare": [
+    "be already registered for a PhD at an Egyptian university",
+    "an approved research plan, and your Egyptian supervisor's agreement",
+    "TOEFL or IELTS",
+    "three recommendation letters"
+   ],
+   "summary": "Six to ten months of PhD research at a US university for students already registered for a doctorate in Egypt, supervised jointly with their Egyptian department.",
+   "keywords": [
+    "fulbright",
+    "usa",
+    "egypt",
+    "phd",
+    "joint supervision"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2026-10-10",
+     "url": "https://fulbright-egypt.org/program/js/",
+     "quote": "Fulbright Egyptian Student Program - PhD Joint Supervision with an application deadline of October 10, 2026",
+     "checked": false
+    }
+   ]
+  },
+  {
+   "id": "msca-postdoctoral-fellowships",
+   "title": "MSCA Postdoctoral Fellowships",
+   "url": "https://marie-sklodowska-curie-actions.ec.europa.eu/calls",
+   "org": "European Commission (Horizon Europe)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "Europe (or a third country, then Europe)",
+   "opens_about": "04-09",
+   "closes_about": "09-09",
+   "prepare_weeks": 20,
+   "prepare": [
+    "a host supervisor who has agreed, months ahead: this is the real bottleneck",
+    "the proposal itself: excellence, impact, implementation (about 10 pages)",
+    "a letter of commitment from the host institution",
+    "your PhD must be awarded by the call deadline",
+    "check the mobility rule: not more than 12 months in the host country in the last 3 years"
+   ],
+   "summary": "One to three years of funded postdoctoral research in Europe, or abroad with a return phase. The single biggest postdoctoral fellowship call there is -- the 2026 round drew 21,627 proposals -- so the host and the proposal need months, not weeks.",
+   "keywords": [
+    "msca",
+    "marie curie",
+    "postdoc",
+    "fellowship",
+    "horizon europe",
+    "mobility"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-04-09",
+     "closes": "2026-09-09",
+     "url": "https://www.nks-msc.de/en/MSCA-call-for-Postdoctoral-Fellowships-PF-2026-open-2774.html",
+     "quote": "The call for the MSCA Postdoctoral Fellowships 2026 opened on 9 April 2026. The call for the MSCA Postdoctoral Fellowships 2026 opened on 9 April 2026. The deadline for the submission of applications is 9 September 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "chinese-government-scholarship-type-a",
+   "title": "Chinese Government Scholarship (CSC Type A, through your embassy)",
+   "url": "https://www.campuschina.org/",
+   "org": "China Scholarship Council",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "China",
+   "opens_about": "11-01",
+   "closes_about": "02-14",
+   "prepare_weeks": 8,
+   "prepare": [
+    "find your own country's embassy deadline: it is earlier than the CSC system's own",
+    "a pre-admission letter from a Chinese university helps a great deal",
+    "degree certificates and transcripts, notarised",
+    "a study plan, two recommendation letters, and a physical examination form"
+   ],
+   "summary": "Fully funded Master's and PhD study in China through the Chinese embassy in your own country (Type A). Each embassy sets its own deadline, earlier than the central one, so the date to watch is your embassy's.",
+   "keywords": [
+    "china",
+    "csc",
+    "scholarship",
+    "master",
+    "phd",
+    "campuschina"
+   ],
+   "seen": []
+  }
  ]
 }

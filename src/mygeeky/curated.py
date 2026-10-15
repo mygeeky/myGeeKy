@@ -215,6 +215,8 @@ def clean(data: Any) -> dict[str, Any]:
                 seen.add(it["id"])
                 items.append(it)
         out[kind] = items
+    from .seasons import clean as clean_seasons   # scholarships that come back every year (seasons.py)
+    out["seasons"] = clean_seasons(data.get("seasons") if isinstance(data, dict) else None)
     from .protocols import clean_protocol     # reviewed protocols: a skill as ordered stages (protocols.py)
     seen = set()
     out["protocols"] = []
