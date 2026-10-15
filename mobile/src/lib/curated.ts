@@ -27,6 +27,8 @@ export type Item = {
   id: string; title: string; url: string; keywords: string[]; summary: string; deadline?: string;
   org?: string; place?: string; type?: string; remote?: boolean; who?: string; amount?: string;
   starts?: string; ends?: string; student?: string; skills?: string[]; level?: string; free?: boolean;
+  // a listing from a board in another language: the English is in `title`, these say where it came from
+  original_title?: string; language?: string;
 };
 export type Lists = { version: string; protocols: Protocol[] } & Record<ListName, Item[]>;
 export type Ranked = Item & { score: number; match: string[]; daysLeft: number | null; vote: number };
@@ -47,6 +49,8 @@ export function cleanItem(kind: ListName, raw: any): Item | null {
   if (!raw || typeof raw !== 'object' || !ID_RE.test(String(raw.id ?? ''))) return null;
   const it: Item = { id: raw.id, title: text(raw.title, 140), url: https(raw.url), keywords: words(raw.keywords), summary: text(raw.summary, 400) };
   if (!it.title || !it.url) return null;
+  const original = text(raw.original_title, 140), language = text(raw.language, 30);
+  if (original && language) Object.assign(it, { original_title: original, language });   // translated, and says so
   if (DATED.includes(kind)) {
     it.deadline = day(raw.deadline);
     if (!it.deadline) return null;

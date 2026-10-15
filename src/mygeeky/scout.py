@@ -180,7 +180,12 @@ Use ONLY facts written on the page. Never guess: if something isn't on the page,
 Answer as JSON with exactly these keys:
 {{
  "is_listing": true if the page is about ONE specific {kind_word} that is open now, else false,
- "title": "its title as written on the page",
+ "title": "its title EXACTLY as written on the page, in the page's own language, word for word",
+ "language": "the language the page is written in, in English: English, French, German, Spanish...",
+ "title_en": "the title in English. If the page is already in English, repeat it unchanged",
+ "summary_en": "the summary below, in English (repeat it unchanged if the page is in English)",
+ "who_en": "'who' below, in English (funding only; '' if empty)",
+ "amount_en": "'amount' below, in English, keeping the currency and the numbers as they are",
  "org": "the organisation offering it",
  "place": "city, country (or online)",
  "remote": true only if the page says it can be done remotely,
@@ -196,7 +201,11 @@ Answer as JSON with exactly these keys:
  "summary": "one or two plain sentences on what it is, from the page",
  "relevance": a number 0-1: how well it fits the field,
  "confidence": a number 0-1: how sure you are that it is real, open, and every field above is right
-}}"""
+}}
+
+Translate faithfully: say what the page says, in plain English, and never add a fact that is not there.
+"title" and "deadline_quote" stay in the page's own language, word for word, because myGeeKy checks them
+against the page itself."""
 
 KIND_WORD = {"jobs": "job", "funding": "funding call", "conferences": "conference or meeting"}
 
@@ -257,8 +266,13 @@ def check(kind: str, ans: dict[str, Any], detail: dict[str, Any], listing_url: s
     title = curated._text(ans.get("title"), 140)
     if not ans.get("is_listing") or not title:
         return {"hard_fail": "not a single open listing", "checks": checks, "score": 0.0}
-    if not curated.english_enough(title, ans.get("summary"), ans.get("who"), ans.get("org")):
-        return {"hard_fail": "not in English", "checks": checks, "score": 0.0}
+    # The title and the quote are checked in the page's own language; what people are shown is the English
+    # that came back with them. A page in another language is translated, never dropped for it.
+    english = curated._text(ans.get("title_en"), 140) or title
+    if not curated.english_enough(english, ans.get("summary_en")):
+        return {"hard_fail": "no English translation came back", "checks": checks, "score": 0.0}
+    if _norm(english) != _norm(title):
+        checks.append((True, f"translated from {curated._text(ans.get('language'), 30) or 'another language'}"))
     words = [w for w in _norm(title).split() if len(w) > 2]
     on_page = sum(1 for w in words if w in text) / max(len(words), 1)
     checks.append((on_page >= 0.7, "title is on the page"))
@@ -287,15 +301,23 @@ def check(kind: str, ans: dict[str, Any], detail: dict[str, Any], listing_url: s
 
 
 def to_item(kind: str, ans: dict[str, Any], url: str) -> dict[str, Any] | None:
-    """DeepSeek's answer as a curated-list item (checked by curated.clean_item, like any other)."""
-    title = curated._text(ans.get("title"), 140)
+    """DeepSeek's answer as a curated-list item (checked by curated.clean_item, like any other).
+
+    People read the English; the title as printed on the page is kept beside it, so anyone can hold the
+    listing against its own source."""
+    original = curated._text(ans.get("title"), 140)
+    title = curated._text(ans.get("title_en"), 140) or original
     org = curated._text(ans.get("org"), 100)
     deadline = curated._day(ans.get("deadline"))
     base = re.sub(r"[^a-z0-9]+", "-", f"{org} {title}".lower()).strip("-")[:60].strip("-")
+    language = curated._text(ans.get("language"), 30)
+    translated = bool(original) and _norm(title) != _norm(original)
     raw = {"id": f"{base}-{deadline[:4]}" if base else "", "title": title, "url": url, "deadline": deadline,
            "org": org, "place": ans.get("place"), "remote": bool(ans.get("remote")), "type": ans.get("type") or "job",
-           "who": ans.get("who"), "amount": ans.get("amount"), "starts": ans.get("starts"), "ends": ans.get("ends"),
-           "student": ans.get("student"), "keywords": ans.get("keywords") or [], "summary": ans.get("summary")}
+           "who": ans.get("who_en") or ans.get("who"), "amount": ans.get("amount_en") or ans.get("amount"),
+           "starts": ans.get("starts"), "ends": ans.get("ends"), "student": ans.get("student"),
+           "keywords": ans.get("keywords") or [], "summary": ans.get("summary_en") or ans.get("summary"),
+           "language": language if translated else "", "original_title": original if translated else ""}
     return curated.clean_item(kind, raw)
 
 

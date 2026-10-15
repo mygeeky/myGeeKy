@@ -62,6 +62,8 @@ function Chance({ kind, it, onVote }: { kind: Mode; it: Ranked; onVote: (up: boo
         <Thumbs vote={it.vote} onVote={onVote} />
       </View>
       {bits.filter(Boolean).length ? <Text style={s.muted}>{bits.filter(Boolean).join(' · ')}</Text> : null}
+      {it.original_title && it.language
+        ? <Text style={s.muted}>🌍 Translated from {it.language} · {it.original_title}</Text> : null}
       {it.who ? <Text style={s.muted}>Who can apply: {it.who}</Text> : null}
       {it.student ? <Text style={s.muted}>Students: {it.student}</Text> : null}
       {it.summary ? <Text style={s.body}>{it.summary}</Text> : null}

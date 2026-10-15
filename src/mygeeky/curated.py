@@ -133,10 +133,14 @@ def clean_item(kind: str, raw: Any) -> dict[str, Any] | None:
         return None
     item = {"id": raw["id"], "title": _text(raw.get("title"), 140), "url": _https(raw.get("url")),
             "keywords": _words(raw.get("keywords")), "summary": _text(raw.get("summary"), 400)}
+    # a listing from a board in another language is translated, and says so, with its own title kept
+    original, language = _text(raw.get("original_title"), 140), _text(raw.get("language"), 30)
+    if original and language:
+        item["original_title"], item["language"] = original, language
     if not item["title"] or not item["url"]:
         return None
-    if kind in DATED and not english_enough(item["title"], item["summary"], raw.get("who"), raw.get("org")):
-        return None           # the boards may be in any language; what people are shown is in English
+    if kind in DATED and not english_enough(item["title"], item["summary"]):
+        return None           # the boards may be in any language; what people are shown is English
     if kind in DATED:
         item["deadline"] = _day(raw.get("deadline"))
         if not item["deadline"]:

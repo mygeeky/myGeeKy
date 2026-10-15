@@ -1238,6 +1238,10 @@ class OpportunityCard(QFrame):
         line = " · ".join(b for b in bits if b)
         if line:
             lay.addWidget(_label(line, _muted(theme, 10.5)))
+        if it.get("original_title") and it.get("language"):
+            # the English is what you read; the board's own words are here so you can hold it against the page
+            lay.addWidget(_label(f"🌍 Translated from {html.escape(it['language'])} · "
+                                 f"<i>{html.escape(it['original_title'])}</i>", _muted(theme, 10)))
         if it.get("pending"):
             lay.addWidget(_label("⏳ You accepted this: only you see it until you publish", f"color:{theme['warn']}; "
                                  "font-size:10.5px; background:transparent;"))
