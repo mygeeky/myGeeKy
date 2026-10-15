@@ -127,6 +127,43 @@ def english_enough(*parts: Any) -> bool:
     return english >= other
 
 
+# The languages a listing can also be read in. Each entry is (its own name, right-to-left), and the name
+# is written into the lists beside every translation -- so a language added later arrives with the lists
+# themselves, within hours, rather than waiting for everyone to install a new myGeeKy.
+LANGUAGES = {"ar": ("العربية", True), "fr": ("Français", False), "de": ("Deutsch", False),
+             "es": ("Español", False), "zh": ("中文", False)}
+_CODE = re.compile(r"^[a-z]{2}(-[a-z]{2})?$")
+_SAID = {"title": 140, "summary": 400, "who": 160, "amount": 60, "student": 160}
+
+
+def clean_translations(raw: Any) -> dict[str, dict[str, Any]]:
+    """The same listing in other languages: {code: {"name", "rtl", "title", "summary", ...}}.
+
+    A translation is only ever a reading aid: nothing here can drop a listing, and one that arrives without
+    a title is simply left out. Each entry carries its own language name and its own direction, so a code
+    myGeeKy has never heard of still shows up with the right name on the button."""
+    out: dict[str, dict[str, Any]] = {}
+    for code, val in list(raw.items())[:20] if isinstance(raw, dict) else []:
+        code = str(code).strip().lower()
+        if not _CODE.match(code) or not isinstance(val, dict):
+            continue
+        known = LANGUAGES.get(code)
+        name = _text(val.get("name"), 30) or (known[0] if known else "")
+        said = {f: _text(val.get(f), n) for f, n in _SAID.items()}
+        if not name or not said["title"]:
+            continue
+        out[code] = {"name": name, "rtl": bool(val.get("rtl", known[1] if known else False)),
+                     **{f: v for f, v in said.items() if v}}
+    return out
+
+
+def languages_of(item: dict[str, Any]) -> list[str]:
+    """The codes a listing is translated into, the known ones first, in the order people are offered them."""
+    known = list(LANGUAGES)
+    tr = item.get("translations") or {}
+    return sorted(tr, key=lambda c: (known.index(c) if c in known else len(known), c))
+
+
 def clean_item(kind: str, raw: Any) -> dict[str, Any] | None:
     """One checked item, or None if it isn't usable."""
     if not isinstance(raw, dict) or not _ID.match(str(raw.get("id", ""))):
@@ -141,6 +178,10 @@ def clean_item(kind: str, raw: Any) -> dict[str, Any] | None:
         return None
     if kind in DATED and not english_enough(item["title"], item["summary"]):
         return None           # the boards may be in any language; what people are shown is English
+    if kind in DATED:
+        said = clean_translations(raw.get("translations"))
+        if said:
+            item["translations"] = said
     if kind in DATED:
         item["deadline"] = _day(raw.get("deadline"))
         if not item["deadline"]:

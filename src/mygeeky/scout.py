@@ -186,6 +186,8 @@ Answer as JSON with exactly these keys:
  "summary_en": "the summary below, in English (repeat it unchanged if the page is in English)",
  "who_en": "'who' below, in English (funding only; '' if empty)",
  "amount_en": "'amount' below, in English, keeping the currency and the numbers as they are",
+ "translations": {{"ar": {{"title": "", "summary": "", "who": "", "amount": "", "student": ""}},
+                  "fr": {{...}}, "de": {{...}}, "es": {{...}}, "zh": {{...}}}},
  "org": "the organisation offering it",
  "place": "city, country (or online)",
  "remote": true only if the page says it can be done remotely,
@@ -205,7 +207,12 @@ Answer as JSON with exactly these keys:
 
 Translate faithfully: say what the page says, in plain English, and never add a fact that is not there.
 "title" and "deadline_quote" stay in the page's own language, word for word, because myGeeKy checks them
-against the page itself."""
+against the page itself.
+
+"translations" is the English above said again in each of these five languages, so that someone who does not
+read English can still tell what the listing is: ar Arabic, fr French, de German, es Spanish, zh Chinese
+(Simplified). Leave dates, numbers, currencies, the organisation's name and the technical words of the field
+(RNA-seq, GWAS, BLAST, PhD, postdoc) as they are, and use "" for any field that is empty above."""
 
 KIND_WORD = {"jobs": "job", "funding": "funding call", "conferences": "conference or meeting"}
 
@@ -230,6 +237,35 @@ def pick(key: str, kind: str, listing: dict[str, Any], focus: str, today: date, 
 def read(key: str, kind: str, detail: dict[str, Any], focus: str, today: date, post=None) -> dict[str, Any]:
     return ask(key, READ_SYSTEM.format(what=WHAT[kind], kind_word=KIND_WORD[kind], focus=focus, today=today.isoformat()),
                f"PAGE: {detail['url']}\n\nTEXT:\n{detail['text'][:PAGE_CHARS]}", post)
+
+
+# --------------------------------------------------------------------------- saying it in other languages
+SAY_LANGUAGES = {"ar": "Arabic", "fr": "French", "de": "German", "es": "Spanish", "zh": "Chinese (Simplified)"}
+SAY_FIELDS = ("title", "summary", "who", "amount", "student")
+SAY_SYSTEM = """You translate one research opportunity for myGeeKy, so that someone who does not read English
+can still tell what it is and whether to apply.
+Answer as JSON with exactly these keys: {codes}.
+Each is an object holding these keys, translated into that language: {fields}.
+Rules:
+- Say exactly what the English says. Never add a fact, drop one, or soften one.
+- Leave dates, numbers, currencies, the organisation's name and the words of the field itself as they are:
+  RNA-seq, GWAS, BLAST, PhD, postdoc, bioinformatics, single-cell.
+- Translate nothing else into English, and answer with no commentary."""
+
+
+def say_in(item: dict[str, Any], key: str, post=None) -> dict[str, dict[str, Any]]:
+    """One listing in the other languages myGeeKy offers, ready for `curated.clean_translations`.
+
+    Only the words people read are translated. The deadline, the link and the organisation are untouched,
+    and nothing here can change the listing itself: a translation that comes back wrong, short or not at
+    all costs the listing nothing. Listings found by `find` are translated as they are read, so this is for
+    the ones that were already on the lists before myGeeKy could do it."""
+    english = {f: item[f] for f in SAY_FIELDS if item.get(f)}
+    if not english.get("title"):
+        return {}
+    system = SAY_SYSTEM.format(codes=", ".join(f'"{c}" ({name})' for c, name in SAY_LANGUAGES.items()),
+                               fields=", ".join(english))
+    return curated.clean_translations(ask(key, system, json.dumps(english, ensure_ascii=False), post))
 
 
 # --------------------------------------------------------------------------- checking what DeepSeek said
@@ -275,7 +311,8 @@ def check(kind: str, ans: dict[str, Any], detail: dict[str, Any], listing_url: s
         checks.append((True, f"translated from {curated._text(ans.get('language'), 30) or 'another language'}"))
     words = [w for w in _norm(title).split() if len(w) > 2]
     on_page = sum(1 for w in words if w in text) / max(len(words), 1)
-    checks.append((on_page >= 0.7, "title is on the page"))
+    title_found = on_page >= 0.7           # held in its own name: `checks` no longer starts with this one
+    checks.append((title_found, "title is on the page"))
     deadline = curated._day(ans.get("deadline"))
     if not deadline:
         return {"hard_fail": "no deadline on the page", "checks": checks, "score": 0.0}
@@ -292,7 +329,7 @@ def check(kind: str, ans: dict[str, Any], detail: dict[str, Any], listing_url: s
     checks.append((relevance >= 0.5, f"fits your field ({round(relevance * 100)}%)"))
     if kind == "conferences" and curated._day(ans.get("starts")):
         checks.append((curated._day(ans.get("starts")) >= deadline, "starts after its deadline"))
-    if not quoted and not checks[0][0]:
+    if not quoted and not title_found:
         return {"hard_fail": "neither the title nor the deadline could be found on the page", "checks": checks,
                 "score": 0.0}
     conf = max(0.0, min(1.0, float(ans.get("confidence") or 0)))
@@ -317,7 +354,8 @@ def to_item(kind: str, ans: dict[str, Any], url: str) -> dict[str, Any] | None:
            "who": ans.get("who_en") or ans.get("who"), "amount": ans.get("amount_en") or ans.get("amount"),
            "starts": ans.get("starts"), "ends": ans.get("ends"), "student": ans.get("student"),
            "keywords": ans.get("keywords") or [], "summary": ans.get("summary_en") or ans.get("summary"),
-           "language": language if translated else "", "original_title": original if translated else ""}
+           "language": language if translated else "", "original_title": original if translated else "",
+           "translations": ans.get("translations")}
     return curated.clean_item(kind, raw)
 
 

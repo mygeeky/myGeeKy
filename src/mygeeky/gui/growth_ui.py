@@ -1201,6 +1201,73 @@ class CollaboratorCard(QFrame):
         self.note.setText(text)
 
 
+class SaidPanel(QFrame):
+    """One listing in another language, folded into the card it belongs to.
+
+    myGeeKy lives in a panel docked to the side of the screen, which has no room for a window of its own --
+    so this opens where the listing already is: press the languages and the card grows, press again and it
+    closes. The English stays above it, because the English title and the deadline sentence are the parts
+    that were checked word for word against the page; this is a reading aid beside them, and says so.
+    Nothing is fetched: every language came down with the lists, so it works with no connection."""
+
+    def __init__(self, it: dict[str, Any], theme: dict[str, Any],
+                 on_close: Callable[[], None] | None = None) -> None:
+        super().__init__()
+        from ..curated import languages_of
+        self.setObjectName("saidPanel")
+        self._said = it.get("translations") or {}
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(8, 7, 8, 7)
+        lay.setSpacing(5)
+        chips = FlowRow()              # five languages do not fit across a docked panel; they wrap
+        self._chips: dict[str, QPushButton] = {}
+        for code in languages_of(it):
+            chip = QPushButton(self._said[code]["name"])
+            chip.setCheckable(True)
+            chip.setCursor(Qt.PointingHandCursor)
+            chip.setStyleSheet(
+                f"QPushButton {{ background:{theme['btn_bg']}; color:{theme['muted']}; border:none; "
+                f"border-radius:9px; padding:3px 9px; font-size:10.5px; }}"
+                f"QPushButton:hover {{ background:{theme['btn_hover']}; color:{theme['text']}; }}"
+                f"QPushButton:checked {{ background:{theme['section_btn']}; color:{theme['text']}; "
+                "font-weight:700; }}")
+            chip.clicked.connect(lambda _=False, c=code: self.show_language(c))
+            chips.add(chip)
+            self._chips[code] = chip
+        if on_close is not None:
+            # a way out that is visible from inside the translation, for anyone who has scrolled past the row
+            shut = QPushButton("✕")
+            shut.setCursor(Qt.PointingHandCursor)
+            shut.setToolTip("Close the translation")
+            shut.setStyleSheet(f"QPushButton {{ background:transparent; color:{theme['muted']}; border:none; "
+                               "padding:3px 7px; font-size:11px; }"
+                               f"QPushButton:hover {{ color:{theme['text']}; }}")
+            shut.clicked.connect(on_close)
+            chips.add(shut)
+        lay.addWidget(chips)
+        self._body = _label("", f"color:{theme['text']}; font-size:11px; background:transparent;", rich=True)
+        self._body.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        lay.addWidget(self._body)
+        lay.addWidget(_label("Translated by machine from the English above, which is the part myGeeKy "
+                             "checked against the page itself.", _muted(theme, 9.5)))
+        self.setStyleSheet(f"QFrame#saidPanel {{ background:{theme['btn_bg']}; border-radius:8px; }}")
+        first = languages_of(it)
+        if first:
+            self.show_language(first[0])
+
+    def show_language(self, code: str) -> None:
+        """The listing in one language. Arabic sets the paragraph right-to-left; Qt handles the rest."""
+        said = self._said.get(code) or {}
+        for other, chip in self._chips.items():
+            chip.setChecked(other == code)
+        lines = [f"<b>{html.escape(said.get('title', ''))}</b>"]
+        lines += [html.escape(said[f]) for f in ("summary", "who", "amount", "student") if said.get(f)]
+        self._body.setText("<br><br>".join(lines))
+        rtl = bool(said.get("rtl"))
+        self._body.setLayoutDirection(Qt.RightToLeft if rtl else Qt.LeftToRight)
+        self._body.setAlignment((Qt.AlignRight if rtl else Qt.AlignLeft) | Qt.AlignTop)
+
+
 # --------------------------------------------------------------------------- 🎯 Chances
 class OpportunityCard(QFrame):
     """A verified job, a funding call or a conference: what, where, until when, why it fits."""
@@ -1251,6 +1318,29 @@ class OpportunityCard(QFrame):
             lay.addWidget(_label("Students: " + it["student"], _muted(theme, 10.5)))
         if it.get("summary"):
             lay.addWidget(_label(it["summary"], f"color:{theme['text']}; font-size:10.5px; background:transparent;"))
+        if it.get("translations"):
+            # the row names the languages in their own scripts: someone who cannot read this card can still
+            # see that it is for them, which an English word like "Translate" would not manage
+            from ..curated import languages_of
+            names = " · ".join(it["translations"][c]["name"] for c in languages_of(it))
+            said = SaidPanel(it, theme, on_close=lambda: _open_said(False))
+            say = QPushButton()
+            say.setCursor(Qt.PointingHandCursor)
+            say.setStyleSheet(f"QPushButton {{ color:{theme['muted']}; background:transparent; border:none; "
+                              f"font-size:10.5px; text-align:left; padding:2px 0; }}"
+                              f"QPushButton:hover {{ color:{theme['text']}; }}")
+
+            def _open_said(show: bool) -> None:
+                """The caret is the whole hint that the row is a switch, so it is the row that carries it."""
+                said.setVisible(show)
+                say.setText(f"🌍 {names}  {'▴' if show else '▾'}")
+                say.setToolTip("Close the translation" if show else "Read this listing in another language")
+
+            _open_said(False)
+            # isHidden, not isVisible: a card built while the panel is folded is not visible either way
+            say.clicked.connect(lambda: _open_said(said.isHidden()))
+            lay.addWidget(say)
+            lay.addWidget(said)
         foot = QHBoxLayout()
         left = deadline_text(it.get("days_left"))
         warn = it.get("days_left") is not None and it["days_left"] <= 7

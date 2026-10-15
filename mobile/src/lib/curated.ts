@@ -29,7 +29,11 @@ export type Item = {
   starts?: string; ends?: string; student?: string; skills?: string[]; level?: string; free?: boolean;
   // a listing from a board in another language: the English is in `title`, these say where it came from
   original_title?: string; language?: string;
+  // the same listing to read in other languages, each entry carrying its own name and direction
+  translations?: Record<string, Said>;
 };
+export type Said = { name: string; rtl: boolean; title: string; summary?: string; who?: string;
+  amount?: string; student?: string };
 export type Lists = { version: string; protocols: Protocol[] } & Record<ListName, Item[]>;
 export type Ranked = Item & { score: number; match: string[]; daysLeft: number | null; vote: number };
 
@@ -45,6 +49,37 @@ function day(v: unknown): string {
 const words = (v: unknown, n = 12) => Array.isArray(v)
   ? [...new Set(v.map((x) => text(x, 40).toLowerCase()).filter(Boolean))].slice(0, n) : [];
 
+// The languages a listing can also be read in: (own name, right-to-left). The name is written into the
+// lists beside every translation, so a language added later arrives with the lists, not with a new app.
+export const LANGUAGES: Record<string, [string, boolean]> = {
+  ar: ['العربية', true], fr: ['Français', false], de: ['Deutsch', false], es: ['Español', false], zh: ['中文', false],
+};
+const CODE_RE = /^[a-z]{2}(-[a-z]{2})?$/;
+const SAID: [keyof Said, number][] = [['title', 140], ['summary', 400], ['who', 160], ['amount', 60], ['student', 160]];
+
+/** The same listing in other languages. Only ever a reading aid: nothing here can drop a listing. */
+export function cleanTranslations(raw: any): Record<string, Said> {
+  const out: Record<string, Said> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [key, val] of Object.entries(raw).slice(0, 20)) {
+    const code = String(key).trim().toLowerCase();
+    if (!CODE_RE.test(code) || !val || typeof val !== 'object') continue;
+    const known = LANGUAGES[code];
+    const name = text((val as any).name, 30) || (known ? known[0] : '');
+    const said: any = { name, rtl: !!((val as any).rtl ?? (known ? known[1] : false)) };
+    for (const [f, n] of SAID) { const v = text((val as any)[f], n); if (v) said[f] = v; }
+    if (name && said.title) out[code] = said as Said;
+  }
+  return out;
+}
+
+/** The codes a listing is translated into, the known languages first. */
+export function languagesOf(it: Item): string[] {
+  const known = Object.keys(LANGUAGES);
+  const at = (c: string) => (known.indexOf(c) < 0 ? known.length : known.indexOf(c));
+  return Object.keys(it.translations ?? {}).sort((a, b) => at(a) - at(b) || a.localeCompare(b));
+}
+
 export function cleanItem(kind: ListName, raw: any): Item | null {
   if (!raw || typeof raw !== 'object' || !ID_RE.test(String(raw.id ?? ''))) return null;
   const it: Item = { id: raw.id, title: text(raw.title, 140), url: https(raw.url), keywords: words(raw.keywords), summary: text(raw.summary, 400) };
@@ -54,6 +89,8 @@ export function cleanItem(kind: ListName, raw: any): Item | null {
   if (DATED.includes(kind)) {
     it.deadline = day(raw.deadline);
     if (!it.deadline) return null;
+    const said = cleanTranslations(raw.translations);
+    if (Object.keys(said).length) it.translations = said;
   }
   if (kind === 'jobs') {
     const t = String(raw.type ?? 'job').toLowerCase();

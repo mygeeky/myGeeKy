@@ -2,9 +2,12 @@
 // checked by hand. Matched to you here, on the phone; each one disappears after its
 // deadline. 👍/👎 teach your model, 🚩 tells the maker one looks fake.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text,
+  View } from 'react-native';
 import { quickProfile, useApp } from '../lib/app-state';
-import { type Item, JOB_TYPES, type ListName, loadLists, type Lists, ranked, type Ranked, reportLinks, VOTE_KIND } from '../lib/curated';
+import { type Item, JOB_TYPES, languagesOf, type ListName, loadLists, type Lists, ranked, type Ranked,
+  reportLinks, type Said, VOTE_KIND } from '../lib/curated';
+import { C } from '../lib/theme';
 import * as taste from '../lib/taste';
 import { GCard, Hidden, s, Thumbs } from './growth-parts';
 import { Empty, open, Segments } from './ui';
@@ -47,11 +50,66 @@ function report(kind: ListName, it: Item) {
   }
 }
 
+function Translations({ it, onClose }: { it: Item; onClose: () => void }) {
+  // English is the record: it is the English title and the deadline sentence that were checked word for
+  // word against the page. This is a reading aid beside that, and says so at the bottom. Everything it
+  // shows came down with the lists, so it works with no connection.
+  const codes = languagesOf(it);
+  const [code, setCode] = useState(codes[0] ?? '');
+  const said: Said | undefined = it.translations?.[code];
+  const dir = said?.rtl ? 'right' : 'left';
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={t.backdrop}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel="Close" />
+        <View style={t.sheet}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={t.tabs}>
+            {codes.map((c) => (
+              <Pressable key={c} onPress={() => setCode(c)} style={[t.tab, c === code && t.tabOn]}>
+                <Text style={[t.tabText, c === code && t.tabTextOn]}>{it.translations?.[c]?.name}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+            {said ? <>
+              <Text style={[t.title, { textAlign: dir }]}>{said.title}</Text>
+              {(['summary', 'who', 'amount', 'student'] as const).map((f) => (said[f]
+                ? <Text key={f} style={[t.body, { textAlign: dir }]}>{said[f]}</Text> : null))}
+            </> : null}
+            <Text style={t.note}>Translated by machine, from the English below — which is what myGeeKy
+              checked, word for word, against the page itself.</Text>
+            <Text style={t.english}>{it.title}</Text>
+            <Pressable onPress={() => open(it.url)}><Text style={t.link}>Open the page ↗</Text></Pressable>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const t = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: '#17171f', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16,
+    maxHeight: '82%' },
+  tabs: { gap: 7, paddingBottom: 12 },
+  tab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)' },
+  tabOn: { backgroundColor: 'rgba(255,111,216,0.35)' },
+  tabText: { color: C.muted, fontSize: 13 },
+  tabTextOn: { color: '#ffffff', fontWeight: '700' },
+  title: { color: C.text, fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  body: { color: C.text, fontSize: 14, marginBottom: 7, lineHeight: 20 },
+  note: { color: C.muted, fontSize: 11, marginTop: 16, lineHeight: 16 },
+  english: { color: C.muted, fontSize: 12, marginTop: 6, fontStyle: 'italic' },
+  link: { color: '#ff6fd8', fontSize: 13, marginTop: 14 },
+});
+
 function Chance({ kind, it, onVote }: { kind: Mode; it: Ranked; onVote: (up: boolean) => Promise<number> }) {
   const bits = kind === 'jobs' ? [JOB_TYPES[it.type ?? 'job'], it.org, it.place, it.remote ? 'remote possible' : '']
     : kind === 'funding' ? [it.org, it.amount]
     : [it.place, [it.starts, it.ends && it.ends !== it.starts ? `to ${it.ends}` : ''].filter(Boolean).join(' ')];
   const soon = it.daysLeft !== null && it.daysLeft <= 7;
+  const [saying, setSaying] = useState(false);
+  const codes = languagesOf(it);
   const emoji = kind === 'jobs' ? EMOJI[it.type ?? 'job'] ?? '💼' : kind === 'funding' ? '💶' : '🎤';
   return (
     <GCard>
@@ -67,6 +125,13 @@ function Chance({ kind, it, onVote }: { kind: Mode; it: Ranked; onVote: (up: boo
       {it.who ? <Text style={s.muted}>Who can apply: {it.who}</Text> : null}
       {it.student ? <Text style={s.muted}>Students: {it.student}</Text> : null}
       {it.summary ? <Text style={s.body}>{it.summary}</Text> : null}
+      {codes.length ? (
+        // the languages name themselves, in their own scripts: someone who cannot read this card can
+        // still see that it is for them, which an English word like "Translate" would not manage
+        <Pressable onPress={() => setSaying(true)} accessibilityLabel="Read in another language" hitSlop={6}>
+          <Text style={s.muted}>🌍 {codes.map((c) => it.translations?.[c]?.name).join(' · ')}</Text>
+        </Pressable>) : null}
+      {saying ? <Translations it={it} onClose={() => setSaying(false)} /> : null}
       <View style={[s.row, { justifyContent: 'space-between' }]}>
         <Text style={soon ? s.warn : s.muted}>{soon ? '⏳ ' : ''}{closes(it.daysLeft)} ({it.deadline})
           {it.match.length ? ` · matches ${it.match.slice(0, 3).join(', ')}` : ''}</Text>

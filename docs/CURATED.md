@@ -25,20 +25,67 @@ Then the daily **Curated lists** workflow (`.github/workflows/curated-lists.yml`
 - **removes anything past its deadline** (the apps already hide it the day after);
 - keeps the phone app's copy (`mobile/src/data/curated.json`) the same.
 
-## English only (jobs, funding, conferences)
+## English, whatever language the board is in (jobs, funding, conferences)
 
-A listing is shown to people in **English**, whatever language the board it came from is in. The French
-bioinformatics society's board, for instance, is read for its English posts and its French ones are left
-where they are.
+A listing is shown to people in **English** — but a board in another language is **translated, not passed
+over**. The French bioinformatics society posts a few hundred jobs, most of them in French; DeepSeek reads
+the page in French and sends back both the page's own words and the English.
 
-The test counts function words rather than guessing from accented letters, so a post written in English at
-the *Université de Paris* still counts as English, while one full of *de*, *pour*, *la* does not. A short
-title that marks neither language ("Computational Biologist") is kept rather than thrown away.
+The split matters, because it is what keeps the checks honest:
 
-It is enforced in `curated.clean_item`, which every route goes through — the scout, this file edited by
-hand, and anything else — so a non-English listing cannot reach the lists by any path. The scout says
-"not in English" when it drops one, rather than dropping it silently. **Learning resources are not
-filtered this way**: a good course in another language is still a good course.
+| What is checked | Against |
+|---|---|
+| The title is on the page | the **French** title, word for word |
+| The deadline sentence is on the page | the **French** quote, word for word |
+| That sentence holds the date | the same French quote |
+| It reads as English | the **translation** |
+
+So a translation can never drift away from what the page says, and an invented quote fails in any language.
+If no usable English comes back, the listing is dropped with *"no English translation came back"*: myGeeKy
+does not publish what it cannot show in English.
+
+What is kept is the English, with `original_title` and `language` beside it, and both interfaces say so:
+*🌍 Translated from French · Ingénieur de recherche…* — so anyone can hold the card against the real page.
+
+The English test counts function words rather than guessing from accented letters, so a post written in
+English at the *Université de Paris* still counts as English, while one full of *de*, *pour*, *la* does not.
+A short title that marks neither language ("Computational Biologist") is kept rather than thrown away. It
+is enforced in `curated.clean_item`, which every route goes through — the scout, this file edited by hand,
+and anything else. **Learning resources are not filtered this way**: a good course in another language is
+still a good course.
+
+## Read it in your own language
+
+Every dated listing also carries itself in five other languages, in a `translations` block:
+
+```json
+"translations": {
+  "ar": {"name": "العربية", "rtl": true, "title": "…", "summary": "…"},
+  "zh": {"name": "中文", "rtl": false, "title": "…", "summary": "…"}
+}
+```
+
+Only the words people read are translated — `title`, `summary`, `who`, `amount`, `student`. The deadline,
+the link and the organisation are untouched, and dates, numbers, currencies and the words of the field
+itself (RNA-seq, GWAS, PhD, postdoc) are left as they are.
+
+A card shows one button naming the languages **in their own scripts** — `🌍 العربية · Français · Deutsch ·
+Español · 中文` — because someone who cannot read the card could not find a button labelled "Translate".
+It opens a small window with the listing in the chosen language, Arabic set right-to-left, and says at the
+bottom that it was translated by machine from the English, which is the part that was checked against the
+page. Nothing is fetched: the translations came down with the lists, so it works offline.
+
+**A translation is never evidence.** `clean_translations` drops a bad entry and keeps the listing; no check
+in `scout.check` can fail a listing over a translation, and a listing with none at all is perfectly normal.
+
+**Adding a language needs no new version of myGeeKy.** Each entry carries its own name and direction, so
+both interfaces render whatever codes a listing happens to have. Translate the lists into Italian, publish,
+and it reaches everyone within hours — `curated.LANGUAGES` only supplies the name and direction for the
+five myGeeKy already knows, as a default.
+
+Listings found by the scout are translated as they are read, at no extra cost in what is sent. For listings
+that were already on the lists, `scout.say_in(item, key)` translates one. The whole list of 40 cost about
+**three cents**.
 
 ## The four lists
 
