@@ -245,13 +245,33 @@
       if (Math.abs(ny) > 0.34) carry = ny > 0 ? 1 : -1;
       sides.push(carry * flip);
     }
+
+    /* WHERE THE SIDE CHANGES, PINCH THE BAND TO NOTHING.
+     *
+     * An arm that hooks far enough really does swap which face is underneath, part way along. Drawing
+     * straight through the swap twists the ribbon into a bowtie: the two edges cross, and the shape
+     * renders as a spur poking out through the arm's outline. Fading the band's width to zero at the
+     * swap makes the two halves meet at a point instead, which is invisible.
+     *
+     * The last beads fade too. At the tip the arm's half-width is about five units while the outline is
+     * six wide, so a band drawn to full width there has nowhere to hide and spills past the rounded cap.
+     */
+    var fade = [];
     for (i = 0; i <= N; i++) {
-      var p = arm.spine[i], n = arm.norms[i], r = arm.widths[i], s = sides[i];
+      var f = Math.min(1, (N - i) / 2.5);              // ...to nothing at the very tip
+      for (var j = 1; j <= N; j++) {
+        if (sides[j] !== sides[j - 1]) f = Math.min(f, Math.abs(i - j + 0.5) / 2.5);
+      }
+      fade.push(Math.max(0, Math.min(1, f)));
+    }
+
+    for (i = 0; i <= N; i++) {
+      var p = arm.spine[i], n = arm.norms[i], r = arm.widths[i] * fade[i], s = sides[i];
       inner.push([p[0] + n[0] * r * from * s, p[1] + n[1] * r * from * s]);
       outer.push([p[0] + n[0] * r * to * s, p[1] + n[1] * r * to * s]);
       // fewer, bigger rings: a dense dotted line reads as texture, where an octopus should read as a
       // row of distinct cups.
-      if (i > 2 && i % every === 0 && r > 5) {
+      if (i > 2 && i % every === 0 && r > 5 && fade[i] > 0.85) {
         var mid = (from + to) / 2;
         dots.push({ cx: round(p[0] + n[0] * r * mid * s), cy: round(p[1] + n[1] * r * mid * s),
                     r: round(r * cup) });
