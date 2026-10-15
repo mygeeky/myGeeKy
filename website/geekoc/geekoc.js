@@ -51,14 +51,18 @@
    * straight down. Tying the two together is what made the first attempt splay like a starfish.
    * `w` is the width at the root; the two middle arms are fattest because they are nearest the viewer. */
   var ARMS = [
-    { spot: -1.00, dir: 154, len: 182, w: 40, back: true },
-    { spot: -0.72, dir: 141, len: 194, w: 44, back: true },
-    { spot: -0.44, dir: 127, len: 188, w: 47, back: true },
-    { spot: -0.26, dir: 97, len: 168, w: 48 },
-    { spot: 0.26, dir: 83, len: 168, w: 48 },
-    { spot: 0.44, dir: 53, len: 188, w: 47, back: true },
-    { spot: 0.72, dir: 39, len: 194, w: 44, back: true },
-    { spot: 1.00, dir: 26, len: 182, w: 40, back: true },
+    /* `dir` is close to straight down for ALL of them on purpose. An arm that sets off sideways
+     * travels across the height where the mantle narrows, and pops out beside his mouth -- which is
+     * exactly what it looked like. Leaving downwards clears the body first; the curl does the
+     * spreading afterwards, below the chin, where there is nothing to cross. */
+    { spot: -1.00, dir: 122, len: 196, w: 40, back: true },
+    { spot: -0.72, dir: 114, len: 206, w: 44, back: true },
+    { spot: -0.44, dir: 106, len: 198, w: 47, back: true },
+    { spot: -0.30, dir: 97, len: 172, w: 48, back: true },
+    { spot: 0.30, dir: 83, len: 172, w: 48, back: true },
+    { spot: 0.44, dir: 74, len: 198, w: 47, back: true },
+    { spot: 0.72, dir: 66, len: 206, w: 44, back: true },
+    { spot: 1.00, dir: 58, len: 196, w: 40, back: true },
   ];
 
   /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
@@ -103,20 +107,20 @@
   };
 
   var POSES = {
-    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [118, 106, 92, 64, -64, -92, -106, -118],
+    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [148, 130, 108, 70, -70, -108, -130, -148],
                len: 1, face: 'happy' },
-    wave:    { swing: [0, 0, 0, 0, 0, -6, -20, -48], curl: [118, 106, 92, 64, -64, -86, -82, -64],
+    wave:    { swing: [0, 0, 0, 0, 0, -6, -18, -44], curl: [148, 130, 108, 70, -70, -100, -96, -74],
                len: 1, face: 'excited' },
-    point:   { swing: [0, 0, 0, 0, 0, -4, -12, 10], curl: [118, 106, 92, 64, -64, -84, -72, -24],
+    point:   { swing: [0, 0, 0, 0, 0, -4, -12, 14], curl: [148, 130, 108, 70, -70, -98, -84, -30],
                len: 1, face: 'curious' },
-    think:   { swing: [0, 0, 0, 0, 0, -8, -26, -42], curl: [118, 106, 92, 64, -64, -94, -104, -128],
+    think:   { swing: [0, 0, 0, 0, 0, -8, -24, -38], curl: [148, 130, 108, 70, -70, -112, -126, -150],
                len: 0.97, face: 'thinking' },
-    cheer:   { swing: [28, 18, 6, 0, 0, -6, -18, -28], curl: [112, 102, 90, 66, -66, -90, -102, -112],
-               len: 1.04, face: 'excited' },
-    sleep:   { swing: [-26, -16, -6, 0, 0, 6, 16, 26], curl: [84, 78, 70, 52, -52, -70, -78, -84],
+    cheer:   { swing: [24, 15, 5, 0, 0, -5, -15, -24], curl: [142, 126, 106, 72, -72, -106, -126, -142],
+               len: 1.05, face: 'excited' },
+    sleep:   { swing: [-22, -14, -5, 0, 0, 5, 14, 22], curl: [112, 100, 86, 58, -58, -86, -100, -112],
                len: 0.92, face: 'sleepy' },
-    present: { swing: [6, 3, 0, 0, 0, 0, -3, -6], curl: [86, 80, 70, 50, -50, -70, -80, -86],
-               len: 1.04, face: 'proud' },
+    present: { swing: [5, 3, 0, 0, 0, 0, -3, -5], curl: [116, 104, 88, 58, -58, -88, -104, -116],
+               len: 1.05, face: 'proud' },
   };
 
   /* Mix two poses. This is the whole reason a pose is numbers: GeekOc can be 40% of the way from
@@ -254,18 +258,23 @@
        * The start is then pushed 34 units back INSIDE the body. The join is what was ugly: an arm that
        * begins exactly on the rim shows its own outline as a dark seam across the edge. Beginning it
        * well inside, and drawing the mantle over the top, hides every join under the body. */
-      var ax = cx + base.spot * 104 * headK;
-      var ay = cy + (112 - Math.abs(base.spot) * 26) * headK;
+      var ax = cx + base.spot * 84 * headK;
+      var ay = cy + (128 - Math.abs(base.spot) * 14) * headK;
       var into = rad(base.dir + (pose.swing[i] || 0));
-      ax -= Math.cos(into) * 34 * headK;
-      ay -= Math.sin(into) * 34 * headK;
+      ax -= Math.cos(into) * 48 * headK;
+      ay -= Math.sin(into) * 48 * headK;
       var spine = (opts.spines && opts.spines[i])
-        || walk(ax, ay, ang, (base.len + 34) * (pose.len || 1) * armK, pose.curl[i] || 0,
+        || walk(ax, ay, ang, (base.len + 48) * (pose.len || 1) * armK, pose.curl[i] || 0,
                 opts.still ? 0 : 1, t * 1.6 + i * 0.8);
       var arm = skin(spine, base.w * thickK);
+      /* EVERY arm is drawn behind the mantle. Two of them used to be in front, and they began at
+       * mouth height -- so the pair nearest the middle sat across his smile. Putting them behind fixes
+       * that and the join in one move: nothing of an arm's blunt start, or its outline, ever crosses
+       * the body. Depth is carried by shade and by draw order instead of by overlap, which is how the
+       * reference art does it too. */
       arms.push({ d: arm.d, tip: arm.tip, spine: arm.spine, norms: arm.norms, widths: arm.widths,
-                  side: arm.side, back: !!base.back, i: i,
-                  fill: base.back ? SKIN.deep : SKIN.dark });
+                  side: arm.side, back: true, i: i, spot: base.spot,
+                  fill: Math.abs(base.spot) > 0.55 ? SKIN.deep : SKIN.dark });
     }
 
     // a blink has its own clock so it never lines up with the breathing and look mechanical
@@ -423,15 +432,15 @@
 
     // the pale undersides and their sucker rings, one per arm, in the same order as the arms
     var stripes = [], suckers = [], backStripes = [], frontStripes = [], backSuckers = [], frontSuckers = [];
-    g.arms.forEach(function (arm) {
+    g.arms.slice().sort(function (p, q) { return Math.abs(q.spot) - Math.abs(p.spot); }).forEach(function (arm) {
       var u = underside(arm, s);
       var band = { d: u.d, fill: u.fill, back: arm.back };
       stripes.push(band);
-      (arm.back ? backStripes : frontStripes).push(band);
+      backStripes.push(band);
       u.dots.forEach(function (dot) {
         var ring = { cx: dot.cx, cy: dot.cy, r: dot.r, fill: s.sucker, back: arm.back };
         suckers.push(ring);
-        (arm.back ? backSuckers : frontSuckers).push(ring);
+        backSuckers.push(ring);
       });
     });
 
@@ -447,8 +456,8 @@
       outline: s.outline, outlineWidth: round(s.outlineWidth * k),
       skinLight: s.light, skinMid: s.mid, skinDark: s.dark, skinDeep: s.deep,
       lidFill: s.mid, glassColour: s.glass, inkColour: s.ink,
-      backArms: g.arms.filter(function (a) { return a.back; }),
-      frontArms: g.arms.filter(function (a) { return !a.back; }),
+      backArms: g.arms.slice().sort(function (p, q) { return Math.abs(q.spot) - Math.abs(p.spot); }),
+      frontArms: [],
       arms: g.arms,
       headD: head(cx, cy, k),
       bellyY: round(cy + 42 * k), bellyRx: round(86 * k), bellyRy: round(60 * k),
