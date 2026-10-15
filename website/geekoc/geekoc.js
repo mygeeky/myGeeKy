@@ -41,15 +41,25 @@
    * straight down. Tying the two together is what made the first attempt splay like a starfish.
    * `w` is the width at the root; the two middle arms are fattest because they are nearest the viewer. */
   var ARMS = [
-    { at: 152, dir: 112, len: 104, w: 20, back: true },
-    { at: 133, dir: 103, len: 112, w: 22, back: true },
-    { at: 115, dir: 98, len: 118, w: 24 },
-    { at: 99, dir: 94, len: 122, w: 25 },
-    { at: 81, dir: 86, len: 122, w: 25 },
-    { at: 65, dir: 82, len: 118, w: 24 },
-    { at: 47, dir: 77, len: 112, w: 22, back: true },
-    { at: 28, dir: 68, len: 104, w: 20, back: true },
+    { at: 152, dir: 112, len: 158, w: 26, back: true },
+    { at: 133, dir: 103, len: 170, w: 29, back: true },
+    { at: 115, dir: 98, len: 180, w: 31 },
+    { at: 99, dir: 94, len: 186, w: 33 },
+    { at: 81, dir: 86, len: 186, w: 33 },
+    { at: 65, dir: 82, len: 180, w: 31 },
+    { at: 47, dir: 77, len: 170, w: 29, back: true },
+    { at: 28, dir: 68, len: 158, w: 26, back: true },
   ];
+
+  /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
+   * had to be stubby, and stubby arms on an octopus read as legs. Everything is in these units, so a
+   * caller only ever sets a pixel width. */
+  var BOX = 500;
+
+  /* The head is drawn at this fraction of the grid. Shrinking it is what leaves room for arms that
+   * are actually tentacles: an octopus's arms are far longer than its mantle, and the first rig had them
+   * at about the mantle's own height, which read as a blob with feet. */
+  var HEAD = 0.84;
 
   /* A pose says, per arm, how far to swing from its resting direction (`swing`), how much the arm coils
    * along its length (`curl`), and how long it is (`len`, as a multiplier). Everything else -- where the
@@ -61,36 +71,69 @@
    * SIGNS, because they are the thing that is easy to get backwards: angles run clockwise on screen with
    * 0 right, 90 down, 180 left, 270 up. So a LEFT arm spreads outward and rises on POSITIVE swing, and a
    * RIGHT arm on NEGATIVE. Curl is the same turn applied gradually down the arm's own length. */
+  /* FACES, kept apart from poses on purpose.
+   *
+   * A body pose says what the arms are doing; a face says what he is feeling. Tangling them means
+   * "waving" can only ever be happy, and "thinking" can only ever be puzzled -- so seven poses would
+   * have to become seventy to cover the combinations. Separated, any face goes on any pose: a worried
+   * wave and a proud point are each one line.
+   *
+   * `lids` is 0 open, 1 shut, and takes a PAIR for a wink. `look` is -1..1 across and up. */
+  var FACES = {
+    happy:     { mouth: 'smile', brow: 0, lids: 0, look: [0, 0] },
+    excited:   { mouth: 'open', brow: 0.8, lids: 0, look: [0, -0.15] },
+    curious:   { mouth: 'smile', brow: 0.45, lids: 0, look: [0.5, -0.1] },
+    thinking:  { mouth: 'flat', brow: 0.5, lids: 0.25, look: [-0.2, -0.4] },
+    proud:     { mouth: 'grin', brow: 0.2, lids: 0.15, look: [0, -0.05] },
+    surprised: { mouth: 'oh', brow: 1, lids: 0, look: [0, -0.1] },
+    shy:       { mouth: 'tiny', brow: 0.1, lids: 0.35, look: [-0.45, 0.25] },
+    wink:      { mouth: 'grin', brow: 0.3, lids: [0, 1], look: [0.15, 0] },
+    sleepy:    { mouth: 'tiny', brow: -0.2, lids: 1, look: [0, 0.2] },
+    worried:   { mouth: 'worried', brow: 0.65, lids: 0.1, look: [-0.25, 0.1] },
+  };
+
   var POSES = {
     idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [30, 22, 13, 5, -5, -13, -22, -30],
-               len: 1, look: [0, 0], mouth: 'smile', brow: 0, lids: 0 },
+               len: 1, face: 'happy' },
     wave:    { swing: [2, 1, 0, 0, 0, 0, -54, -104], curl: [30, 22, 13, 5, -5, -13, -34, -46],
-               len: 1, look: [0.25, -0.12], mouth: 'grin', brow: 0.3, lids: 0 },
+               len: 1, face: 'excited' },
     point:   { swing: [2, 1, 0, 0, 0, 0, -34, -62], curl: [30, 22, 13, 5, -5, -13, -18, -20],
-               len: 0.98, look: [0.55, 0.05], mouth: 'smile', brow: 0.15, lids: 0 },
+               len: 0.98, face: 'curious' },
     think:   { swing: [4, 2, 0, 0, 0, 0, -56, -116], curl: [30, 22, 13, 5, -5, -13, -34, -70],
-               len: 0.95, look: [-0.18, -0.4], mouth: 'flat', brow: 0.5, lids: 0.25 },
+               len: 0.95, face: 'thinking' },
     cheer:   { swing: [82, 54, 16, 2, -2, -16, -54, -82], curl: [26, 20, 13, 5, -5, -13, -20, -26],
-               len: 1.02, look: [0, -0.15], mouth: 'open', brow: 0.8, lids: 0 },
+               len: 1.02, face: 'excited' },
     sleep:   { swing: [8, 4, 2, 0, 0, -2, -4, -8], curl: [52, 40, 24, 10, -10, -24, -40, -52],
-               len: 0.88, look: [0, 0.2], mouth: 'tiny', brow: -0.2, lids: 1 },
+               len: 0.88, face: 'sleepy' },
     present: { swing: [46, 31, 14, 4, -4, -14, -31, -46], curl: [22, 16, 10, 4, -4, -10, -16, -22],
-               len: 0.98, look: [0, -0.1], mouth: 'grin', brow: 0.25, lids: 0 },
+               len: 0.98, face: 'proud' },
   };
 
   /* Mix two poses. This is the whole reason a pose is numbers: GeekOc can be 40% of the way from
    * thinking to cheering, which no set of hand-drawn pictures can ever be. */
   function mix(a, b, t) {
     t = clamp(t, 0, 1);
-    var out = { swing: [], curl: [], len: lerp(a.len, b.len, t),
-                look: [lerp(a.look[0], b.look[0], t), lerp(a.look[1], b.look[1], t)],
-                brow: lerp(a.brow, b.brow, t), lids: lerp(a.lids, b.lids, t),
-                mouth: t < 0.5 ? a.mouth : b.mouth };
+    var out = { swing: [], curl: [], len: lerp(a.len, b.len, t), face: t < 0.5 ? a.face : b.face };
     for (var i = 0; i < 8; i++) {
       out.swing.push(lerp(a.swing[i], b.swing[i], t));
       out.curl.push(lerp(a.curl[i], b.curl[i], t));
     }
     return out;
+  }
+
+  /* Mixing two FACES, which is what lets a smile fall rather than cut. `lids` may be a number or a pair
+   * (a wink), so both are widened to a pair before blending -- otherwise a wink mixed with anything
+   * throws away the eye it was winking. */
+  function mixFace(a, b, t) {
+    t = clamp(t, 0, 1);
+    var pair = function (v) { return Array.isArray(v) ? v : [v, v]; };
+    var la = pair(a.lids), lb = pair(b.lids);
+    return {
+      mouth: t < 0.5 ? a.mouth : b.mouth,
+      brow: lerp(a.brow, b.brow, t),
+      lids: [lerp(la[0], lb[0], t), lerp(la[1], lb[1], t)],
+      look: [lerp(a.look[0], b.look[0], t), lerp(a.look[1], b.look[1], t)],
+    };
   }
 
   // --------------------------------------------------------------------- one tentacle
@@ -129,48 +172,74 @@
     opts = opts || {};
     var t = opts.t || 0;
     var pose = typeof opts.pose === 'string' ? POSES[opts.pose] || POSES.idle : opts.pose || POSES.idle;
-    var cx = 200, cy = 150;                 // the head's centre, in a 400x400 box
+    // the face: asked for by name, else the one the pose prefers, else happy
+    var face = opts.face;
+    face = typeof face === 'string' ? FACES[face] || FACES.happy : face || FACES[pose.face] || FACES.happy;
+
+    // every size is a multiplier, so the dashboard can tune the whole character without touching a path
+    var headK = opts.head != null ? opts.head : HEAD;
+    var armK = opts.arm != null ? opts.arm : 1;
+    var thickK = opts.thick != null ? opts.thick : 1;
+    var cx = BOX / 2, cy = 160;
     var breathe = opts.still ? 0 : Math.sin(t * 1.5) * 1;
 
     var arms = [], i;
     for (i = 0; i < 8; i++) {
       var base = ARMS[i];
       var ang = base.dir + (pose.swing[i] || 0);
-      // where the arm leaves the body: its own spot on the ellipse of the mantle's lower edge
-      var ax = cx + Math.cos(rad(base.at)) * 98;
-      var ay = cy + Math.sin(rad(base.at)) * 112;
-      var arm = tentacle(ax, ay, ang, base.len * (pose.len || 1), pose.curl[i] || 0, base.w,
-                         opts.still ? 0 : 1, t * 1.6 + i * 0.8);
-      arms.push({ d: arm.d, tip: arm.tip, back: !!base.back, fill: base.back ? SKIN.deep : SKIN.dark });
+      var ax = cx + Math.cos(rad(base.at)) * 98 * headK;
+      var ay = cy + Math.sin(rad(base.at)) * 112 * headK;
+      var arm = tentacle(ax, ay, ang, base.len * (pose.len || 1) * armK, pose.curl[i] || 0,
+                         base.w * thickK, opts.still ? 0 : 1, t * 1.6 + i * 0.8);
+      arms.push({ d: arm.d, tip: arm.tip, spine: arm.spine, back: !!base.back,
+                  fill: base.back ? SKIN.deep : SKIN.dark });
     }
 
-    // a blink is its own clock, so it never lines up with the breathing and look mechanical
+    // a blink has its own clock so it never lines up with the breathing and look mechanical
     var cycle = opts.still ? 0.5 : (t % 5.4) / 5.4;
-    var blink = cycle > 0.955 && cycle < 0.985 ? 1 : 0;
-    var lids = clamp(Math.max(pose.lids || 0, blink), 0, 1);
+    var blinking = !opts.still && cycle > 0.955 && cycle < 0.985 ? 1 : 0;
+    var want = Array.isArray(face.lids) ? face.lids : [face.lids || 0, face.lids || 0];
+    var lids = [clamp(Math.max(want[0], blinking), 0, 1), clamp(Math.max(want[1], blinking), 0, 1)];
 
-    var look = pose.look || [0, 0];
-    var eyes = [-42, 42].map(function (dx) {
-      return { x: cx + dx, y: cy + 22, px: cx + dx + look[0] * 9, py: cy + 22 + look[1] * 9 + breathe * 0.3,
-               lid: lids };
+    var look = face.look || [0, 0];
+    var eyeR = 30 * headK, gap = 42 * headK, eyeY = cy + 22 * headK;
+    var eyes = [-gap, gap].map(function (dx, n) {
+      return {
+        x: cx + dx, y: eyeY, r: eyeR,
+        px: cx + dx + look[0] * 9 * headK,
+        py: eyeY + look[1] * 9 * headK + breathe * 0.3,
+        lid: lids[n],
+      };
     });
 
     return {
-      arms: arms, eyes: eyes, lids: lids, breathe: breathe, pose: pose,
-      head: { cx: cx, cy: cy + breathe },
-      mouth: mouthPath(pose.mouth, cx, cy + 68 + breathe),
-      brow: pose.brow || 0,
+      arms: arms, eyes: eyes, lids: lids, breathe: breathe, pose: pose, face: face,
+      head: { cx: cx, cy: cy + breathe, k: headK },
+      mouth: mouthPath(face.mouth, cx, cy + 68 * headK + breathe, headK),
+      brow: face.brow || 0,
       skin: opts.skin || SKIN,
       holding: opts.holding || [],
     };
   }
 
-  function mouthPath(kind, x, y) {
-    if (kind === 'grin')  return { d: 'M' + (x - 26) + ' ' + (y - 4) + 'C' + (x - 12) + ' ' + (y + 16) + ' ' + (x + 12) + ' ' + (y + 16) + ' ' + (x + 26) + ' ' + (y - 6), fill: 'none' };
-    if (kind === 'open')  return { d: 'M' + (x - 20) + ' ' + (y - 6) + 'C' + (x - 14) + ' ' + (y + 20) + ' ' + (x + 14) + ' ' + (y + 20) + ' ' + (x + 20) + ' ' + (y - 6) + 'Z', fill: SKIN.mouth };
-    if (kind === 'flat')  return { d: 'M' + (x - 18) + ' ' + (y + 2) + 'C' + (x - 6) + ' ' + (y - 3) + ' ' + (x + 6) + ' ' + (y - 3) + ' ' + (x + 18) + ' ' + (y + 2), fill: 'none' };
-    if (kind === 'tiny')  return { d: 'M' + (x - 9) + ' ' + y + 'C' + (x - 4) + ' ' + (y + 7) + ' ' + (x + 4) + ' ' + (y + 7) + ' ' + (x + 9) + ' ' + y, fill: 'none' };
-    return { d: 'M' + (x - 22) + ' ' + (y - 2) + 'C' + (x - 10) + ' ' + (y + 13) + ' ' + (x + 10) + ' ' + (y + 13) + ' ' + (x + 22) + ' ' + (y - 4), fill: 'none' };
+  function mouthPath(kind, x, y, k) {
+    k = k || 1;
+    var C = function (a, b, c, d2, fill) {
+      return { d: 'M' + round(x + a[0] * k) + ' ' + round(y + a[1] * k) +
+        'C' + round(x + b[0] * k) + ' ' + round(y + b[1] * k) + ' ' +
+        round(x + c[0] * k) + ' ' + round(y + c[1] * k) + ' ' +
+        round(x + d2[0] * k) + ' ' + round(y + d2[1] * k) + (fill && fill !== 'none' ? 'Z' : ''),
+        fill: fill || 'none' };
+    };
+    if (kind === 'grin')    return C([-26, -4], [-12, 16], [12, 16], [26, -6]);
+    if (kind === 'open')    return C([-20, -6], [-14, 20], [14, 20], [20, -6], SKIN.mouth);
+    if (kind === 'oh')      return { d: 'M' + round(x) + ' ' + round(y - 11 * k) +
+                                     'a' + round(9 * k) + ' ' + round(11 * k) + ' 0 1 0 0.1 0Z',
+                                     fill: SKIN.mouth };
+    if (kind === 'flat')    return C([-18, 2], [-6, -3], [6, -3], [18, 2]);
+    if (kind === 'worried') return C([-18, 6], [-10, -6], [10, -6], [18, 6]);
+    if (kind === 'tiny')    return C([-9, 0], [-4, 7], [4, 7], [9, 0]);
+    return C([-22, -2], [-10, 13], [10, 13], [22, -4]);
   }
 
   // --------------------------------------------------------------------- the picture
@@ -236,12 +305,14 @@
     return out.join('');
   }
 
-  function head(cx, cy) {
-    return 'M' + cx + ' ' + (cy - 102) + 'C' + (cx + 84) + ' ' + (cy - 102) + ' ' + (cx + 132) + ' ' + (cy - 38) +
-      ' ' + (cx + 132) + ' ' + (cy + 34) + 'C' + (cx + 132) + ' ' + (cy + 94) + ' ' + (cx + 96) + ' ' + (cy + 130) +
-      ' ' + (cx + 58) + ' ' + (cy + 142) + 'L' + (cx - 58) + ' ' + (cy + 142) + 'C' + (cx - 96) + ' ' + (cy + 130) +
-      ' ' + (cx - 132) + ' ' + (cy + 94) + ' ' + (cx - 132) + ' ' + (cy + 34) + 'C' + (cx - 132) + ' ' + (cy - 38) +
-      ' ' + (cx - 84) + ' ' + (cy - 102) + ' ' + cx + ' ' + (cy - 102) + 'Z';
+  function head(cx, cy, k) {
+    k = k || 1;
+    var X = function (n) { return round(cx + n * k); }, Y = function (n) { return round(cy + n * k); };
+    return 'M' + X(0) + ' ' + Y(-102) + 'C' + X(84) + ' ' + Y(-102) + ' ' + X(132) + ' ' + Y(-38) +
+      ' ' + X(132) + ' ' + Y(34) + 'C' + X(132) + ' ' + Y(94) + ' ' + X(96) + ' ' + Y(130) +
+      ' ' + X(58) + ' ' + Y(142) + 'L' + X(-58) + ' ' + Y(142) + 'C' + X(-96) + ' ' + Y(130) +
+      ' ' + X(-132) + ' ' + Y(94) + ' ' + X(-132) + ' ' + Y(34) + 'C' + X(-132) + ' ' + Y(-38) +
+      ' ' + X(-84) + ' ' + Y(-102) + ' ' + X(0) + ' ' + Y(-102) + 'Z';
   }
 
   /* Everything the picture needs, as plain values ready to bind into markup -- no HTML string anywhere.
@@ -252,37 +323,58 @@
    * character, two shapes -- which is why one file can serve the site, the app and the renderer. */
   function parts(opts) {
     var g = build(opts);
-    var s = g.skin, cx = g.head.cx, cy = g.head.cy;
+    var s = g.skin, cx = g.head.cx, cy = g.head.cy, k = g.head.k;
+    /* THE LID. It is a rectangle sliding down inside a clip of the eye, so it has to travel its own
+     * full height PLUS the eye's: at rest its bottom edge rests on the eye's top, and shut its top edge
+     * rests on the eye's top. Getting that by one lid-height is what left half the white showing --
+     * the old sum closed the eye at lid 0.5 and showed the top half at 0 and the bottom half at 1. */
     var eye = function (i) {
       var e = g.eyes[i];
-      return { x: round(e.x), y: round(e.y), px: round(e.px), py: round(e.py),
-               gx: round(e.px - 4.5), gy: round(e.py - 5),
-               lx: round(e.x - 34), ly: round(e.y - 92 + 30 + e.lid * 62) };
+      var h = e.r * 2.2;                       // tall enough to cover the whole eye in one move
+      return { x: round(e.x), y: round(e.y), r: round(e.r),
+               px: round(e.px), py: round(e.py),
+               gx: round(e.px - 4.5 * k), gy: round(e.py - 5 * k), gr: round(4.4 * k),
+               pr: round(12.5 * k),
+               lx: round(e.x - e.r - 6), lw: round(e.r * 2 + 12),
+               // travels exactly its own height: at 0 its bottom edge rests on the eye's top edge
+               // (nothing covered), at 1 its top edge does (everything covered). Any other number here
+               // leaves a crescent of white, which is what "half white" looked like.
+               ly: round(e.y - e.r - h + e.lid * h), lh: round(h),
+               shut: e.lid > 0.55 ? round((e.lid - 0.55) / 0.45) : 0,
+               lashD: 'M' + round(e.x - e.r) + ' ' + round(e.y) +
+                      'C' + round(e.x - e.r * 0.4) + ' ' + round(e.y + e.r * 0.5) + ' ' +
+                      round(e.x + e.r * 0.4) + ' ' + round(e.y + e.r * 0.5) + ' ' +
+                      round(e.x + e.r) + ' ' + round(e.y) };
     };
+    var lens = round(38 * k), rim = round(11 * k);
     return {
       backArms: g.arms.filter(function (a) { return a.back; }),
       frontArms: g.arms.filter(function (a) { return !a.back; }),
       arms: g.arms,
-      headD: head(cx, cy),
-      bellyY: round(cy + 42),
+      headD: head(cx, cy, k),
+      bellyY: round(cy + 42 * k), bellyRx: round(86 * k), bellyRy: round(60 * k),
+      blushY: round(cy + 64 * k), blushX: round(82 * k),
       eyeL: eye(0), eyeR: eye(1),
-      lensL: { cx: round(cx - 42), cy: round(cy + 22) },
-      lensR: { cx: round(cx + 42), cy: round(cy + 22) },
-      bridgeD: 'M' + (cx - 4) + ' ' + (cy + 18) + 'C' + (cx - 1) + ' ' + (cy + 11) + ' ' +
-               (cx + 1) + ' ' + (cy + 11) + ' ' + (cx + 4) + ' ' + (cy + 18),
-      templeLD: 'M' + (cx - 80) + ' ' + (cy + 16) + 'C' + (cx - 94) + ' ' + (cy + 10) + ' ' +
-                (cx - 104) + ' ' + (cy + 12) + ' ' + (cx - 110) + ' ' + (cy + 20),
-      templeRD: 'M' + (cx + 80) + ' ' + (cy + 16) + 'C' + (cx + 94) + ' ' + (cy + 10) + ' ' +
-                (cx + 104) + ' ' + (cy + 12) + ' ' + (cx + 110) + ' ' + (cy + 20),
+      lensL: { cx: round(cx - 42 * k), cy: round(cy + 22 * k) },
+      lensR: { cx: round(cx + 42 * k), cy: round(cy + 22 * k) },
+      lensR2: lens, rim: rim, bridgeW: round(9 * k),
+      bridgeD: 'M' + round(cx - 4 * k) + ' ' + round(cy + 18 * k) + 'C' + round(cx - k) + ' ' + round(cy + 11 * k) +
+               ' ' + round(cx + k) + ' ' + round(cy + 11 * k) + ' ' + round(cx + 4 * k) + ' ' + round(cy + 18 * k),
+      templeLD: 'M' + round(cx - 80 * k) + ' ' + round(cy + 16 * k) + 'C' + round(cx - 94 * k) + ' ' + round(cy + 10 * k) +
+                ' ' + round(cx - 104 * k) + ' ' + round(cy + 12 * k) + ' ' + round(cx - 110 * k) + ' ' + round(cy + 20 * k),
+      templeRD: 'M' + round(cx + 80 * k) + ' ' + round(cy + 16 * k) + 'C' + round(cx + 94 * k) + ' ' + round(cy + 10 * k) +
+                ' ' + round(cx + 104 * k) + ' ' + round(cy + 12 * k) + ' ' + round(cx + 110 * k) + ' ' + round(cy + 20 * k),
       mouth: { d: g.mouth.d, fill: g.mouth.fill,
                stroke: g.mouth.fill === 'none' ? s.mouth : 'none' },
       brow: g.brow,
-      browLD: 'M' + (cx - 60) + ' ' + round(cy - 26 - g.brow * 5) + 'C' + (cx - 50) + ' ' + round(cy - 34 - g.brow * 7) +
-              ' ' + (cx - 32) + ' ' + round(cy - 34 - g.brow * 7) + ' ' + (cx - 24) + ' ' + round(cy - 26 - g.brow * 4),
-      browRD: 'M' + (cx + 24) + ' ' + round(cy - 26 - g.brow * 4) + 'C' + (cx + 32) + ' ' + round(cy - 34 - g.brow * 7) +
-              ' ' + (cx + 50) + ' ' + round(cy - 34 - g.brow * 7) + ' ' + (cx + 60) + ' ' + round(cy - 26 - g.brow * 5),
+      browLD: 'M' + round(cx - 60 * k) + ' ' + round(cy - (26 + g.brow * 5) * k) + 'C' + round(cx - 50 * k) + ' ' +
+              round(cy - (34 + g.brow * 7) * k) + ' ' + round(cx - 32 * k) + ' ' + round(cy - (34 + g.brow * 7) * k) +
+              ' ' + round(cx - 24 * k) + ' ' + round(cy - (26 + g.brow * 4) * k),
+      browRD: 'M' + round(cx + 24 * k) + ' ' + round(cy - (26 + g.brow * 4) * k) + 'C' + round(cx + 32 * k) + ' ' +
+              round(cy - (34 + g.brow * 7) * k) + ' ' + round(cx + 50 * k) + ' ' + round(cy - (34 + g.brow * 7) * k) +
+              ' ' + round(cx + 60 * k) + ' ' + round(cy - (26 + g.brow * 5) * k),
       browOpacity: round(clamp(g.brow, 0, 1)),
-      pose: g.pose, skin: s, raw: g,
+      pose: g.pose, face: g.face, skin: s, raw: g,
     };
   }
 
@@ -290,8 +382,8 @@
   function svg(opts) {
     opts = opts || {};
     var g = build(opts);
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="' + (opts.size || 400) +
-      '" height="' + (opts.size || 400) + '" role="img" aria-label="' +
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + BOX + ' ' + BOX +
+      '" width="' + (opts.size || BOX) + '" height="' + (opts.size || BOX) + '" role="img" aria-label="' +
       (opts.label || 'GeekOc, a friendly octopus in thick glasses') + '">' + markup(g, opts) + '</svg>';
   }
 
@@ -324,6 +416,7 @@
     return function () { stopped = true; };
   }
 
-  root.GeekOc = { POSES: POSES, ARMS: ARMS, SKIN: SKIN, build: build, parts: parts, markup: markup,
-                  svg: svg, mix: mix, play: play, tentacle: tentacle, TAU: TAU };
+  root.GeekOc = { POSES: POSES, FACES: FACES, ARMS: ARMS, SKIN: SKIN, HEAD: HEAD, BOX: BOX,
+                  build: build, parts: parts, markup: markup, svg: svg,
+                  mix: mix, mixFace: mixFace, play: play, tentacle: tentacle, head: head };
 })(typeof window !== 'undefined' ? window : globalThis);
