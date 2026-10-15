@@ -52,6 +52,9 @@ curated.json
 skills_history.json
 my_repos.json
 scout.json
+quizwriter.json
+questions.json
+github_cache.json
 wins.json
 *.token
 *.lock

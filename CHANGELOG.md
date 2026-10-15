@@ -3,6 +3,59 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.24.0 (2026-10-14): for computer science and for data analysis, and quizzes
+
+- **myGeeKy now covers three kinds of work at a computer**, not only bioinformatics: 💻 computer scientists and
+  developers, 🧬 bioinformaticians and data scientists, and 📊 experimental researchers analysing their own data.
+  Setup asks which fits you best (`work_style`), which only tilts the starting balance of what's suggested.
+  - **22 new skills in the dictionary**: 15 computer-science ones (algorithms, system design, databases, frontend,
+    backend, DevOps, security, HCI, compilers, graphics, embedded…), and 7 for people starting to analyse their own
+    data (statistics basics, scientific plotting, spreadsheets, GraphPad, power analysis, image quantification,
+    experimental design).
+  - **9 new reviewed protocols** (14 in all), every link checked by hand: Git and GitHub teamwork, algorithms for
+    interviews, a first web app, machine learning outside a notebook, a first pull request · from Excel to R,
+    statistics for experiments, figures for papers, images into numbers with Fiji.
+  - **📘 Guides** join repos, papers, books, courses, tutorials and videos as a kind of link: a project's or tool's
+    own documentation.
+- **myGeeKy does not teach laboratory work, and now refuses to** (`src/mygeeky/safety.py`). It covers code, data,
+  statistics, figures and pipelines. A protocol whose skill, goal or title names a bench technique is refused with
+  a plain reason, and protocol repositories, protocol journals and suppliers' method libraries are refused as
+  sources — in a protocol built on a device, in the curated file, in one another user published, and as a quiz
+  question's source. Analysing the data an experiment produced is welcome, and is what the gentlest protocols are
+  for. (An earlier version of this release had bench protocols; they were removed before it went out.)
+- **258 questions, written by hand**, covering all 14 reviewed protocols (14 to 20 each): every one quotes a
+  sentence that is really on one of that protocol's own sources, and `tools/quiz/verify.py` checks all 258
+  against the live pages. `tools/quiz/sources.py` and `tools/quiz/add.py` are the maker-side tools for
+  writing more.
+- **🏆 Quiz, a new tab in 🌱 Grow** (and on the phone), next to Protocols: every quiz in one place, with your
+  best score on each, what you can still try today, and the reviewed protocols you could start. **Taking one
+  happens inside that tab** — pressing 🏁 on a protocol, or 🎓 on a step, moves you there and draws the attempt
+  in the tab, with a dot per question (`QuizRunView`, `QuestionDots`, `AnswerRow`). No pop-up windows. Every reviewed
+  protocol can have a question bank; an attempt is ten questions drawn at random: 50% easy, 35% applied,
+  15% real pitfalls.
+  - Each question **comes from one of that protocol's own sources** and quotes the sentence that proves the answer,
+    and the card shows that source once you answer, with why.
+  - Only your best score counts, one attempt a day, and 🚩 drops a question you think is wrong (and can tell the maker).
+  - The shipped bank stores each answer as a **hash** rather than its position, so the file doesn't show which
+    option is right. That is obfuscation, not security — four options can be hashed and compared — and the
+    board stays, honestly, for fun ([docs/QUIZZES.md](docs/QUIZZES.md)).
+  - A step's level check now uses that step's questions when there are any.
+  - **The maker's side** (`quizwriter.py`, admin tab → 📝 Quizzes): DeepSeek writes them from the real page; myGeeKy
+    checks the quote is on it, runs the code, and a blind second read must pick the same answer twice. The maker
+    reads five ([docs/QUIZZES.md](docs/QUIZZES.md)).
+- **🌍 Scores on mygeeky.org, only if you ask.** Your name and your scores are two separate choices; you see exactly
+  what would appear; and you agree by writing `accept` on a public GitHub issue **from your own account** — the proof
+  — with `withdraw` to undo it. A score below 80% is never shown, the maker is excluded, and the board keeps the
+  month's top three plus the first five to finish each protocol (🏴 Pathfinder for the first).
+  A daily workflow collects consents and opens a pull request the maker approves ([docs/LEADERBOARD.md](docs/LEADERBOARD.md)).
+- **Phone app:** the same quizzes, one question per page, with the source and the score breakdown.
+- **Far fewer GitHub calls, with nothing going stale** (`src/mygeeky/ghcache.py`). Every answer is kept with
+  its ETag and every request carries it, so GitHub can reply 304 Not Modified — which costs nothing against
+  your limit. Measured: re-reading three profiles cost 3 requests, then 0. Also: the same question asked
+  twice in one refresh goes out once; a deleted account isn't re-asked for hours; and **when GitHub or the
+  network is away the app keeps working** on what it kept. The Admin tab shows what was asked and what was
+  free today, with a Forget button.
+
 ## 0.23.0 (2026-10-13): 🌱 Grow, 🎯 Chances and protocols (phone app 1.7.0)
 
 - **🌱 Grow, a new planet.**

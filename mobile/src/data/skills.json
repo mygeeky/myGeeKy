@@ -1,5 +1,5 @@
 {
- "version": "2026-10-13",
+ "version": "2026-10-14b",
  "skills": [
   {
    "name": "Python",
@@ -1225,6 +1225,231 @@
    "kind": "method",
    "aliases": [
     "benchmarking"
+   ]
+  },
+  {
+   "name": "Image quantification",
+   "kind": "method",
+   "aliases": [
+    "image quantification",
+    "imagej",
+    "fiji software",
+    "densitometry",
+    "cellprofiler",
+    "image analysis"
+   ]
+  },
+  {
+   "name": "Experimental design",
+   "kind": "method",
+   "aliases": [
+    "experimental design",
+    "design of experiments",
+    "randomised design",
+    "replicates and controls",
+    "power analysis"
+   ]
+  },
+  {
+   "name": "Algorithms and data structures",
+   "kind": "method",
+   "aliases": [
+    "algorithms",
+    "data structures",
+    "leetcode",
+    "dynamic programming",
+    "big-o"
+   ]
+  },
+  {
+   "name": "System design",
+   "kind": "method",
+   "aliases": [
+    "system design",
+    "distributed systems",
+    "scalability design"
+   ]
+  },
+  {
+   "name": "Operating systems",
+   "kind": "method",
+   "aliases": [
+    "operating systems",
+    "kernel development",
+    "systems programming"
+   ]
+  },
+  {
+   "name": "Databases",
+   "kind": "method",
+   "aliases": [
+    "database design",
+    "relational databases",
+    "query optimisation",
+    "postgres",
+    "postgresql"
+   ]
+  },
+  {
+   "name": "Frontend development",
+   "kind": "method",
+   "aliases": [
+    "frontend",
+    "front-end development",
+    "react",
+    "vue",
+    "svelte"
+   ]
+  },
+  {
+   "name": "Backend development",
+   "kind": "method",
+   "aliases": [
+    "backend",
+    "back-end development",
+    "rest api",
+    "graphql",
+    "fastapi",
+    "django",
+    "node.js"
+   ]
+  },
+  {
+   "name": "Mobile development",
+   "kind": "method",
+   "aliases": [
+    "mobile development",
+    "android development",
+    "ios development",
+    "react native",
+    "flutter"
+   ]
+  },
+  {
+   "name": "DevOps",
+   "kind": "method",
+   "aliases": [
+    "devops",
+    "ci/cd",
+    "continuous integration",
+    "infrastructure as code",
+    "terraform"
+   ]
+  },
+  {
+   "name": "Security",
+   "kind": "method",
+   "aliases": [
+    "application security",
+    "secure coding",
+    "penetration testing",
+    "cryptography"
+   ]
+  },
+  {
+   "name": "Open source contribution",
+   "kind": "method",
+   "aliases": [
+    "open source contribution",
+    "good first issue",
+    "pull request review",
+    "code review"
+   ]
+  },
+  {
+   "name": "Compilers",
+   "kind": "method",
+   "aliases": [
+    "compilers",
+    "interpreters",
+    "language design",
+    "parsing"
+   ]
+  },
+  {
+   "name": "Computer graphics",
+   "kind": "method",
+   "aliases": [
+    "computer graphics",
+    "shaders",
+    "game development",
+    "rendering"
+   ]
+  },
+  {
+   "name": "Embedded systems",
+   "kind": "method",
+   "aliases": [
+    "embedded systems",
+    "microcontrollers",
+    "arduino",
+    "raspberry pi"
+   ]
+  },
+  {
+   "name": "Human-computer interaction",
+   "kind": "method",
+   "aliases": [
+    "human-computer interaction",
+    "hci research",
+    "usability study",
+    "user study"
+   ]
+  },
+  {
+   "name": "Technical interviews",
+   "kind": "method",
+   "aliases": [
+    "technical interview",
+    "coding interview",
+    "interview preparation"
+   ]
+  },
+  {
+   "name": "Spreadsheets for data",
+   "kind": "tool",
+   "aliases": [
+    "excel for data",
+    "spreadsheet analysis",
+    "google sheets analysis",
+    "pivot table"
+   ]
+  },
+  {
+   "name": "GraphPad Prism",
+   "kind": "tool",
+   "aliases": [
+    "graphpad",
+    "prism software"
+   ]
+  },
+  {
+   "name": "Scientific plotting",
+   "kind": "method",
+   "aliases": [
+    "scientific plotting",
+    "publication-quality figures",
+    "figure preparation"
+   ]
+  },
+  {
+   "name": "Statistics basics",
+   "kind": "method",
+   "aliases": [
+    "statistics basics",
+    "t-test",
+    "anova",
+    "choosing a statistical test",
+    "p-value interpretation",
+    "basic statistics"
+   ]
+  },
+  {
+   "name": "Power analysis",
+   "kind": "method",
+   "aliases": [
+    "power analysis",
+    "sample size calculation"
    ]
   }
  ]

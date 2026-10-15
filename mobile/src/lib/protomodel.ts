@@ -6,13 +6,15 @@
 import model from '../data/protocol_model.json';
 import { gh } from './github';
 import { fetchT } from './net';
+import { blockedSource, isBench } from './safety';
 
 export const ROLES = ['none', 'basics', 'deeper', 'applied', 'project'] as const;
 export type Cand = { kind: 'repo' | 'article'; id: string; title: string; url: string; text: string; topics: string[];
   language?: string; stars?: number; updated?: string; pages?: boolean; archived?: boolean; type?: string; year?: number;
-  cited?: number; oa?: boolean; askedBy?: string };
+  cited?: number; oa?: boolean; venue?: string; askedBy?: string };
 type Model = { roles: string[]; bias: number[]; weights: Record<string, number[]> };
 const M = model as unknown as Model;
+
 const OPENALEX = 'https://api.openalex.org';
 
 export const term = (name: string) => (name.includes(' ') ? `"${name}"` : name);
@@ -32,6 +34,7 @@ export function articleQueries(name: string, goal = ''): [string, string][] {
 
 export function fromRepo(r: any): Cand | null {
   if (!r?.full_name || r.fork) return null;
+  if (isBench(`${r.full_name} ${r.description ?? ''}`)) return null;   // a repo of bench protocols, not this
   return { kind: 'repo', id: `gh:${String(r.full_name).toLowerCase()}`, title: String(r.full_name).slice(0, 140),
     url: `https://github.com/${r.full_name}`, text: String(r.description ?? '').split(/\s+/).join(' ').slice(0, 400),
     topics: (r.topics ?? []).slice(0, 20).map((t: unknown) => String(t).slice(0, 50)), language: String(r.language ?? '').slice(0, 40),
@@ -51,10 +54,13 @@ export function fromWork(w: any): Cand | null {
   const wid = String(w.id ?? '').split('/').pop() ?? '';
   if (!/^W\d{2,12}$/.test(wid)) return null;
   const doi = String(w.doi ?? '');
+  const url = doi.startsWith('https://') ? doi : `https://openalex.org/${wid}`;
+  const sourceId = String(w.primary_location?.source?.id ?? '');
+  if (blockedSource(url, sourceId)) return null;        // a protocol journal is never a candidate at all
   return { kind: 'article', id: `oa:${wid}`, title: String(w.title).split(/\s+/).join(' ').slice(0, 200),
-    url: doi.startsWith('https://') ? doi : `https://openalex.org/${wid}`, text: abstract(w.abstract_inverted_index), topics: [],
+    url, text: abstract(w.abstract_inverted_index), topics: [],
     type: String(w.type ?? '').slice(0, 20), year: Number(w.publication_year ?? 0), cited: Number(w.cited_by_count ?? 0),
-    oa: !!w.open_access?.is_oa };
+    oa: !!w.open_access?.is_oa, venue: String(w.primary_location?.source?.display_name ?? '').slice(0, 80) };
 }
 
 export async function searchGithub(q: string, token: string | null, perPage = 20): Promise<Cand[]> {
@@ -64,7 +70,7 @@ export async function searchGithub(q: string, token: string | null, perPage = 20
 
 export async function searchOpenalex(search: string, filter = '', perPage = 12): Promise<Cand[]> {
   const p = new URLSearchParams({ search, 'per-page': String(perPage),
-    select: 'id,title,doi,type,publication_year,cited_by_count,open_access,abstract_inverted_index' });
+    select: 'id,title,doi,type,publication_year,cited_by_count,open_access,abstract_inverted_index,primary_location' });
   if (filter) p.set('filter', filter);
   const r = await fetchT(`${OPENALEX}/works?${p.toString()}`);
   if (!r.ok) return [];

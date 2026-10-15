@@ -1,0 +1,1309 @@
+{
+ "note": "Hand-written reviewed protocols (the maker's own list). merge.py checks every link opens and that nothing comes from a bench-protocol source, then writes them into src/mygeeky/data/curated.json. myGeeKy teaches analysis, never laboratory work: see src/mygeeky/safety.py.",
+ "protocols": [
+  {
+   "id": "git-github-teamwork",
+   "skill": "Git",
+   "goal": "working with others on GitHub",
+   "title": "Git and GitHub for working with others",
+   "summary": "Branches, pull requests and reviews: how a team works on one repo without stepping on each other. For anyone whose code has started to matter to someone else.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "Git on your own machine",
+     "role": "basics",
+     "query": "git basics",
+     "skills": [
+      "git"
+     ],
+     "can": [
+      "I can commit, look at the history and undo a change I regret",
+      "I know what the staging area is for",
+      "I can get myself out of a mess without deleting the folder"
+     ],
+     "items": [
+      {
+       "title": "Pro Git",
+       "url": "https://git-scm.com/book/en/v2",
+       "kind": "book",
+       "note": "The whole of Git, free, and the only reference you'll keep coming back to. Chapters 2 and 3 are enough to start."
+      },
+      {
+       "title": "Learn Git Branching",
+       "url": "https://learngitbranching.js.org/",
+       "kind": "tutorial",
+       "note": "Branches drawn as you type the commands. Half an hour here saves weeks of confusion."
+      },
+      {
+       "title": "The Missing Semester of Your CS Education",
+       "url": "https://missing.csail.mit.edu/2020/version-control/",
+       "kind": "course",
+       "note": "MIT's lecture on version control: what Git actually stores, which makes the commands make sense."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Branches, and fixing history",
+     "role": "deeper",
+     "query": "git branching workflow",
+     "skills": [
+      "git"
+     ],
+     "can": [
+      "I can rebase or merge a branch and explain which I'd choose",
+      "I can resolve a conflict without panicking",
+      "I know what not to force-push, and why"
+     ],
+     "items": [
+      {
+       "title": "Oh My Git!",
+       "url": "https://ohmygit.org/",
+       "kind": "tutorial",
+       "note": "A card game that teaches branching, rebasing and conflicts. Free, and more fun than it has any right to be."
+      },
+      {
+       "title": "GitHub flow",
+       "url": "https://docs.github.com/en/get-started/using-github/github-flow",
+       "kind": "guide",
+       "note": "The short branching rule most teams actually follow, in one page."
+      },
+      {
+       "title": "Dangit, Git!?!",
+       "url": "https://dangitgit.com/",
+       "kind": "website",
+       "note": "The fix for whatever you just did, in plain words. Keep it open."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Pull requests and reviews",
+     "role": "applied",
+     "query": "pull request review",
+     "skills": [
+      "git",
+      "open source contribution"
+     ],
+     "can": [
+      "I can open a pull request that a reviewer can actually read",
+      "I can review someone's code and leave a useful comment",
+      "I can keep a branch up to date while it's being reviewed"
+     ],
+     "items": [
+      {
+       "title": "GitHub Skills",
+       "url": "https://skills.github.com/",
+       "kind": "course",
+       "note": "Short hands-on courses from GitHub itself: pull requests, reviews and Actions, each done inside a real repo."
+      },
+      {
+       "title": "Google's code review guide",
+       "url": "https://google.github.io/eng-practices/review/",
+       "kind": "guide",
+       "note": "What a reviewer looks for, and how to be one. Short, and the standard most teams borrow from."
+      },
+      {
+       "title": "Conventional Commits",
+       "url": "https://www.conventionalcommits.org/en/v1.0.0/",
+       "kind": "website",
+       "note": "A commit-message rule a whole team can follow, which later gives you a changelog for free."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "One repo, as a team",
+     "role": "project",
+     "query": "github actions ci",
+     "skills": [
+      "git",
+      "github actions"
+     ],
+     "can": [
+      "Our repo has a branch rule and a check that runs on every pull request"
+     ],
+     "items": [
+      {
+       "title": "GitHub Actions: your first workflow",
+       "url": "https://docs.github.com/en/actions/writing-workflows/quickstart",
+       "kind": "guide",
+       "note": "The check that runs on every pull request, in about ten lines."
+      },
+      {
+       "title": "First Contributions",
+       "url": "https://github.com/firstcontributions/first-contributions",
+       "kind": "repo",
+       "note": "A repo whose whole purpose is to accept your practice pull request. Do it once with no stakes."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "git"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "algorithms-interviews",
+   "skill": "Algorithms and data structures",
+   "goal": "technical interviews",
+   "title": "Algorithms and data structures, for interviews and for real work",
+   "summary": "The handful of patterns most interview questions come from, and the thinking behind them, without grinding puzzles for six months.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "The structures themselves",
+     "role": "basics",
+     "query": "data structures",
+     "skills": [
+      "algorithms and data structures"
+     ],
+     "can": [
+      "I can say when I'd use a hash map instead of a list, and why",
+      "I can read O(n log n) and say what it means for 10 million items",
+      "I can write a loop over a tree without looking it up"
+     ],
+     "items": [
+      {
+       "title": "Open Data Structures",
+       "url": "https://opendatastructures.org/",
+       "kind": "book",
+       "note": "Free, short, and in the language you choose. Each structure with the cost of every operation."
+      },
+      {
+       "title": "MIT 6.006: Introduction to Algorithms",
+       "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+       "kind": "course",
+       "note": "The lectures, notes and problem sets, free. The honest version of this subject."
+      },
+      {
+       "title": "TheAlgorithms/Python",
+       "url": "https://github.com/TheAlgorithms/Python",
+       "kind": "repo",
+       "note": "Every classic algorithm, implemented plainly, to read rather than to copy."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "The patterns behind the questions",
+     "role": "deeper",
+     "query": "algorithm patterns",
+     "skills": [
+      "algorithms and data structures"
+     ],
+     "can": [
+      "I can spot a two-pointer, sliding-window or BFS problem from its wording",
+      "I can write a recursion and say what its base case is",
+      "I can get from a working answer to a faster one on purpose"
+     ],
+     "items": [
+      {
+       "title": "Competitive Programmer's Handbook",
+       "url": "https://cses.fi/book/book.pdf",
+       "kind": "book",
+       "note": "Free. The patterns, in order, with the maths kept to what you need."
+      },
+      {
+       "title": "NeetCode: the roadmap",
+       "url": "https://neetcode.io/roadmap",
+       "kind": "website",
+       "note": "The problems grouped by pattern, in an order that builds. Use the grouping even if you practise elsewhere."
+      },
+      {
+       "title": "CSES Problem Set",
+       "url": "https://cses.fi/problemset/",
+       "kind": "website",
+       "note": "A graded set that matches the handbook, with no gimmicks."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "The interview itself",
+     "role": "applied",
+     "query": "interview preparation",
+     "skills": [
+      "technical interviews"
+     ],
+     "can": [
+      "I can talk through my thinking while I write, not after",
+      "I ask about the input before I start",
+      "I can test my own answer on the awkward cases"
+     ],
+     "items": [
+      {
+       "title": "Tech Interview Handbook",
+       "url": "https://www.techinterviewhandbook.org/",
+       "kind": "website",
+       "note": "What happens in the room, how to practise for it, and what to say. Free and plainly written."
+      },
+      {
+       "title": "System Design Primer",
+       "url": "https://github.com/donnemartin/system-design-primer",
+       "kind": "repo",
+       "note": "For the design round, which most people meet unprepared."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "Build one thing with them",
+     "role": "project",
+     "query": "build your own",
+     "skills": [
+      "algorithms and data structures"
+     ],
+     "can": [
+      "I've written something non-trivial where the data structure choice mattered"
+     ],
+     "items": [
+      {
+       "title": "Build Your Own X",
+       "url": "https://github.com/codecrafters-io/build-your-own-x",
+       "kind": "repo",
+       "note": "Write your own database, git, or regex engine, following someone who did. Where the structures stop being abstract."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "algorithms and data structures"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "first-web-app",
+   "skill": "Backend development",
+   "goal": "your first web app",
+   "title": "Your first web app, start to finish",
+   "summary": "One small app with a database behind it, put online where other people can use it. The shape every later project reuses.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "How the web actually works",
+     "role": "basics",
+     "query": "http basics",
+     "skills": [
+      "backend development"
+     ],
+     "can": [
+      "I can say what happens between a click and a page appearing",
+      "I know what a GET and a POST are for",
+      "I can read a 404 or a 500 and know whose problem it is"
+     ],
+     "items": [
+      {
+       "title": "MDN: learn web development",
+       "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development",
+       "kind": "course",
+       "note": "The reference the whole industry uses, free. Start with the server-side part."
+      },
+      {
+       "title": "FastAPI tutorial",
+       "url": "https://fastapi.tiangolo.com/tutorial/",
+       "kind": "tutorial",
+       "note": "A working API in a few lines of Python, each line explained. The gentlest start if you already know Python."
+      },
+      {
+       "title": "Flask tutorial",
+       "url": "https://flask.palletsprojects.com/en/stable/tutorial/",
+       "kind": "tutorial",
+       "note": "A small blog app, built step by step, with the database and logins included."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "A database behind it",
+     "role": "deeper",
+     "query": "database design",
+     "skills": [
+      "databases",
+      "sql"
+     ],
+     "can": [
+      "I can design two or three tables that don't repeat themselves",
+      "I can write the queries my app needs without an ORM",
+      "I know what an index is for"
+     ],
+     "items": [
+      {
+       "title": "Select Star SQL",
+       "url": "https://selectstarsql.com/",
+       "kind": "tutorial",
+       "note": "SQL you write in the page, on real data. Free, and quietly excellent."
+      },
+      {
+       "title": "Django's own tutorial",
+       "url": "https://docs.djangoproject.com/en/stable/intro/tutorial01/",
+       "kind": "tutorial",
+       "note": "The heavier framework, which hands you an admin page and a login system. Worth seeing once."
+      },
+      {
+       "title": "Use the index, Luke",
+       "url": "https://use-the-index-luke.com/",
+       "kind": "book",
+       "note": "Why your query is slow. The one thing most self-taught developers never read."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Put it online",
+     "role": "applied",
+     "query": "deploy",
+     "skills": [
+      "backend development",
+      "devops"
+     ],
+     "can": [
+      "Someone else can open my app at a URL",
+      "My secrets are not in the repo",
+      "I can see what went wrong when it breaks at 2am"
+     ],
+     "items": [
+      {
+       "title": "Full Stack open",
+       "url": "https://fullstackopen.com/en/",
+       "kind": "course",
+       "note": "The University of Helsinki's free course, front to back, with deployment. Long, and worth it."
+      },
+      {
+       "title": "The Twelve-Factor App",
+       "url": "https://12factor.net/",
+       "kind": "website",
+       "note": "Twelve short rules that keep an app deployable. Read it before you need it."
+      },
+      {
+       "title": "OWASP Top Ten",
+       "url": "https://owasp.org/www-project-top-ten/",
+       "kind": "guide",
+       "note": "The ten ways apps get broken into. Know them before you put a login on anything."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "One real app, finished",
+     "role": "project",
+     "query": "example app",
+     "skills": [
+      "backend development"
+     ],
+     "can": [
+      "I've finished and deployed one small app that someone else uses"
+     ],
+     "items": [
+      {
+       "title": "RealWorld example apps",
+       "url": "https://github.com/gothinkster/realworld",
+       "kind": "repo",
+       "note": "The same app written in dozens of stacks. Read the one near yours to see what 'done' looks like."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "backend development"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "ml-in-practice",
+   "skill": "Machine learning",
+   "goal": "real projects",
+   "title": "Machine learning that works outside a notebook",
+   "summary": "Getting from a tutorial model to one that holds up: honest validation, the leakage that quietly ruins results, and putting it somewhere it can be used.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "The basics, properly",
+     "role": "basics",
+     "query": "machine learning course",
+     "skills": [
+      "machine learning",
+      "scikit-learn"
+     ],
+     "can": [
+      "I can split data into train and test and say why",
+      "I can tell classification from regression and pick a fitting measure",
+      "I can fit and score a model with scikit-learn on my own"
+     ],
+     "items": [
+      {
+       "title": "scikit-learn MOOC (Inria)",
+       "url": "https://inria.github.io/scikit-learn-mooc/",
+       "kind": "course",
+       "note": "Free, with notebooks and exercises, by the people who write scikit-learn."
+      },
+      {
+       "title": "An Introduction to Statistical Learning",
+       "url": "https://www.statlearning.com/",
+       "kind": "book",
+       "note": "The free book that explains what the methods are doing, in R and in Python."
+      },
+      {
+       "title": "Practical Deep Learning for Coders",
+       "url": "https://course.fast.ai/",
+       "kind": "course",
+       "note": "fast.ai's course: working results from the first lesson, theory when you need it."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Validation you can defend",
+     "role": "deeper",
+     "query": "cross-validation leakage",
+     "skills": [
+      "machine learning"
+     ],
+     "can": [
+      "I can set up cross-validation that respects groups and time",
+      "I can name three ways data leaks between train and test",
+      "I know why my test score will look worse in the real world"
+     ],
+     "items": [
+      {
+       "title": "Leakage and the reproducibility crisis in ML-based science",
+       "url": "https://doi.org/10.1016/j.patter.2023.100804",
+       "kind": "article",
+       "note": "Kapoor & Narayanan: eight kinds of leakage, and the published results they broke. The most useful afternoon in this protocol."
+      },
+      {
+       "title": "Rules of Machine Learning",
+       "url": "https://developers.google.com/machine-learning/guides/rules-of-ml",
+       "kind": "guide",
+       "note": "Google's 43 rules, in order of when you'll need them. Rule 1 is 'don't be afraid to launch without machine learning'."
+      },
+      {
+       "title": "Model Cards for Model Reporting",
+       "url": "https://doi.org/10.1145/3287560.3287596",
+       "kind": "article",
+       "note": "What to write down about a model so someone else can judge it."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Out of the notebook",
+     "role": "applied",
+     "query": "mlops deployment",
+     "skills": [
+      "machine learning",
+      "mlops"
+     ],
+     "can": [
+      "My training runs from a script, not from cells I ran in some order",
+      "I can say which data and which code made a given model",
+      "Someone else can get a prediction out of it without me"
+     ],
+     "items": [
+      {
+       "title": "Made With ML",
+       "url": "https://madewithml.com/",
+       "kind": "course",
+       "note": "Free, and the only popular course that treats testing, packaging and serving as part of the job."
+      },
+      {
+       "title": "Machine Learning Operations (ml-ops.org)",
+       "url": "https://ml-ops.org/",
+       "kind": "website",
+       "note": "The vocabulary and the moving parts, without a vendor attached."
+      },
+      {
+       "title": "awesome-production-machine-learning",
+       "url": "https://github.com/EthicalML/awesome-production-machine-learning",
+       "kind": "repo",
+       "note": "The tools, grouped by what they're for, when you need to pick one."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "One model, used by someone",
+     "role": "project",
+     "query": "end to end project",
+     "skills": [
+      "machine learning"
+     ],
+     "can": [
+      "I've taken one model from data to something a person can actually use"
+     ],
+     "items": [
+      {
+       "title": "Papers with Code",
+       "url": "https://paperswithcode.com/",
+       "kind": "website",
+       "note": "A published result with its code, to reproduce before you trust it. The best honesty exercise there is."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "machine learning"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "open-source-first-pr",
+   "skill": "Open source contribution",
+   "goal": "your first pull request",
+   "title": "Your first pull request to someone else's project",
+   "summary": "Finding an issue worth taking, reading a codebase you didn't write, and getting a change merged without annoying anyone.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "How a project works",
+     "role": "basics",
+     "query": "open source guide",
+     "skills": [
+      "open source contribution"
+     ],
+     "can": [
+      "I can find a project's CONTRIBUTING file and follow it",
+      "I know what a maintainer's time is worth, and what to ask for",
+      "I can fork, branch and open a pull request without help"
+     ],
+     "items": [
+      {
+       "title": "Open Source Guides",
+       "url": "https://opensource.guide/how-to-contribute/",
+       "kind": "guide",
+       "note": "GitHub's own guide to a first contribution, and the one most maintainers wish people had read."
+      },
+      {
+       "title": "First Contributions",
+       "url": "https://github.com/firstcontributions/first-contributions",
+       "kind": "repo",
+       "note": "A repo built to accept your practice pull request. Get the mechanics wrong here, where it doesn't matter."
+      },
+      {
+       "title": "How to Contribute to Open Source (freeCodeCamp)",
+       "url": "https://www.freecodecamp.org/news/how-to-contribute-to-open-source-projects-beginners-guide/",
+       "kind": "tutorial",
+       "note": "The same ground again in plainer words, if the guides feel abstract."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Reading code you didn't write",
+     "role": "deeper",
+     "query": "read codebase",
+     "skills": [
+      "open source contribution",
+      "code review"
+     ],
+     "can": [
+      "I can get a strange project running on my machine",
+      "I can find where a bug lives using the tests",
+      "I can make the smallest change that fixes it"
+     ],
+     "items": [
+      {
+       "title": "The Architecture of Open Source Applications",
+       "url": "https://aosabook.org/en/",
+       "kind": "book",
+       "note": "Real projects explained by the people who built them. Free."
+      },
+      {
+       "title": "Google's code review guide: the reviewer",
+       "url": "https://google.github.io/eng-practices/review/reviewer/",
+       "kind": "guide",
+       "note": "What reviewers look at, which is what your pull request should answer in advance."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Find a real issue",
+     "role": "applied",
+     "query": "good first issue",
+     "skills": [
+      "open source contribution"
+     ],
+     "can": [
+      "I've found an issue I understand in a project I use",
+      "I asked whether it's still wanted before writing code",
+      "My pull request says what it changes and why, in two lines"
+     ],
+     "items": [
+      {
+       "title": "Good First Issue",
+       "url": "https://goodfirstissue.dev/",
+       "kind": "website",
+       "note": "Issues maintainers have marked as a good place to start, across many projects."
+      },
+      {
+       "title": "CodeTriage",
+       "url": "https://www.codetriage.com/",
+       "kind": "website",
+       "note": "Sends you one open issue a day from a project you choose. Low effort, and it builds the habit."
+      },
+      {
+       "title": "Up For Grabs",
+       "url": "https://up-for-grabs.net/",
+       "kind": "website",
+       "note": "The same idea, a different list. Between the three you'll find something in your language."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "Merged",
+     "role": "project",
+     "query": "contribution",
+     "skills": [
+      "open source contribution"
+     ],
+     "can": [
+      "Something I wrote is in a project I don't own"
+     ],
+     "items": [
+      {
+       "title": "myGeeKy's own ideas repo",
+       "url": "https://github.com/mygeeky/myGeeKy-ideas",
+       "kind": "repo",
+       "note": "If you'd rather start somewhere small: this is where myGeeKy's own issues and protocols live."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "open source contribution"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "image-analysis-fiji",
+   "skill": "Image quantification",
+   "goal": "measuring images you already have",
+   "title": "Images into numbers, with Fiji",
+   "summary": "Measuring the images on your disk without fooling yourself: what a pixel value is, which measurement answers your question, and a script that measures a whole folder the same way.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "Fiji, and what an image is",
+     "role": "basics",
+     "query": "imagej basics",
+     "skills": [
+      "image quantification"
+     ],
+     "can": [
+      "I can open, scale and measure an image in Fiji",
+      "I know what bit depth and a lookup table are",
+      "I can set the scale from the file's own metadata, not by guessing"
+     ],
+     "items": [
+      {
+       "title": "Fiji (ImageJ)",
+       "url": "https://imagej.net/software/fiji/",
+       "kind": "website",
+       "note": "The free software, with the plugins already in. Everything here assumes it."
+      },
+      {
+       "title": "ImageJ: the basics of image processing",
+       "url": "https://imagej.net/imaging/principles",
+       "kind": "guide",
+       "note": "What a digital image is, from the project itself. Short, and it prevents most later mistakes."
+      },
+      {
+       "title": "ImageJ user guide",
+       "url": "https://imagej.net/ij/docs/guide/",
+       "kind": "book",
+       "note": "The reference for every menu item, free."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Measurements you can defend",
+     "role": "deeper",
+     "query": "image measurement integrity",
+     "skills": [
+      "image quantification"
+     ],
+     "can": [
+      "I know what saturated pixels do to a measurement, and how to spot them in the histogram",
+      "I can say which measurement (intensity, area, count, ratio) answers my question",
+      "I record every adjustment I make, and never one that changes the data"
+     ],
+     "items": [
+      {
+       "title": "Avoiding twisted pixels: ethical guidelines for digital images",
+       "url": "https://doi.org/10.1007/s11948-010-9201-y",
+       "kind": "article",
+       "note": "What you may and may not do to an image, with examples of what crosses the line."
+      },
+      {
+       "title": "A guide to accurate reporting in digital image processing",
+       "url": "https://doi.org/10.1242/jcs.254151",
+       "kind": "article",
+       "note": "What to write down about how an image was processed, from the Journal of Cell Science."
+      },
+      {
+       "title": "ImageJ: image intensity processing",
+       "url": "https://imagej.net/imaging/principles",
+       "kind": "guide",
+       "note": "Histograms, look-up tables and what 'brightness' really means to a measurement."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Counting and measuring, repeatably",
+     "role": "applied",
+     "query": "segmentation measurement",
+     "skills": [
+      "image quantification"
+     ],
+     "can": [
+      "I can threshold and count objects, and name the method I used",
+      "I can write a macro so every image in a folder gets the same treatment",
+      "I can measure colocalisation without reading more into it than it says"
+     ],
+     "items": [
+      {
+       "title": "ImageJ: segmentation",
+       "url": "https://imagej.net/imaging/segmentation",
+       "kind": "guide",
+       "note": "The thresholding and segmentation methods, and when each one fits."
+      },
+      {
+       "title": "ImageJ macro language",
+       "url": "https://imagej.net/scripting/macro",
+       "kind": "tutorial",
+       "note": "Record what you clicked, then run it on a folder. The step that turns clicking into a method."
+      },
+      {
+       "title": "CellProfiler",
+       "url": "https://cellprofiler.org/",
+       "kind": "website",
+       "note": "Free pipelines for measuring thousands of objects, when macros stop being enough."
+      }
+     ]
+    },
+    {
+     "id": "numbers",
+     "title": "From measurements to a result",
+     "role": "applied",
+     "query": "image data statistics",
+     "skills": [
+      "statistics basics",
+      "scientific plotting"
+     ],
+     "can": [
+      "My unit of analysis is what I actually compared, not every object I measured",
+      "I plot every object and every replicate, not a mean alone",
+      "My numbers come out of a script, so they can be remade"
+     ],
+     "items": [
+      {
+       "title": "Nested analyses of cell-based data",
+       "url": "https://doi.org/10.1083/jcb.202001064",
+       "kind": "article",
+       "note": "SuperPlots: how to plot and test measurements without pretending each object is independent."
+      },
+      {
+       "title": "Fundamentals of Data Visualization",
+       "url": "https://clauswilke.com/dataviz/",
+       "kind": "book",
+       "note": "Free, and the fastest way to stop making misleading figures."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "Reproduce a published measurement",
+     "role": "project",
+     "query": "image analysis reproducible",
+     "skills": [
+      "image quantification"
+     ],
+     "can": [
+      "I've reproduced a published image measurement from its own description"
+     ],
+     "items": [
+      {
+       "title": "Papers with Code",
+       "url": "https://paperswithcode.com/",
+       "kind": "website",
+       "note": "Published image-analysis work with its code, to rerun before you trust it."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "image quantification"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "excel-to-r",
+   "skill": "R",
+   "goal": "your first analysis of your own data",
+   "title": "From Excel to R, with your own data",
+   "summary": "Your own spreadsheet, read into R, cleaned, plotted and tested. Written for people who have never programmed, and who have real data waiting.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "R, with no programming before",
+     "role": "basics",
+     "query": "r for beginners",
+     "skills": [
+      "r"
+     ],
+     "can": [
+      "I can install R and RStudio and find my way around the windows",
+      "I can read my own Excel file into R",
+      "I can look at the first rows and say what each column is"
+     ],
+     "items": [
+      {
+       "title": "Hands-On Programming with R",
+       "url": "https://rstudio-education.github.io/hopr/",
+       "kind": "book",
+       "note": "Free, and written for people with no programming at all. Three small projects, nothing assumed."
+      },
+      {
+       "title": "R for Reproducible Scientific Analysis (Software Carpentry)",
+       "url": "https://swcarpentry.github.io/r-novice-gapminder/",
+       "kind": "course",
+       "note": "The lesson taught in workshops worldwide, free to work through alone."
+      },
+      {
+       "title": "readxl",
+       "url": "https://readxl.tidyverse.org/",
+       "kind": "website",
+       "note": "Reading .xlsx straight into R, including the sheet and the range. One line, and your data is in."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "A tidy table, not a tidy-looking one",
+     "role": "deeper",
+     "query": "tidy data cleaning",
+     "skills": [
+      "r",
+      "tidyverse"
+     ],
+     "can": [
+      "I can turn a wide sheet with merged headers into one row per measurement",
+      "I can keep my raw file untouched and do the cleaning in the script",
+      "I can spot the typos and units problems my spreadsheet was hiding"
+     ],
+     "items": [
+      {
+       "title": "R for Data Science (2e)",
+       "url": "https://r4ds.hadley.nz/",
+       "kind": "book",
+       "note": "The free standard. Chapters on data import, tidying and transforming are exactly this step."
+      },
+      {
+       "title": "Tidy Data",
+       "url": "https://doi.org/10.18637/jss.v059.i10",
+       "kind": "article",
+       "note": "The short paper that explains what shape a table should be in, and why it makes everything after easier."
+      },
+      {
+       "title": "Data organization in spreadsheets",
+       "url": "https://doi.org/10.1080/00031305.2017.1375989",
+       "kind": "article",
+       "note": "Broman & Woo: how to keep the spreadsheet itself sane, before R ever sees it. Change one habit from this."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Your first plot and test",
+     "role": "applied",
+     "query": "ggplot2 plotting",
+     "skills": [
+      "r",
+      "ggplot2",
+      "statistics basics"
+     ],
+     "can": [
+      "I can plot my own measurements with every replicate showing",
+      "I can run the test that suits my design and read the output",
+      "I can save a figure at a size and resolution a journal accepts"
+     ],
+     "items": [
+      {
+       "title": "Data Analysis and Visualisation in R for Ecologists (Data Carpentry)",
+       "url": "https://datacarpentry.github.io/R-ecology-lesson/",
+       "kind": "course",
+       "note": "Real messy data, plotted and summarised. Nothing to do with ecology, really."
+      },
+      {
+       "title": "ggplot2: Elegant Graphics for Data Analysis",
+       "url": "https://ggplot2-book.org/",
+       "kind": "book",
+       "note": "Free. How the plotting grammar fits together, so you stop copying examples."
+      },
+      {
+       "title": "Learning Statistics with R",
+       "url": "https://learningstatisticswithr.com/",
+       "kind": "book",
+       "note": "Free, long, and kind: statistics and R taught together, assuming neither."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "One analysis, from file to figure",
+     "role": "project",
+     "query": "reproducible report",
+     "skills": [
+      "r",
+      "quarto"
+     ],
+     "can": [
+      "One script takes my raw file and makes the figure, with nothing done by hand"
+     ],
+     "items": [
+      {
+       "title": "Quarto: get started",
+       "url": "https://quarto.org/docs/get-started/",
+       "kind": "tutorial",
+       "note": "Put the text, the code and the figures in one document that rebuilds itself. This is what makes it reproducible."
+      },
+      {
+       "title": "TidyTuesday",
+       "url": "https://github.com/rfordatascience/tidytuesday",
+       "kind": "repo",
+       "note": "A new dataset every week, and hundreds of people's scripts for it. The best way to see how others do it."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "r"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "stats-for-experiments",
+   "skill": "Statistics basics",
+   "goal": "choosing and running the right test",
+   "title": "Statistics for experiments: which test, and why",
+   "summary": "t-test, ANOVA and their assumptions, in the words of an experiment: replicates, controls, and what a p-value does and does not tell you.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "What your numbers are",
+     "role": "basics",
+     "query": "statistics basics",
+     "skills": [
+      "statistics basics"
+     ],
+     "can": [
+      "I can say what my unit of analysis is for a given experiment",
+      "I know the difference between a technical and a biological replicate",
+      "I can describe my data before testing it: mean, spread, and a plot"
+     ],
+     "items": [
+      {
+       "title": "Points of Significance (Nature Methods)",
+       "url": "https://www.nature.com/collections/qghhqm",
+       "kind": "article",
+       "note": "Two-page columns, free, each on one idea: error bars, replication, significance. Start here and read them in order."
+      },
+      {
+       "title": "Introduction to Modern Statistics",
+       "url": "https://openintro-ims.netlify.app/",
+       "kind": "book",
+       "note": "Free, clear, and full of real data. The textbook if you want one."
+      },
+      {
+       "title": "StatQuest",
+       "url": "https://www.youtube.com/@statquest",
+       "kind": "video",
+       "note": "Short videos that explain one test at a time, drawn out slowly. Many bench scientists learn this way."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Choosing the test",
+     "role": "deeper",
+     "query": "choosing statistical test assumptions",
+     "skills": [
+      "statistics basics"
+     ],
+     "can": [
+      "I can pick between a t-test, a paired t-test and ANOVA for my design",
+      "I can state the assumptions of the test I chose",
+      "I know what to do about multiple comparisons"
+     ],
+     "items": [
+      {
+       "title": "Handbook of Biological Statistics",
+       "url": "https://www.biostathandbook.com/",
+       "kind": "book",
+       "note": "McDonald's free handbook: for each test, when to use it, how, and what to report. The most practical thing on this list."
+      },
+      {
+       "title": "The ASA statement on p-values",
+       "url": "https://doi.org/10.1080/00031305.2016.1154108",
+       "kind": "article",
+       "note": "Six short principles from the American Statistical Association. Two pages that change how you write results."
+      },
+      {
+       "title": "Scientists rise up against statistical significance",
+       "url": "https://doi.org/10.1038/d41586-019-00857-9",
+       "kind": "article",
+       "note": "Why 'not significant' doesn't mean 'no effect'. Free, and short."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "Running it, and reporting it",
+     "role": "applied",
+     "query": "statistics in r",
+     "skills": [
+      "statistics basics",
+      "r"
+     ],
+     "can": [
+      "I can run my test in R or GraphPad and read every number it gives back",
+      "I report effect size and uncertainty, not only a p-value",
+      "I can work out a sample size before the experiment, not after"
+     ],
+     "items": [
+      {
+       "title": "Learning Statistics with R",
+       "url": "https://learningstatisticswithr.com/",
+       "kind": "book",
+       "note": "Free. Does the test in R next to the explanation, which is the fastest way to trust the output."
+      },
+      {
+       "title": "G*Power",
+       "url": "https://www.psychologie.hhu.de/arbeitsgruppen/allgemeine-psychologie-und-arbeitspsychologie/gpower",
+       "kind": "website",
+       "note": "Free software for sample size and power. Use it before you start, even roughly."
+      },
+      {
+       "title": "Beyond bar and line graphs",
+       "url": "https://doi.org/10.1371/journal.pbio.1002128",
+       "kind": "article",
+       "note": "Plot the data, not a summary of it. The figure change that makes the statistics honest."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "Reanalyse one of your own experiments",
+     "role": "project",
+     "query": "worked example",
+     "skills": [
+      "statistics basics"
+     ],
+     "can": [
+      "I've redone the statistics of one finished experiment, and can defend every choice"
+     ],
+     "items": [
+      {
+       "title": "Nested analyses of cell-based data (SuperPlots)",
+       "url": "https://doi.org/10.1083/jcb.202001064",
+       "kind": "article",
+       "note": "A worked example of the mistake almost everyone makes with replicates, and how to fix the plot and the test together."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "statistics basics"
+     ],
+     "items": []
+    }
+   ]
+  },
+  {
+   "id": "figures-for-papers",
+   "skill": "Scientific plotting",
+   "goal": "publication-quality figures",
+   "title": "Figures your reviewers won't ask you to redo",
+   "summary": "One script that makes the figure, so it can be remade when the data changes: axes, colour, honesty, and the file the journal actually wants.",
+   "stages": [
+    {
+     "id": "basics",
+     "title": "What makes a figure readable",
+     "role": "basics",
+     "query": "data visualization basics",
+     "skills": [
+      "scientific plotting",
+      "data visualization"
+     ],
+     "can": [
+      "I can choose the plot type that suits my data, not the one I always use",
+      "I can label axes with units so no caption is needed to read them",
+      "I can tell when my figure is hiding the data"
+     ],
+     "items": [
+      {
+       "title": "Fundamentals of Data Visualization",
+       "url": "https://clauswilke.com/dataviz/",
+       "kind": "book",
+       "note": "Free. Each chapter shows a bad figure and the better one, with the reason."
+      },
+      {
+       "title": "Ten Simple Rules for Better Figures",
+       "url": "https://doi.org/10.1371/journal.pcbi.1003833",
+       "kind": "article",
+       "note": "Ten rules, two pages, open access. The fastest improvement available to anyone."
+      },
+      {
+       "title": "Points of View (Nature Methods)",
+       "url": "https://www.nature.com/collections/qghhqm",
+       "kind": "article",
+       "note": "The visualisation companion to Points of Significance: colour, salience and layout, one page each."
+      }
+     ]
+    },
+    {
+     "id": "deeper",
+     "title": "Colour, and who can read it",
+     "role": "deeper",
+     "query": "colour palettes accessibility",
+     "skills": [
+      "scientific plotting"
+     ],
+     "can": [
+      "I use a palette that survives colour blindness and a black-and-white printer",
+      "I never use a rainbow scale for continuous data, and can say why",
+      "My colours mean the same thing in every panel"
+     ],
+     "items": [
+      {
+       "title": "ColorBrewer",
+       "url": "https://colorbrewer2.org/",
+       "kind": "website",
+       "note": "Palettes chosen for maps and plots, with colour-blind and print-safe filters."
+      },
+      {
+       "title": "The misuse of colour in science communication",
+       "url": "https://doi.org/10.1038/s41467-020-19160-7",
+       "kind": "article",
+       "note": "Why jet and rainbow scales mislead, with the alternatives. Open access."
+      },
+      {
+       "title": "viridis",
+       "url": "https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html",
+       "kind": "tutorial",
+       "note": "The default good answer for continuous colour, in R and Python alike."
+      }
+     ]
+    },
+    {
+     "id": "applied",
+     "title": "The figure, from a script",
+     "role": "applied",
+     "query": "ggplot matplotlib figure",
+     "skills": [
+      "scientific plotting",
+      "ggplot2",
+      "matplotlib"
+     ],
+     "can": [
+      "My figure is made by a script I can rerun when the data changes",
+      "I can build a multi-panel figure with consistent sizes and fonts",
+      "I can export at the width, font size and format the journal asks for"
+     ],
+     "items": [
+      {
+       "title": "ggplot2: Elegant Graphics for Data Analysis",
+       "url": "https://ggplot2-book.org/",
+       "kind": "book",
+       "note": "Free. The R side, including arranging panels and saving at an exact size."
+      },
+      {
+       "title": "Matplotlib tutorials",
+       "url": "https://matplotlib.org/stable/tutorials/index.html",
+       "kind": "tutorial",
+       "note": "The Python side, from the project itself."
+      },
+      {
+       "title": "The R Graph Gallery",
+       "url": "https://r-graph-gallery.com/",
+       "kind": "website",
+       "note": "Hundreds of plots with their code. Find the one you want and take the code."
+      }
+     ]
+    },
+    {
+     "id": "project",
+     "title": "Remake one of your own figures",
+     "role": "project",
+     "query": "reproducible figure",
+     "skills": [
+      "scientific plotting"
+     ],
+     "can": [
+      "One of my published or submitted figures now comes out of a script, identical"
+     ],
+     "items": [
+      {
+       "title": "Quarto: get started",
+       "url": "https://quarto.org/docs/get-started/",
+       "kind": "tutorial",
+       "note": "Text, code and figures in one document that rebuilds itself. Then a data fix never means redrawing by hand."
+      }
+     ]
+    },
+    {
+     "id": "use",
+     "title": "Use it in your own work",
+     "role": "use",
+     "skills": [
+      "scientific plotting"
+     ],
+     "items": []
+    }
+   ]
+  }
+ ]
+}

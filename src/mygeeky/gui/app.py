@@ -289,6 +289,18 @@ def replace_token(cfg: MyGeekyConfig, name: str, value: str) -> dict[str, Any]:
     return {"ok": True, "message": "Saved. " + (renewed["message"] if renewed else "")}
 
 
+WORK_STYLES = (("", "I'd rather not say"), ("code", "I mostly build software"),
+               ("analysis", "I mostly analyse data"), ("both", "Both"))
+
+
+def set_work_style(cfg: MyGeekyConfig, style: str) -> str:
+    """What kind of work you mostly do: it only tilts which kinds of skill come up first (skills.py)."""
+    from ..config import save_config
+    cfg.work_style = style if style in {s for s, _ in WORK_STYLES} else ""
+    save_config(cfg)
+    return cfg.work_style
+
+
 def set_hearts(cfg: MyGeekyConfig, enabled: bool) -> None:
     cfg.gui_hearts_enabled = bool(enabled)
     save_config(cfg)
@@ -797,6 +809,31 @@ def scout_publish() -> dict[str, Any]:
         return {"error": f"Couldn't publish: {exc}"}
 
 
+def github_calls() -> dict[str, Any]:
+    """What myGeeKy asked GitHub today, and what it didn't have to ask (ghcache.py).
+
+    GitHub's limit is per person -- your own token gets 5,000 an hour -- so this is about your refreshes
+    staying quick, not about GitHub's servers. A 304 ("nothing changed") costs nothing against it."""
+    from .. import ghcache
+    store = ghcache.store()
+    today = store.today()
+    asked = int(today.get("requests") or 0)
+    free = int(today.get("not_modified") or 0) + int(today.get("from_cache") or 0)
+    return {"asked": asked, "not_modified": int(today.get("not_modified") or 0),
+            "from_cache": int(today.get("from_cache") or 0), "offline": int(today.get("offline") or 0),
+            "searches": int(today.get("searches") or 0), "saved": free, "entries": store.entries(),
+            "share": round(100 * free / (asked + free)) if (asked + free) else 0}
+
+
+def forget_github_cache() -> int:
+    """Throw away what GitHub told us. Nothing is lost: the next refresh asks for it again."""
+    from .. import ghcache
+    store = ghcache.store()
+    n = store.entries()
+    store.clear()
+    return n
+
+
 def admin_data(cfg: MyGeekyConfig) -> dict[str, Any]:
     """The admin tab from local state (no network)."""
     from .. import admin
@@ -1016,6 +1053,8 @@ def build_protocol(cfg: MyGeekyConfig, skill: str, goal: str = "") -> dict[str, 
     try:
         with requests.Session() as session:
             proto = protocols.build(cfg, skill, goal, client=client, session=session)
+    except ValueError as exc:
+        return {"error": str(exc)}            # myGeeKy doesn't teach this: the reason is already plain
     except Exception as exc:
         from ..errors import describe
         return {"error": f"Couldn't build it: {describe(exc)}"}
@@ -1041,6 +1080,191 @@ def publish_protocol(cfg: MyGeekyConfig, pid: str) -> dict[str, str]:
     from .. import protocols
     entry = protocols.mine(cfg).get(pid)
     return protocols.publish(entry) if entry else {"url": "", "clipboard": ""}
+
+
+# ---- quizzes: a protocol's questions, marked here (quiz.py)
+def quiz_state(cfg: MyGeekyConfig, pid: str = "") -> dict[str, Any]:
+    """What there is to take and what you scored: {"best", "counts", "can_try", "why", "badge"}."""
+    from .. import protocols, quiz
+    entry = protocols.mine(cfg).get(pid) if pid else None
+    proto = entry["protocol"] if entry else None
+    counts = quiz.counts(pid, (proto or {}).get("based_on", "")) if pid else {}
+    ok, why = quiz.can_try(pid) if pid else (False, "")
+    return {"best": quiz.best(pid) if pid else quiz.best(), "counts": counts, "can_try": ok, "why": why,
+            "per_attempt": quiz.PER_ATTEMPT, "pass_mark": quiz.PASS, "flags": quiz.flags()}
+
+
+def quiz_overview(cfg: MyGeekyConfig, data: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Everything the 🏆 Quiz tab shows: one row per protocol that has questions (yours first, then the
+    reviewed ones you haven't started), your best scores, and what's left to try today."""
+    from .. import curated, protocols, quiz
+    data = data or curated.load()
+    best = quiz.best()
+    flags = set(quiz.flags())
+    rows, seen = [], set()
+
+    def row(proto: dict[str, Any], mine: bool) -> dict[str, Any] | None:
+        counts = quiz.counts(proto["id"], proto.get("based_on", ""), None)
+        if not counts["total"]:
+            return None
+        got = best.get(proto["id"]) or {}
+        ok, why = quiz.can_try(proto["id"]) if mine else (True, "")
+        return {"id": proto["id"], "title": proto["title"], "skill": proto["skill"], "mine": mine,
+                "counts": counts, "best": got, "score": float(got.get("score") or 0.0),
+                "can_try": ok and mine, "why": "" if mine else "Start this protocol to take its quiz",
+                "why_not": why, "flagged": sum(1 for q in quiz.for_protocol(proto["id"], proto.get("based_on", ""))
+                                               if q["id"] in flags)}
+
+    for entry in protocols.mine(cfg, data).values():
+        r = row(entry["protocol"], True)
+        seen.add(entry["protocol"]["id"])
+        if r:
+            rows.append(r)
+    for proto in protocols.reviewed(data):
+        if proto["id"] not in seen:
+            r = row(proto, False)
+            if r:
+                rows.append(r)
+    done = [r for r in rows if r["best"]]
+    with_quiz = {r["id"] for r in rows}
+    waiting = [e["protocol"]["title"] for pid, e in protocols.mine(cfg, data).items() if pid not in with_quiz]
+    return {"rows": rows, "waiting": waiting, "taken": len(done),
+            "average": round(sum(r["score"] for r in done) / len(done), 4) if done else 0.0,
+            "perfect": sum(1 for r in done if r["score"] >= 1.0), "flagged": len(flags),
+            "questions": len(quiz.bank()["questions"]), "per_attempt": quiz.PER_ATTEMPT,
+            "pass_mark": quiz.PASS, "mix": quiz.share()}
+
+
+def quiz_unflag_all() -> int:
+    """Take back every 🚩: those questions can come up again."""
+    from .. import quiz
+    gone = quiz.flags()
+    for qid in gone:
+        quiz.flag(qid, False)
+    return len(gone)
+
+
+def quiz_draw(cfg: MyGeekyConfig, pid: str, stage: str = "") -> Any:
+    """A quiz for one of your protocols (`stage`: the level check for one step only). None if there's none."""
+    from .. import protocols, quiz
+    entry = protocols.mine(cfg).get(pid)
+    if not entry:
+        return None
+    q = quiz.Quiz.draw(entry["protocol"], n=quiz.PER_ATTEMPT, flags=quiz.flags(), stage=stage)
+    return q if q.questions else None
+
+
+def quiz_mark(cfg: MyGeekyConfig, quiz_obj: Any, answers: list[int], stage: str = "") -> Any:
+    """Mark an attempt, keep the best score, and -- for a step's check -- mark that step as known if passed."""
+    from .. import protocols, quiz
+    before = float((quiz.best(quiz_obj.protocol) or {}).get("score") or 0.0)
+    attempt = quiz.mark(quiz_obj, answers, before)
+    if not stage:
+        quiz.record(attempt)
+    elif attempt.passed:
+        protocols.answer_quiz_score(cfg, quiz_obj.protocol, stage, attempt.score)
+    return attempt
+
+
+def quiz_flag(qid: str, on: bool = True) -> bool:
+    from .. import quiz
+    return quiz.flag(qid, on)
+
+
+def quiz_report(question: Any, reason: str = "") -> str:
+    from .. import quiz
+    return quiz.report_question(question, reason)
+
+
+def quiz_refresh(force: bool = False) -> dict[str, Any]:
+    """Fetch the newest question bank (like the curated lists). Never raises."""
+    from .. import quiz
+    try:
+        return {"changed": quiz.refresh_if_due(force=force)}
+    except Exception as exc:
+        from ..errors import describe
+        return {"error": f"Couldn't fetch the questions: {describe(exc)}"}
+
+
+# ---- showing a score on mygeeky.org: only if you ask, from your own account (leaderboard.py)
+def share_state(cfg: MyGeekyConfig, share_name: bool = False, share_scores: bool = False) -> dict[str, Any]:
+    """What would appear on the website, in plain words, before anything is sent anywhere."""
+    from .. import leaderboard
+    share = leaderboard.share_of(cfg, share_name, share_scores)
+    ok, why = leaderboard.can_share(share)
+    return {"lines": share.lines(), "ok": ok, "why": why, "login": share.login,
+            "scores": share.shown_scores, "titles": share.titles, "min_shown": leaderboard.MIN_SHOWN}
+
+
+def share_url(cfg: MyGeekyConfig, share_name: bool, share_scores: bool) -> str:
+    """The prefilled issue where *you* write `accept`, from your own GitHub account. "" if nothing to share."""
+    from .. import leaderboard
+    share = leaderboard.share_of(cfg, share_name, share_scores)
+    ok, _ = leaderboard.can_share(share)
+    return leaderboard.accept_url(share) if ok else ""
+
+
+def withdraw_url(cfg: MyGeekyConfig) -> str:
+    """How to take it back: the same issue, where you write `withdraw`."""
+    from .. import ideas
+    login = (cfg.github_username or "").strip()
+    return f"https://github.com/{ideas.IDEAS_REPO}/issues?q=is%3Aissue+label%3Aleaderboard+author%3A{login}"
+
+
+# ---- the maker's quiz writer (quizwriter.py)
+def quizwriter_state() -> dict[str, Any]:
+    from .. import quiz, quizwriter, scout
+    state = quizwriter.load()
+    bank = quiz.bank()
+    per: dict[str, dict[str, int]] = {}
+    for q in bank["questions"]:
+        per.setdefault(q["protocol"], {lv: 0 for lv in quiz.LEVELS})[q["level"]] += 1
+    from .. import curated, protocols
+    reviewed = [p["id"] for p in protocols.reviewed(curated.load())]
+    ready = [pid for pid in reviewed if sum((per.get(pid) or {}).values()) >= quizwriter.READY]
+    return {"has_key": bool(scout.get_key()), "bank": len(bank["questions"]), "per_protocol": per,
+            "batches": state["batches"], "want": quizwriter.PER_PROTOCOL, "ready": quizwriter.READY,
+            "good": quizwriter.GOOD, "protocols": len(reviewed), "with_quiz": len(ready),
+            "missing": [pid for pid in reviewed if pid not in ready]}
+
+
+def quizwriter_run(cfg: MyGeekyConfig, pid: str) -> dict[str, Any]:
+    """Write and check a batch of questions for one protocol. Slow (reads pages, asks DeepSeek)."""
+    import requests
+    from .. import curated, protocols, quiz, quizwriter, scout
+    key = scout.get_key()
+    if not key:
+        return {"error": "Add your DeepSeek key first."}
+    proto = next((p for p in protocols.reviewed(curated.load()) if p["id"] == pid), None)
+    if not proto:
+        return {"error": "No reviewed protocol with that id."}
+    have = [q["q"] for q in quiz.bank()["questions"] if q["protocol"] == pid]
+    try:
+        with requests.Session() as session:
+            batch = quizwriter.write_for(proto, key, session=session, existing=have)
+    except PermissionError as exc:
+        return {"error": str(exc)}
+    except Exception as exc:
+        from ..errors import describe
+        return {"error": f"Couldn't finish: {describe(exc)}"}
+    quizwriter.keep_batch(pid, batch)
+    return {**batch, "summary": quizwriter.summary(batch), "reasons": quizwriter.reasons(batch)}
+
+
+def quizwriter_accept(pid: str, verdict: str) -> dict[str, Any]:
+    """The maker's spot check: "accepted" puts the batch in the shipped bank, "rewrite" throws it away."""
+    from .. import quizwriter
+    state = quizwriter.load()
+    batch = state["batches"].get(pid)
+    if not batch:
+        return {"error": "Nothing to accept."}
+    quizwriter.set_verdict(pid, verdict)
+    if verdict != "accepted":
+        return {"added": 0, "rewrite": True}
+    try:
+        return quizwriter.add_to_bank(quizwriter.balance(batch["questions"]))
+    except Exception as exc:
+        return {"error": f"Couldn't write the bank: {exc}"}
 
 
 def get_collaborators(cfg: MyGeekyConfig, rising: dict[str, Any] | None = None) -> dict[str, Any]:

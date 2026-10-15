@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { forSkill, type Lists } from './curated';
 import { articleQueries, type Cand, githubQueries, predict, searchGithub, searchOpenalex, term } from './protomodel';
 import { cleanLink, cleanProtocol, type Link, MAX_ITEMS, MAX_STAGES, type Protocol, type Role, slug, type Stage, text } from './protocol-shape';
+import { allowed } from './safety';
 import { type Doc, find } from './skills';
 import * as taste from './taste';
 import type { MyRepo } from './wins';
@@ -153,6 +154,10 @@ export async function fill(p: Protocol, cands: Cand[], lists: Lists): Promise<Pr
 
 /** The reviewed protocol if there is one, else one built now from GitHub, OpenAlex and the model. */
 export async function build(skill: string, goal: string, lists: Lists, token: string | null, docs: Doc[]): Promise<Protocol> {
+  // myGeeKy teaches analysis, never laboratory work (safety.ts). The message says what to ask for instead.
+  const s0 = find(skill);
+  const [ok, why] = allowed(s0?.name ?? skill, goal, s0?.kind === 'lab');
+  if (!ok) throw new Error(why);
   const found = findReviewed(skill, goal, lists);
   let p = found ? clone(found) : template(skill, goal);
   if (!found) p = await fill(p, await candidates(p, token), lists);
@@ -270,6 +275,13 @@ export const markKnown = (lists: Lists, pid: string, sid: string, how: 'self' | 
   if (how) e.known[sid] = how;
   else delete e.known[sid];
 });
+/** Keep a score for one stage, already marked elsewhere (quiz.ts draws and marks the bank's questions). */
+export async function answerQuizScore(lists: Lists, pid: string, sid: string, score: number): Promise<number> {
+  const rounded = Math.round(score * 100) / 100;
+  await change(lists, (s) => { if (s[pid]) s[pid].quiz[sid] = rounded; });
+  return rounded;
+}
+
 export async function answerQuiz(lists: Lists, pid: string, sid: string, answers: number[]): Promise<number> {
   let score = 0;
   await change(lists, (s) => {
@@ -421,6 +433,7 @@ export const STATUS_LABEL: Record<string, string> = { done: 'Done', known: 'You 
 export const RESOURCE_KINDS: Record<string, [string, string, string]> = {
   repo: ['📦', 'GitHub repo', 'Open on GitHub'], article: ['📄', 'Paper', 'Read the paper'], book: ['📖', 'Free book', 'Read the book'],
   course: ['🎓', 'Course', 'Start the course'], tutorial: ['🧭', 'Tutorial', 'Follow the tutorial'], video: ['🎬', 'Video', 'Watch it'],
+  guide: ['📘', 'Guide', 'Read the guide'],
   website: ['🌐', 'Website', 'Open the site'], search: ['🔎', 'GitHub search', 'Search GitHub'],
 };
 
@@ -450,9 +463,10 @@ export function resourceOf(it: Link): Resource {
     if (it.lang) facts.push(it.lang);
     if (it.updated) facts.push(`updated ${it.updated.slice(0, 4)}`);
   } else if (kind === 'article') {
+    if (it.venue) facts.push(it.venue);
     if (it.year) facts.push(String(it.year));
     if (it.cited) facts.push(`cited ${short(it.cited)}×`);
-    facts.push(host(it.url).replace('doi.org', 'DOI'));
+    if (!it.venue) facts.push(host(it.url).replace('doi.org', 'DOI'));
   } else if (kind === 'search') {
     title = it.title.replace('Search GitHub: ', '');
     facts.push('nothing picked yet: the most-starred matches');

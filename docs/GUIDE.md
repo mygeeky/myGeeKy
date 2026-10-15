@@ -50,6 +50,29 @@ happens — myGeeKy has no follow/unfollow code anywhere in the project; see
 
 Two planets on the panel (and two on the phone's rings) for what comes next.
 
+myGeeKy is for researchers who build things **at a computer**. Setup asks which fits you best
+(*I mostly build software* / *I mostly analyse data* / *both*), and it only sets the starting balance of what's
+suggested: your model still learns from what you open. Change it any time (`work_style` in `config.json`).
+
+### What myGeeKy does not teach
+
+**Laboratory work.** myGeeKy covers code, data, statistics, figures and pipelines. It does not give protocols,
+steps, recipes, volumes, conditions or troubleshooting for anything done at a bench, and it **refuses to build
+one**: type a bench technique and it says so, and says what to ask for instead.
+
+Why: a wrong line of R wastes an afternoon; a wrong line at a bench can hurt somebody. myGeeKy has one
+maintainer, can't review bench safety, can't know your lab's rules, training or containment, and can't check
+what anyone actually does. That work belongs to your lab and your institution.
+
+This is enforced in code (`src/mygeeky/safety.py`), not only in words:
+- a protocol is refused if its skill or goal names a laboratory technique, reagent or instrument;
+- protocol repositories, protocol journals and suppliers' method libraries are refused as sources, so none of
+  their pages can become a step, a link or a quiz question — including in a protocol somebody else published;
+- the same rules go into the prompts the maker's tools send.
+
+**Analysing data an experiment produced is welcome**, and is what *From Excel to R*, *statistics for
+experiments* and *images into numbers with Fiji* are for.
+
 **🌱 Grow** has five parts:
 - **📈 Skills**: Rising Skills, the skills growing in your field that you don't show yet.
   - Each one says why it's suggested.
@@ -60,9 +83,13 @@ Two planets on the panel (and two on the phone's rings) for what comes next.
   - **Start one:** pick a ✓ reviewed protocol, or type any skill (and, if you like, what it's for, like *data
     analysis*) and press **🧭 Build**. Without a reviewed one, myGeeKy searches GitHub and papers, and its small
     protocol model sorts what it finds into stages. That one is marked *Auto-built, not reviewed*.
+  - **Reviewed protocols**: 💻 *Git and GitHub for working with others*, *algorithms and data structures*, *your
+    first web app*, *machine learning outside a notebook*, *your first pull request*; 🧬 *R and Python for data
+    analysis*, *GWAS*, *Nextflow*, *single-cell RNA-seq*; 📊 and for anyone starting to analyse their own data:
+    *From Excel to R*, *statistics for experiments*, *figures for papers*, *images into numbers with Fiji*.
   - **The level check:** stages your own repos already show are marked *You know this*; press **Not really** if
-    they aren't. **🎓 Check** opens a short quiz (pass at 75%) or a list of "I can do these". **▶ Start here** marks
-    the first stage you don't know yet.
+    they aren't. **🎓 Check** asks that step's own questions (pass at 75%), or shows a list of "I can do these".
+    **▶ Start here** marks the first stage you don't know yet.
   - Tick a stage with **☑ Done**. The last stage, *Use it in your own work*, ticks itself when one of your repos
     shows the skill.
   - **✏️ Edit** lets you move stages and links up and down (a link past the top or bottom moves to the stage before
@@ -70,6 +97,21 @@ Two planets on the panel (and two on the phone's rings) for what comes next.
   - **📤 Publish** sends your protocol to myGeeKy's maker, as a public issue in the ideas repository that you send
     with your own GitHub account. It holds the stages, the links, and the links you removed. It never holds your
     progress, checks or answers. Published protocols become reviewed ones for everyone and teach the next model.
+- **🏆 Quiz** (its own tab, next to Protocols): every protocol that has questions, in one place, with your best
+  score on each, what you can still try today, and the ones you could start. **🏁 Take the quiz** asks ten
+  questions drawn at random from that protocol's bank — half
+  basics, then applied, then a few real pitfalls. Every question comes from one of that protocol's own sources, and
+  shows you that source, with the sentence that proves the answer, once you've answered.
+  - Only your best score counts, and there's one attempt a day.
+  - **🚩** on a question you think is wrong: it's left out of your next attempts, and you can tell the maker.
+  - **The quiz is drawn in that tab, never in a pop-up.** The same 🏁 button is on each protocol in
+    🧭 Protocols, and **🎓 I know this: check me** on a step asks only that step's questions — both move you
+    to 🏆 Quiz and open it there. One quiz, three ways in, one place it happens.
+  - A dot per question shows where you are; ✕ leaves (an unfinished attempt simply doesn't count).
+  - **🌍 Show my result** is how a score could appear on mygeeky.org — and it is off until you ask. Your name and
+    your scores are two separate choices, you see exactly what would appear, and you agree by writing `accept` on a
+    GitHub issue from your own account (`withdraw` undoes it). A score can follow you into a job application, so low
+    scores are never shown at all: [LEADERBOARD.md](LEADERBOARD.md).
 - **📚 Learn**: hand-picked learning resources, matched to you and your rising skills.
 - **🎉 Wins**: new stars, forks and citations. The first check only sets the starting point.
 - **🤝 Collaborators**: fellow myGeeKy users on Signals whose skills complement yours.
@@ -80,8 +122,30 @@ Two planets on the panel (and two on the phone's rings) for what comes next.
 - 👍 / 👎 teach your model;
 - 🚩 reports one that looks fake (as a GitHub issue, or by email to support@mygeeky.org).
 
-All matching happens on your device. Your votes are kept in `taste.json` and your protocols in `learning_paths.json`
-(both synced to your private data repository if sync is on). How listings are added: [CURATED.md](CURATED.md).
+All matching happens on your device. Your votes are kept in `taste.json`, your protocols in `learning_paths.json`
+and your quiz scores in `quiz.json` (all synced to your private data repository if sync is on). How listings are
+added: [CURATED.md](CURATED.md). How questions are written and checked: [QUIZZES.md](QUIZZES.md).
+
+## How myGeeKy spends your GitHub limit
+
+GitHub's limit belongs to **you**, not to myGeeKy: your own token gets 5,000 requests an hour (60 without
+one, which is why the phone asks you to sign in). So refreshing cheaply is about your app staying quick,
+not about GitHub's servers.
+
+Every answer GitHub gives is kept on your computer with its **ETag**, and the next request carries it. When
+nothing has changed GitHub replies **304 Not Modified**, which costs nothing against your limit and sends no
+data. Nothing goes stale, because myGeeKy still asks every time — GitHub just answers "unchanged" for free.
+In a measured check, re-reading three profiles cost 3 requests the first time and **0** the second.
+
+On top of that:
+- the same question asked twice in one refresh goes out **once**;
+- an account that no longer exists isn't asked about again for hours;
+- **if GitHub or your network is away, the tabs still fill** from what was kept, with an honest "updated N
+  hours ago" instead of an empty page.
+
+The Admin tab shows what was asked and what was free today, with a **Forget** button. Forgetting loses
+nothing: the next refresh asks again. The file is `github_cache.json` in your data folder, capped in size,
+and never synced — it only holds public data GitHub served.
 
 ## Finding people (`mygeeky run`)
 

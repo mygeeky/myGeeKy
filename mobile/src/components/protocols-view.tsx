@@ -9,6 +9,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressa
 import type { Lists } from '../lib/curated';
 import { ITEM_KINDS, type Stage } from '../lib/protocol-shape';
 import * as P from '../lib/protocols';
+import * as Q from '../lib/quiz';
 import type { Doc } from '../lib/skills';
 import * as taste from '../lib/taste';
 import { C } from '../lib/theme';
@@ -91,7 +92,8 @@ function CheckSheet({ stage, onClose, onQuiz, onKnown }: { stage: Stage; onClose
 }
 
 const KIND_COLOR: Record<string, string> = { repo: '#a78bfa', article: '#38bdf8', book: '#f59e0b', course: '#34d399',
-  tutorial: '#34d399', video: '#f472b6', website: '#94a3b8', search: '#94a3b8' };
+  tutorial: '#34d399', video: '#f472b6', guide: '#fb923c', website: '#94a3b8', search: '#94a3b8' };
+const LEVEL_COLOR: Record<string, string> = { easy: '#34d399', medium: '#38bdf8', tricky: '#fb923c' };
 const statusColor = (status: string) => (status === 'done' || status === 'known' ? C.green : status === 'current' ? C.violet : C.muted);
 
 /** The protocol as a road map: numbered circles on a line. The chosen step makes room for itself -- its
@@ -187,9 +189,199 @@ function StepPanel({ step, steps, onSelect, onCheck, onAct, votes }: {
   );
 }
 
-export function ProtocolsView({ lists, docs, repos, profile, token, startWith, onStarted }: {
+
+/** One quiz question, as plain as it can be: which step it belongs to and how hard it is, the question
+ *  (with its code set apart), and four answers as full-width buttons. Once you answer, the one you picked
+ *  turns green or red, the right one is always marked, and the card opens up: why that answer is right,
+ *  the source it was written from with the sentence quoted from it, and 🚩 if the question looks wrong. */
+function QuestionCard({ q, picked, flagged, onPick, onFlag }: { q: Q.Question; picked: number | null; flagged: boolean;
+  onPick: ((i: number) => void) | null; onFlag: (() => void) | null }) {
+  const color = LEVEL_COLOR[q.level] ?? C.violet;
+  const done = picked != null;
+  const ok = picked === q.answer;
+  return (
+    <View>
+      <View style={[s.row, { marginTop: 0, alignItems: 'center' }]}>
+        <Text style={s.muted}>{q.number} of {q.of}</Text>
+        <Text style={[st.chip, { color, backgroundColor: `${color}22` }]}>{q.levelIcon} {q.levelLabel}</Text>
+        <Text style={[s.muted, { flex: 1 }]} numberOfLines={1}>{q.kindIcon} {q.stageTitle}</Text>
+        {onFlag ? (
+          <Pressable onPress={onFlag} hitSlop={8} accessibilityLabel="This question looks wrong">
+            <Text style={s.muted}>{flagged ? '🚩 flagged' : '🚩'}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      <Text style={[s.body, { fontSize: 15, fontWeight: '700', marginTop: 8 }]}>{q.text}</Text>
+      {q.code ? <Text style={st.code}>{q.code}</Text> : null}
+      {q.options.map((o, i) => {
+        const mine = picked === i;
+        const style = [st.answer,
+          done && i === q.answer ? { backgroundColor: 'rgba(52,211,153,0.16)', borderColor: C.green } : null,
+          done && mine && !ok ? { backgroundColor: 'rgba(248,113,113,0.16)', borderColor: '#f87171' } : null];
+        return (
+          <Pressable key={i} onPress={() => (done || !onPick ? null : onPick(i))} style={style} disabled={done}
+                     accessibilityState={{ selected: mine, disabled: done }}>
+            <Text style={s.body}>{String.fromCharCode(65 + i)}.  {o}</Text>
+          </Pressable>
+        );
+      })}
+      {done ? (
+        <View style={{ marginTop: 8 }}>
+          <Text style={[s.title, { fontSize: 14, color: ok ? C.green : '#f87171' }]}>{ok ? '✓ Right' : '✗ Not this one'}</Text>
+          {q.why ? <Text style={s.body}>{q.why}</Text> : null}
+          {q.source.quote ? <Text style={st.quote}>“{q.source.quote}”</Text> : null}
+          {q.resource ? <><Text style={[s.section, { marginBottom: 0 }]}>WHERE THIS COMES FROM</Text>
+            <ResourceCard r={q.resource} vote={0} onVote={null} /></> : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** Your score as a ring is a desktop luxury; on the phone it's a big number, then where you stood per step. */
+function Result({ attempt, bestBefore }: { attempt: Q.Attempt; bestBefore: number }) {
+  return (
+    <View>
+      <Text style={[s.title, { fontSize: 30, color: attempt.passed ? C.green : C.text }]}>{Math.round(attempt.score * 100)}%</Text>
+      <Text style={s.body}>{attempt.right} of {attempt.total} right</Text>
+      {attempt.perfect ? <Text style={[s.body, { color: C.green }]}>🏴 100%: a clean sweep.</Text>
+        : attempt.passed ? <Text style={[s.body, { color: C.green }]}>Passed. Take it again tomorrow to push it higher.</Text>
+        : <Text style={s.muted}>Not yet. The steps below show where to look; the links under each one are a good place to start.</Text>}
+      <Text style={s.muted}>Your best for this protocol: {Math.round(attempt.best * 100)}%
+        {attempt.improved && bestBefore > 0 ? ` (was ${Math.round(bestBefore * 100)}%)` : ''}. Only your best counts.</Text>
+      <View style={[s.row, { marginTop: 8 }]}>
+        {attempt.byLevel.map((lv) => (
+          <Text key={lv.level} style={[st.chip, { color: LEVEL_COLOR[lv.level], backgroundColor: `${LEVEL_COLOR[lv.level]}22` }]}>
+            {lv.icon} {lv.label} {lv.right}/{lv.total}
+          </Text>
+        ))}
+      </View>
+      {attempt.byStage.length > 1 ? (
+        <View style={{ marginTop: 8 }}>
+          <Text style={s.section}>BY STEP</Text>
+          {attempt.byStage.map((g) => (
+            <View key={g.stage} style={s.hiddenRow}>
+              <Text style={[s.body, { flex: 1 }]} numberOfLines={1}>{g.title}</Text>
+              <Text style={[s.body, { color: g.right === g.total ? C.green : C.muted, fontWeight: '700' }]}>
+                {g.right === g.total ? '✓' : `${g.right}/${g.total}`}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** One dot per question: the ones you answered, the one you're on, and the ones still to come. */
+export function QuestionDots({ questions, at, answers, attempt }: {
+  questions: Q.Question[]; at: number; answers: number[]; attempt: Q.Attempt | null }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 8 }}>
+      {questions.map((q, i) => {
+        const done = answers[i] >= 0;
+        const colour = !done ? 'rgba(255,255,255,0.14)'
+          : attempt ? (answers[i] === q.answer ? C.green : '#f87171') : C.violet;
+        return <View key={q.id} style={[st.dotMark, { backgroundColor: colour },
+          i === at && !attempt ? st.dotNow : null]} />;
+      })}
+    </View>
+  );
+}
+
+/** A whole attempt, drawn inside the 🏆 Quiz tab (never a pop-up): which protocol it is for, a dot per
+ *  question, the question itself, and one button to go on. When it's finished the same card shows the
+ *  result. It draws; the tab owns what happens next. */
+export function QuizRunView({ quiz, stage, onClose, onDone }: { quiz: Q.Quiz; stage: string; onClose: () => void;
+  onDone: (attempt: Q.Attempt) => Promise<void> }) {
+  const [at, setAt] = useState(0);
+  const [answers, setAnswers] = useState<number[]>(quiz.questions.map(() => -1));
+  const [attempt, setAttempt] = useState<Q.Attempt | null>(null);
+  const [bestBefore, setBestBefore] = useState(0);
+  const [flagged, setFlagged] = useState<string[]>([]);
+  const q = quiz.questions[at];
+  const last = at === quiz.questions.length - 1;
+  const flagIt = async () => {
+    const on = await Q.flag(q.id, !flagged.includes(q.id));
+    setFlagged(on ? [...flagged, q.id] : flagged.filter((x) => x !== q.id));
+    if (on) {
+      Alert.alert('This question looks wrong', "Thanks: it's left out of your next attempts.\n\nTell the maker too? It opens a "
+        + 'public GitHub issue, sent with your own account when you press Submit. It holds the question, not your answers.', [
+        { text: 'Not now', style: 'cancel' }, { text: 'Tell the maker', onPress: () => open(Q.reportUrl(q)) }]);
+    }
+  };
+  const forward = async () => {
+    if (!last) { setAt(at + 1); return; }
+    const saved = await Q.load();
+    const before = saved.best[quiz.protocol]?.score ?? 0;
+    setBestBefore(before);
+    // a fresh copy: the questions carry the answers, and a prop is never changed in place
+    const marked = Q.mark({ ...quiz, questions: quiz.questions.map((x) => ({ ...x })) }, answers, before);
+    setAttempt(marked);
+    await onDone(marked);
+  };
+  return (
+    <GCard>
+      <View style={s.head}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.title}>🏆 {quiz.title}</Text>
+          <Text style={s.muted}>{attempt ? 'Your score' : `Question ${q.number} of ${q.of}`}
+            {q.stageTitle && !attempt ? ` · ${q.stageTitle}` : ''}</Text>
+        </View>
+        <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Leave this quiz">
+          <Text style={{ color: C.muted, fontSize: 18 }}>×</Text>
+        </Pressable>
+      </View>
+      <QuestionDots questions={quiz.questions} at={at} answers={answers} attempt={attempt} />
+      {attempt ? (
+        <View>
+          <Result attempt={attempt} bestBefore={bestBefore} />
+          <Text style={s.muted}>{stage ? (attempt.passed ? 'This step is marked as known.' : '')
+            : 'One attempt a day, so a score means something. Only your best counts.'}</Text>
+          <View style={s.row}><Button accent label="← Back to the quizzes" onPress={onClose} /></View>
+        </View>
+      ) : (
+        <View>
+          <QuestionCard q={q} picked={answers[at] < 0 ? null : answers[at]} flagged={flagged.includes(q.id)}
+                        onPick={(i) => setAnswers(answers.map((x, k) => (k === at ? i : x)))} onFlag={flagIt} />
+          <View style={s.row}>
+            <Button accent label={last ? 'See your score' : 'Next question →'} disabled={answers[at] < 0}
+                    onPress={forward} />
+            <Text style={s.muted}>{quiz.questions.length - at} to go</Text>
+          </View>
+        </View>
+      )}
+    </GCard>
+  );
+}
+
+/** The quiz line on a protocol: how many questions it has, your best score, and the button to take it. */
+function QuizRow({ counts, best, canTry, why, onTake, onShare }: { counts: Record<string, number>; best: Q.Best | null;
+  canTry: boolean; why: string; onTake: () => void; onShare: () => void }) {
+  const total = counts.total ?? 0;
+  const mix = Q.LEVELS.filter((lv) => counts[lv]).map((lv) => `${counts[lv]} ${lv}`).join(' · ');
+  return (
+    <View style={st.quizRow}>
+      <View style={[s.head, { alignItems: 'center' }]}>
+        <Text style={[s.title, { fontSize: 13.5, color: best ? (best.score >= 1 ? C.green : C.text) : C.text }]}>
+          {best ? `🏆 Your best: ${best.score >= 1 ? '🏴 100%' : `${Math.round(best.score * 100)}%`}` : '🏆 Quiz'}
+        </Text>
+        <Text style={s.muted}>{total ? `${total} questions${mix ? ` (${mix})` : ''}` : 'no questions for this one yet'}</Text>
+      </View>
+      <View style={[s.row, { marginTop: 4 }]}>
+        {total && canTry ? <Button accent={!best} label={`🏁 Take the quiz (${Math.min(Q.PER_ATTEMPT, total)} questions)`}
+                                   onPress={onTake} /> : null}
+        {total && !canTry ? <Text style={s.muted}>{why}</Text> : null}
+        {best ? <Button label="🌍 Show my result" onPress={onShare} /> : null}
+      </View>
+    </View>
+  );
+}
+
+export function ProtocolsView({ lists, docs, repos, profile, token, startWith, onStarted, onQuiz }: {
   lists: Lists | null; docs: Doc[]; repos: MyRepo[]; profile: string; token: string | null;
-  startWith: { skill: string; goal: string } | null; onStarted: () => void }) {
+  startWith: { skill: string; goal: string } | null; onStarted: () => void;
+  onQuiz: (pid: string, stage: string) => void }) {
   const [state, setState] = useState<P.State>({});
   const [votes, setVotes] = useState<Record<string, taste.Vote>>({});
   const [skill, setSkill] = useState('');
@@ -201,11 +393,23 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
   const [note, setNote] = useState('');
   const [openId, setOpenId] = useState('');                 // one protocol open; the others fold to one line
   const [chosen, setChosen] = useState<Record<string, string>>({});
+  const [quizInfo, setQuizInfo] = useState<Record<string, { counts: Record<string, number>; best: Q.Best | null;
+    canTry: boolean; why: string }>>({});
 
   const reload = useCallback(async () => {
     if (!lists) return;
-    setState(await P.load(lists));
+    const loaded = await P.load(lists);
+    setState(loaded);
     setVotes(await taste.load());
+    const saved = await Q.load();
+    const info: Record<string, { counts: Record<string, number>; best: Q.Best | null; canTry: boolean; why: string }> = {};
+    for (const e of Object.values(loaded)) {
+      const pid = e.protocol.id;
+      const can = await Q.canTry(pid);
+      info[pid] = { counts: await Q.counts(pid, e.protocol.based_on), best: saved.best[pid] ?? null,
+        canTry: can.ok, why: can.why };
+    }
+    setQuizInfo(info);
   }, [lists]);
   useEffect(() => { Promise.resolve().then(reload); }, [reload]);
 
@@ -239,6 +443,16 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
   const act = async (fn: () => Promise<unknown>) => { await fn(); await reload(); };
   const shown = views.some((v) => v.id === openId) || openId === '-' ? openId
     : (views.find((v) => !v.finished) ?? views[0])?.id ?? '';
+
+  // the quiz itself lives in the 🏆 Quiz tab, so pressing 🏁 here simply moves there
+  const takeQuiz = (pid: string, stage = '') => onQuiz(pid, stage);
+
+  const shareScores = () => {
+    Alert.alert('Show my result on mygeeky.org',
+      'Nothing about you is online. A score can follow you into a job application, so this is yours to choose — and you '
+      + 'agree to it from your own GitHub account, which is what makes it provable.\n\nThe choice lives in myGeeKy on your '
+      + 'computer, where it can show you exactly what would appear before anything is sent.', [{ text: 'OK' }]);
+  };
 
   const publish = (pid: string, title: string) => {
     const e = state[pid];
@@ -320,11 +534,20 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
               <Button label={ed ? '✅ Done editing' : '✏️ Edit'} onPress={() => setEditing(ed ? '' : v.id)} />
               <Button label="📤 Publish" onPress={() => publish(v.id, v.title)} />
             </View>
+            {!ed && quizInfo[v.id] ? (
+              <QuizRow counts={quizInfo[v.id].counts} best={quizInfo[v.id].best} canTry={quizInfo[v.id].canTry}
+                       why={quizInfo[v.id].why} onTake={() => takeQuiz(v.id)} onShare={shareScores} />
+            ) : null}
             {!ed && step ? (
               <View>
                 <StepBar steps={steps} selected={step.id} onSelect={(id) => setChosen({ ...chosen, [v.id]: id })} />
                 <StepPanel step={step} steps={steps} votes={votes} onSelect={(id) => setChosen({ ...chosen, [v.id]: id })}
-                           onCheck={() => setCheck({ pid: v.id, stage: step.stage })}
+                           onCheck={async () => {
+                             const saved = await Q.load();
+                             const drawn = await Q.draw(v, Q.PER_ATTEMPT, saved.flags, step.id);
+                             if (drawn.questions.length) onQuiz(v.id, step.id);   // opens in the 🏆 Quiz tab
+                             else setCheck({ pid: v.id, stage: step.stage });
+                           }}
                            onAct={(what) => act(() => (what === 'tick' || what === 'untick' ? P.tick(lists, v.id, step.id, what === 'tick')
                              : P.markKnown(lists, v.id, step.id, what === 'notReally' ? 'no' : null)))} />
               </View>
@@ -440,4 +663,13 @@ const st = StyleSheet.create({
   resLabel: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.7 },
   resBtn: { alignSelf: 'flex-start', borderRadius: 9, paddingHorizontal: 12, paddingVertical: 7, marginTop: 8 },
   resBtnText: { color: C.text, fontSize: 13, fontWeight: '700' },
+  answer: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'transparent', borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 9, marginTop: 6 },
+  code: { color: C.text, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 12.5,
+    backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 8, padding: 9, marginTop: 8 },
+  quote: { color: C.muted, fontSize: 12.5, fontStyle: 'italic', backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 8, padding: 8, marginTop: 8 },
+  quizRow: { backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 9, marginTop: 8 },
+  dotMark: { width: 9, height: 9, borderRadius: 5 },
+  dotNow: { width: 13, height: 13, borderRadius: 7, borderWidth: 2, borderColor: C.text },
 });

@@ -130,6 +130,19 @@
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.8,.2,1); }
   .reveal.in { opacity: 1; transform: none; }
 
+  .who { color: var(--muted); font-size: 14.5px; max-width: 760px; margin: 18px auto 0; line-height: 1.7; }
+  .who b { color: var(--text); font-weight: 700; white-space: nowrap; }
+  .who .scope { display: inline-block; margin-top: 8px; font-size: 13.5px; opacity: .85; }
+  /* "is myGeeKy for me?": one card per kind of work */
+  .forwho { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); margin-top: 26px; }
+  .forwho .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; }
+  .forwho .card:hover { border-color: rgba(255,255,255,.22); background: var(--card-hi); }
+  .forwho .ico { font-size: 28px; }
+  .forwho h3 { margin: 8px 0 6px; font-size: 17px; }
+  .forwho p { color: var(--muted); font-size: 14px; line-height: 1.65; margin: 0 0 10px; }
+  .forwho .first { font-size: 13px; color: var(--text); }
+  .forwho .first b { color: var(--cyan); font-weight: 700; }
+  @media (max-width: 860px) { .forwho { grid-template-columns: 1fr; } .who b { white-space: normal; } }
   /* bento grid of what it does */
   .bento { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
   .tile { position: relative; overflow: hidden; background: var(--card); border: 1px solid var(--line);
@@ -321,6 +334,11 @@
       <a class="btn" href="https://github.com/mygeeky/myGeeKy">★ GitHub</a>
     </div>
     <div class="pip mono"><span class="dollar">$</span><code id="pip">pip install mygeeky</code><button type="button" id="copy">Copy</button></div>
+    <p class="who">For researchers who build things at a computer:
+      <b>💻 computer scientists and developers</b> · <b>🧬 bioinformaticians and data scientists</b> ·
+      <b>📊 experimental researchers analysing their own data</b><br>
+      <span class="scope">Code, data, statistics, figures and pipelines — never laboratory protocols or bench
+      instructions.</span></p>
     <p class="note">Free and open source (MIT) · v{{VERSION}} · Windows installer · <a href="#start">one line on Linux and macOS</a> · or pip anywhere</p>
     <p class="note signpath">Windows releases are currently unsigned. We have applied to the <a href="https://signpath.org">SignPath Foundation</a> for free open-source code signing, and future releases will be signed once approved. See our <a href="#code-signing">code signing policy</a>.</p>
     <div class="hero-shot" id="heroShot"><picture>
@@ -349,6 +367,40 @@
         <li>🤝 Find friends</li><li>🛠️ Collaborate</li><li>🔕 Away from noise</li>
       </ul>
     </div>
+  </div>
+</section>
+
+<section id="forwho">
+  <div class="wrap">
+    <h2 class="center">Is myGeeKy <span class="g">for me?</span></h2>
+    <p class="sub center">Three kinds of work, one app. You say which fits you best when you set it up, and change it
+      whenever you like — it only sets the starting balance, and your model learns from what you actually open.</p>
+    <div class="forwho">
+      <div class="card reveal"><div class="ico">💻</div>
+        <h3>You mostly write code</h3>
+        <p>Repos that welcome your pull requests, people building what you build, the tools rising in your corner of
+          software, and interviews, internships and hackathons under 🎯 Chances.</p>
+        <p class="first">Start with: <b>Git and GitHub for working with others</b></p>
+      </div>
+      <div class="card reveal"><div class="ico">📊</div>
+        <h3>You analyse your own experiments</h3>
+        <p>No repos needed: it reads your CV and your papers. The gentlest protocols start where you are — a
+          spreadsheet of results — and end with a figure and a test you can defend. myGeeKy covers the analysis,
+          never the bench work itself.</p>
+        <p class="first">Start with: <b>From Excel to R, with your own data</b></p>
+      </div>
+      <div class="card reveal"><div class="ico">🧬</div>
+        <h3>You analyse data</h3>
+        <p>Papers gaining citations fastest with their code, pipelines and methods rising in your field, and the
+          postdocs, fellowships and conferences that fit your topics.</p>
+        <p class="first">Start with: <b>R for data analysis</b></p>
+      </div>
+    </div>
+    <p class="sub center">New to analysis? The gentlest protocols are written for exactly that:
+      <b>From Excel to R, with your own data</b>, <b>statistics for experiments: which test, and why</b>,
+      <b>figures your reviewers won't ask you to redo</b>, and <b>images into numbers, with Fiji</b>.<br>
+      <b>What myGeeKy doesn't do:</b> laboratory protocols, bench steps, recipes or troubleshooting. It can't
+      review bench safety or know your lab's rules, so it stays out of it — and refuses to build one.</p>
   </div>
 </section>
 
@@ -422,13 +474,40 @@
         into steps you can follow.</p>
       <ul class="ticks">
         <li>A short check skips what you already know: your own repos as evidence, a quiz, or "I can do these"</li>
-        <li>Each step comes with repos (with stars and language), papers (year and citations) and free books</li>
-        <li>Five reviewed protocols to start: R and Python for data analysis, GWAS, Nextflow, single-cell RNA-seq</li>
-        <li>Any other skill: built from GitHub and papers by a small model, on your device. Change it, then share it</li>
+        <li>Each step comes with repos (stars, language), papers (year, citations), free books and 📘 guides from
+          a project's own documentation</li>
+        <li><b>14 reviewed protocols</b>: Git, algorithms, a first web app, machine learning, a first pull
+          request · R, Python, GWAS, Nextflow, single-cell RNA-seq · Excel to R, statistics for experiments,
+          figures for papers, images into numbers with Fiji</li>
+        <li>Any other skill: built from GitHub, papers and protocol journals by a small model, on your device.
+          Change it, then share it</li>
         <li>Wins (new stars, forks, citations) and collaborators whose skills complement yours</li>
       </ul>
     </div>
     <div class="pic reveal"><img src="img/grow-protocols.png" alt="A protocol shown as a road map of steps" loading="lazy"></div>
+  </div>
+</section>
+
+<section id="quizzes">
+  <div class="wrap feature flip">
+    <div class="copy reveal">
+      <div class="eyebrow">🏆 Quizzes <span class="tag-new">NEW</span></div>
+      <h2>Ten questions, and <span class="g">not one of them invented</span></h2>
+      <p class="sub">Every protocol has a question bank. An attempt draws ten at random: half basics, then applied,
+        and a few of the mistakes people really make.</p>
+      <ul class="ticks">
+        <li>Each question was written from one real source and quotes the sentence that proves the answer — and shows
+          you that source once you've answered</li>
+        <li>Code questions are run, and sums (dilutions, master mixes, ΔΔCt) recomputed, before a question ships</li>
+        <li>Only your best score counts, one attempt a day, and 🚩 drops a question you think is wrong</li>
+        <li><b>Nothing about you goes online unless you ask.</b> Your name and your scores are two separate choices,
+          and you agree to them by writing <code>accept</code> on a GitHub issue from your own account — that's the
+          proof, and <code>withdraw</code> undoes it</li>
+        <li>A score can follow you into a job application, so low scores are never shown anywhere, and the top three
+          of the month and the first people to finish a protocol are all the page ever lists</li>
+      </ul>
+    </div>
+    <div class="pic reveal"><img src="img/quiz-question.png" alt="A quiz question, answered: why that answer is right, and the source it came from" loading="lazy"></div>
   </div>
 </section>
 
@@ -437,8 +516,8 @@
     <div class="copy reveal">
       <div class="eyebrow">🎯 Chances <span class="tag-new">NEW</span></div>
       <h2>Verified jobs, funding and conferences</h2>
-      <p class="sub">PhD places, postdocs, fellowships, travel grants and meetings in your field, each one checked by
-        hand before it's listed.</p>
+      <p class="sub">PhD places, postdocs, fellowships, travel grants and meetings in your field — and internships,
+        hackathons and software jobs — each one checked by hand before it's listed.</p>
       <ul class="ticks">
         <li>Matched to you on your own device: nobody learns what you looked at</li>
         <li>Each one says who can apply and when it closes, and disappears after its deadline</li>
@@ -666,7 +745,8 @@
 
 <footer>
   <div class="wrap">
-    <span>© myGeeKy · MIT License · made by a bioinformatician who doesn't have Facebook</span>
+    <span>© myGeeKy · MIT License · made by a bioinformatician who doesn't have Facebook, for everyone who
+      builds things at a computer</span>
     <div class="links">
       <a href="https://github.com/mygeeky/myGeeKy">GitHub</a>
       <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md">Guide</a>
@@ -741,6 +821,7 @@
     ["signals", "Signals", "Private thank-yous from fellow users; 🤝 only when mutual (example people)."],
     ["grow-skills", "Grow", "Rising skills in your field, and what's missing from you."],
     ["grow-protocols", "Protocols", "A road map for any skill; the step you're on makes room for itself."],
+    ["grow-quiz", "Quiz", "Every protocol's quiz in one place, with your best scores."],
     ["chances-jobs", "Chances", "Verified jobs, funding and conferences, matched to you."],
     ["model", "Model", "What myGeeKy knows about you, drawn as a living map."],
   ];
@@ -771,7 +852,8 @@
 
   // the interest map, drawn live
   const cv = document.getElementById("map"), c = cv.getContext("2d");
-  const field = ["genomics", "population genetics", "GWAS", "plant biology", "bioinformatics", "phylogenetics"];
+  const field = ["genomics", "population genetics", "GWAS", "plant biology", "bioinformatics", "phylogenetics",
+                 "molecular biology", "cell biology", "systems programming", "machine learning"];
   const lately = [["single cell", 1], ["fine mapping", .8], ["snakemake", .65], ["spatial omics", .55], ["rust", .4]];
   const explore = ["climate", "education", "accessibility"];
   const nodes = [

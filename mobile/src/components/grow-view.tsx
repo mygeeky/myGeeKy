@@ -15,14 +15,18 @@ import { C } from '../lib/theme';
 import { recent, refreshWins, type WinsState, loadWins } from '../lib/wins';
 import { Button, GCard, Hidden, s, Thumbs } from './growth-parts';
 import { ProtocolsView } from './protocols-view';
+import { QuizView } from './quiz-view';
 import { Empty, open, Segments } from './ui';
 
-type Mode = 'skills' | 'paths' | 'learn' | 'wins' | 'collab';
-const MODES: [Mode, string][] = [['skills', 'Skills'], ['paths', 'Protocols'], ['learn', 'Learn'], ['wins', 'Wins'], ['collab', 'People']];
+type Mode = 'skills' | 'paths' | 'quiz' | 'learn' | 'wins' | 'collab';
+const MODES: [Mode, string][] = [['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'],
+  ['wins', 'Wins'], ['collab', 'People']];
 const ABOUT: Record<Mode, string> = {
   skills: "Skills growing in your field that you don't show yet. 👍 / 👎 teach it what to suggest; 🧭 turns one into steps.",
   paths: 'A skill as stages, e.g. R basics → statistics with R → data analysis → a real project. A short check skips what you know. '
     + 'Reviewed ones come from the maker; for any other skill myGeeKy builds one from GitHub and papers. Change it, then 📤 publish it.',
+  quiz: "Ten questions from a protocol's own bank: half basics, then applied, then a few real pitfalls. Each one shows the "
+    + 'source it came from once you answer. Only your best counts, one attempt a day, and it stays on this phone.',
   learn: "Free courses, books, tutorials and repos picked by myGeeKy's maker, matched to you and your rising skills.",
   wins: 'New stars and forks on your repos, and new citations of your papers. Checked once a day.',
   collab: "Fellow myGeeKy users whose skills complement yours. 🤝 is sealed: they only see it if they pick you too.",
@@ -67,6 +71,8 @@ export function GrowView() {
   const { settings, token, profile } = useApp();
   const me = settings?.username ?? '';
   const [mode, setMode] = useState<Mode>('skills');
+  // 🏁 pressed on a protocol: which quiz the 🏆 Quiz tab opens when it appears
+  const [openQuiz, setOpenQuiz] = useState<{ pid: string; stage: string } | null>(null);
   const [lists, setLists] = useState<Lists | null>(null);
   const [docs, setDocs] = useState<Doc[] | null>(null);
   const [wins, setWins] = useState<WinsState | null>(null);
@@ -174,7 +180,13 @@ export function GrowView() {
 
       {mode === 'paths' ? (
         <ProtocolsView lists={lists} docs={docs ?? []} repos={wins?.myRepos ?? []} profile={mine} token={token}
-                       startWith={startWith} onStarted={onStarted} />
+                       startWith={startWith} onStarted={onStarted}
+                       onQuiz={(pid, stage) => { setOpenQuiz({ pid, stage }); setMode('quiz'); }} />
+      ) : null}
+
+      {mode === 'quiz' ? (
+        <QuizView lists={lists} onStart={(skill) => onPath(skill)} open={openQuiz}
+                  onOpened={() => setOpenQuiz(null)} />
       ) : null}
 
       {mode === 'learn' ? (

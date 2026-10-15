@@ -110,6 +110,11 @@ protocol, the app builds one itself from GitHub and papers.
 ```
 
 - **`skill`** is a name from the skills dictionary. Any alias finds it (`rstats` finds `R`).
+- **No laboratory work** (`src/mygeeky/safety.py`). A protocol whose skill, goal, title or summary names a bench
+  technique is refused when the file is read, and so is any link from a protocol repository, protocol journal or
+  supplier method library — in the curated file, in a protocol a user published, and in one built on a device.
+  `tools/protocols/merge.py` removes such a protocol from the file and says so. Analysis of data an experiment
+  produced is welcome; the bench steps that produced it are not myGeeKy's to give.
 - **`role`** is one of `basics`, `deeper`, `applied`, `project` or `use`.
   - The `use` stage ticks itself when one of the user's repos shows the skill.
   - The other roles decide how the user's own repos count as evidence.
@@ -119,7 +124,9 @@ protocol, the app builds one itself from GitHub and papers.
   - **`quiz`:** multiple choice, where `answer` is the position of the right option (0 = the first). Passing at 75%
     marks the stage as known.
   - **`can`:** "I can do these" statements, used when there's no quiz.
-- **`kind`** for a link is one of `repo`, `article`, `website`, `course`, `book`, `tutorial` or `video`.
+- **`kind`** for a link is one of `repo`, `article`, `website`, `course`, `book`, `tutorial`, `video` or
+  `guide` (📘 a project's or tool's own documentation). An `article` may also carry `venue` (the journal),
+  which its card shows.
 - **A `project` stage with no links** is filled with real repos from the user's own field.
 
 ### Protocols users publish
@@ -139,7 +146,20 @@ python -m mygeeky.protocols harvest      # -> tools/protocol_model/published.jso
 To make a published protocol reviewed:
 1. Check it.
 2. Copy its JSON into `protocols` here.
-3. Add a quiz if you like.
+3. Give it a question bank with the admin tab's **📝 Write questions** ([QUIZZES.md](QUIZZES.md)).
+
+**Writing reviewed protocols by hand** (how the current 19 were made):
+
+```
+python tools/protocols/draft.py          # optional: drafts from the app's own builder, to start from
+# then write them properly in tools/protocols/reviewed.json
+python tools/protocols/merge.py --check  # every link must open; dead ones are named
+python tools/protocols/merge.py          # writes curated.json and the phone's copy
+```
+
+`merge.py` keeps a link that only *robots* are refused (403, or a timeout) and drops one that is really gone (404).
+The auto-built drafts were not good enough for the lab and computer-science protocols, which is why those were
+written by hand: "reviewed" means the maker read it.
 
 Every harvested protocol also becomes training data for the next model (see `tools/protocol_model/README.md`).
 

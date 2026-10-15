@@ -42,6 +42,10 @@ import mygeeky.collab  # noqa: F401
 import mygeeky.protocols  # noqa: F401
 import mygeeky.protomodel  # noqa: F401
 import mygeeky.scout  # noqa: F401
+import mygeeky.ghcache  # noqa: F401
+import mygeeky.quiz  # noqa: F401
+import mygeeky.quizwriter  # noqa: F401
+import mygeeky.leaderboard  # noqa: F401
 
 REAL_ROOTS = (Path(config_module.CONFIG_DIR), Path(config_module.DATA_DIR))
 
@@ -53,6 +57,16 @@ def _under_real_root(value: Path) -> tuple[Path, Path] | None:
         except ValueError:
             continue
     return None
+
+
+@pytest.fixture(autouse=True)
+def _own_github_cache(tmp_path, monkeypatch):
+    """Each test gets its own GitHub cache: one test's remembered answers must never serve another's."""
+    import mygeeky.ghcache as ghcache
+    monkeypatch.setattr(ghcache, "CACHE_FILE", tmp_path / "github_cache.json")
+    ghcache.reset(tmp_path / "github_cache.json")
+    yield
+    ghcache.reset(tmp_path / "github_cache.json")
 
 
 @pytest.fixture(autouse=True)
@@ -116,3 +130,13 @@ def _no_real_deepseek_key(monkeypatch):
     passes a fake one itself, and DeepSeek is always faked."""
     import mygeeky.scout as scout
     monkeypatch.setattr(scout, "get_key", lambda: None)
+
+
+@pytest.fixture(scope="session")
+def qapp_offscreen():
+    """A Qt application with no screen, for widget tests (skipped when PySide6 isn't installed)."""
+    import os
+    pytest.importorskip("PySide6", reason="PySide6 (the 'gui' extra) is not installed")
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+    return QApplication.instance() or QApplication([])

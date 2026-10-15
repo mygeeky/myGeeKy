@@ -1,0 +1,106 @@
+name: Quiz leaderboard
+
+# Quiz scores only appear on mygeeky.org for people who asked for it, from their own GitHub
+# account (src/mygeeky/leaderboard.py says how, and docs/LEADERBOARD.md explains it in words).
+#
+# This job reads the 🏆 issues in the public ideas repo and writes website/data/leaderboard.json:
+#   - an `accept` only counts when the account that wrote it is the one being shown;
+#   - a later `withdraw` from that same account removes them, and the file is REWRITTEN, so no
+#     old copy of someone's score stays in this branch's history;
+#   - the maker's own account is left out (that is where the tests happen);
+#   - a score below 80% is never written, agreed or not.
+#
+# It does not publish by itself: it opens (or updates) a pull request, so the maker approves
+# every entry before it reaches the website. With DEEPSEEK_API_KEY set as a repository secret
+# it also adds a "does this look like a real researcher" note to that pull request, which is
+# the maker's own check, never a gate on anyone.
+
+on:
+  schedule:
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+    inputs:
+      rewrite:
+        description: "Rewrite the board branch from scratch (use after a withdrawal)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: leaderboard
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Read who asked for the board, and who took it back
+        env:
+          PYTHONPATH: src
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install --quiet requests platformdirs
+          mkdir -p website/data
+          python -m mygeeky.leaderboard harvest website/data/leaderboard.json | tee board.log
+
+      - name: Check the file would be safe to publish
+        env:
+          PYTHONPATH: src
+        run: |
+          python - <<'PY'
+          import json, sys
+          sys.path.insert(0, "src")
+          from mygeeky import leaderboard
+          board = json.load(open("website/data/leaderboard.json", encoding="utf-8"))
+          problems = leaderboard.problems(board)
+          for p in problems:
+              print(f"::error::{p}")
+          print(f"{len(board.get('top') or [])} on this month's board, "
+                f"{len(board.get('protocols') or {})} protocols with people")
+          sys.exit(1 if problems else 0)
+          PY
+
+      - name: Add a "does this look like a real account" note for the maker
+        env:
+          PYTHONPATH: src
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python - <<'PY' | tee -a board.log
+          import json, os, sys
+          sys.path.insert(0, "src")
+          from mygeeky import leaderboard
+          from mygeeky.github_client import GitHubClient
+          board = json.load(open("website/data/leaderboard.json", encoding="utf-8"))
+          logins = sorted({w["login"] for w in (board.get("top") or []) + (board.get("hall") or [])})
+          if not logins:
+              print("\nNobody on the board yet.")
+              raise SystemExit(0)
+          client = GitHubClient(os.environ.get("GITHUB_TOKEN") or None)
+          key = os.environ.get("DEEPSEEK_API_KEY") or None
+          print("\n### Does the account look real? (the maker decides; this is only a note)\n")
+          for login in logins:
+              said = leaderboard.looks_real(client, login, key)
+              mark = "✅" if said["looks_real"] else "⚠️"
+              print(f"- {mark} **{login}** — {said['why']}")
+          PY
+
+      - name: Open a pull request for the maker to approve
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: leaderboard-update
+          base: main
+          title: "🏆 Quiz leaderboard: entries to approve"
+          commit-message: "Quiz leaderboard: entries people asked for"
+          body-path: board.log
+          labels: leaderboard
+          delete-branch: true

@@ -12,6 +12,14 @@
 </p>
 
 <p align="center">
+  <b>For researchers who build things at a computer.</b><br>
+  <sub>💻 computer scientists and developers · 🧬 bioinformaticians and data scientists ·
+  📊 experimental researchers analysing their own data</sub><br>
+  <sub><em>Code, data, statistics, figures and pipelines. Never laboratory protocols or bench instructions:
+  <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#what-mygeeky-does-not-teach">why</a>.</em></sub>
+</p>
+
+<p align="center">
   <a href="https://github.com/mygeeky/myGeeKy/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/%E2%AC%87%20Download%20for%20Windows-MyGeeKySetup.exe-ff6fd8?style=for-the-badge&logo=windows&logoColor=white" height="44"></a>
   &nbsp;
   <a href="https://pypi.org/project/mygeeky/"><img alt="pip install mygeeky" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-pip%20install%20mygeeky-7a5cff?style=for-the-badge&logo=python&logoColor=white" height="44"></a>
@@ -92,6 +100,15 @@ who fit say "I'm in", privately, with the skills that matched. A thin "Your fiel
 shows everyone on Signals and every call, closer when they're closer to your work.
 
 🏅 **Rewards you for using it.** Badges under your name (Regular, Clicker, AI Fan, Analyst, Model Hunter, Networker…, in bronze, silver and gold), next to your GitHub achievements.
+
+🧭 **Gives you a road map.** Any skill becomes ordered steps, with the repos, papers, books and guides for each
+one -- and a quiz that skips what you already know. Reviewed protocols cover software and analysis:
+*Git and GitHub*, *algorithms*, *your first web app*, *machine learning*, *a first pull request*, *R* and
+*Python for data analysis*, *GWAS*, *Nextflow*, *single-cell RNA-seq*, *images into numbers with Fiji*,
+*from Excel to R*, *statistics for experiments*, *figures for papers*.
+
+🏆 **Lets you prove it, if you want to.** Each protocol has a question bank; your best score is yours, on your
+own device. Nothing about you is shown anywhere unless you ask for it, from your own GitHub account.
 
 🧠 **Learns what you're into.** Every click, follow, star and fork tunes it, and 🔭 20% of every list stays open for new territory.
 
@@ -236,6 +253,14 @@ and 👎 teach your model what to show you more and less of, and never leave you
 </tr>
 </table>
 
+<table>
+<tr>
+<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-quiz.png" width="300" alt="The Quiz tab"><br><b>🏆 The Quiz tab</b><br><sub>Every protocol's quiz in one place, with your best score on each</sub></td>
+<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-question.png" width="380" alt="A quiz question, answered"><br><b>🏆 A question, answered</b><br><sub>Why that answer is right, and the source it was written from, with the sentence quoted from it</sub></td>
+<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-score.png" width="380" alt="A quiz score"><br><b>🏆 Your score</b><br><sub>How each level and each step went. Only your best counts, and it stays on your device unless you ask</sub></td>
+</tr>
+</table>
+
 **🌱 Grow**
 - **📈 Rising Skills.** Skills, tools and methods growing in your field (in the rising papers, trending repos and
   models, and the people myGeeKy follows for you) that your profile, CV, papers and repos don't show yet. Each one says
@@ -244,11 +269,29 @@ and 👎 teach your model what to show you more and less of, and never leave you
   analysis → a real project to rerun → your own work.
   - **A level check skips what you already know.** Your own repos are the evidence (*"6 of your repos use R"*,
     which you can overrule); there's also a short quiz, or "I can do these".
-  - **Reviewed protocols** are written by myGeeKy's maker.
+  - **Reviewed protocols** are written by myGeeKy's maker:
+    💻 *Git and GitHub for working with others*, *algorithms and data structures*, *your first web app*,
+    *machine learning outside a notebook*, *your first pull request*;
+    🧬 *R and Python for data analysis*, *GWAS*, *Nextflow*, *single-cell RNA-seq*;
+    📊 and for anyone starting to analyse their own data: *From Excel to R*, *statistics for experiments:
+    which test, and why*, *figures your reviewers won't ask you to redo*, *images into numbers with Fiji*.
+  - **Never laboratory work.** myGeeKy doesn't give bench protocols, steps, recipes or troubleshooting, and
+    refuses to build one: a wrong line of R wastes an afternoon, a wrong line at a bench can hurt somebody, and
+    myGeeKy can't review bench safety or know your local rules. Analysing what an experiment produced is
+    welcome — that's what *From Excel to R* is for.
   - **For any other skill, myGeeKy builds one.** It searches GitHub and papers, and a small model trained for
     this (about 400 KB, running on your device) sorts what it finds into stages.
   - **Change it as you like** (reorder, rename, add and remove), then **📤 publish it**: it goes to the maker as a
     public GitHub issue you send yourself, so it can become a reviewed protocol for everyone and teach the next model.
+- **🏆 Quiz** (its own tab in 🌱 Grow). **258 questions across all 14 protocols**, ten drawn at random per attempt: half basics, then applied, and
+  a few real pitfalls (*"a band in the no-template control: what's the most likely cause?"*).
+  - **Every question comes from a source**, with the sentence quoted from it, and shows that source once you answer.
+    Code questions are run, and sums (dilutions, master mixes, ΔΔCt) are recomputed, before a question is ever shipped.
+  - **Only your best score counts**, one attempt a day, and 🚩 drops a question you think is wrong.
+  - **Nothing goes online unless you ask.** If you want your score on
+    [mygeeky.org](https://mygeeky.org), you say so in two separate choices (your name, and your scores) and then
+    write `accept` on a GitHub issue **from your own account** -- that's the proof, and `withdraw` undoes it. A score
+    can follow you into a job application, so it's yours to decide; low scores are never shown at all.
 - **📚 Learn.** Free courses, books, tutorials and repos picked by hand, matched to you and your rising skills.
 - **🎉 Wins.** New ⭐ stars and 🍴 forks on your repos, and new 📚 citations of your papers, with the newest paper citing
   you. Checked once a day.
@@ -256,7 +299,8 @@ and 👎 teach your model what to show you more and less of, and never leave you
   what they don't. Asking is the sealed 🤝 signal, which they only ever see if they pick you too.
 
 **🎯 Chances**
-- **Verified jobs.** PhD places, postdocs, master's places and research jobs, each one checked by hand to be real.
+- **Verified jobs.** PhD places, postdocs, master's places, research jobs and internships, each one checked by hand
+  to be real -- for labs and for software teams.
 - **Funding and conferences.** Grants, fellowships, travel grants and conferences, with who can apply and what
   students get.
 - **Each one disappears after its deadline.** A 🚩 tells the maker a listing looks fake.
@@ -372,10 +416,11 @@ Everything else is in **[docs/GUIDE.md](https://github.com/mygeeky/myGeeKy/blob/
 | [Your profile](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#your-profile-cv--github--orcidopenalex--google-scholar) | [Signals, step by step](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#join-signals-step-by-step) | [Sync across computers](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#use-it-from-any-computer-mygeeky-sync) |
 | [Updating](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#updating) | [Token expiry](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#token-expiry) | [Troubleshooting](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#if-something-goes-wrong-on-windows) |
 | [The panel](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#live-glass-panel-optional-gui) | [All settings](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#all-parameters-adjustable-or-leave-at-the-defaults) | [Scripts & AI agents](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#using-mygeeky-from-an-ai-agent--script) |
+| [Grow and Chances](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#-grow-and--chances) | [How quizzes are written](https://github.com/mygeeky/myGeeKy/blob/main/docs/QUIZZES.md) | [Scores on the website](https://github.com/mygeeky/myGeeKy/blob/main/docs/LEADERBOARD.md) |
 
 ## License
 
-MIT. Made with ❤️ for researchers who code.
+MIT. Made with ❤️ for researchers who build things at a computer.
 
 <p align="center">
   <a href="https://github.com/mygeeky/myGeeKy"><img alt="Star myGeeKy on GitHub" src="https://img.shields.io/github/stars/mygeeky/myGeeKy?style=social"></a>

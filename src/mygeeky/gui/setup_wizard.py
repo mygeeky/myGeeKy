@@ -31,6 +31,7 @@ from PySide6.QtGui import QDesktopServices, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
+    QComboBox,
     QFileDialog,
     QFormLayout,
     QFrame,
@@ -785,6 +786,14 @@ class ProfilePage(Page):
         self.languages.setPlaceholderText("e.g. Python, R")
         self.topics = QLineEdit()
         self.topics.setPlaceholderText("e.g. gwas, single-cell, llm")
+        # What kind of work you mostly do. It only tilts what's suggested first; your model still learns
+        # from what you open, and you can change this whenever you like.
+        self.work_style = QComboBox()
+        for label, value in (("I'd rather not say", ""), ("I mostly build software", "code"),
+                             ("I mostly analyse data", "analysis"), ("Both", "both")):
+            self.work_style.addItem(label, value)
+        self.work_style.setToolTip("Only the starting balance of what myGeeKy suggests. It learns from what you "
+                                   "actually open, and you can change this any time.")
         form.addRow("ORCID iD", orcid_wrap)
         form.addRow("", self.orcid_note)
         form.addRow("GitHub username", self.username)
@@ -792,6 +801,7 @@ class ProfilePage(Page):
         form.addRow("Google Scholar", self.scholar)
         form.addRow("Languages", self.languages)
         form.addRow("Topics", self.topics)
+        form.addRow("Your work", self.work_style)
         box = QWidget()
         box.setLayout(form)
         self.add(box)
@@ -834,11 +844,14 @@ class ProfilePage(Page):
             self.scholar.setText(s.get("scholar_id", ""))
             self.languages.setText(", ".join(s.get("languages") or []))
             self.topics.setText(", ".join(s.get("topics") or []))
+            at = self.work_style.findData(s.get("work_style", ""))
+            self.work_style.setCurrentIndex(max(0, at))
 
     def job(self):
         payload = {"github_username": self.username.text().strip(), "cv_path": self.cv.text().strip(),
                    "orcid_id": self.orcid.text().strip(), "scholar_id": self.scholar.text().strip(),
-                   "languages": self.languages.text(), "topics": self.topics.text()}
+                   "languages": self.languages.text(), "topics": self.topics.text(),
+                   "work_style": self.work_style.currentData()}
         python = self.w.python
         return lambda wk: api(python, "save_profile", payload)
 

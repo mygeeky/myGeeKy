@@ -62,6 +62,7 @@ def status(req: dict[str, Any]) -> dict[str, Any]:
         "languages": cfg.languages,
         "topics": cfg.topics,
         "keywords": cfg.keywords,
+        "work_style": cfg.work_style,
         "token_source": auth.token_source(user) if user else "none",
         "gh": shutil.which("gh") is not None,
         "sync_repo": cfg.sync_repo,
@@ -109,6 +110,9 @@ def save_profile(req: dict[str, Any]) -> dict[str, Any]:
     for key in ("languages", "topics", "keywords"):
         if key in req:
             setattr(cfg, key, _split(req[key]))
+    if "work_style" in req:                   # code / analysis / both: only the starting balance
+        style = str(req.get("work_style") or "").strip().lower()
+        cfg.work_style = style if style in ("code", "analysis", "both") else ""
     save_config(cfg)
     try:
         from . import keywords

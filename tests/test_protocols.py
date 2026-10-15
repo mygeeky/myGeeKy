@@ -377,3 +377,135 @@ def test_the_road_map_makes_room_for_the_chosen_step():
         assert all(abs(cols[i][0] + cols[i][1] - cols[i + 1][0]) < 0.01 for i in range(len(cols) - 1))
     c = qcolor("rgba(255,255,255,51)")
     assert (c.red(), c.alpha()) == (255, 51) and qcolor("#34d399").name() == "#34d399"
+
+
+# --------------------------------------------------------------------------- analysis only, never a bench
+def test_every_protocol_has_the_same_shape_now_that_there_is_no_bench_one():
+    p = protocols.template("R", "data analysis")
+    assert [st["id"] for st in p["stages"]] == ["basics", "deeper", "applied", "project", "use"]
+    assert p["stages"][1]["title"] == "Statistics with R"
+    can = " ".join(p["stages"][0]["can"]).lower()
+    assert "reagent" not in can and "bench" not in can
+
+
+def test_a_guide_is_shown_its_own_way():
+    guide = protocols.Resource.from_link(protocols.clean_item(
+        {"title": "GitHub flow", "url": "https://docs.github.com/en/get-started/using-github/github-flow",
+         "kind": "guide", "note": "The short branching rule most teams follow."}))
+    assert guide.icon == "📘" and guide.label == "Guide" and guide.action == "Read the guide"
+    assert "protocol" not in protocols.ITEM_KINDS and "protocol" not in protocols.RESOURCE_KINDS
+
+
+def test_a_project_s_own_documentation_counts_as_a_guide_but_a_protocol_site_never_does():
+    assert protomodel.is_guide("https://docs.github.com/en/actions")
+    assert protomodel.is_guide("https://imagej.net/imaging/principles")
+    assert not protomodel.is_guide("https://www.protocols.io/view/abc")       # a bench protocol, refused
+    assert not protomodel.is_guide("https://openwetware.org/wiki/PCR")
+    assert not protomodel.is_guide("https://github.com/x/y")
+
+
+def test_a_protocol_journal_hit_is_never_even_a_candidate():
+    work = {"id": "https://openalex.org/W1234567", "title": "Protocol for something",
+            "doi": "https://doi.org/10.1/x", "type": "article", "publication_year": 2024, "cited_by_count": 3,
+            "open_access": {"is_oa": True}, "abstract_inverted_index": {"A": [0]},
+            "primary_location": {"source": {"id": "https://openalex.org/S4210212477",
+                                            "display_name": "STAR Protocols"}}}
+    assert protomodel.from_work(work) is None
+    ordinary = protomodel.from_work({**work, "title": "A method for sequence alignment",
+                                     "primary_location": {"source": {"id": "https://openalex.org/S999",
+                                                                     "display_name": "Bioinformatics"}}})
+    assert ordinary and ordinary["venue"] == "Bioinformatics"
+
+
+def test_a_repo_of_bench_protocols_is_not_learning_material_here():
+    assert protomodel.from_repo({"full_name": "someone/wet-lab-protocols",
+                                 "description": "Western blot and PCR protocols"}) is None
+    assert protomodel.from_repo({"full_name": "hadley/r4ds", "description": "R for Data Science"})
+
+
+def test_no_bench_link_can_get_into_a_protocol_however_it_arrives():
+    """clean_item is the one door every link comes through: built here, curated, or published by a user."""
+    for url in ("https://www.protocols.io/view/x", "https://bio-protocol.org/e1",
+                "https://openwetware.org/wiki/PCR", "https://www.neb.com/protocols/x"):
+        assert protocols.clean_item({"title": "A method", "url": url, "kind": "website"}) is None, url
+    assert protocols.clean_item({"title": "Western blot protocol", "url": "https://example.org/a",
+                                 "kind": "website"}) is None
+    assert protocols.clean_item({"title": "R for Data Science", "url": "https://r4ds.hadley.nz/", "kind": "book"})
+
+
+def test_a_bench_protocol_is_refused_wherever_it_comes_from():
+    bench = {"skill": "qPCR", "goal": "gene expression", "title": "qPCR, from the plate to ddCt",
+             "summary": "Primers, controls and a plate plan.",
+             "stages": [{"id": "basics", "title": "The plate and the controls", "items": []}]}
+    assert protocols.clean_protocol(bench, reviewed=True) is None      # the curated file
+    assert protocols.clean_protocol({**bench, "source": "mine"}) is None  # one a user published
+    assert protocols.parse_issue({"title": "🧭 Protocol: qPCR", "body": "```json\n"
+                                  + json.dumps(bench) + "\n```", "user": {"login": "someone"}}) is None
+
+
+def test_building_refuses_bench_work_and_says_what_to_ask_instead():
+    import pytest
+    cfg = MyGeekyConfig(github_username="me")
+    for skill, goal in (("PCR", ""), ("R", "a western blot protocol"), ("Python", "cell culture")):
+        with pytest.raises(ValueError, match="computer"):
+            protocols.build(cfg, skill, goal, data={"resources": [], "protocols": []})
+    # and analysis still builds
+    assert protocols.build(cfg, "Some new framework", "", data={"resources": [], "protocols": []})["stages"]
+
+
+def test_the_shipped_protocols_are_all_about_work_at_a_computer():
+    from mygeeky import safety
+    from mygeeky import skills as skills_mod
+    ps = protocols.reviewed(curated.load())
+    ids = {p["id"] for p in ps}
+    assert {"git-github-teamwork", "algorithms-interviews", "first-web-app"} <= ids          # 💻 software
+    assert {"r-data-analysis", "gwas", "nextflow", "single-cell-rna-seq"} <= ids             # 🧬 analysis
+    assert {"excel-to-r", "stats-for-experiments", "figures-for-papers"} <= ids              # getting started
+    for p in ps:
+        assert skills_mod.find(p["skill"]), f"{p['id']}: '{p['skill']}' isn't in the skills dictionary"
+        assert not safety.is_bench(f"{p['skill']} {p['title']} {p['summary']} {p.get('goal', '')}"), p["id"]
+        for st in p["stages"]:
+            for it in st["items"]:
+                assert not safety.blocked_source(it["url"]), f"{p['id']}: {it['url']}"
+
+
+def test_the_dictionary_has_no_bench_skills_left():
+    """Rising Skills must never suggest something myGeeKy then refuses to teach."""
+    from mygeeky import safety
+    from mygeeky import skills as skills_mod
+    assert [s["name"] for s in skills_mod.vocabulary() if s["kind"] == "lab"] == []
+    refused = [s["name"] for s in skills_mod.vocabulary() if not safety.allowed(s["name"])[0]]
+    assert refused == [], f"these would be suggested and then refused: {refused}"
+
+
+def test_what_you_said_you_do_tilts_the_kinds_of_skill_without_hiding_any():
+    from mygeeky import skills as skills_mod
+    assert skills_mod.style_weight("code", "language") > skills_mod.style_weight("analysis", "language")
+    assert skills_mod.style_weight("analysis", "method") > skills_mod.style_weight("code", "method")
+    for style in ("", "code", "analysis", "both"):
+        for kind in ("language", "tool", "method"):
+            assert skills_mod.style_weight(style, kind) > 0, "a kind of skill is never hidden"
+
+
+def test_the_panel_shows_the_refusal_in_plain_words_without_a_prefix():
+    """A refusal is not a failure: the reason is already a sentence, so the panel shows it as it is."""
+    from mygeeky.gui import app as logic
+    out = logic.build_protocol(MyGeekyConfig(github_username="me"), "Western blot", "quantifying bands")
+    assert out["error"].startswith("myGeeKy only covers work done at a computer")
+    assert "Couldn't build it" not in out["error"]
+
+
+def test_the_phone_carries_the_same_refusal_rule():
+    """safety.ts is a port of safety.py: the same sites, the same journals, the same words."""
+    from mygeeky import safety
+    ts = (ROOT / "mobile" / "src" / "lib" / "safety.ts").read_text(encoding="utf-8")
+    for site in safety.BLOCKED_SITES:
+        assert f"'{site}'" in ts, f"mobile/src/lib/safety.ts is missing {site}"
+    for sid in safety.BLOCKED_SOURCE_IDS:
+        assert f"'{sid}'" in ts, f"mobile/src/lib/safety.ts is missing {sid}"
+    plain = ts.replace("\\\\", "\\")          # the TS source escapes its regex twice
+    for word in ("western\s*blot", "cell\s*cultur", "biosafety", "wet\s*lab", "pcr", "elisa"):
+        assert word in plain, f"mobile/src/lib/safety.ts is missing the rule for {word}"
+    # and the phone refuses to build one at all
+    built = (ROOT / "mobile" / "src" / "lib" / "protocols.ts").read_text(encoding="utf-8")
+    assert "allowed(" in built and "throw new Error(why)" in built

@@ -27,7 +27,9 @@ TABS = [  # (file, tab, market mode)
     ("market", "market", "repos"), ("research", "market", "research"), ("models", "market", "models"),
     ("news", "news", None),
     ("activity", "activity", None), ("signals", "signals", None), ("model", "model", None),
-    ("grow-skills", "grow", "skills"), ("grow-protocols", "grow", "paths"), ("grow-learn", "grow", "learn"),
+    ("grow-skills", "grow", "skills"), ("grow-protocols", "grow", "paths"), ("grow-quiz", "grow", "quiz"),
+    ("grow-quiz-question", "grow", "quiz-run"),
+    ("grow-learn", "grow", "learn"),
     ("chances-jobs", "chances", "jobs"), ("chances-funding", "chances", "funding"),
     ("chances-conferences", "chances", "conferences"),
 ]
@@ -74,7 +76,7 @@ def example_signals(cfg, force=False):
 
 def render() -> dict[str, Path]:
     from PySide6.QtCore import Qt
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QScrollArea
     app = QApplication.instance() or QApplication(sys.argv)
     from mygeeky.config import load_config
     from mygeeky.gui import app as logic
@@ -117,6 +119,20 @@ def render() -> dict[str, Path]:
     pid = protocols.start(cfg_for_protocols := load_config(), protocols.find_reviewed("R", "data analysis"))
     protocols.tick(cfg_for_protocols, pid, "deeper")
     protocols.start(cfg_for_protocols, protocols.find_reviewed("GWAS"))
+    # Quiz scores, in a throwaway file too (never your own quiz.json)
+    from mygeeky import quiz
+    quiz.QUIZ_FILE = Path(tempfile.mkdtemp()) / "quiz.json"
+    banked = {q["protocol"] for q in quiz.bank()["questions"]}
+    for p in protocols.reviewed():                     # start the ones with a quiz, and score one
+        if p["id"] in banked:
+            protocols.start(cfg_for_protocols, p)
+    shown = next((pid for pid in protocols.mine(cfg_for_protocols) if pid in banked), "")
+    if shown:
+        drawn = quiz.Quiz.draw(protocols.mine(cfg_for_protocols)[shown]["protocol"])
+        answers = [q.answer for q in drawn.questions]
+        if len(answers) > 2:
+            answers[1] = (answers[1] + 1) % 4          # one wrong: a real-looking score
+        quiz.record(quiz.mark(drawn, answers))
     from mygeeky.gui.qt_panel import MyGeekyPanel
 
     def pump(seconds: float) -> None:
@@ -137,7 +153,19 @@ def render() -> dict[str, Path]:
             SHOW_EXAMPLES["on"] = True
             panel._refresh_signals(force=True)
         panel._switch_tab(tab)
-        if tab == "grow":
+        if tab == "grow" and mode == "quiz-run":        # a quiz being taken, inside the tab
+            panel._set_grow_mode("quiz")
+            pump(1.0)
+            pid = next((p for p in protocols.mine(cfg_for_protocols)
+                        if quiz.counts(p)["total"]), "")
+            if pid:
+                drawn = quiz.Quiz.draw(protocols.mine(cfg_for_protocols)[pid]["protocol"])
+                panel._start_quiz(pid, drawn, stage="", stage_title="")
+                pump(1.0)
+                panel._quiz_pick(drawn.questions[0].answer)      # answered, so the reason and source show
+                pump(0.6)
+                panel._grow_scroll.verticalScrollBar().setValue(0)   # start the picture at the question
+        elif tab == "grow":
             panel._set_grow_mode(mode)
         elif tab == "chances":
             panel._set_chance_mode(mode)
@@ -145,7 +173,6 @@ def render() -> dict[str, Path]:
             panel._set_market_mode(mode)
         pump(4.5 if tab in ("grow", "chances") else 2.5)
         if fname == "grow-protocols":  # start the picture at your protocols: the road map and a step
-            from PySide6.QtWidgets import QScrollArea
             from mygeeky.gui.growth_ui import ProtocolCard
             cards = [c for c in panel.grow_area.parentWidget().findChildren(ProtocolCard) if c.isVisible()]
             box = panel._grow_scroll
@@ -165,6 +192,74 @@ def render() -> dict[str, Path]:
         panel.panel_frame.grab().save(str(path))
         out[fname] = path
         print("  ", path.name)
+    out.update(quiz_shots(app, cfg))
+    return out
+
+
+def _trim_bottom(path: Path, keep: int = 14) -> None:
+    """Cut the plain background off the bottom of a picture (Qt's wrapped labels ask for too much room)."""
+    from PIL import Image
+    im = Image.open(path).convert("RGB")
+    w, h = im.size
+    bg = im.getpixel((w - 2, h - 2))
+    bottom = h
+    while bottom > 1:
+        row = im.crop((0, bottom - 1, w, bottom)).getcolors(w) or []
+        if len(row) > 1 or row[0][1] != bg:
+            break
+        bottom -= 1
+    if bottom < h:
+        im.crop((0, 0, w, min(h, bottom + keep))).save(path)
+
+
+def quiz_shots(app, cfg) -> dict:
+    """The quiz: one question answered (why, and the source it came from), and the score at the end."""
+    from PySide6.QtWidgets import QVBoxLayout, QWidget
+
+    from mygeeky import protocols, quiz
+    from mygeeky.gui.growth_ui import QuestionCard, ResultView
+    from mygeeky.gui.qt_panel import THEMES
+    theme = THEMES["midnight"]
+    out = {}
+    # the protocol with the most questions in the shipped bank
+    banked = {}
+    for q in quiz.bank()["questions"]:
+        banked[q["protocol"]] = banked.get(q["protocol"], 0) + 1
+    if not banked:
+        print("   (no questions in the bank yet: skipping the quiz pictures)")
+        return out
+    pid = max(banked, key=lambda k: banked[k])
+    proto = next(p for p in protocols.reviewed() if p["id"] == pid)
+    drawn = quiz.Quiz.draw(proto, n=min(10, banked[pid]))
+
+    def shot(widget, name):
+        holder = QWidget()
+        holder.setStyleSheet("background:#17171f;")
+        lay = QVBoxLayout(holder)
+        lay.setContentsMargins(14, 14, 14, 14)
+        lay.addWidget(widget)
+        holder.setFixedWidth(430)
+        holder.show()
+        end = time.time() + 1.2
+        while time.time() < end:
+            app.processEvents()
+            time.sleep(0.03)
+        holder.resize(430, holder.layout().sizeHint().height())   # only as tall as what it says
+        app.processEvents()
+        path = SHOTS / f"{name}.png"
+        holder.grab().save(str(path))
+        _trim_bottom(path)          # wrapped labels over-report their height: cut the empty tail
+        out[name] = path
+        print("  ", path.name)
+        holder.hide()
+
+    q = drawn.questions[0]
+    q.picked = q.answer                       # answered, so the reason and the source show
+    shot(QuestionCard(q, theme, lambda i: None, lambda url: True), "quiz-question")
+    answers = [x.answer for x in drawn.questions]
+    if len(answers) > 2:
+        answers[1] = (answers[1] + 1) % 4     # one wrong, so the breakdown is worth looking at
+    shot(ResultView(quiz.mark(drawn, answers), theme, best_before=0.6), "quiz-score")
     return out
 
 

@@ -159,6 +159,16 @@ def _alive(w: QWidget) -> bool:
         return False
 
 
+def _short(text: str, n: int) -> str:
+    """A label that fits: cut on a word boundary and end with an ellipsis. Buttons can't shrink below
+    their own text, so a long title in a button makes the whole panel wider than it is."""
+    text = " ".join((text or "").split())
+    if len(text) <= n:
+        return text
+    cut = text[:n].rsplit(" ", 1)[0] if " " in text[:n] else text[:n]
+    return cut.rstrip(" ,.;:") + "…"
+
+
 def _time_ago(iso: str) -> str:
     if not iso:
         return ""
@@ -3902,8 +3912,8 @@ class MyGeekyPanel(QWidget):
         return scroll
 
     # ------------------------------------------------------------------ 🌱 Grow and 🎯 Chances
-    GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("learn", "📚 Learn"), ("wins", "🎉 Wins"),
-                  ("collab", "🤝 Collaborators"))
+    GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("quiz", "🏆 Quiz"), ("learn", "📚 Learn"),
+                  ("wins", "🎉 Wins"), ("collab", "🤝 Collaborators"))
     CHANCE_MODES = (("jobs", "💼 Jobs"), ("funding", "💶 Funding"), ("conferences", "🎤 Conferences"))
 
     def _scroll_page(self, build: Callable[[QVBoxLayout], None]) -> QScrollArea:
@@ -3946,6 +3956,9 @@ class MyGeekyPanel(QWidget):
         self._building_protocol = False
         self._open_protocol = ""          # the one protocol shown open; the others fold to one line
         self._open_step: dict[str, str] = {}
+        # a quiz being taken, drawn inside the 🏆 Quiz tab (never a pop-up): the drawn questions, which one
+        # you're on, your answers, and the attempt once it's marked
+        self._quiz_run: dict[str, Any] | None = None
 
         def build(layout: QVBoxLayout) -> None:
             actions = QHBoxLayout()
@@ -4153,6 +4166,8 @@ class MyGeekyPanel(QWidget):
                                                        True, strength=True))
         elif mode == "paths":
             self._render_protocols(data, theme)
+        elif mode == "quiz":
+            self._render_quizzes(theme)
         elif mode == "learn":
             self.grow_hint.setText("Free courses, books, tutorials and repos picked by myGeeKy's maker, matched "
                                    "to your work and the skills rising in your field. 👍 / 👎 teach it what helps you.")
@@ -4334,8 +4349,11 @@ class MyGeekyPanel(QWidget):
             self._grow_header("✓ REVIEWED PROTOCOLS", theme)
             row = FlowRow()
             for r in offer:
-                b = QPushButton(f"🧭 {r['title']}")
-                b.setToolTip(r.get("summary") or "")
+                # A button can never be narrower than its own text, so a long title would make the whole
+                # page wider than the panel and squeeze everything in it. Shorten it here; the full title
+                # and summary stay in the tooltip.
+                b = QPushButton(f"🧭 {_short(r['title'], 30)}")
+                b.setToolTip((r["title"] + "\n\n" + (r.get("summary") or "")).strip())
                 b.setCursor(Qt.PointingHandCursor)
                 b.setStyleSheet(f"QPushButton {{ background:{theme['card_bg']}; color:{theme['text']}; border:none; "
                                 "border-radius:8px; padding:4px 9px; font-size:11px; }")
@@ -4367,7 +4385,81 @@ class MyGeekyPanel(QWidget):
                 vote_of=lambda it: logic.vote_of("resource", it["url"]),
                 is_open=pid == self._open_protocol, selected=self._open_step.get(pid, ""),
                 on_toggle=lambda pid=pid: self._toggle_protocol_open(pid),
-                on_select=lambda sid, pid=pid: self._select_protocol_step(pid, sid)))
+                on_select=lambda sid, pid=pid: self._select_protocol_step(pid, sid),
+                quiz=logic.quiz_state(self.cfg, pid),
+                on_quiz=lambda pid=pid, title=p["title"]: self._on_take_quiz(pid, title),
+                on_share=self._on_share_scores))
+
+    # ---- 🏆 Quiz: every protocol's quiz in one place
+    def _render_quizzes(self, theme: dict[str, Any]) -> None:
+        from .growth_ui import QuizCard, QuizRunView
+        if self._quiz_run:                        # a quiz is being taken: it lives here, in this tab
+            run = self._quiz_run
+            self.grow_hint.setText("Your answers stay on this computer. Pick an answer to see why it's right "
+                                   "and the source it came from.")
+            self.grow_area.addWidget(QuizRunView(
+                run, theme, on_pick=self._quiz_pick, on_next=self._quiz_next, on_flag=self._quiz_flag,
+                on_open=logic.open_link, on_close=self._quiz_close,
+                on_share=self._on_share_scores if run.get("attempt") else None))
+            return
+        mix = logic.quiz_state(self.cfg)
+        over = logic.quiz_overview(self.cfg)
+        share = over["mix"]
+        self.grow_hint.setText(
+            f"Ten questions drawn at random from a protocol's own bank: {share['easy']} basics, "
+            f"{share['medium']} applied and {share['tricky']} of the mistakes people really make. Every question "
+            "comes from one of that protocol's links and shows you that source, with the sentence that proves the "
+            f"answer, once you've answered. Pass at {round(over['pass_mark'] * 100)}%; only your best counts, one "
+            "attempt a day. Your answers stay on this computer.")
+        if over["taken"]:
+            self._grow_header("🏆 YOUR SCORES", theme)
+            line = (f"{over['taken']} quiz{'zes' if over['taken'] != 1 else ''} taken · "
+                    f"average {round(over['average'] * 100)}%")
+            if over["perfect"]:
+                line += f" · {over['perfect']} at 100% 🏴"
+            self._grow_note(line, theme)
+        rows = over["rows"]
+        if not rows:
+            self._grow_note("No quizzes yet. Questions are written and checked on the maker's side and arrive "
+                            "with the lists, so the reviewed protocols get them first. 🧭 Protocols still works "
+                            "without them: each step has its links, and \"I can do these\" marks what you know.",
+                            theme)
+            return
+        mine = [r for r in rows if r["mine"]]
+        others = [r for r in rows if not r["mine"]]
+        if mine:
+            self._grow_header("🧭 YOUR PROTOCOLS", theme)
+        for r in mine:
+            self.grow_area.addWidget(QuizCard({**r, "per_attempt": over["per_attempt"],
+                                               "pass_mark": over["pass_mark"]}, theme,
+                                              on_take=lambda r=r: self._on_take_quiz(r["id"], r["title"]),
+                                              on_start=lambda r=r: self._on_start_path(r["skill"]),
+                                              on_share=self._on_share_scores))
+        if others:
+            self._grow_header("✓ REVIEWED PROTOCOLS WITH A QUIZ", theme)
+        for r in others:
+            self.grow_area.addWidget(QuizCard({**r, "per_attempt": over["per_attempt"],
+                                               "pass_mark": over["pass_mark"]}, theme,
+                                              on_take=lambda r=r: self._on_take_quiz(r["id"], r["title"]),
+                                              on_start=lambda r=r: self._on_start_path(r["skill"]),
+                                              on_share=None))
+        if over.get("waiting"):
+            n = len(over["waiting"])
+            self._grow_note(f"{n} of your protocols {'have' if n != 1 else 'has'} no questions yet "
+                            f"({', '.join(over['waiting'][:3])}{'…' if n > 3 else ''}). They're written and "
+                            "checked on the maker's side, and arrive with the lists.", theme)
+        if over["flagged"]:
+            from .growth_ui import _pill_button
+            back = _pill_button(f"🚩 {over['flagged']} question{'s' if over['flagged'] != 1 else ''} you flagged: "
+                                "show them again", "They can come up in your next attempts", theme,
+                                self._on_unflag_all)
+            self.grow_area.addWidget(back)
+        _ = mix
+
+    def _on_unflag_all(self) -> None:
+        n = logic.quiz_unflag_all()
+        self._info("Flagged questions", f"{n} question{'s' if n != 1 else ''} can come up again.")
+        self._render_grow()
 
     def _toggle_protocol_open(self, pid: str) -> None:
         self._open_protocol = "" if self._open_protocol == pid else pid
@@ -4464,61 +4556,213 @@ class MyGeekyPanel(QWidget):
         self._load_growth()
 
     def _on_level_check(self, pid: str, st: dict[str, Any]) -> None:
-        """The level check for one stage: a short quiz if it has one, else 'I can do these'."""
+        """The level check for one stage: questions from the bank for that step, the ones written into
+        the protocol itself, or 'I can do these' when there are none."""
+        drawn = logic.quiz_draw(self.cfg, pid, st["id"])
+        if drawn is not None:
+            self._start_quiz(pid, drawn, stage=st["id"], stage_title=st["title"])
+            return
+        if st.get("quiz"):
+            self._old_style_check(pid, st)
+            return
+        self._can_do_check(pid, st)
+
+    def _can_do_check(self, pid: str, st: dict[str, Any]) -> None:
+        """No questions for this step: tick what you can already do."""
         dlg = QDialog(self)
         dlg.setWindowTitle(f"Check: {st['title']}")
         dlg.setStyleSheet(self._dialog_css())
         lay = QVBoxLayout(dlg)
-        groups: list[list[QRadioButton]] = []
+        intro = QLabel("Tick what you can already do. All ticked, and this stage is marked as known.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
         boxes: list[QCheckBox] = []
-        if st.get("quiz"):
-            intro = QLabel(f"{len(st['quiz'])} questions. Get {round(75)}% right and this stage is marked as "
-                           "known. Your answers stay on this computer.")
-            intro.setWordWrap(True)
-            lay.addWidget(intro)
-            for n, q in enumerate(st["quiz"], 1):
-                ql = QLabel(f"<b>{n}. {html.escape(q['q'])}</b>")
-                ql.setWordWrap(True)
-                lay.addWidget(ql)
-                opts = []
-                holder = QWidget()
-                hl = QVBoxLayout(holder)
-                hl.setContentsMargins(12, 0, 0, 4)
-                for o in q["options"]:
-                    rb = QRadioButton(o)
-                    hl.addWidget(rb)
-                    opts.append(rb)
-                lay.addWidget(holder)
-                groups.append(opts)
-        else:
-            intro = QLabel("Tick what you can already do. All ticked, and this stage is marked as known.")
-            intro.setWordWrap(True)
-            lay.addWidget(intro)
-            for c in st.get("can") or []:
-                cb = QCheckBox(c)
-                lay.addWidget(cb)
-                boxes.append(cb)
+        for c in st.get("can") or []:
+            cb = QCheckBox(c)
+            lay.addWidget(cb)
+            boxes.append(cb)
+        lay.addLayout(self._dialog_buttons(dlg, "Check"))
+        if dlg.exec() == QDialog.Accepted and boxes and all(cb.isChecked() for cb in boxes):
+            logic.protocol_action(self.cfg, "known", pid, st["id"], "self")
+        self._load_growth()
+
+    def _old_style_check(self, pid: str, st: dict[str, Any]) -> None:
+        """Questions written into the protocol itself (reviewed protocols from before the bank)."""
+        dlg = QDialog(self)
+        dlg.setWindowTitle(f"Check: {st['title']}")
+        dlg.setStyleSheet(self._dialog_css())
+        lay = QVBoxLayout(dlg)
+        intro = QLabel(f"{len(st['quiz'])} questions. Get 75% right and this stage is marked as known. "
+                       "Your answers stay on this computer.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+        groups: list[list[QRadioButton]] = []
+        for n, q in enumerate(st["quiz"], 1):
+            ql = QLabel(f"<b>{n}. {html.escape(q['q'])}</b>")
+            ql.setWordWrap(True)
+            lay.addWidget(ql)
+            holder = QWidget()
+            hl = QVBoxLayout(holder)
+            hl.setContentsMargins(12, 0, 0, 4)
+            opts = []
+            for o in q["options"]:
+                rb = QRadioButton(o)
+                hl.addWidget(rb)
+                opts.append(rb)
+            lay.addWidget(holder)
+            groups.append(opts)
+        lay.addLayout(self._dialog_buttons(dlg, "Check"))
+        if dlg.exec() != QDialog.Accepted:
+            return
+        answers = [next((i for i, rb in enumerate(g) if rb.isChecked()), -1) for g in groups]
+        score = logic.protocol_action(self.cfg, "quiz", pid, st["id"], answers) or 0.0
+        self._info("Check", f"{round(score * len(groups))} of {len(groups)} right." + (
+            " You know this one: it's marked as known." if score >= 0.75 else
+            " Not yet: this stage stays on your list. The links below it are a good place to start."))
+        self._load_growth()
+
+    def _dialog_buttons(self, dlg: QDialog, ok_text: str) -> QHBoxLayout:
         row = QHBoxLayout()
         row.addStretch(1)
         cancel = QPushButton("Cancel")
-        ok = QPushButton("Check")
+        ok = QPushButton(ok_text)
         cancel.clicked.connect(dlg.reject)
         ok.clicked.connect(dlg.accept)
         row.addWidget(cancel)
         row.addWidget(ok)
+        return row
+
+    # ---- taking a quiz: one question at a time, then the result
+    def _on_take_quiz(self, pid: str, title: str) -> None:
+        """🏁 Take the quiz. Wherever it was pressed, the quiz itself opens in the 🏆 Quiz tab."""
+        state = logic.quiz_state(self.cfg, pid)
+        if not state["counts"].get("total"):
+            self._info("Quiz", "There are no questions for this protocol yet. They're written and checked on "
+                               "the maker's side, and arrive with the lists — the reviewed protocols get them "
+                               "first.")
+            return
+        if not state["can_try"]:
+            self._info("Quiz", state["why"])
+            return
+        drawn = logic.quiz_draw(self.cfg, pid)
+        if drawn is None:
+            self._info("Quiz", "There are no questions left for this protocol that you haven't flagged.")
+            return
+        self._start_quiz(pid, drawn, stage="", stage_title="")
+
+    def _start_quiz(self, pid: str, drawn: Any, stage: str, stage_title: str) -> None:
+        """Begin an attempt and show it in the 🏆 Quiz tab."""
+        self._quiz_run = {"pid": pid, "quiz": drawn, "stage": stage, "stage_title": stage_title,
+                          "at": 0, "answers": [-1] * len(drawn.questions), "attempt": None,
+                          "best_before": float((logic.quiz_state(self.cfg, pid)["best"] or {}).get("score") or 0.0)}
+        self._grow_mode = "quiz"
+        self._switch_tab("grow")
+        self._render_grow()
+
+    def _quiz_pick(self, i: int) -> None:
+        run = self._quiz_run
+        if not run:
+            return
+        q = run["quiz"].questions[run["at"]]
+        if q.answered:
+            return
+        q.picked = i
+        run["answers"][run["at"]] = i
+        self._render_grow()
+
+    def _quiz_next(self) -> None:
+        run = self._quiz_run
+        if not run:
+            return
+        if run["at"] < len(run["quiz"].questions) - 1:
+            run["at"] += 1
+        else:
+            run["attempt"] = logic.quiz_mark(self.cfg, run["quiz"], run["answers"], run["stage"])
+        self._render_grow()
+
+    def _quiz_flag(self) -> None:
+        """🚩 on the question you're looking at: left out of your next attempts, and the maker can be told."""
+        run = self._quiz_run
+        if not run:
+            return
+        q = run["quiz"].questions[run["at"]]
+        on = logic.quiz_flag(q.id, not q.flagged)
+        q.flagged = on
+        if on:
+            box = self._box("This question looks wrong", "Thanks: it's left out of your next attempts.\n\n"
+                            "Tell the maker too? It opens a public GitHub issue, sent with your own account "
+                            "when you press Submit. It holds the question, not your answers.")
+            tell = box.addButton("Tell the maker", QMessageBox.AcceptRole)
+            box.addButton(QMessageBox.Cancel)
+            box.exec()
+            if box.clickedButton() is tell:
+                logic.open_link(logic.quiz_report(q))
+        self._render_grow()
+
+    def _quiz_close(self) -> None:
+        """Leave the quiz: back to the list in this same tab. An unmarked attempt simply doesn't count."""
+        self._quiz_run = None
+        self._load_growth()
+
+    # ---- showing a score on mygeeky.org (only if you ask for it)
+    def _on_share_scores(self) -> None:
+        """Two switches, exactly what would appear, and then your own `accept` on GitHub."""
+        theme = THEMES[self._theme_name()]
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Show my result on mygeeky.org")
+        dlg.setStyleSheet(self._dialog_css())
+        dlg.setMinimumWidth(460)
+        lay = QVBoxLayout(dlg)
+        intro = QLabel("Nothing about you is online. A score can follow you into a job application, so this "
+                       "is yours to choose, in two parts, and you agree to it from your own GitHub account.")
+        intro.setWordWrap(True)
+        lay.addWidget(intro)
+        name_box = QCheckBox("Show my name, my profile link and my GitHub photo")
+        score_box = QCheckBox("Show my scores next to it")
+        for cb in (name_box, score_box):
+            lay.addWidget(cb)
+        preview = QLabel("")
+        preview.setWordWrap(True)
+        preview.setStyleSheet(f"color:{theme['text']}; font-size:11px; background:{theme['card_bg']}; "
+                              "border-radius:8px; padding:8px;")
+        lay.addWidget(preview)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        later = QPushButton("Not now")
+        go = QPushButton("Accept on GitHub")
+        row.addWidget(later)
+        row.addWidget(go)
         lay.addLayout(row)
+        take_back = QPushButton("Take a shared score back (withdraw)")
+        take_back.setCursor(Qt.PointingHandCursor)
+        take_back.clicked.connect(lambda: logic.open_link(logic.withdraw_url(self.cfg)))
+        lay.addWidget(take_back)
+
+        def refresh() -> None:
+            st = logic.share_state(self.cfg, name_box.isChecked(), score_box.isChecked())
+            preview.setText("What would appear on the page:\n" + "\n".join(f"• {ln}" for ln in st["lines"])
+                            + ("" if st["ok"] else f"\n\n{st['why']}"))
+            go.setEnabled(st["ok"])
+        for cb in (name_box, score_box):
+            cb.toggled.connect(lambda checked=False: refresh())
+        later.clicked.connect(dlg.reject)
+        go.clicked.connect(dlg.accept)
+        refresh()
         if dlg.exec() != QDialog.Accepted:
             return
-        if groups:
-            answers = [next((i for i, rb in enumerate(g) if rb.isChecked()), -1) for g in groups]
-            score = logic.protocol_action(self.cfg, "quiz", pid, st["id"], answers) or 0.0
-            right = round(score * len(groups))
-            self._info("Check", f"{right} of {len(groups)} right." + (
-                " You know this one: it's marked as known." if score >= 0.75 else
-                " Not yet: this stage stays on your list. The links below it are a good place to start."))
-        elif boxes and all(cb.isChecked() for cb in boxes):
-            logic.protocol_action(self.cfg, "known", pid, st["id"], "self")
-        self._load_growth()
+        url = logic.share_url(self.cfg, name_box.isChecked(), score_box.isChecked())
+        if not url:
+            return
+        box = self._box("Accept on GitHub", "This opens a public issue in mygeeky/myGeeKy-ideas holding exactly "
+                        "what you just saw, with the word “accept” already written in it. Press Submit there and "
+                        "it's your own account that says yes — that's the proof, and no email is involved.\n\n"
+                        "The maker checks each entry before it appears, and you can write “withdraw” on the same "
+                        "issue any time.")
+        open_it = box.addButton("Open on GitHub", QMessageBox.AcceptRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        if box.clickedButton() is open_it:
+            logic.open_link(url)
 
     def _on_publish_protocol(self, p: dict[str, Any]) -> None:
         box = self._box("Publish this protocol", f"Send “{p['title']}” to myGeeKy, for everyone?\n\n"
@@ -4772,6 +5016,17 @@ class MyGeekyPanel(QWidget):
         self.admin_funnel = QLabel("")
         self.admin_funnel.setWordWrap(True)
         layout.addWidget(self.admin_funnel)
+        # what the ETag cache saved today: a 304 costs nothing against your limit (ghcache.py)
+        calls_row = QHBoxLayout()
+        self.admin_calls = QLabel("")
+        self.admin_calls.setWordWrap(True)
+        forget = QPushButton("Forget")
+        forget.setCursor(Qt.PointingHandCursor)
+        forget.setToolTip("Throw away what GitHub told us. Nothing is lost: the next refresh asks again.")
+        forget.clicked.connect(self._on_forget_cache)
+        calls_row.addWidget(self.admin_calls, 1)
+        calls_row.addWidget(forget, 0, Qt.AlignTop)
+        layout.addLayout(calls_row)
         self.admin_scout_header = QLabel("\U0001f3af LISTINGS TO REVIEW")
         layout.addWidget(self.admin_scout_header)
         scout_box = QWidget()
@@ -4779,6 +5034,13 @@ class MyGeekyPanel(QWidget):
         self.admin_scout.setContentsMargins(0, 0, 0, 0)
         self.admin_scout.setSpacing(6)
         layout.addWidget(scout_box)
+        self.admin_quiz_header = QLabel("\U0001f4dd QUIZZES")
+        layout.addWidget(self.admin_quiz_header)
+        quiz_box = QWidget()
+        self.admin_quiz = QVBoxLayout(quiz_box)
+        self.admin_quiz.setContentsMargins(0, 0, 0, 0)
+        self.admin_quiz.setSpacing(6)
+        layout.addWidget(quiz_box)
         layout.addWidget(self.admin_headers[1])
         inbox_box = QWidget()
         self.admin_inbox = QVBoxLayout(inbox_box)
@@ -4826,6 +5088,13 @@ class MyGeekyPanel(QWidget):
         self.admin_funnel.setText(f"Invites: {f.get('invited', 0)} sent · {f.get('joined', 0)} joined"
                                   + (f" ({round(100 * f['joined'] / f['invited'])}%)" if f.get("invited") else "")
                                   + f" · {f.get('new', 0)} to consider · {data.get('invited_today', 0)}/10 today")
+        calls = logic.github_calls()
+        self.admin_calls.setText(
+            f"GitHub today: {calls['asked']} asked · {calls['saved']} free "
+            f"({calls['not_modified']} unchanged, {calls['from_cache']} already known"
+            + (f", {calls['offline']} while offline" if calls["offline"] else "") + ")"
+            + (f" · {calls['share']}% saved" if calls["share"] else "")
+            + f" · {calls['searches']} searches · {calls['entries']} answers kept")
         _clear_layout(self.admin_inbox)
         inbox = data.get("inbox") or []
         if not inbox:
@@ -4861,10 +5130,11 @@ class MyGeekyPanel(QWidget):
                                   "from beacons and from the suggest button.</span>")
         self.admin_kw.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; background:transparent;")
         self._render_scout()
-        for lbl in self.admin_headers + [self.admin_kw_header, self.admin_scout_header]:
+        self._render_quizwriter()
+        for lbl in self.admin_headers + [self.admin_kw_header, self.admin_scout_header, self.admin_quiz_header]:
             lbl.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
                               "margin-top:6px; background:transparent;")
-        for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated):
+        for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated, self.admin_calls):
             lbl.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
         self.admin_refresh_btn.setStyleSheet(
             f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
@@ -4872,6 +5142,174 @@ class MyGeekyPanel(QWidget):
         self.admin_undo_btn.setStyleSheet(
             f"QPushButton {{ background:transparent; color:{theme['link']}; border:none; padding:4px 6px; "
             f"font-size:11px; text-decoration:underline; }}")
+
+    def _on_forget_cache(self) -> None:
+        n = logic.forget_github_cache()
+        self._info("GitHub cache", f"{n} remembered answer{'s' if n != 1 else ''} thrown away. Nothing is lost: "
+                                   "the next refresh asks GitHub for them again.")
+        self._render_admin()
+
+    # ---- 📝 quizzes (quizwriter.py): DeepSeek writes them from each protocol's own sources, myGeeKy
+    # checks them, and the maker only reads five
+    def _render_quizwriter(self) -> None:
+        from .growth_ui import FlowRow, _label, _muted, _pill_button
+        theme = THEMES[self._theme_name()]
+        area = self.admin_quiz
+        _clear_layout(area)
+        st = logic.quizwriter_state()
+        missing = st.get("missing") or []
+        done = not missing
+        head = (f"✅ All {st['protocols']} reviewed protocols have a quiz — {st['bank']} questions in all. "
+                "Nothing to do here unless you want more."
+                if done else
+                f"{st['with_quiz']} of {st['protocols']} protocols have a quiz ({st['bank']} questions). "
+                f"{len(missing)} still to write.")
+        area.addWidget(_label(head, f"color:{theme['good'] if done else theme['text']}; font-size:11px; "
+                                    "background:transparent;"))
+        area.addWidget(_label("Writing more is optional: DeepSeek drafts them from a protocol's own links and must "
+                              "quote the sentence that proves the answer; myGeeKy checks the quote is on the page, "
+                              "runs the code, and a blind second read has to agree. You read five. Writing by hand "
+                              "is the other way: tools/quiz/sources.py, then tools/quiz/add.py.",
+                              _muted(theme, 10.5)))
+        if not st["has_key"]:
+            area.addWidget(_label("Add your DeepSeek key in 🎯 Listings above: the writer uses the same key.",
+                                  _muted(theme, 10.5)))
+            return
+        running = getattr(self, "_quizwriter_running", "")
+        note = getattr(self, "_quizwriter_note", "")
+        if note:
+            area.addWidget(_label(note, _muted(theme, 10.5)))
+        for p in self._reviewed_protocols():
+            pid = p["id"]
+            have = st["per_protocol"].get(pid) or {}
+            n = sum(have.values())
+            batch = (st["batches"] or {}).get(pid) or {}
+            mix = " · ".join(f"{have.get(lv, 0)} {lv}" for lv in ("easy", "medium", "tricky") if have.get(lv))
+            # ✓ it can be taken (enough for an attempt), ✦ a good bank, ○ not enough yet
+            mark, colour = ("○", theme["muted"]) if n < st["ready"] else \
+                (("✓", theme["good"]) if n < st["good"] else ("✦", theme["good"]))
+            row = FlowRow()
+            row.add(_label(f"{mark} {_short(p['title'], 34)}",
+                           f"color:{colour if n < st['ready'] else theme['text']}; font-size:10.5px; "
+                           "background:transparent;"))
+            row.add(_label(f"{n} questions" + (f" ({mix})" if mix else ""), _muted(theme, 10)))
+            if batch.get("questions") and not batch.get("verdict"):
+                row.add(_pill_button(f"👀 Spot-check {len(batch['spot_check'])}",
+                                     "Read a few questions; one 👎 rewrites the batch", theme,
+                                     lambda pid=pid: self._on_quiz_spot_check(pid), accent=True))
+            else:
+                write = _pill_button("Writing…" if running == pid else
+                                     ("📝 Write questions" if n < st["ready"] else "➕ More questions"),
+                                     "Asks DeepSeek, then checks every question (a few minutes). "
+                                     "Optional once a protocol has enough to be taken.", theme,
+                                     lambda pid=pid: self._on_quizwriter_run(pid))
+                write.setEnabled(not running)
+                row.add(write)
+            row.finish()
+            area.addWidget(row)
+
+    def _reviewed_protocols(self) -> list[dict[str, Any]]:
+        from .. import curated, protocols
+        return [{"id": x["id"], "title": x["title"]} for x in protocols.reviewed(curated.load())]
+
+    def _on_quizwriter_run(self, pid: str) -> None:
+        self._quizwriter_running = pid
+        self._quizwriter_note = "Reading each source page and asking DeepSeek…"
+        self._render_quizwriter()
+        self._run_async(lambda: logic.quizwriter_run(self.cfg, pid),
+                        lambda r: self._on_quizwriter_done(pid, r))
+
+    def _on_quizwriter_done(self, pid: str, result: Any) -> None:
+        self._quizwriter_running = ""
+        result = result or {}
+        if result.get("error"):
+            self._quizwriter_note = ""
+            self._info("Write questions", result["error"])
+        else:
+            why = "; ".join(f"{n}x {reason}" for reason, n in (result.get("reasons") or [])[:3])
+            self._quizwriter_note = result.get("summary", "") + (f" - {why}" if why else "")
+        self._render_quizwriter()
+
+    def _on_quiz_spot_check(self, pid: str) -> None:
+        """The maker's whole review: a few questions, 👍 or 👎 each. One 👎 and the batch is rewritten."""
+        from .. import quizwriter
+        from ..quiz import Question
+        from .growth_ui import QuestionCard
+        theme = THEMES[self._theme_name()]
+        batch = (quizwriter.load()["batches"] or {}).get(pid) or {}
+        wanted = set(batch.get("spot_check") or [])
+        rows = [q for q in batch.get("questions") or [] if q["id"] in wanted]
+        if not rows:
+            self._info("Spot check", "Nothing to check for this protocol.")
+            return
+        dlg = QDialog(self)
+        dlg.setWindowTitle(f"Spot check: {pid}")
+        dlg.setStyleSheet(self._dialog_css())
+        dlg.setMinimumWidth(480)
+        outer = QVBoxLayout(dlg)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background:transparent; border:none;")
+        holder = QWidget()
+        body = QVBoxLayout(holder)
+        scroll.setWidget(holder)
+        outer.addWidget(scroll, 1)
+        verdicts: dict[str, bool] = {}
+
+        def marker(qid, good_btn, bad_btn):
+            def mark(ok: bool) -> None:
+                verdicts[qid] = ok
+                good_btn.setChecked(ok)
+                bad_btn.setChecked(not ok)
+            return mark
+
+        for raw in rows:
+            q = Question.build(raw, 0, len(rows))
+            q.picked = q.answer            # shown answered, so the reason and the source show too
+            body.addWidget(QuestionCard(q, theme, lambda i: None, logic.open_link, locked=True))
+            if raw.get("needs_eyes"):
+                body.addWidget(QLabel("! the checks did not fully agree on this one"))
+            good = QPushButton("👍 fine")
+            bad = QPushButton("👎 wrong")
+            for b in (good, bad):
+                b.setCursor(Qt.PointingHandCursor)
+                b.setCheckable(True)
+            mark = marker(raw["id"], good, bad)
+            good.clicked.connect(lambda checked=False, f=mark: f(True))
+            bad.clicked.connect(lambda checked=False, f=mark: f(False))
+            line = QHBoxLayout()
+            line.addWidget(good)
+            line.addWidget(bad)
+            line.addStretch(1)
+            holder_row = QWidget()
+            holder_row.setLayout(line)
+            body.addWidget(holder_row)
+        body.addStretch(1)
+        bar = QHBoxLayout()
+        bar.addStretch(1)
+        later = QPushButton("Later")
+        done = QPushButton("Accept the batch")
+        later.clicked.connect(dlg.reject)
+        done.clicked.connect(dlg.accept)
+        bar.addWidget(later)
+        bar.addWidget(done)
+        outer.addLayout(bar)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        if len(verdicts) < len(rows):
+            self._info("Spot check", "Mark each question 👍 or 👎 first.")
+            return
+        if all(verdicts.values()):
+            out = logic.quizwriter_accept(pid, "accepted")
+            self._info("Spot check", out.get("error") or
+                       f"{out.get('added', 0)} questions added to the bank ({out.get('total', 0)} in all). "
+                       "Commit data/questions.json when you're ready.")
+        else:
+            logic.quizwriter_accept(pid, "rewrite")
+            self._info("Spot check", "Thrown away: a question you marked 👎 means the whole batch is suspect. "
+                                     "Press 📝 Write questions again for a fresh one.")
+        self._render_quizwriter()
 
     # ---- 🎯 listings to review (scout.py): found with DeepSeek, checked, accepted by you, then published
     SCOUT_EMOJI = {"jobs": "💼", "funding": "💶", "conferences": "🎤"}

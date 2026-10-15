@@ -27,6 +27,7 @@ KINDS = {
     "keyword": ("🔤", "Keyword", "keyword"),
     "report": ("🚩", "Report", "report"),   # a job, call or resource that looks fake
     "protocol": ("🧭", "Protocol", "protocol"),   # a learning protocol a user published (protocols.py)
+    "score": ("🏆", "Quiz score", "leaderboard"),  # someone asking for their score to be shown (leaderboard.py)
 }
 
 

@@ -65,6 +65,8 @@ CURATED_FILE = DATA_DIR / "curated.json"              # jobs, funding, conferenc
 SKILLS_HISTORY_FILE = DATA_DIR / "skills_history.json"  # how often each skill showed up in your field, by day
 MY_REPOS_FILE = DATA_DIR / "my_repos.json"            # your own repos (names, topics, stars), for paths and alerts
 PATHS_FILE = DATA_DIR / "learning_paths.json"         # the protocols you started (synced)
+QUIZ_FILE = DATA_DIR / "quiz.json"                    # your best quiz scores, flags and sharing choice (synced)
+QUESTIONS_FILE = DATA_DIR / "questions.json"          # the question bank, newest copy fetched
 WINS_FILE = DATA_DIR / "wins.json"                    # stars, forks and citations: the last counts and what changed
 
 
@@ -84,6 +86,10 @@ class MyGeekyConfig:
     topics: list[str] = field(default_factory=list)         # e.g. ["bioinformatics", "llm"]
     keywords: list[str] = field(default_factory=list)       # extra free-text interests
     locations: list[str] = field(default_factory=list)      # optional, e.g. ["Cairo", "Remote"]
+    # What kind of work you mostly do: "code" (you mostly build software), "analysis" (you mostly analyse
+    # data), "both", or "" (not said). It only sets the starting balance of what myGeeKy suggests -- your
+    # model still learns from what you like. Changeable any time.
+    work_style: str = ""
 
     # Candidate filters
     min_followers: int = 0

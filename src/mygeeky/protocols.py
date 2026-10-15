@@ -50,7 +50,7 @@ from .files import read_json, write_json
 
 ROLES = ("basics", "deeper", "applied", "project", "use")
 ITEM_KINDS = {"repo": "📦", "article": "📄", "website": "🌐", "course": "🎓", "book": "📖", "tutorial": "🧭",
-              "video": "🎬"}
+              "video": "🎬", "guide": "📘"}
 PASS = 0.75
 PER_STAGE = {"basics": 3, "deeper": 3, "applied": 3, "project": 2}
 ARTICLES_PER_STAGE = 1
@@ -84,11 +84,16 @@ def _clean_quiz(raw: Any) -> list[dict[str, Any]]:
 
 
 def clean_item(raw: Any) -> dict[str, Any] | None:
+    """One checked link, or None. A bench protocol's home is refused here, which is the one door every
+    link comes through: a protocol myGeeKy builds, a reviewed one, or one another user published."""
+    from . import safety
     if not isinstance(raw, dict):
         return None
     url = curated._https(raw.get("url"))
     title = curated._text(raw.get("title"), 160)
     if not url or not title:
+        return None
+    if safety.blocked_source(url) or safety.is_bench(f"{title} {raw.get('note') or ''}"):
         return None
     kind = str(raw.get("kind") or "website").lower()
     out = {"title": title, "url": url, "kind": kind if kind in ITEM_KINDS else "website",
@@ -100,7 +105,7 @@ def clean_item(raw: Any) -> dict[str, Any] | None:
             n = 0
         if 0 < n < 10_000_000:
             out[k] = n
-    for k, n in (("lang", 40), ("updated", 10)):
+    for k, n in (("lang", 40), ("updated", 10), ("venue", 80)):
         v = curated._text(raw.get(k), n)
         if v:
             out[k] = v
@@ -130,12 +135,19 @@ def clean_stage(raw: Any, i: int = 0) -> dict[str, Any] | None:
 
 
 def clean_protocol(raw: Any, reviewed: bool = False) -> dict[str, Any] | None:
-    """A checked protocol, or None. `reviewed` is only ever set by the caller, never by the file."""
+    """A checked protocol, or None. `reviewed` is only ever set by the caller, never by the file.
+
+    A protocol about laboratory work is refused outright, wherever it came from -- the curated file, a
+    user's published one, or one built here (safety.py)."""
+    from . import safety
     if not isinstance(raw, dict):
         return None
     skill = curated._text(raw.get("skill"), 60)
     title = curated._text(raw.get("title"), 100)
     if not skill or not title:
+        return None
+    if safety.is_bench(f"{skill} {title} {curated._text(raw.get('goal'), 60)} "
+                       f"{curated._text(raw.get('summary'), 300)}"):
         return None
     pid = str(raw.get("id") or "").lower()
     stages, seen = [], set()
@@ -204,8 +216,8 @@ def template(skill: str, goal: str = "") -> dict[str, Any]:
         {"id": "basics", "title": f"{name} basics", "role": "basics"},
         {"id": "deeper", "title": f"Statistics with {name}" if stats else f"{name} in depth", "role": "deeper",
          "query": "statistics" if stats else ""},
-        {"id": "applied", "title": f"{name} for {goal}" if goal else f"Using {name} on real data", "role": "applied",
-         "query": goal},
+        {"id": "applied", "title": f"{name} for {goal}" if goal else f"Using {name} on real data",
+         "role": "applied", "query": goal},
         {"id": "project", "title": "A real project to rerun", "role": "project", "query": goal or "analysis"},
         {"id": "use", "title": "Use it in your own work", "role": "use"},
     ]
@@ -235,6 +247,15 @@ def _from_resource(r: dict[str, Any]) -> dict[str, Any]:
 
 
 _LEVEL_ROLE = {"beginner": "basics", "": "basics", "intermediate": "deeper", "advanced": "deeper"}
+
+
+def _kind_of(c: dict[str, Any]) -> str:
+    """What a candidate is shown as: a 📘 guide, or whatever it came as."""
+    if c["kind"] == "repo":
+        return "repo"
+    if protomodel.is_guide(c.get("url", "")):
+        return "guide"
+    return c["kind"]
 
 
 def candidates_for(proto: dict[str, Any], client=None, session=None, limit_queries: int = 10) -> list[dict[str, Any]]:
@@ -268,7 +289,7 @@ def candidates_for(proto: dict[str, Any], client=None, session=None, limit_queri
         for st in proto["stages"]:
             if st.get("query") and st["role"] in ("deeper", "applied"):
                 searches.append((f"{name} {st['query']} tutorial", ""))
-        for search, filt in searches[:4]:
+        for search, filt in searches[:6]:
             try:
                 hits = protomodel.search_openalex(session, search, filt, per_page=12)
             except Exception:  # noqa: BLE001
@@ -304,9 +325,9 @@ def fill(proto: dict[str, Any], cands: list[dict[str, Any]], data: dict[str, Any
         if stage_of.get(c.get("asked_by", "")) == role:
             boost += 0.25
         tilt = taste.lean(f"{c['title']} {c.get('text', '')}", c.get("topics") or [], lean_weights)
-        item = clean_item({"title": c["title"], "url": c["url"], "kind": c["kind"], "note": c.get("text") or "",
+        item = clean_item({"title": c["title"], "url": c["url"], "kind": _kind_of(c), "note": c.get("text") or "",
                            "stars": c.get("stars"), "lang": c.get("language"), "updated": c.get("updated"),
-                           "year": c.get("year"), "cited": c.get("cited")})
+                           "year": c.get("year"), "cited": c.get("cited"), "venue": c.get("venue")})
         if not item:
             continue
         by_role[role].append((p[role] * boost + 0.25 * tilt, item))
@@ -348,7 +369,14 @@ def _field_projects(proto: dict[str, Any], docs: list[dict[str, Any]] | None = N
 
 def build(cfg: MyGeekyConfig, skill: str, goal: str = "", client=None, session=None,
           data: dict[str, Any] | None = None, docs: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    """The reviewed protocol if there is one, else one built now from GitHub, OpenAlex and the model."""
+    """The reviewed protocol if there is one, else one built now from GitHub, OpenAlex and the model.
+
+    Raises ValueError, with a reason in plain words, for work myGeeKy doesn't cover (safety.py)."""
+    from . import safety
+    s = skills.find(skill)
+    ok, why = safety.allowed(s["name"] if s else skill, goal, lab=bool(s and s.get("kind") == "lab"))
+    if not ok:
+        raise ValueError(why)                     # myGeeKy teaches analysis, never bench work
     found = find_reviewed(skill, goal, data)
     proto = json.loads(json.dumps(found)) if found else template(skill, goal)
     if not found:
@@ -429,6 +457,7 @@ RESOURCE_KINDS = {
     "course": ("🎓", "Course", "Start the course"),
     "tutorial": ("🧭", "Tutorial", "Follow the tutorial"),
     "video": ("🎬", "Video", "Watch it"),
+    "guide": ("📘", "Guide", "Read the guide"),       # a project's or tool's own documentation
     "website": ("🌐", "Website", "Open the site"),
     "search": ("🔎", "GitHub search", "Search GitHub"),
 }
@@ -475,12 +504,15 @@ class Resource:
                 facts.append(it["lang"])
             if it.get("updated"):
                 facts.append(f"updated {str(it['updated'])[:4]}")
-        elif kind == "article":
+        elif kind in ("article", "protocol"):
+            if it.get("venue"):                      # "Bio-protocol", "STAR Protocols", the journal
+                facts.append(it["venue"])
             if it.get("year"):
                 facts.append(str(it["year"]))
             if it.get("cited"):
                 facts.append(f"cited {_short(int(it['cited']))}×")
-            facts.append(_host(url).replace("doi.org", "DOI"))
+            if not it.get("venue"):
+                facts.append(_host(url).replace("doi.org", "DOI"))
         elif kind == "search":
             title = it["title"].replace("Search GitHub: ", "")
             facts.append("nothing picked yet: the most-starred matches")
@@ -630,6 +662,16 @@ def mark_known(cfg: MyGeekyConfig, pid: str, sid: str, how: str | None) -> None:
             known.pop(sid, None)
         e["known"] = known
     _store(cfg, change)
+
+
+def answer_quiz_score(cfg: MyGeekyConfig, pid: str, sid: str, score: float) -> float:
+    """Keep a score for one stage, already marked elsewhere (quiz.py draws and marks the bank's questions)."""
+    def change(state):
+        e = state.get(pid)
+        if e:
+            e["quiz"] = {**(e.get("quiz") or {}), sid: round(float(score), 2)}
+    _store(cfg, change)
+    return round(float(score), 2)
 
 
 def answer_quiz(cfg: MyGeekyConfig, pid: str, sid: str, answers: list[int]) -> float:

@@ -227,7 +227,9 @@ STATUS = {"done": ("✅", "Done"), "known": ("🎓", "You know this"), "current"
 SOURCE = {"reviewed": "✓ Reviewed", "auto": "Auto-built, not reviewed", "mine": "Yours"}
 STATUS_ICON_TEXT = {"done": "✓", "known": "🎓", "current": "▶", "todo": "○"}
 KIND_COLOR = {"repo": "#a78bfa", "article": "#38bdf8", "book": "#f59e0b", "course": "#34d399", "tutorial": "#34d399",
-              "video": "#f472b6", "website": "#94a3b8", "search": "#94a3b8"}
+              "video": "#f472b6", "protocol": "#2dd4bf", "guide": "#fb923c", "website": "#94a3b8",
+              "search": "#94a3b8"}
+LEVEL_COLOR = {"easy": "#34d399", "medium": "#38bdf8", "tricky": "#fb923c"}
 
 
 def _small_button(text: str, tip: str, theme: dict[str, Any], on_click: Callable[[], Any]) -> QPushButton:
@@ -431,6 +433,361 @@ class ResourceCard(QFrame):
         self.setStyleSheet(f"QFrame#resourceCard {{ background:{theme['btn_bg']}; border-radius:10px; }}")
 
 
+class AnswerRow(QFrame):
+    """One answer: a letter in a badge, and the answer itself as text that *wraps*.
+
+    It is deliberately not a QPushButton. A button is never narrower than its own text, so four long
+    answers would force the whole panel wider than it is and squeeze everything in it. A frame with a
+    wrapping label inside can be as narrow as the panel and simply grow taller."""
+
+    def __init__(self, letter: str, text: str, theme: dict[str, Any], state: str,
+                 on_pick: Callable[[], None] | None) -> None:
+        super().__init__()
+        self.setObjectName("answerRow")
+        edge = {"right": theme["good"], "wrong": theme["bad"]}.get(state, "transparent")
+        fill = {"right": f"{theme['good']}26", "wrong": f"{theme['bad']}26"}.get(state, theme["btn_bg"])
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(9, 8, 10, 8)
+        lay.setSpacing(9)
+        badge = _label(letter, f"color:{theme['text']}; font-size:11px; font-weight:800; "
+                               f"background:{theme['card_bg']}; border-radius:9px;", wrap=False)
+        badge.setFixedSize(20, 20)
+        badge.setAlignment(Qt.AlignCenter)
+        lay.addWidget(badge, 0, Qt.AlignTop)
+        lay.addWidget(_label(text, f"color:{theme['text']}; font-size:11.5px; background:transparent;"), 1)
+        if state in ("right", "wrong"):
+            lay.addWidget(_label("✓" if state == "right" else "✗",
+                                 f"color:{theme['good'] if state == 'right' else theme['bad']}; font-size:12px; "
+                                 "font-weight:800; background:transparent;", wrap=False), 0, Qt.AlignTop)
+        self.setStyleSheet(f"QFrame#answerRow {{ background:{fill}; border:1px solid {edge}; border-radius:9px; }}"
+                           + (f"QFrame#answerRow:hover {{ background:{theme['tab_active']}; }}" if on_pick else ""))
+        if on_pick is not None:
+            self.setCursor(Qt.PointingHandCursor)
+            self._on_pick = on_pick
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        if getattr(self, "_on_pick", None) is not None:
+            self._on_pick()
+
+
+class QuestionCard(QFrame):
+    """One quiz question, as big and plain as it can be: which step it belongs to and how hard it is,
+    the question (with its code set apart, in a monospace block), and four answers as full-width
+    buttons. Once you answer, the one you picked turns green or red, the right one is always marked,
+    and the card opens up: *why* that answer is right, the source it was written from with the sentence
+    quoted from it, and a 🚩 if the question itself looks wrong."""
+
+    def __init__(self, q: Any, theme: dict[str, Any], on_pick: Callable[[int], None],
+                 on_open: Callable[[str], Any], on_flag: Callable[[], None] | None = None,
+                 locked: bool = False) -> None:
+        super().__init__()
+        self.setObjectName("questionCard")
+        self.question = q
+        color = LEVEL_COLOR.get(q.level, theme["accent"])
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(12, 12, 12, 12)
+        outer.setSpacing(8)
+        # ---- where it comes from, and how hard
+        top = QHBoxLayout()
+        top.setSpacing(6)
+        top.addWidget(_label(f"{q.number} of {q.of}", _muted(theme, 10), wrap=False))
+        top.addWidget(_label(f"{q.level_icon} {q.level_label.upper()}",
+                             f"color:{color}; font-size:9px; font-weight:700; letter-spacing:0.6px; "
+                             f"background:{color}22; border-radius:6px; padding:2px 6px;", wrap=False))
+        step = _label(f"{q.kind_icon} {q.stage_title}", _muted(theme, 10))
+        step.setToolTip(q.stage_title)
+        top.addWidget(step, 1)
+        if on_flag is not None:
+            top.addWidget(_small_button("🚩" if not q.flagged else "🚩 flagged",
+                                        "This question looks wrong: tell the maker", theme, on_flag), 0, Qt.AlignRight)
+        outer.addLayout(top)
+        outer.addWidget(_label(q.text, f"color:{theme['text']}; font-size:13px; font-weight:600; "
+                                       "background:transparent;"))
+        if q.code:
+            code = _label(q.code, f"color:{theme['text']}; font-family:Consolas,'Courier New',monospace; "
+                                  f"font-size:11px; background:{theme['btn_bg']}; border-radius:8px; padding:8px;")
+            code.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            outer.addWidget(code)
+        # ---- the four answers, each one as wide as the panel and as tall as its own text needs
+        self.answers: list[AnswerRow] = []
+        for i, option in enumerate(q.options):
+            if q.answered:
+                state = "right" if i == q.answer else ("wrong" if i == q.picked else "")
+            else:
+                state = ""
+            row = AnswerRow(chr(65 + i), option, theme, state,
+                            None if (q.answered or locked) else (lambda i=i: on_pick(i)))
+            self.answers.append(row)
+            outer.addWidget(row)
+        # ---- after you answer: right or wrong, why, and the source
+        if q.answered:
+            verdict = "✓ Right" if q.right else "✗ Not this one"
+            good = theme["good"] if q.right else theme["bad"]
+            outer.addWidget(_label(verdict, f"color:{good}; font-size:12px; font-weight:700; background:transparent;",
+                                   wrap=False))
+            if q.why:
+                outer.addWidget(_label(q.why, f"color:{theme['text']}; font-size:11px; background:transparent;"))
+            res = q.source
+            if res is not None:
+                if q.source_quote:
+                    outer.addWidget(_label(f"“{q.source_quote}”",
+                                           f"color:{theme['muted']}; font-size:10.5px; font-style:italic; "
+                                           f"background:{theme['btn_bg']}; border-radius:8px; padding:7px;"))
+                outer.addWidget(_label("WHERE THIS COMES FROM",
+                                       f"color:{theme['muted']}; font-size:9px; font-weight:700; "
+                                       "letter-spacing:0.6px; background:transparent;", wrap=False))
+                outer.addWidget(ResourceCard(res, theme, on_open))
+        self.setStyleSheet(f"QFrame#questionCard {{ background:{theme['card_bg']}; border-radius:12px; }}")
+
+
+class ScoreRing(QWidget):
+    """Your score as a ring: the share you got right, in green when you passed, with the number inside."""
+
+    def __init__(self, score: float, theme: dict[str, Any], passed: bool, size: int = 110) -> None:
+        super().__init__()
+        self.score, self.theme, self.passed = max(0.0, min(1.0, score)), theme, passed
+        self.setFixedSize(size, size)
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        from PySide6.QtCore import QRectF
+        from PySide6.QtGui import QFont, QPainter, QPen
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        side = min(self.width(), self.height())
+        box = QRectF(7, 7, side - 14, side - 14)
+        p.setPen(QPen(qcolor(self.theme["btn_bg"]), 9))
+        p.drawArc(box, 0, 360 * 16)
+        colour = qcolor(self.theme["good"] if self.passed else self.theme["accent"])
+        pen = QPen(colour, 9)
+        pen.setCapStyle(Qt.RoundCap)
+        p.setPen(pen)
+        p.drawArc(box, 90 * 16, -int(360 * 16 * self.score))
+        p.setPen(qcolor(self.theme["text"]))
+        f = QFont()
+        f.setPointSizeF(max(11.0, side / 5.2))
+        f.setBold(True)
+        p.setFont(f)
+        p.drawText(self.rect(), Qt.AlignCenter, f"{round(self.score * 100)}%")
+
+
+class ResultView(QWidget):
+    """What you scored: the ring, how each step and each level went, your best score, and what's next."""
+
+    def __init__(self, attempt: Any, theme: dict[str, Any], best_before: float = 0.0) -> None:
+        super().__init__()
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(8)
+        head = QHBoxLayout()
+        head.setSpacing(12)
+        head.addWidget(ScoreRing(attempt.score, theme, attempt.passed), 0, Qt.AlignTop)
+        side = QVBoxLayout()
+        side.setSpacing(3)
+        side.addWidget(_label(f"{attempt.right} of {attempt.total} right",
+                              f"color:{theme['text']}; font-size:14px; font-weight:700; background:transparent;"))
+        if attempt.perfect:
+            side.addWidget(_label("🏴 100%: a clean sweep.",
+                                  f"color:{theme['good']}; font-size:11.5px; background:transparent;"))
+        elif attempt.passed:
+            side.addWidget(_label("Passed. Take it again tomorrow to push it higher.",
+                                  f"color:{theme['good']}; font-size:11.5px; background:transparent;"))
+        else:
+            side.addWidget(_label("Not yet. The steps below show where to look; the links under each one "
+                                  "are a good place to start.", _muted(theme, 11)))
+        if attempt.improved and best_before > 0:
+            side.addWidget(_label(f"Your best for this protocol: {round(attempt.best * 100)}% "
+                                  f"(was {round(best_before * 100)}%). Only your best counts.",
+                                  _muted(theme, 10.5)))
+        else:
+            side.addWidget(_label(f"Your best for this protocol: {round(attempt.best * 100)}%. Only your best counts.",
+                                  _muted(theme, 10.5)))
+        head.addLayout(side, 1)        # no stretch: the card is only as tall as what it says
+        outer.addLayout(head)
+        if attempt.by_level:
+            row = FlowRow()
+            for lv in attempt.by_level:
+                colour = LEVEL_COLOR.get(lv["level"], theme["muted"])
+                row.add(_label(f"{lv['icon']} {lv['label']} {lv['right']}/{lv['total']}",
+                               f"color:{colour}; font-size:10px; font-weight:600; background:{colour}22; "
+                               "border-radius:7px; padding:3px 7px;", wrap=False))
+            row.finish()
+            outer.addWidget(row)
+        if len(attempt.by_stage) > 1:
+            outer.addWidget(_label("BY STEP", f"color:{theme['muted']}; font-size:9px; font-weight:700; "
+                                              "letter-spacing:0.6px; background:transparent;", wrap=False))
+            for g in attempt.by_stage:
+                ok = g["right"] == g["total"]
+                mark = "✓" if ok else f"{g['right']}/{g['total']}"
+                colour = theme["good"] if ok else (theme["muted"] if g["right"] else theme["bad"])
+                line = QHBoxLayout()
+                line.addWidget(_label(g["title"], f"color:{theme['text']}; font-size:11px; background:transparent;"), 1)
+                line.addWidget(_label(mark, f"color:{colour}; font-size:11px; font-weight:700; background:transparent;",
+                                      wrap=False), 0, Qt.AlignRight)
+                holder = QWidget()
+                holder.setLayout(line)
+                holder.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+                outer.addWidget(holder)
+        outer.addStretch(1)              # any spare room collects at the bottom, not between the rows
+
+
+class QuestionDots(QWidget):
+    """One dot per question in this attempt: the ones you answered, right or wrong, the one you're on
+    (ringed), and the ones still to come. It is the only progress bar a ten-question quiz needs."""
+
+    DOT = 9
+    GAP = 7
+
+    def __init__(self, questions: list[Any], at: int, theme: dict[str, Any], marked: bool = False) -> None:
+        super().__init__()
+        self.questions, self.at, self.theme, self.marked = questions, at, theme, marked
+        self.setFixedHeight(self.DOT + 8)
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        from PySide6.QtGui import QPainter, QPen
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        n = max(1, len(self.questions))
+        step = min(self.DOT + self.GAP, max(self.DOT + 2, self.width() // n))
+        x = 0
+        for i, q in enumerate(self.questions):
+            if q.answered:
+                colour = qcolor(self.theme["good"] if q.right else self.theme["bad"]) if self.marked \
+                    else qcolor(self.theme["accent"])
+            else:
+                colour = qcolor(self.theme["btn_bg"])
+            p.setPen(Qt.NoPen)
+            p.setBrush(colour)
+            top = (self.height() - self.DOT) // 2
+            p.drawEllipse(x, top, self.DOT, self.DOT)
+            if i == self.at and not self.marked:                 # where you are now
+                p.setBrush(Qt.NoBrush)
+                p.setPen(QPen(qcolor(self.theme["text"]), 1.6))
+                p.drawEllipse(x - 3, top - 3, self.DOT + 6, self.DOT + 6)
+            x += step
+
+
+class QuizRunView(QFrame):
+    """A whole quiz attempt, drawn inside the 🏆 Quiz tab: which protocol and step it is for, a dot per
+    question, the question itself (QuestionCard), and one button to go on. When it's finished the same
+    frame shows the result (ResultView) and what to do next.
+
+    It draws; it decides nothing. The panel owns the answers and hands them in: `state` carries the drawn
+    quiz, where you are, and the attempt once it has been marked."""
+
+    def __init__(self, state: dict[str, Any], theme: dict[str, Any], on_pick: Callable[[int], None],
+                 on_next: Callable[[], None], on_flag: Callable[[], None], on_open: Callable[[str], Any],
+                 on_close: Callable[[], None], on_share: Callable[[], None] | None = None) -> None:
+        super().__init__()
+        self.setObjectName("quizRun")
+        quiz, at = state["quiz"], state["at"]
+        attempt = state.get("attempt")
+        questions = quiz.questions
+        q = questions[min(at, len(questions) - 1)]
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(10, 9, 10, 10)
+        lay.setSpacing(8)
+
+        head = QHBoxLayout()
+        head.setSpacing(6)
+        title = ("Your score" if attempt else f"Question {q.number} of {q.of}")
+        head.addWidget(_label(f"<b>🏆 {html.escape(quiz.title)}</b><br>"
+                              f"<span style='color:{theme['muted']}; font-size:10px'>{title}"
+                              + (f" · {html.escape(state['stage_title'])}" if state.get("stage_title") else "")
+                              + "</span>",
+                              f"color:{theme['text']}; font-size:12.5px; background:transparent;", rich=True), 1)
+        head.addWidget(_small_button("✕", "Leave this quiz", theme, on_close), 0, Qt.AlignTop)
+        lay.addLayout(head)
+        lay.addWidget(QuestionDots(questions, at, theme, marked=attempt is not None))
+
+        if attempt is None:
+            lay.addWidget(QuestionCard(q, theme, on_pick, on_open, on_flag))
+            row = QHBoxLayout()
+            left = len(questions) - at - (1 if q.answered else 0)
+            row.addWidget(_label("Pick an answer." if not q.answered
+                                 else (f"{left} to go." if left else "That's the last one."),
+                                 _muted(theme, 10.5)), 1)
+            nxt = _pill_button("See your score" if at == len(questions) - 1 else "Next question →",
+                               "", theme, on_next, accent=True)
+            nxt.setEnabled(q.answered)
+            row.addWidget(nxt, 0, Qt.AlignRight)
+            lay.addLayout(row)
+        else:
+            lay.addWidget(ResultView(attempt, theme, state.get("best_before", 0.0)))
+            if state.get("stage_title"):
+                lay.addWidget(_label("This step is marked as known." if attempt.passed
+                                     else "Not yet: this step stays on your list.", _muted(theme, 10.5)))
+            else:
+                lay.addWidget(_label("One attempt a day, so a score means something. Only your best counts.",
+                                     _muted(theme, 10.5)))
+            row = FlowRow()
+            row.add(_pill_button("← Back to the quizzes", "", theme, on_close, accent=True))
+            if on_share is not None and attempt.score > 0:
+                row.add(_pill_button("🌍 Show my result",
+                                     "Choose whether your name and score appear on mygeeky.org", theme, on_share))
+            row.finish()
+            lay.addWidget(row)
+            lay.addWidget(_label("Every question above came from one of this protocol's own links. Open one "
+                                 "from the card to read more.", _muted(theme, 10)))
+        self.setStyleSheet(_card_style("quizRun", theme))
+
+
+class QuizCard(QFrame):
+    """One protocol's quiz, in the 🏆 Quiz tab: what its bank holds, your best score, and the button to
+    take it. A protocol you haven't started yet says so, and starting it is one press."""
+
+    def __init__(self, row: dict[str, Any], theme: dict[str, Any], on_take: Callable[[], None],
+                 on_start: Callable[[], None], on_share: Callable[[], None] | None = None) -> None:
+        super().__init__()
+        self.setObjectName("quizCard")
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(10, 9, 10, 9)
+        outer.setSpacing(10)
+        score = float(row.get("score") or 0.0)
+        got = bool(row.get("best"))
+        colour = theme["good"] if score >= 1.0 else (theme["good"] if score >= row.get("pass_mark", 0.75)
+                                                     else theme["accent"])
+        if got:
+            ring = ScoreRing(score, theme, score >= row.get("pass_mark", 0.75), size=58)
+            outer.addWidget(ring, 0, Qt.AlignTop)
+        else:
+            mark = _label("🏆", f"background:{theme['btn_bg']}; border-radius:14px; font-size:19px;", wrap=False)
+            mark.setFixedSize(46, 46)
+            mark.setAlignment(Qt.AlignCenter)
+            outer.addWidget(mark, 0, Qt.AlignTop)
+        body = QVBoxLayout()
+        body.setSpacing(3)
+        body.addWidget(_label(f"<b>{html.escape(row['title'])}</b>",
+                              f"color:{theme['text']}; font-size:12.5px; background:transparent;", rich=True))
+        counts = row.get("counts") or {}
+        mix = " · ".join(f"{counts.get(lv, 0)} {lv}" for lv in ("easy", "medium", "tricky") if counts.get(lv))
+        line = f"{counts.get('total', 0)} questions" + (f" ({mix})" if mix else "")
+        if got:
+            line += f" · best {round(score * 100)}%" + (" 🏴" if score >= 1.0 else "")
+        if row.get("flagged"):
+            line += f" · {row['flagged']} flagged by you"
+        body.addWidget(_label(line, _muted(theme, 10.5)))
+        row_buttons = FlowRow()
+        if row.get("can_try"):
+            asked = min(int(row.get("per_attempt") or 10), counts.get("total", 0))
+            row_buttons.add(_pill_button(f"🏁 Take the quiz ({asked} question{'s' if asked != 1 else ''})",
+                                         "Drawn at random: half basics, then applied, and a few real pitfalls",
+                                         theme, on_take, accent=not got))
+        elif not row.get("mine"):
+            row_buttons.add(_pill_button("🧭 Start this protocol",
+                                         "Keep it in 🧭 Protocols, then its quiz is yours to take", theme, on_start))
+        if got and on_share is not None:
+            row_buttons.add(_pill_button("🌍 Show my result",
+                                         "Choose whether your name and score appear on mygeeky.org", theme, on_share))
+        row_buttons.finish()
+        body.addWidget(row_buttons)
+        # a wrapping sentence can't live in a row of buttons (it would be squeezed to nothing): its own line
+        if row.get("mine") and not row.get("can_try") and row.get("why_not"):
+            body.addWidget(_label(row["why_not"], _muted(theme, 10)))
+        outer.addLayout(body, 1)
+        self.setStyleSheet(_card_style("quizCard", theme))
+
+
 class ProtocolCard(QFrame):
     """A protocol. Folded, it's one line: its name, a dot per step and how far you are. Open, it shows its
     steps as a bar of circles (StepBar) and one step at a time: what kind of step it is, where you stand
@@ -439,7 +796,11 @@ class ProtocolCard(QFrame):
 
     act(action, *args) changes the protocol (see app.protocol_action); on_check(stage) opens the level
     check; on_add_link(stage id) and on_rename(stage) ask for text; on_publish() sends it to the maker;
-    on_toggle() opens or folds it; on_select(step id) shows another step."""
+    on_toggle() opens or folds it; on_select(step id) shows another step.
+
+    `quiz` (app.quiz_state) adds the quiz row: how many questions this protocol has, your best score, and
+    🏁 Take the quiz -- or why you can't right now (one attempt a day). on_share() opens the choice to show
+    a score on mygeeky.org, which is off until you ask for it."""
 
     def __init__(self, p: dict[str, Any], theme: dict[str, Any], editing: bool, act: Callable[..., Any],
                  on_check: Callable[[dict[str, Any]], None], on_open: Callable[[str], Any],
@@ -447,7 +808,9 @@ class ProtocolCard(QFrame):
                  on_add_link: Callable[[str], None], on_rename: Callable[[dict[str, Any]], None],
                  on_add_stage: Callable[[], None], vote_item: Callable[[dict[str, Any]], Callable[[bool], int]],
                  vote_of: Callable[[dict[str, Any]], int], is_open: bool = True, selected: str = "",
-                 on_toggle: Callable[[], None] | None = None, on_select: Callable[[str], None] | None = None) -> None:
+                 on_toggle: Callable[[], None] | None = None, on_select: Callable[[str], None] | None = None,
+                 quiz: dict[str, Any] | None = None, on_quiz: Callable[[], None] | None = None,
+                 on_share: Callable[[], None] | None = None) -> None:
         super().__init__()
         self.setObjectName("protocolCard")
         self.protocol = p
@@ -501,6 +864,8 @@ class ProtocolCard(QFrame):
         lay.addLayout(tools)
         if p.get("summary") and not editing:
             lay.addWidget(_label(p["summary"], _muted(theme, 10.5)))
+        if quiz and not editing:
+            lay.addWidget(self._quiz_row(quiz, on_quiz, on_share))
 
         if editing:
             last = len(p["stages"]) - 1
@@ -517,6 +882,55 @@ class ProtocolCard(QFrame):
             lay.addWidget(StepBar(steps, chosen.id, theme, on_select or (lambda sid: None)))
             lay.addWidget(self._step_panel(chosen, steps, on_select))
         self.setStyleSheet(_card_style("protocolCard", theme))
+
+    def _quiz_row(self, quiz: dict[str, Any], on_quiz: Callable[[], None] | None,
+                  on_share: Callable[[], None] | None) -> QFrame:
+        """The quiz line: how many questions there are, your best score, and the button to take it."""
+        theme = self.theme
+        box = QFrame()
+        box.setObjectName("quizRow")
+        lay = QVBoxLayout(box)
+        lay.setContentsMargins(9, 7, 9, 7)
+        lay.setSpacing(4)
+        counts = quiz.get("counts") or {}
+        total = int(counts.get("total") or 0)
+        best = quiz.get("best") or {}
+        score = float(best.get("score") or 0.0) if best else 0.0
+        top = QHBoxLayout()
+        top.setSpacing(6)
+        if best:
+            colour = theme["good"] if score >= 1.0 else (theme["good"] if score >= quiz.get("pass_mark", 0.75)
+                                                         else theme["accent"])
+            mark = "🏴 100%" if score >= 1.0 else f"{round(score * 100)}%"
+            top.addWidget(_label(f"🏆 Your best: {mark}",
+                                 f"color:{colour}; font-size:11px; font-weight:700; background:transparent;",
+                                 wrap=False))
+        else:
+            top.addWidget(_label("🏆 Quiz", f"color:{theme['text']}; font-size:11px; font-weight:700; "
+                                            "background:transparent;", wrap=False))
+        if total:
+            mix = " · ".join(f"{counts.get(lv, 0)} {lv}" for lv in ("easy", "medium", "tricky") if counts.get(lv))
+            top.addWidget(_label(f"{total} questions ({mix})" if mix else f"{total} questions",
+                                 _muted(theme, 10)), 1)
+        else:
+            top.addWidget(_label("no questions for this one yet", _muted(theme, 10)), 1)
+        lay.addLayout(top)
+        row = FlowRow()
+        if total and on_quiz:
+            if quiz.get("can_try"):
+                asked = min(int(quiz.get("per_attempt") or 10), total)      # a small bank asks what it has
+                row.add(_pill_button(f"🏁 Take the quiz ({asked} question{'s' if asked != 1 else ''})",
+                                     "Drawn at random: half basics, then applied, and a few real pitfalls",
+                                     theme, on_quiz, accent=not best))
+            else:
+                row.add(_label(quiz.get("why") or "Come back tomorrow", _muted(theme, 10)))
+        if best and on_share:
+            row.add(_pill_button("🌍 Show my result", "Choose whether your name and score appear on mygeeky.org",
+                                 theme, on_share))
+        row.finish()
+        lay.addWidget(row)
+        box.setStyleSheet(f"QFrame#quizRow {{ background:{theme['btn_bg']}; border-radius:9px; }}")
+        return box
 
     def _step_panel(self, step: Any, steps: list[Any], on_select: Callable[[str], None] | None) -> QFrame:
         theme, act = self.theme, self.act

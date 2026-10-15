@@ -66,6 +66,20 @@ def _said(source: str, n: int) -> str:
     one, many, _ = SOURCES[source]
     return f"in {n} {one if n == 1 else many}"
 
+
+# What you said you mostly do (cfg.work_style) tilts which *kinds* of skill come up first. It never
+# hides a kind: someone who mostly analyses data should still see a language rising, and the other way
+# round. myGeeKy only ever covers work at a computer (safety.py), so these are kinds of that work.
+STYLE_TILT = {
+    "code": {"language": 1.15, "tool": 1.1, "method": 1.0},
+    "analysis": {"method": 1.15, "language": 1.05, "tool": 1.0},
+    "both": {"language": 1.05, "method": 1.05, "tool": 1.0},
+}
+
+
+def style_weight(style: str, kind: str) -> float:
+    return STYLE_TILT.get(style or "", {}).get(kind, 1.0)
+
 _vocab: list[dict[str, Any]] | None = None
 
 
@@ -290,7 +304,7 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
         v = int(votes.get(taste.key_of("skill", name), {}).get("vote", 0))
         base, growth, up = score_of(name)
         tilt = taste.lean(name, s["aliases"][:3], lean_w)
-        score = base * (1 + 0.5 * tilt) * (1.3 if v > 0 else 1.0)
+        score = base * (1 + 0.5 * tilt) * (1.3 if v > 0 else 1.0) * style_weight(cfg.work_style, s["kind"])
         reasons = [_said(src, n) for src, n in sorted(by_source[name].items(), key=lambda kv: kv[1], reverse=True)[:3]]
         row = {"name": name, "kind": s["kind"], "score": round(score, 4), "growth": round(growth, 2),
                "mentions": hits[name], "reasons": reasons, "examples": examples[name], "vote": v,

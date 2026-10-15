@@ -63,11 +63,30 @@ def article_queries(name: str, goal: str = "") -> list[tuple[str, str]]:
     return [(f"{words} tutorial", ""), (words, "type:review")]
 
 
+# Free step-by-step pages that aren't papers: a tool's or a project's own guide. Only software: myGeeKy
+# does not teach bench work, and the sites that publish bench protocols are refused outright (safety.py).
+GUIDE_SITES = ("imagej.net", "docs.github.com", "developer.mozilla.org", "docs.python.org", "cran.r-project.org",
+               "quarto.org", "owasp.org", "12factor.net", "google.github.io", "opensource.guide",
+               "kubernetes.io", "docs.docker.com", "cellprofiler.org")
+
+
+def is_guide(url: str) -> bool:
+    """A free how-to page from a project's or a tool's own documentation."""
+    from . import safety
+    if safety.blocked_source(url):
+        return False
+    host = str(url or "").lower().split("/")[2] if str(url or "").startswith("https://") else ""
+    return any(host == s or host.endswith("." + s) for s in GUIDE_SITES)
+
+
 # --------------------------------------------------------------------------- what comes back
 def from_repo(r: dict[str, Any]) -> dict[str, Any] | None:
     """A GitHub search hit as a candidate (only the fields search returns)."""
+    from . import safety
     if not isinstance(r, dict) or not r.get("full_name") or r.get("fork"):
         return None
+    if safety.is_bench(f"{r.get('full_name', '')} {r.get('description') or ''}"):
+        return None                      # a repo of bench protocols is not learning material here
     return {"kind": "repo", "id": f"gh:{str(r['full_name']).lower()}",
             "title": str(r["full_name"])[:140], "url": f"https://github.com/{r['full_name']}",
             "text": " ".join(str(r.get("description") or "").split())[:400],
@@ -93,14 +112,21 @@ def from_work(w: dict[str, Any]) -> dict[str, Any] | None:
         return None
     doi = str(w.get("doi") or "")
     oa = w.get("open_access") or {}
+    src = ((w.get("primary_location") or {}).get("source") or {}) if isinstance(w.get("primary_location"), dict) else {}
+    sid = str(src.get("id") or "").rsplit("/", 1)[-1]
+    url = doi if doi.startswith("https://") else f"https://openalex.org/{wid}"
+    from . import safety
+    if safety.blocked_source(url, sid):        # a bench-protocol journal is never a candidate at all
+        return None
     return {"kind": "article", "id": f"oa:{wid}", "title": " ".join(str(w["title"]).split())[:200],
-            "url": doi if doi.startswith("https://") else f"https://openalex.org/{wid}",
-            "text": _abstract(w.get("abstract_inverted_index")), "topics": [],
+            "url": url, "text": _abstract(w.get("abstract_inverted_index")), "topics": [],
             "type": str(w.get("type") or "")[:20], "year": int(w.get("publication_year") or 0),
-            "cited": int(w.get("cited_by_count") or 0), "oa": bool(oa.get("is_oa"))}
+            "cited": int(w.get("cited_by_count") or 0), "oa": bool(oa.get("is_oa")),
+            "venue": str(src.get("display_name") or "")[:80], "source_id": sid}
 
 
-WORK_FIELDS = "id,title,doi,type,publication_year,cited_by_count,open_access,abstract_inverted_index"
+WORK_FIELDS = ("id,title,doi,type,publication_year,cited_by_count,open_access,abstract_inverted_index,"
+               "primary_location")
 
 
 def search_github(client, query: str, per_page: int = 20) -> list[dict[str, Any]]:

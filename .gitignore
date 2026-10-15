@@ -13,6 +13,9 @@ venv*/
 mygeeky_config.local.json
 _site/
 
+# protocol drafts from the app's own builder (a starting point, not the reviewed list)
+tools/protocols/drafts.json
+
 # video renders (large; re-create with launch/video/make_video.py)
 launch/video/*.mp4
 launch/video/*.wav

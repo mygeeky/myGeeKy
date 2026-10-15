@@ -1,4 +1,10 @@
-"""Minimal, read-only GitHub REST API client.
+"""Minimal, read-only GitHub REST API client, with conditional requests.
+
+Every answer is remembered with its ETag (ghcache.py), and every request carries
+`If-None-Match`, so GitHub can reply **304 Not Modified** -- which costs nothing
+against the rate limit. Nothing goes stale: we still ask each time, GitHub just
+answers "unchanged" for free. When the network or GitHub is away, the cached
+answer is served instead, marked `from_cache`, so the app keeps working.
 
 Deliberate design constraint: this file contains no `follow` / `unfollow`
 method, and never calls `PUT/DELETE /user/following/*`. myGeeKy suggests;
@@ -14,6 +20,8 @@ import time
 from typing import Any, Iterable, Iterator
 
 import requests
+
+from . import ghcache
 
 API_ROOT = "https://api.github.com"
 MAX_WAIT = 60          # seconds a request may wait for GitHub's limit; longer, and we say so instead
@@ -68,7 +76,8 @@ def _retry_after(resp: requests.Response) -> float:
 
 class GitHubClient:
     def __init__(self, token: str | None, rate_limit_sleep: float = 1.5, search_pause: float = 2.1,
-                 user_agent: str = "mygeeky-cli"):
+                 user_agent: str = "mygeeky-cli", cache: "ghcache.Store | None" = None,
+                 use_cache: bool = True):
         self.session = requests.Session()
         headers = {
             "Accept": "application/vnd.github+json",
@@ -80,16 +89,46 @@ class GitHubClient:
         self.session.headers.update(headers)
         self.rate_limit_sleep = rate_limit_sleep
         self._blocked_until = 0.0
+        # what GitHub already told us, and what this client did with it
+        self.cache = (cache or ghcache.store()) if use_cache else None
+        self.stats = ghcache.Stats()
+        self._poll_until = 0.0        # GitHub's X-Poll-Interval for the events endpoints
         # GitHub's /search/* endpoints have their own, much tighter rate limit
         # (~30 requests/min) independent of the main 5000/hour REST limit, so
         # they need their own, longer pacing regardless of X-RateLimit-Remaining.
         self.search_pause = search_pause
 
-    def _get(self, path: str, params: dict[str, Any] | None = None, is_search: bool = False) -> requests.Response:
+    def _get(self, path: str, params: dict[str, Any] | None = None, is_search: bool = False) -> Any:
+        """One read. It may be answered by GitHub, by GitHub saying "unchanged" (free), or -- when the
+        network is away -- out of the cache, in which case the answer carries `from_cache`."""
         url = path if path.startswith("http") else f"{API_ROOT}{path}"
+        key = ghcache.key_of(url, params)
+        self.stats.note(path)
+        held = self.cache.get(key) if self.cache is not None else None
+        if held is not None:
+            # the same question twice in one refresh, and a 404 we were told about recently, are not asked again
+            if held.age < ghcache.SAME_RUN_SECONDS or (held.status == 404 and held.age < ghcache.MISSING_SECONDS):
+                self.stats.from_cache += 1
+                if self.cache is not None:
+                    self.cache.count("from_cache")
+                return ghcache.CachedResponse(held)
         if self._blocked_until > time.time():
+            if held is not None:                     # the limit is spent: what we know beats nothing
+                self.stats.from_cache += 1
+                self.stats.offline += 1
+                return ghcache.CachedResponse(held)
             raise RateLimited(self._blocked_until)
-        resp = self.session.get(url, params=params, timeout=30)
+        headers = held.headers() if held is not None else {}
+        try:
+            resp = self.session.get(url, params=params, headers=headers or None, timeout=30)
+        except requests.RequestException:
+            if held is not None:                     # no network: the app keeps working on what it has
+                self.stats.from_cache += 1
+                self.stats.offline += 1
+                if self.cache is not None:
+                    self.cache.count("offline")
+                return ghcache.CachedResponse(held)
+            raise
         if resp.status_code in (403, 429) and _is_slow_down(resp):
             # GitHub's secondary limit: it says how long to back off (Retry-After) or when the limit resets
             wait = _retry_after(resp)
@@ -103,6 +142,7 @@ class GitHubClient:
                 raise RateLimited(self._blocked_until, secondary=True)
         if resp.status_code == 200 and _looks_like_web_page(resp):
             raise NotGitHub()
+        resp = self._remember(key, resp, is_search)
         remaining = resp.headers.get("X-RateLimit-Remaining")
         if remaining is not None and int(remaining) <= 1:
             reset = int(resp.headers.get("X-RateLimit-Reset", time.time() + 60))
@@ -113,9 +153,47 @@ class GitHubClient:
                 self._blocked_until = float(reset)
         elif is_search and self.search_pause:
             time.sleep(self.search_pause)
-        elif self.rate_limit_sleep:
-            time.sleep(self.rate_limit_sleep)
+        elif self.rate_limit_sleep and not getattr(resp, "fresh", False):
+            time.sleep(self.rate_limit_sleep)       # a 304 cost nothing, so there is nothing to pace
         return resp
+
+    def _remember(self, key: str, resp: requests.Response, is_search: bool) -> Any:
+        """Count what this answer was, and keep it (or keep what 304 just confirmed)."""
+        self.stats.requests += 1
+        if is_search:
+            self.stats.searches += 1
+        if self.cache is None:
+            return resp
+        self.cache.count("requests")
+        if is_search:
+            self.cache.count("searches")
+        if resp.status_code == 304:                  # free: nothing changed since last time
+            self.stats.not_modified += 1
+            self.cache.count("not_modified")
+            row = self.cache.touch(key, resp.headers.get("ETag", ""), resp.headers.get("Last-Modified", ""))
+            if row is not None:
+                return ghcache.CachedResponse(row, fresh=True)
+            return resp                              # we were asked to revalidate something we no longer hold
+        if resp.status_code == 200:
+            try:
+                body = resp.json()
+            except ValueError:
+                return resp                          # not JSON (204s and the like): nothing to keep
+            self.cache.put(key, body, 200, resp.headers.get("ETag", ""), resp.headers.get("Last-Modified", ""))
+        elif resp.status_code == 404:
+            self.cache.put(key, None, 404)           # a deleted account isn't asked for again all day
+        elif resp.status_code >= 500:
+            held = self.cache.get(key)               # GitHub is having a bad day: use what we have
+            if held is not None and held.status == 200:
+                self.stats.from_cache += 1
+                return ghcache.CachedResponse(held)
+        return resp
+
+    def done(self) -> ghcache.Stats:
+        """Write the cache once, at the end of a refresh, and hand back what this run did."""
+        if self.cache is not None:
+            self.cache.save()
+        return self.stats
 
     def get_user(self, username: str) -> dict[str, Any] | None:
         resp = self._get(f"/users/{username}")

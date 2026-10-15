@@ -3,15 +3,17 @@
 // OpenAlex, or from the person editing one: all someone's text, so every field is
 // capped and only https links survive. Kept apart so curated.ts can use it too.
 
+import { blockedSource, isBench } from './safety';
+
 export const ROLES = ['basics', 'deeper', 'applied', 'project', 'use'] as const;
 export type Role = (typeof ROLES)[number];
 export const ITEM_KINDS: Record<string, string> = { repo: '📦', article: '📄', website: '🌐', course: '🎓', book: '📖',
-  tutorial: '🧭', video: '🎬' };
+  tutorial: '🧭', video: '🎬', guide: '📘' };
 export const MAX_STAGES = 10;
 export const MAX_ITEMS = 8;
 
 export type Link = { title: string; url: string; kind: string; note: string; stars?: number; cited?: number; year?: number;
-  lang?: string; updated?: string };
+  lang?: string; updated?: string; venue?: string };
 export type Quiz = { q: string; options: string[]; answer: number };
 export type Stage = { id: string; title: string; role: Role; query: string; skills: string[]; can: string[]; quiz: Quiz[];
   items: Link[] };
@@ -39,6 +41,8 @@ export function cleanLink(raw: any): Link | null {
   const url = https(raw.url);
   const title = text(raw.title, 160);
   if (!url || !title) return null;
+  // the one door every link comes through: a bench protocol's home never gets in (safety.ts)
+  if (blockedSource(url) || isBench(`${title} ${text(raw.note, 200)}`)) return null;
   const kind = String(raw.kind ?? 'website').toLowerCase();
   const out: Link = { title, url, kind: kind in ITEM_KINDS ? kind : 'website', note: text(raw.note, 200) };
   for (const k of ['stars', 'cited', 'year'] as const) {      // facts shown on the link's card (optional)
@@ -47,8 +51,10 @@ export function cleanLink(raw: any): Link | null {
   }
   const lang = text(raw.lang, 40);
   const updated = text(raw.updated, 10);
+  const venue = text(raw.venue, 80);
   if (lang) out.lang = lang;
   if (updated) out.updated = updated;
+  if (venue) out.venue = venue;                              // the journal a 🧪 lab protocol came from
   return out;
 }
 
@@ -88,6 +94,12 @@ export function cleanStage(raw: any, i = 0): Stage | null {
 
 /** A checked protocol, or null. `reviewed` is only ever set by the caller, never by the file. */
 export function cleanProtocol(raw: any, reviewed = false): Protocol | null {
+  // a protocol about laboratory work is refused wherever it came from: the curated file, one a user
+  // published, or one built here (safety.ts)
+  if (raw && typeof raw === 'object'
+      && isBench(`${text(raw.skill, 60)} ${text(raw.title, 100)} ${text(raw.goal, 60)} ${text(raw.summary, 300)}`)) {
+    return null;
+  }
   if (!raw || typeof raw !== 'object') return null;
   const skill = text(raw.skill, 60);
   const title = text(raw.title, 100);
