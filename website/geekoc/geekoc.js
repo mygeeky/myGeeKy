@@ -29,9 +29,19 @@
 
   // --------------------------------------------------------------------- the look
   var SKIN = {
-    light: '#a98cff', mid: '#8b6bf5', dark: '#6442d8', deep: '#5b3bcc',
-    glass: '#7fd8ff', ink: '#1a1428', mouth: '#2a1f3d', sucker: '#c7b2ff', white: '#ffffff',
+    light: '#9a5cf0', mid: '#8b45e0', dark: '#7430cf', deep: '#5f23b4',
+    belly: '#ffc457', spot: '#6a28c0',
+    outline: '#2b1053', outlineWidth: 7,
+    glass: '#7fd8ff', ink: '#1a1428', mouth: '#2b1053', sucker: '#ffe0a3', white: '#ffffff',
   };
+
+  /* Where the darker freckles sit on the mantle, as fractions of its box. Fixed rather than random, so
+   * the same octopus turns up every time -- a mascot that reshuffles its own spots is two mascots. */
+  var SPOTS = [
+    [-0.46, -0.30, 0.070], [-0.20, -0.52, 0.048], [0.12, -0.56, 0.062], [0.44, -0.34, 0.054],
+    [-0.58, 0.04, 0.050], [0.60, -0.02, 0.066], [-0.34, 0.40, 0.058], [0.30, 0.44, 0.050],
+    [0.02, 0.60, 0.044], [-0.62, 0.34, 0.038], [0.56, 0.32, 0.042], [-0.06, -0.14, 0.036],
+  ];
 
   /* The eight arms before any pose touches them.
    *
@@ -41,25 +51,25 @@
    * straight down. Tying the two together is what made the first attempt splay like a starfish.
    * `w` is the width at the root; the two middle arms are fattest because they are nearest the viewer. */
   var ARMS = [
-    { at: 152, dir: 112, len: 158, w: 26, back: true },
-    { at: 133, dir: 103, len: 170, w: 29, back: true },
-    { at: 115, dir: 98, len: 180, w: 31 },
-    { at: 99, dir: 94, len: 186, w: 33 },
-    { at: 81, dir: 86, len: 186, w: 33 },
-    { at: 65, dir: 82, len: 180, w: 31 },
-    { at: 47, dir: 77, len: 170, w: 29, back: true },
-    { at: 28, dir: 68, len: 158, w: 26, back: true },
+    { at: 166, dir: 196, len: 176, w: 40, back: true },
+    { at: 146, dir: 174, len: 190, w: 44, back: true },
+    { at: 126, dir: 152, len: 186, w: 47 },
+    { at: 104, dir: 116, len: 160, w: 48 },
+    { at: 76, dir: 64, len: 160, w: 48 },
+    { at: 54, dir: 28, len: 186, w: 47 },
+    { at: 34, dir: 6, len: 190, w: 44, back: true },
+    { at: 14, dir: -16, len: 176, w: 40, back: true },
   ];
 
   /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
    * had to be stubby, and stubby arms on an octopus read as legs. Everything is in these units, so a
    * caller only ever sets a pixel width. */
-  var BOX = 500;
+  var BOX = 620;
 
   /* The head is drawn at this fraction of the grid. Shrinking it is what leaves room for arms that
    * are actually tentacles: an octopus's arms are far longer than its mantle, and the first rig had them
    * at about the mantle's own height, which read as a blob with feet. */
-  var HEAD = 0.84;
+  var HEAD = 0.98;
 
   /* A pose says, per arm, how far to swing from its resting direction (`swing`), how much the arm coils
    * along its length (`curl`), and how long it is (`len`, as a multiplier). Everything else -- where the
@@ -80,7 +90,7 @@
    *
    * `lids` is 0 open, 1 shut, and takes a PAIR for a wink. `look` is -1..1 across and up. */
   var FACES = {
-    happy:     { mouth: 'smile', brow: 0, lids: 0, look: [0, 0] },
+    happy:     { mouth: 'smile', brow: 0.3, lids: 0, look: [0, 0] },
     excited:   { mouth: 'open', brow: 0.8, lids: 0, look: [0, -0.15] },
     curious:   { mouth: 'smile', brow: 0.45, lids: 0, look: [0.5, -0.1] },
     thinking:  { mouth: 'flat', brow: 0.5, lids: 0.25, look: [-0.2, -0.4] },
@@ -93,20 +103,20 @@
   };
 
   var POSES = {
-    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [30, 22, 13, 5, -5, -13, -22, -30],
+    idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [152, 132, 104, 78, -78, -104, -132, -152],
                len: 1, face: 'happy' },
-    wave:    { swing: [2, 1, 0, 0, 0, 0, -54, -104], curl: [30, 22, 13, 5, -5, -13, -34, -46],
+    wave:    { swing: [0, 0, 0, 0, 0, -8, -26, -62], curl: [152, 132, 104, 78, -78, -96, -96, -74],
                len: 1, face: 'excited' },
-    point:   { swing: [2, 1, 0, 0, 0, 0, -34, -62], curl: [30, 22, 13, 5, -5, -13, -18, -20],
-               len: 0.98, face: 'curious' },
-    think:   { swing: [4, 2, 0, 0, 0, 0, -56, -116], curl: [30, 22, 13, 5, -5, -13, -34, -70],
-               len: 0.95, face: 'thinking' },
-    cheer:   { swing: [82, 54, 16, 2, -2, -16, -54, -82], curl: [26, 20, 13, 5, -5, -13, -20, -26],
-               len: 1.02, face: 'excited' },
-    sleep:   { swing: [8, 4, 2, 0, 0, -2, -4, -8], curl: [52, 40, 24, 10, -10, -24, -40, -52],
-               len: 0.88, face: 'sleepy' },
-    present: { swing: [46, 31, 14, 4, -4, -14, -31, -46], curl: [22, 16, 10, 4, -4, -10, -16, -22],
-               len: 0.98, face: 'proud' },
+    point:   { swing: [0, 0, 0, 0, 0, -4, -14, 14], curl: [152, 132, 104, 78, -78, -92, -84, -26],
+               len: 1, face: 'curious' },
+    think:   { swing: [0, 0, 0, 0, 0, -10, -34, -52], curl: [152, 132, 104, 78, -78, -104, -118, -150],
+               len: 0.96, face: 'thinking' },
+    cheer:   { swing: [40, 24, 6, 0, 0, -6, -24, -40], curl: [140, 128, 110, 86, -86, -110, -128, -140],
+               len: 1.04, face: 'excited' },
+    sleep:   { swing: [-40, -26, -10, 0, 0, 10, 26, 40], curl: [104, 96, 82, 62, -62, -82, -96, -104],
+               len: 0.9, face: 'sleepy' },
+    present: { swing: [8, 4, 0, 0, 0, 0, -4, -8], curl: [104, 92, 78, 58, -58, -78, -92, -104],
+               len: 1.04, face: 'proud' },
   };
 
   /* Mix two poses. This is the whole reason a pose is numbers: GeekOc can be 40% of the way from
@@ -140,29 +150,75 @@
   /* Walk a spine, turning `curl` degrees in total along the way, then wrap it in an outline that tapers
    * from `w` to a point. `wobble` is a travelling sine so a resting arm breathes instead of freezing. */
   function tentacle(x0, y0, deg, len, curl, w, wobble, phase) {
-    var N = 16, a = rad(deg), step = len / N, turn = rad(curl) / N;
-    var spine = [[x0, y0]], x = x0, y = y0, i;
+    var N = 22, a = rad(deg), step = len / N;
+    /* The turn is NOT spread evenly down the arm. Weighting it towards the tip is what makes a tentacle
+     * curl into a spiral instead of bending like a banana -- an octopus arm is near-straight where it
+     * leaves the body and tightest at the very end. The weights are k^2, normalised so `curl` still
+     * means the total turn in degrees however many steps there are. */
+    var weights = [], total = 0, i;
     for (i = 1; i <= N; i++) {
-      a += turn + Math.sin(phase + i * 0.42) * wobble * 0.012;
+      var k = i / N;
+      var wgt = 0.25 + k * k * 2.2;
+      weights.push(wgt);
+      total += wgt;
+    }
+    var spine = [[x0, y0]], x = x0, y = y0;
+    for (i = 1; i <= N; i++) {
+      a += rad(curl) * weights[i - 1] / total + Math.sin(phase + i * 0.34) * wobble * 0.009;
       x += step * Math.cos(a);
       y += step * Math.sin(a);
       spine.push([x, y]);
     }
-    var left = [], right = [];
+
+    // the outline, offset either side of the spine by a width that tapers to a round tip
+    var left = [], right = [], norms = [], widths = [];
     for (i = 0; i <= N; i++) {
       var p = spine[i];
       var ahead = spine[Math.min(i + 1, N)], behind = spine[Math.max(i - 1, 0)];
       var dx = ahead[0] - behind[0], dy = ahead[1] - behind[1];
       var m = Math.hypot(dx, dy) || 1;
-      var k = i / N;
-      // thickness falls away as a curve, not a straight line: a straight taper reads as a cone
-      var r = (w * (1 - k * k * 0.96)) / 2;
-      left.push([p[0] - (dy / m) * r, p[1] + (dx / m) * r]);
-      right.push([p[0] + (dy / m) * r, p[1] - (dx / m) * r]);
+      var nx = -dy / m, ny = dx / m;
+      var kk = i / N;
+      // ends at 18% of its root width rather than at nothing: a needle point reads as a spike, and the
+      // reference art this follows has arms that stay round right to the curl
+      var r = (w * (1 - 0.82 * kk * kk)) / 2;
+      norms.push([nx, ny]);
+      widths.push(r);
+      left.push([p[0] + nx * r, p[1] + ny * r]);
+      right.push([p[0] - nx * r, p[1] - ny * r]);
     }
-    var d = 'M' + left.map(function (p) { return round(p[0]) + ' ' + round(p[1]); }).join('L');
-    d += 'L' + right.reverse().map(function (p) { return round(p[0]) + ' ' + round(p[1]); }).join('L') + 'Z';
-    return { d: d, tip: spine[N], spine: spine };
+    // round the tip off with a half-circle rather than meeting the two sides in a point
+    var tipN = norms[N], tipR = widths[N], tipP = spine[N];
+    var cap = [];
+    var base = Math.atan2(tipN[1], tipN[0]);
+    for (i = 1; i < 8; i++) {
+      var ang = base - Math.PI * i / 8;
+      cap.push([tipP[0] + Math.cos(ang) * tipR, tipP[1] + Math.sin(ang) * tipR]);
+    }
+    var say = function (p) { return round(p[0]) + ' ' + round(p[1]); };
+    var d = 'M' + left.map(say).join('L') + 'L' + cap.map(say).join('L') +
+            'L' + right.reverse().map(say).join('L') + 'Z';
+    return { d: d, tip: tipP, spine: spine, norms: norms, widths: widths, side: deg > 90 && deg < 270 ? 1 : -1 };
+  }
+
+  /* The pale underside with its rings of suckers -- the single thing that says "octopus" fastest, and
+   * the reason the reference art reads at a glance. It runs along one side of the spine, the side the
+   * arm curls towards, so it stays visible however the arm turns. */
+  function underside(arm, skin) {
+    var inner = [], outer = [], dots = [], i;
+    var N = arm.spine.length - 1;
+    for (i = 0; i <= N; i++) {
+      var p = arm.spine[i], n = arm.norms[i], r = arm.widths[i], s = arm.side;
+      inner.push([p[0] + n[0] * r * 0.20 * s, p[1] + n[1] * r * 0.20 * s]);
+      outer.push([p[0] + n[0] * r * 0.74 * s, p[1] + n[1] * r * 0.74 * s]);
+      if (i > 2 && i % 2 === 0 && r > 4) {
+        dots.push({ cx: round(p[0] + n[0] * r * 0.47 * s), cy: round(p[1] + n[1] * r * 0.47 * s),
+                    r: round(r * 0.19) });
+      }
+    }
+    var say = function (p) { return round(p[0]) + ' ' + round(p[1]); };
+    return { d: 'M' + inner.map(say).join('L') + 'L' + outer.reverse().map(say).join('L') + 'Z',
+             fill: skin.belly, dots: dots };
   }
 
   // --------------------------------------------------------------------- the whole character
@@ -180,18 +236,19 @@
     var headK = opts.head != null ? opts.head : HEAD;
     var armK = opts.arm != null ? opts.arm : 1;
     var thickK = opts.thick != null ? opts.thick : 1;
-    var cx = BOX / 2, cy = 160;
+    var cx = BOX / 2, cy = 248;
     var breathe = opts.still ? 0 : Math.sin(t * 1.5) * 1;
 
     var arms = [], i;
     for (i = 0; i < 8; i++) {
       var base = ARMS[i];
       var ang = base.dir + (pose.swing[i] || 0);
-      var ax = cx + Math.cos(rad(base.at)) * 98 * headK;
-      var ay = cy + Math.sin(rad(base.at)) * 112 * headK;
+      var ax = cx + Math.cos(rad(base.at)) * 122 * headK;
+      var ay = cy + Math.sin(rad(base.at)) * 106 * headK;
       var arm = tentacle(ax, ay, ang, base.len * (pose.len || 1) * armK, pose.curl[i] || 0,
                          base.w * thickK, opts.still ? 0 : 1, t * 1.6 + i * 0.8);
-      arms.push({ d: arm.d, tip: arm.tip, spine: arm.spine, back: !!base.back,
+      arms.push({ d: arm.d, tip: arm.tip, spine: arm.spine, norms: arm.norms, widths: arm.widths,
+                  side: arm.side, back: !!base.back, i: i,
                   fill: base.back ? SKIN.deep : SKIN.dark });
     }
 
@@ -308,11 +365,11 @@
   function head(cx, cy, k) {
     k = k || 1;
     var X = function (n) { return round(cx + n * k); }, Y = function (n) { return round(cy + n * k); };
-    return 'M' + X(0) + ' ' + Y(-102) + 'C' + X(84) + ' ' + Y(-102) + ' ' + X(132) + ' ' + Y(-38) +
-      ' ' + X(132) + ' ' + Y(34) + 'C' + X(132) + ' ' + Y(94) + ' ' + X(96) + ' ' + Y(130) +
-      ' ' + X(58) + ' ' + Y(142) + 'L' + X(-58) + ' ' + Y(142) + 'C' + X(-96) + ' ' + Y(130) +
-      ' ' + X(-132) + ' ' + Y(94) + ' ' + X(-132) + ' ' + Y(34) + 'C' + X(-132) + ' ' + Y(-38) +
-      ' ' + X(-84) + ' ' + Y(-102) + ' ' + X(0) + ' ' + Y(-102) + 'Z';
+    return 'M' + X(0) + ' ' + Y(-132) + 'C' + X(78) + ' ' + Y(-132) + ' ' + X(124) + ' ' + Y(-70) +
+      ' ' + X(124) + ' ' + Y(6) + 'C' + X(124) + ' ' + Y(68) + ' ' + X(94) + ' ' + Y(110) +
+      ' ' + X(52) + ' ' + Y(126) + 'L' + X(-52) + ' ' + Y(126) + 'C' + X(-94) + ' ' + Y(110) +
+      ' ' + X(-124) + ' ' + Y(68) + ' ' + X(-124) + ' ' + Y(6) + 'C' + X(-124) + ' ' + Y(-70) +
+      ' ' + X(-78) + ' ' + Y(-132) + ' ' + X(0) + ' ' + Y(-132) + 'Z';
   }
 
   /* Everything the picture needs, as plain values ready to bind into markup -- no HTML string anywhere.
@@ -347,7 +404,33 @@
                       round(e.x + e.r) + ' ' + round(e.y) };
     };
     var lens = round(38 * k), rim = round(11 * k);
+
+    // the pale undersides and their sucker rings, one per arm, in the same order as the arms
+    var stripes = [], suckers = [], backStripes = [], frontStripes = [], backSuckers = [], frontSuckers = [];
+    g.arms.forEach(function (arm) {
+      var u = underside(arm, s);
+      var band = { d: u.d, fill: u.fill, back: arm.back };
+      stripes.push(band);
+      (arm.back ? backStripes : frontStripes).push(band);
+      u.dots.forEach(function (dot) {
+        var ring = { cx: dot.cx, cy: dot.cy, r: dot.r, fill: s.sucker, back: arm.back };
+        suckers.push(ring);
+        (arm.back ? backSuckers : frontSuckers).push(ring);
+      });
+    });
+
+    var spots = SPOTS.map(function (sp) {
+      return { cx: round(cx + sp[0] * 128 * k), cy: round(cy + sp[1] * 118 * k),
+               r: round(sp[2] * 128 * k), fill: s.spot };
+    });
+
     return {
+      stripes: stripes, suckers: suckers, spots: spots,
+      backStripes: backStripes, frontStripes: frontStripes,
+      backSuckers: backSuckers, frontSuckers: frontSuckers,
+      outline: s.outline, outlineWidth: round(s.outlineWidth * k),
+      skinLight: s.light, skinMid: s.mid, skinDark: s.dark, skinDeep: s.deep,
+      lidFill: s.mid, glassColour: s.glass, inkColour: s.ink,
       backArms: g.arms.filter(function (a) { return a.back; }),
       frontArms: g.arms.filter(function (a) { return !a.back; }),
       arms: g.arms,
