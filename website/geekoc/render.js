@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 /* Render GeekOc to files: still SVGs, or a numbered frame sequence for video.
  *
- *   node render.js                  one .svg per pose
- *   node render.js --frames 300     300 numbered frames of the pose loop, for ffmpeg
+ *   node render.js                     one .svg per pose
+ *   node render.js --frames 300        300 numbered frames of the pose loop
+ *   node render.js --swim cross 360    360 frames of him swimming across, arms trailing
+ *
+ * The swim frames run the real physics, so the trail is the same one the page shows -- and because the
+ * simulation is stepped at a fixed 1/60 regardless of how long a frame takes to write, the film is
+ * identical every time it is rendered.
  *
  * The frames are a pure function of time, so the same command always produces the same film -- and a
  * frame can be re-rendered on its own without replaying what came before it.
@@ -18,6 +23,33 @@ const G = globalThis.GeekOc;
 const here = __dirname;
 const args = process.argv.slice(2);
 const framesAt = args.indexOf('--frames');
+
+const swimAt = args.indexOf('--swim');
+if (swimAt >= 0) {
+  const move = args[swimAt + 1] || 'cross';
+  const howMany = Number(args[swimAt + 2]) || 360;
+  const life = G.alive({ stiff: 0.22, damp: 0.88, droop: 0.12 });
+  const dir = path.join(here, 'frames');
+  fs.mkdirSync(dir, { recursive: true });
+  // settle him before the first frame, or the film opens with the arms falling into place
+  for (let i = 0; i < 120; i++) {
+    const m = life.follow(move, i / 60);
+    life.step(m.pose, null, 1 / 60);
+  }
+  for (let f = 0; f < howMany; f++) {
+    const t = 2 + f / 30;
+    const m = life.follow(move, t);
+    life.step(m.pose, null, 1 / 60);
+    life.step(m.pose, null, 1 / 60);                 // two sim steps per frame at 30fps
+    const p = life.parts(m.pose, null);
+    const stage = '-245 200 1190 455';
+    fs.writeFileSync(path.join(dir, String(f).padStart(4, '0') + '.svg'),
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + stage + '" width="1190" height="455">' +
+      '<g transform="' + p.flipT + '">' + G.markup(p.raw, { id: 'f' + f }) + '</g></svg>');
+  }
+  console.log(`wrote ${howMany} frames of "${move}" to ${dir} (${(howMany / 30).toFixed(1)}s at 30fps)`);
+  process.exit(0);
+}
 
 if (framesAt < 0) {
   for (const pose of Object.keys(G.POSES)) {

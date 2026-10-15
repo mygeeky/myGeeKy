@@ -127,6 +127,13 @@
                len: 1.05, face: 'excited' },
     sleep:   { swing: [-22, -14, -5, 0, 0, 5, 14, 22], curl: [116, 96, 78, 56, -56, -78, -96, -116],
                len: 0.92, face: 'sleepy' },
+    /* SWIMMING. The arms are gathered and barely curled, so they stream instead of hooking; the trail
+     * itself is not in here at all, it falls out of the body moving and the arms having weight. */
+    swim:    { swing: [16, 10, 4, 0, 0, -4, -10, -16], curl: [54, 48, 42, 34, -34, -42, -48, -54],
+               len: 1.08, face: 'curious' },
+    /* JETTING: everything pulled into a point behind him, the way an octopus actually moves fast. */
+    jet:     { swing: [26, 18, 8, 2, -2, -8, -18, -26], curl: [22, 18, 14, 10, -10, -14, -18, -22],
+               len: 1.16, face: 'excited' },
     present: { swing: [5, 3, 0, 0, 0, 0, -3, -5], curl: [120, 100, 80, 57, -57, -80, -100, -120],
                len: 1.05, face: 'proud' },
   };
@@ -329,7 +336,11 @@
     var headK = (opts.head != null ? opts.head : HEAD) * Math.pow(ratio, 0.6);
     var armK = (opts.arm != null ? opts.arm : 1) / Math.pow(ratio, 0.55);
     var thickK = (opts.thick != null ? opts.thick : 1) * Math.pow(ratio, 0.25);
-    var cx = BOX / 2, cy = 248;
+    /* WHERE HE IS. Everything is built around (cx, cy), so moving him is moving these two numbers --
+     * and because the arms are a simulation hung off the body, moving the body is all that "swimming"
+     * needs: the roots go, the arms lag, and the trail comes out of the physics rather than a pose. */
+    var at = opts.at || [0, 0];
+    var cx = BOX / 2 + at[0], cy = 248 + at[1];
     var breathe = opts.still ? 0 : Math.sin(t * 1.5) * 1;
 
     var arms = [], i;
@@ -382,6 +393,8 @@
     return {
       arms: arms, eyes: eyes, lids: lids, breathe: breathe, pose: pose, face: face,
       head: { cx: cx, cy: cy + breathe, k: headK },
+      facing: opts.facing != null ? opts.facing : 1,
+      at: at,
       mouth: mouthPath(face.mouth, cx, cy + 58 * headK + breathe, headK),
       brow: face.brow || 0,
       skin: opts.skin || SKIN,
@@ -587,6 +600,11 @@
               ' ' + round(cx + 60 * k) + ' ' + round(cy - (26 + g.brow * 5) * k),
       browOpacity: round(clamp(g.brow, 0, 1)),
       pose: g.pose, face: g.face, skin: s, raw: g,
+      // Facing left is one mirror, about HIS OWN centre rather than the grid's. Mirroring about the
+      // grid would flip where he is as well as which way he points, so a character halfway across to
+      // the left would jump to the right the moment he turned.
+      flipT: g.facing < 0 ? 'translate(' + round(2 * cx) + ',0) scale(-1,1)' : '',
+      at: g.at,
     };
   }
 
@@ -626,7 +644,9 @@
     this.pull = opts.pull != null ? opts.pull : 0.5;        // ...and how much they lean towards it
     this.t = 0;
     this.chains = null;
-    this.at = null;                                          // where the pointer is, if anywhere
+    this.at = null;                        // the pointer, if anywhere
+    this.at2 = [0, 0];                      // where his body is
+    this.facing = 1;                                          // where the pointer is, if anywhere
   }
 
   /* One step. `dt` in seconds; anything above a twentieth of a second is treated as a twentieth, so a
@@ -636,7 +656,8 @@
     dt = Math.min(dt || 1 / 60, 0.05);
     this.t += dt;
     var want = build({ pose: pose, face: face, t: this.t, arm: o.arm, thick: o.thick,
-                       head: o.head, ratio: o.ratio, band: o.band });
+                       head: o.head, ratio: o.ratio, band: o.band,
+                       at: this.at2, facing: this.facing });
     var k = dt * 60;                                   // everything below is tuned per 60fps frame
     var self = this;
 
@@ -705,14 +726,82 @@
   };
 
   /* The character as it stands right now, ready to draw -- the same shape `parts` always returns. */
+  /* Put him somewhere, facing a way. The arms are NOT told: they find out by being dragged. */
+  Life.prototype.place = function (at, facing) {
+    this.at2 = at || [0, 0];
+    if (facing) this.facing = facing;
+    return this;
+  };
+
+  /* Follow one of the named moves, at `t` seconds. */
+  Life.prototype.follow = function (name, t) {
+    var m = moveAt(name, t == null ? this.t : t);
+    this.place(m.at, m.facing);
+    return m;
+  };
+
   Life.prototype.parts = function (pose, face) {
     var o = this.opts;
     return parts({ pose: pose, face: face, t: this.t, arm: o.arm, thick: o.thick, head: o.head,
-                   ratio: o.ratio, band: o.band,
+                   ratio: o.ratio, band: o.band, at: this.at2, facing: this.facing,
                    spines: this.chains && this.chains.map(function (chain) {
                      return chain.map(function (b) { return [b.x, b.y]; });
                    }) });
   };
+
+  // --------------------------------------------------------------------- moving about
+  /* WAYS OF MOVING, each a pure function of time: give it seconds, get back where he is, which way he
+   * faces and what his body is doing. Pure, so a page and a video renderer agree frame for frame, and
+   * any moment can be asked for on its own.
+   *
+   * Nothing here animates the ARMS. It cannot: the arms are a simulation hung off the body, so the
+   * trail, the overshoot and the settle all come out of the body moving and the arms having weight.
+   * That is the whole reason the physics was worth building -- "swim left" is one line, not a keyframe
+   * track per tentacle.
+   */
+  var MOVES = {
+    /* Crossing the frame and back, facing the way he is going. The pause at each end is what stops it
+     * looking like a sprite on a loop: he arrives, hangs for a moment, then turns. */
+    cross: function (t) {
+      var span = 9, u = (t % span) / span;
+      var out = u < 0.42 ? ease01(u / 0.42) : u < 0.5 ? 1 : u < 0.92 ? 1 - ease01((u - 0.5) / 0.42) : 0;
+      var still = (u >= 0.42 && u < 0.5) || u >= 0.92;
+      return { at: [lerp(230, -230, out), Math.sin(t * 1.1) * 16],
+               facing: u < 0.46 ? -1 : 1, pose: still ? 'idle' : 'swim' };
+    },
+    /* Jetting: four quick bursts across, each with a glide after it. An octopus does not swim evenly. */
+    jet: function (t) {
+      var span = 8, u = (t % span) / span;
+      var burst = Math.min(1, Math.max(0, (u % 0.25) / 0.18));
+      var steps = Math.floor(u / 0.25);
+      var x = 230 - (steps + ease01(burst)) * 115;
+      return { at: [x, Math.sin(t * 0.9) * 10 - burst * 14],
+               facing: -1, pose: burst < 0.75 ? 'jet' : 'swim' };
+    },
+    /* Hanging in the water, going nowhere: the resting loop for a corner of a page. */
+    hover: function (t) {
+      return { at: [Math.sin(t * 0.55) * 26, Math.sin(t * 0.9) * 20], facing: 1, pose: 'idle' };
+    },
+    /* Rising and sinking, as if riding a swell. */
+    bob: function (t) {
+      return { at: [Math.sin(t * 0.4) * 10, Math.sin(t * 0.75) * 58], facing: 1,
+               pose: Math.sin(t * 0.75) < -0.4 ? 'swim' : 'idle' };
+    },
+    /* A slow circuit of the frame, turning at the sides. */
+    circle: function (t) {
+      var a = t * 0.5;
+      var x = Math.cos(a) * 190, y = Math.sin(a) * 70;
+      return { at: [x, y], facing: Math.sin(a) > 0 ? -1 : 1, pose: 'swim' };
+    },
+  };
+
+  function ease01(u) { return u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u); }
+
+  /* Where a move has him at a given second. */
+  function moveAt(name, t) {
+    var fn = MOVES[name] || MOVES.hover;
+    return fn(t);
+  }
 
   /* Play a sequence of poses, easing between them. Returns a stop function. The page passes a callback
    * that takes markup -- so the same loop drives a DOM node, a canvas, or a frame dump for video. */
@@ -746,5 +835,6 @@
   root.GeekOc = { POSES: POSES, FACES: FACES, ARMS: ARMS, SKIN: SKIN, HEAD: HEAD, BOX: BOX,
                   build: build, parts: parts, markup: markup, svg: svg,
                   mix: mix, mixFace: mixFace, play: play, walk: walk, skin: skin, Life: Life,
+                  MOVES: MOVES, moveAt: moveAt,
                   alive: function (o) { return new Life(o); }, head: head };
 })(typeof window !== 'undefined' ? window : globalThis);
