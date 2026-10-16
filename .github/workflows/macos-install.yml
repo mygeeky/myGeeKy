@@ -26,10 +26,31 @@ jobs:
           python-version: "3.12"
       - name: Install myGeeKy, Qt and pytest
         run: python -m pip install -q -e . pytest "PySide6-Essentials>=6.5"
+      # Why the output is repeated as ::error:: lines: downloading a run's log needs a token with
+      # Actions read access, which the maker's everyday token does not have, so a failure here used
+      # to be readable only as "Process completed with exit code 1" from anywhere else. The summary
+      # below lands in the run's annotations instead, which say which test failed without the log.
       - name: The test suite (the macOS-only tests run here)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python -m pytest -q -rs
+        run: |
+          set -o pipefail
+          code=0
+          python -m pytest -q -rs -rf 2>&1 | tee pytest.out || code=$?
+          if [ "$code" -eq 0 ]; then exit 0; fi
+          echo "### The macOS test suite failed" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -60 pytest.out >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          # exit 139 is a segfault (128+11), which pytest cannot report on itself.
+          # Each line ends in `|| true` on purpose: with `set -e -o pipefail`, a test that is simply
+          # false and a grep that matches nothing both end the step with 1 and hide the real code.
+          if [ "$code" -gt 128 ]; then
+            echo "::error::pytest died on signal $((code - 128)) (exit $code)"
+          fi
+          { grep -E "^(FAILED|ERROR)|short test summary|=.*(failed|error)" pytest.out || true; } \
+            | tail -25 | while IFS= read -r line; do echo "::error::$line"; done || true
+          exit "$code"
       - name: On the real macOS screen, a panel-like window stays visible and follows every Space
         run: |
           python - <<'EOF'
