@@ -94,7 +94,21 @@ jobs:
               print(f"- {mark} **{login}** — {said['why']}")
           PY
 
+      # This step does two things: it pushes the board to `leaderboard-update`, and then it asks
+      # GitHub to open a pull request from it. The push always works. The second half is refused
+      # outright when the account has "Allow GitHub Actions to create and approve pull requests"
+      # switched off -- which is the default, and is a setting rather than anything this repository
+      # can carry in a file:
+      #
+      #   GitHub Actions is not permitted to create or approve pull requests.
+      #
+      # That turned every nightly run red while the job had in fact done all of its work. So the
+      # refusal is allowed to happen, and the step below turns it into a warning and a link instead.
+      # Nothing is skipped and nothing is published without review either way: the branch is there,
+      # and the maker still opens and approves the pull request by hand.
       - name: Open a pull request for the maker to approve
+        id: pr
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v7
         with:
           branch: leaderboard-update
@@ -104,3 +118,31 @@ jobs:
           body-path: board.log
           labels: leaderboard
           delete-branch: true
+
+      - name: Say where the board is, and how to let this open its own pull request
+        env:
+          OUTCOME: ${{ steps.pr.outcome }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+        run: |
+          if [ "$OUTCOME" = "success" ] && [ -n "$PR_URL" ]; then
+            echo "Pull request ready for review: $PR_URL" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          COMPARE="https://github.com/$GITHUB_REPOSITORY/compare/main...leaderboard-update?expand=1"
+          echo "::warning::The board branch is pushed, but Actions is not allowed to open the pull request. Open it at $COMPARE"
+          {
+            echo '### The board is ready. The pull request is not.'
+            echo
+            echo 'Everything this job does has been done: the issues were read, the board was written'
+            echo 'and checked, and `leaderboard-update` has been pushed. Only the last step was refused,'
+            echo 'because this account does not let GitHub Actions open pull requests.'
+            echo
+            echo "**Open it yourself:** <$COMPARE>"
+            echo
+            echo 'To have this job open it on its own in future: **Settings -> Actions -> General ->'
+            echo 'Workflow permissions**, and tick *Allow GitHub Actions to create and approve pull'
+            echo 'requests*. The same setting exists on the organisation, and the organisation wins, so'
+            echo 'if the repository box is already ticked, check the organisation too.'
+            echo
+            echo 'Nothing reaches the website either way until the pull request is merged.'
+          } >> "$GITHUB_STEP_SUMMARY"
