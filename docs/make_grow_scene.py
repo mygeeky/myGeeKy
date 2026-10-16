@@ -36,27 +36,69 @@ POT = "#ffc457"          # the same gold as his belly and his suckers' band
 POT_DEEP = "#e8a93a"
 SPARK = "#ffc457"
 
-# he is excited, and he is looking at the plant rather than at you
-# `look` moves a pupil by only nine units inside an eye of thirty, so even a full 1.0 reads as
-# "straight ahead with a thought". The engine does not clamp it, and the pupil is clipped to the eye
-# anyway, so this scene asks for more than the faces do: his eyes are hard right, on the plant.
-FACE = {"mouth": "open", "brow": 1.0, "lids": 0, "look": [1.8, -0.5]}
+# HE REACTS, and what he does follows what the plant is doing: he watches it come up, is surprised
+# by the first leaf, points it out, is delighted when it is done, and ends amused.
+#
+# Every one of these looks RIGHT, at the plant. `look` moves a pupil by only nine units inside an eye
+# of thirty, so even a full 1.0 reads as "straight ahead with a thought". The engine does not clamp
+# it and the pupil is clipped to the eye anyway, so this scene asks for far more than the faces do.
+#
+# `lids` as a PAIR is a wink, which is the nearest the rig has to amused.
+REACTIONS = [
+    # pose,    face,                                                                  from, to
+    ("idle",  {"mouth": "smile", "brow": 0.45, "lids": 0.1, "look": [1.6, 0.15]},     0.00, 0.25),
+    ("idle",  {"mouth": "oh", "brow": 1.0, "lids": 0, "look": [1.7, -0.05]},          0.25, 0.43),
+    ("point", {"mouth": "open", "brow": 0.9, "lids": 0, "look": [1.75, -0.2]},        0.43, 0.61),
+    ("cheer", {"mouth": "open", "brow": 1.0, "lids": 0, "look": [1.5, -0.45]},        0.61, 0.80),
+    ("idle",  {"mouth": "grin", "brow": 0.35, "lids": [0, 1], "look": [1.5, 0.05]},   0.80, 1.00),
+]
+STILL_REACTION = 3       # the one a still shows: delighted, beside a grown plant
 
 
-def geekoc(size: int) -> str:
-    """The octopus, from the rig, as a nested <svg> ready to drop into a bigger picture."""
+def geekoc(size: int, pose: str, face: dict, ident: str) -> str:
+    """One drawing of the octopus, out of the rig.
+
+    Each reaction gets its own `id`, because several of him end up in the same file and they would
+    otherwise share one set of gradient and clip-path names."""
     js = """
       require(process.env.GEEKOC);
       const G = globalThis.GeekOc;
-      G.FACES.__watching = JSON.parse(process.env.FACE);
-      process.stdout.write(G.svg({ pose: 'cheer', face: '__watching', t: 1.4, still: true,
-                                   size: Number(process.env.SIZE) }));
+      G.FACES.__r = JSON.parse(process.env.FACE);
+      process.stdout.write(G.svg({ pose: process.env.POSE, face: '__r', t: 1.4, still: true,
+                                   id: process.env.IDENT, size: Number(process.env.SIZE) }));
     """
-    env = {**os.environ, "GEEKOC": str(ENGINE), "FACE": json.dumps(FACE), "SIZE": str(size)}
+    env = {**os.environ, "GEEKOC": str(ENGINE), "FACE": json.dumps(face), "POSE": pose,
+           "IDENT": ident, "SIZE": str(size)}
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=180, env=env)
     if r.returncode != 0:
         raise SystemExit("node could not draw GeekOc:\n" + (r.stderr or "")[-500:])
     return r.stdout.strip()
+
+
+def reacting(x: int, y: int, size: int) -> str:
+    """All of his reactions, stacked, with one visible at a time.
+
+    Cross-fading stacked drawings is how a rig that produces stills becomes a performance. The
+    changes are quick on purpose -- a slow dissolve between two faces reads as a ghost, where a
+    fast one reads as him having reacted."""
+    snap = 0.012
+    out = []
+    for i, (pose, face, start, end) in enumerate(REACTIONS):
+        drawing = placed(geekoc(size, pose, face, f"r{i}"), x, y, size)
+        if start <= 0:                       # on screen from the very beginning
+            values, keytimes = "1;1;0;0", f"0;{end:.3f};{end + snap:.3f};1"
+        elif end >= 1:                       # ...and this one carries the cycle out
+            values, keytimes = "0;0;1;1", f"0;{start:.3f};{start + snap:.3f};1"
+        else:
+            values = "0;0;1;1;0;0"
+            keytimes = (f"0;{start:.3f};{start + snap:.3f};"
+                        f"{end:.3f};{end + snap:.3f};1")
+        base = "1" if i == STILL_REACTION else "0"
+        out.append(f'<g opacity="{base}">'
+                   f'<animate attributeName="opacity" values="{values}" keyTimes="{keytimes}"'
+                   f' dur="{CYCLE}" calcMode="discrete" repeatCount="indefinite"/>'
+                   f'{drawing}</g>')
+    return "".join(out)
 
 
 def placed(markup: str, x: int, y: int, size: int) -> str:
@@ -75,12 +117,12 @@ def placed(markup: str, x: int, y: int, size: int) -> str:
     return f'<g transform="translate({x},{y}) scale({k:.4f})">{inner}</g>'
 
 
-CYCLE = "17s"            # a word needs time to be read, and three of them need it three times
+CYCLE = "19s"            # a word needs time to be read, and three of them need it three times
 
 # The cycle, as fractions of it. The stem has to REACH its height before a leaf opens, or a leaf
 # hangs in the air above a stem that has not got there yet -- which is exactly what it was doing.
 RISE_END = 0.24          # the stem is at full height here, carrying its leaves still folded
-HOLD_END = 0.93          # it stays grown for most of the cycle, then folds away
+HOLD_END = 0.95          # it stays grown for most of the cycle, then folds away
 
 # Each leaf opens, and the word it stands for takes the place of the one before it. The leaves are
 # spread much further apart than the growing alone needed, because the pace is now set by reading
@@ -90,13 +132,21 @@ LEAVES = [  # (opens, finished opening)
     (0.41, 0.48),
     (0.55, 0.62),
 ]
-WORDS = [   # (the word, when it fades in, when it fades out)
-    ("skills",        0.28, 0.44),
-    ("knowledge",     0.42, 0.58),
-    ("collaboration", 0.56, 0.86),
+# A colour each, and all three chosen to clear 3:1 against BOTH a white README and a dark one --
+# large bold text, so 3:1 is the bar. The pretty versions of these (the pale glass blue, the light
+# pink) sit at about 2:1 on white and vanish there, which is the same mistake the suckers made.
+WORDS = [   # (the word, when it fades in, when it fades out, its colour)
+    ("skills",        0.28, 0.44, "#0f9880"),   # the leaf teal, deepened until white can hold it
+    ("knowledge",     0.42, 0.58, "#7a5cff"),   # the brand purple
+    ("collaboration", 0.56, 0.80, "#d94fb0"),   # pink, the third hue the badge carries
 ]
 WORD_AT = (800, 240)     # all three in the same place, so each replaces the last
-WORD_COLOUR = "#7a5cff"  # bright enough to read on a white README and on a dark one
+
+# ...and the last thing to arrive is the name, in his own two colours: the gold off his suckers and
+# a blue taken from his glasses and deepened until it reads on white as well as on dark.
+NAME_ON, NAME_OFF = 0.83, 0.98
+NAME_GOLD = "#c9871a"
+NAME_BLUE = "#2789bd"
 
 
 def scaled(inner: str, ox: float, oy: float, values: str, keytimes: str, splines: str) -> str:
@@ -136,13 +186,13 @@ def words() -> str:
     The base state -- what anything that ignores animation draws -- is nothing at all, because three
     words sharing one position would otherwise print on top of each other."""
     out = []
-    for i, (text, on, off) in enumerate(WORDS):
+    for i, (text, on, off, colour) in enumerate(WORDS):
         last = i == len(WORDS) - 1
         fade = 0.035
         out.append(
             f'<text x="{WORD_AT[0]}" y="{WORD_AT[1]}" text-anchor="middle" opacity="0"'
             f' font-family="Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif"'
-            f' font-size="34" font-weight="700" fill="{WORD_COLOUR}">{text}'
+            f' font-size="34" font-weight="700" fill="{colour}">{text}'
             f'<animate attributeName="opacity" values="0;0;1;1;0;0"'
             f' keyTimes="0;{on:.3f};{on + fade:.3f};{off - fade:.3f};{off:.3f};1"'
             f' dur="{CYCLE}" calcMode="spline"'
@@ -174,6 +224,32 @@ def spark(x: float, y: float, r: float, order: float) -> str:
                   values=f"0 0;0 0;1 1;1 1;0 0",
                   keytimes=f"0;{at:.3f};{at + 0.04:.3f};{HOLD_END};1",
                   splines=".2 .8 .3 1;.2 .9 .3 1;0 0 1 1;.7 0 .9 .4")
+
+
+def name() -> str:
+    """The last thing to arrive: the name, where the words were.
+
+    It takes the place of `collaboration` rather than sitting somewhere else, so the sequence reads
+    as one sentence ending in who said it -- skills, knowledge, collaboration, myGeeKy. It comes up
+    a little and settles, which is what makes it land rather than merely appear."""
+    snap = 0.02
+    x, y = WORD_AT[0], WORD_AT[1] + 6
+    return (f'<text x="{x}" y="{y}" text-anchor="middle" opacity="0"'
+            f' font-family="Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif"'
+            f' font-size="52" font-weight="700" letter-spacing="-0.5">'
+            f'<tspan fill="{NAME_GOLD}">my</tspan><tspan fill="{NAME_BLUE}">GeeKy</tspan>'
+            f'<animate attributeName="opacity" values="0;0;1;1;0;0"'
+            f' keyTimes="0;{NAME_ON:.3f};{NAME_ON + snap:.3f};'
+            f'{NAME_OFF - snap:.3f};{NAME_OFF:.3f};1"'
+            f' dur="{CYCLE}" calcMode="spline"'
+            f' keySplines="0 0 1 1;.3 .7 .4 1;0 0 1 1;.4 0 .7 .3;0 0 1 1" repeatCount="indefinite"/>'
+            f'<animateTransform attributeName="transform" type="translate"'
+            f' values="0 18;0 18;0 0;0 0;0 0;0 0"'
+            f' keyTimes="0;{NAME_ON:.3f};{NAME_ON + snap * 2:.3f};'
+            f'{NAME_OFF - snap:.3f};{NAME_OFF:.3f};1"'
+            f' dur="{CYCLE}" calcMode="spline"'
+            f' keySplines="0 0 1 1;.2 .9 .3 1;0 0 1 1;0 0 1 1;0 0 1 1" repeatCount="indefinite"/>'
+            f'</text>')
 
 
 def plant() -> str:
@@ -214,9 +290,10 @@ role="img" aria-label="GeekOc, the myGeeKy octopus, watching a plant grow">
   <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0;0 -4;0 0"
        keyTimes="0;0.25;0.5;0.75;1" dur="3.6s" calcMode="spline"
        keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" repeatCount="indefinite"/>
-    {placed(geekoc(440), 6, 2, 440)}</g>
+    {reacting(6, 2, 440)}</g>
   {plant()}
   {words()}
+  {name()}
 </svg>
 """
 
