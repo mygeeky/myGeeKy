@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENGINE = ROOT / "website" / "geekoc" / "geekoc.js"
 OUT_SVG = Path(__file__).parent / "geekoc" / "geekoc-grows.svg"
 
-W, H = 800, 440
+W, H = 1000, 440   # the extra width is where the words go, to the right of the plant
 
 # his palette, so the plant belongs to the same drawing
 INK = "#2b1053"          # the outline every shape of his carries
@@ -75,13 +75,28 @@ def placed(markup: str, x: int, y: int, size: int) -> str:
     return f'<g transform="translate({x},{y}) scale({k:.4f})">{inner}</g>'
 
 
-CYCLE = "13s"            # slow enough to watch: it was over before the eye had followed it
+CYCLE = "17s"            # a word needs time to be read, and three of them need it three times
 
 # The cycle, as fractions of it. The stem has to REACH its height before a leaf opens, or a leaf
 # hangs in the air above a stem that has not got there yet -- which is exactly what it was doing.
-RISE_END = 0.30          # the stem is at full height here, carrying its leaves still folded
-OPEN_END = 0.46          # and here the leaves have opened
-HOLD_END = 0.92          # it stays grown for most of the cycle, then folds away
+RISE_END = 0.24          # the stem is at full height here, carrying its leaves still folded
+HOLD_END = 0.93          # it stays grown for most of the cycle, then folds away
+
+# Each leaf opens, and the word it stands for takes the place of the one before it. The leaves are
+# spread much further apart than the growing alone needed, because the pace is now set by reading
+# rather than by the plant: three words a third of a second apart would be a flicker, not a sentence.
+LEAVES = [  # (opens, finished opening)
+    (0.27, 0.34),
+    (0.41, 0.48),
+    (0.55, 0.62),
+]
+WORDS = [   # (the word, when it fades in, when it fades out)
+    ("skills",        0.28, 0.44),
+    ("knowledge",     0.42, 0.58),
+    ("collaboration", 0.56, 0.86),
+]
+WORD_AT = (800, 240)     # all three in the same place, so each replaces the last
+WORD_COLOUR = "#7a5cff"  # bright enough to read on a white README and on a dark one
 
 
 def scaled(inner: str, ox: float, oy: float, values: str, keytimes: str, splines: str) -> str:
@@ -101,15 +116,46 @@ def scaled(inner: str, ox: float, oy: float, values: str, keytimes: str, splines
 def leaf(d: str, fill: str, ox: float, oy: float, order: float) -> str:
     """A leaf that rides up with the stem folded, and opens once the stem has arrived.
 
-    `order` staggers the opening from the bottom leaf to the top one. It starts at 0.3 rather than 0
-    because a leaf is a small leaf while it travels, not nothing -- "the stem should have leaves
-    small, and then the small leaves grow"."""
-    open_at = RISE_END + 0.02 + order * 0.05
-    done_at = min(open_at + 0.1, OPEN_END + order * 0.04)
+    `order` picks its moment from LEAVES, and the fold is 0.3 rather than 0 because a leaf is a small
+    leaf while it travels, not nothing -- "the stem should have leaves small, and then the small
+    leaves grow"."""
+    open_at, done_at = LEAVES[int(order)]
     return scaled(f'<path d="{d}" fill="{fill}"/>', ox, oy,
                   values="0.3 0.3;0.3 0.3;1 1;1 1",
                   keytimes=f"0;{open_at:.3f};{done_at:.3f};1",
                   splines="0 0 1 1;.2 .8 .3 1;0 0 1 1")
+
+
+def words() -> str:
+    """One word per leaf, each taking the place of the one before it.
+
+    They share a single spot rather than stacking: the picture says *skills*, then *knowledge*, then
+    *collaboration*, and what is left at the end is the plant rather than a list. A word fades in as
+    its leaf opens, so the two read as the same event.
+
+    The base state -- what anything that ignores animation draws -- is nothing at all, because three
+    words sharing one position would otherwise print on top of each other."""
+    out = []
+    for i, (text, on, off) in enumerate(WORDS):
+        last = i == len(WORDS) - 1
+        fade = 0.035
+        out.append(
+            f'<text x="{WORD_AT[0]}" y="{WORD_AT[1]}" text-anchor="middle" opacity="0"'
+            f' font-family="Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif"'
+            f' font-size="34" font-weight="700" fill="{WORD_COLOUR}">{text}'
+            f'<animate attributeName="opacity" values="0;0;1;1;0;0"'
+            f' keyTimes="0;{on:.3f};{on + fade:.3f};{off - fade:.3f};{off:.3f};1"'
+            f' dur="{CYCLE}" calcMode="spline"'
+            f' keySplines="0 0 1 1;.3 .7 .4 1;0 0 1 1;.4 0 .7 .3;0 0 1 1"'
+            f' repeatCount="indefinite"/>'
+            # the word it belongs to rises a little as it arrives, so it does not merely blink on
+            f'<animateTransform attributeName="transform" type="translate"'
+            f' values="0 14;0 14;0 0;0 0;0 {"0" if last else "-10"};0 {"0" if last else "-10"}"'
+            f' keyTimes="0;{on:.3f};{on + fade * 2:.3f};{off - fade:.3f};{off:.3f};1"'
+            f' dur="{CYCLE}" calcMode="spline"'
+            f' keySplines="0 0 1 1;.2 .8 .3 1;0 0 1 1;.4 0 .7 .3;0 0 1 1"'
+            f' repeatCount="indefinite"/></text>')
+    return "".join(out)
 
 
 def spark(x: float, y: float, r: float, order: float) -> str:
@@ -117,7 +163,7 @@ def spark(x: float, y: float, r: float, order: float) -> str:
 
     The glints are what turn "a plant" into "it just did that". They are late on purpose: a sparkle
     before the thing it is celebrating reads as decoration."""
-    at = OPEN_END + 0.03 + order * 0.035
+    at = LEAVES[-1][1] + 0.02 + order * 0.03      # after the last leaf has opened
     path = (f'<path d="M{x} {y - r}C{x + r * .18} {y - r * .22} {x + r * .22} {y - r * .18} {x + r} {y}'
             f'C{x + r * .22} {y + r * .18} {x + r * .18} {y + r * .22} {x} {y + r}'
             f'C{x - r * .18} {y + r * .22} {x - r * .22} {y + r * .18} {x - r} {y}'
@@ -170,6 +216,7 @@ role="img" aria-label="GeekOc, the myGeeKy octopus, watching a plant grow">
        keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" repeatCount="indefinite"/>
     {placed(geekoc(440), 6, 2, 440)}</g>
   {plant()}
+  {words()}
 </svg>
 """
 
@@ -184,12 +231,22 @@ def main() -> int:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     try:
         from PySide6.QtCore import QByteArray, Qt
-        from PySide6.QtGui import QImage, QPainter
+        from PySide6.QtGui import QGuiApplication, QImage, QPainter
         from PySide6.QtSvg import QSvgRenderer
     except ImportError:
         print("  (Qt not here: no PNG written, and the SVG was not checked)")
         return 0
-    renderer = QSvgRenderer(QByteArray(OUT_SVG.read_bytes()))
+
+    # Qt will rasterise shapes with no application object, but the moment it has to touch a FONT --
+    # which this picture now does, because it has words in it -- it kills the process outright: exit
+    # 127, no message, no traceback. One of these first, and it is fine.
+    app = QGuiApplication.instance() or QGuiApplication([])
+    # The still is rendered from a copy with every animation element STRIPPED OUT, not from the
+    # animated file. Qt applies an animation's first keyframe and stops there, and the first keyframe
+    # of a thing that grows is nothing -- so rasterising the real file gave a picture of an empty
+    # pot. Without the animations the groups keep their own transforms, which are the grown ones.
+    still = re.sub(r"<animate(?:Transform)?\b[^>]*/>", "", OUT_SVG.read_text(encoding="utf-8"))
+    renderer = QSvgRenderer(QByteArray(still.encode("utf-8")))
     if not renderer.isValid():
         raise SystemExit("the SVG this wrote is not readable")
     image = QImage(W * 2, H * 2, QImage.Format_ARGB32)
