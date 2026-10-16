@@ -75,33 +75,67 @@ def placed(markup: str, x: int, y: int, size: int) -> str:
     return f'<g transform="translate({x},{y}) scale({k:.4f})">{inner}</g>'
 
 
-def spark(x: float, y: float, r: float) -> str:
-    """A four-pointed glint, the shape a sparkle is in flat art."""
-    return (f'<path d="M{x} {y - r}C{x + r * .18} {y - r * .22} {x + r * .22} {y - r * .18} {x + r} {y}'
+def spark(x: float, y: float, r: float, start: float) -> str:
+    """A four-pointed glint that pops after the leaf it belongs to, then twinkles.
+
+    The glints are what turn "a plant" into "it just did that". They arrive late on purpose: a
+    sparkle before the thing it is celebrating reads as decoration."""
+    path = (f'<path d="M{x} {y - r}C{x + r * .18} {y - r * .22} {x + r * .22} {y - r * .18} {x + r} {y}'
             f'C{x + r * .22} {y + r * .18} {x + r * .18} {y + r * .22} {x} {y + r}'
             f'C{x - r * .18} {y + r * .22} {x - r * .22} {y + r * .18} {x - r} {y}'
-            f'C{x - r * .22} {y - r * .18} {x - r * .18} {y - r * .22} {x} {y - r}Z" fill="{SPARK}"/>')
+            f'C{x - r * .22} {y - r * .18} {x - r * .18} {y - r * .22} {x} {y - r}Z" fill="{SPARK}">'
+            f'<animate attributeName="opacity" values="1;0.45;1;0.6;1" keyTimes="0;0.2;0.45;0.7;1"'
+            f' dur="2.2s" begin="{start}s" repeatCount="indefinite"/></path>')
+    return grows(path, x, y, start=start, rise=0.08)
+
+
+CYCLE = "7s"             # grow, hold, and away again, then round once more
+
+
+def grows(inner: str, ox: float, oy: float, start: float, rise: float = 0.20) -> str:
+    """Make something sprout from the point (ox, oy) and, at the end of the cycle, fold back into it.
+
+    The scaling is done by nesting translate -> scale -> translate-back, rather than by a CSS
+    transform-origin: the path data stays in the picture's own coordinates, and it behaves the same
+    in a browser, in a Markdown preview and in Qt. A renderer that ignores animation altogether draws
+    the base state, which is why that state is the FULL-GROWN one -- a still of this picture is a
+    plant, not an empty pot."""
+    return (f'<g transform="translate({ox},{oy})">'
+            f'<g><animateTransform attributeName="transform" type="scale" additive="replace"'
+            f' values="0 0;1 1;1 1;0 0" keyTimes="0;{rise};0.88;1" dur="{CYCLE}"'
+            f' calcMode="spline"'
+            f' keySplines=".2 .9 .3 1;0 0 1 1;.7 0 .9 .4"'
+            f' begin="{start}s" repeatCount="indefinite"/>'
+            f'<g transform="translate({-ox},{-oy})">{inner}</g></g></g>')
 
 
 def plant() -> str:
     """The pot, the stem and three leaves -- each one bigger than the last, because the picture has to
-    say *growing* and not merely *a plant*. Drawn with his outline so the two belong together."""
+    say *growing* and not merely *a plant*. Drawn with his outline so the two belong together.
+
+    They come up in order, out of the soil line at the top of the pot, each one a little after the
+    one below it. That stagger is the whole illusion: three things scaling at once reads as a picture
+    being zoomed, and the same three a third of a second apart reads as something growing."""
+    SOIL = (588, 336)
     out = [f'<g stroke="{INK}" stroke-width="{OW}" stroke-linejoin="round" stroke-linecap="round">']
-    # the pot, close enough to him that he is plainly looking AT it
+    # the pot does not grow: it is the thing everything else grows out of
     out.append(f'<path d="M506 332 L664 332 L646 420 Q585 434 524 420 Z" fill="{POT}"/>')
     out.append(f'<path d="M506 332 L664 332 L658 358 Q585 372 512 358 Z" fill="{POT_DEEP}"/>')
     # the stem, leaning the way it is growing
-    out.append(f'<path d="M588 334 C585 290 572 258 580 206" fill="none" stroke="{STEM}" '
-               f'stroke-width="15"/>')
+    out.append(grows(f'<path d="M588 334 C585 290 572 258 580 206" fill="none" stroke="{STEM}"'
+                     f' stroke-width="15"/>', *SOIL, start=0.0, rise=0.30))
     # three leaves, smallest at the bottom: the eye reads that as time
-    out.append(f'<path d="M584 318 C546 316 526 294 528 268 C564 266 586 292 584 318Z" fill="{LEAF_DEEP}"/>')
-    out.append(f'<path d="M583 274 C629 272 656 240 650 208 C606 210 580 240 583 274Z" fill="{LEAF}"/>')
-    out.append(f'<path d="M580 224 C538 214 514 174 522 136 C570 146 590 186 580 224Z" fill="{LEAF}"/>')
+    out.append(grows(f'<path d="M584 318 C546 316 526 294 528 268 C564 266 586 292 584 318Z"'
+                     f' fill="{LEAF_DEEP}"/>', 584, 318, start=0.55))
+    out.append(grows(f'<path d="M583 274 C629 272 656 240 650 208 C606 210 580 240 583 274Z"'
+                     f' fill="{LEAF}"/>', 583, 276, start=1.15))
+    out.append(grows(f'<path d="M580 224 C538 214 514 174 522 136 C570 146 590 186 580 224Z"'
+                     f' fill="{LEAF}"/>', 580, 226, start=1.8))
     out.append('</g>')
     # and the glints, which are what make it *just happened* rather than *a plant in a pot*
-    out.append(spark(664, 132, 21))
-    out.append(spark(520, 92, 15))
-    out.append(spark(624, 60, 12))
+    out.append(spark(664, 132, 21, start=2.3))
+    out.append(spark(520, 92, 15, start=2.65))
+    out.append(spark(624, 60, 12, start=2.95))
     return "\n  ".join(out)
 
 
@@ -109,7 +143,10 @@ def scene() -> str:
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" \
 role="img" aria-label="GeekOc, the myGeeKy octopus, watching a plant grow">
   <title>GeekOc watching a plant grow</title>
-  {placed(geekoc(440), 6, 2, 440)}
+  <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0;0 -4;0 0"
+       keyTimes="0;0.25;0.5;0.75;1" dur="3.6s" calcMode="spline"
+       keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" repeatCount="indefinite"/>
+    {placed(geekoc(440), 6, 2, 440)}</g>
   {plant()}
 </svg>
 """
