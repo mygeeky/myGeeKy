@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -159,3 +160,63 @@ def test_the_sucker_colour_stays_the_measured_one():
     skin = json.loads(_node("require(process.env.GEEKOC);"
                             "console.log(JSON.stringify(globalThis.GeekOc.SKIN));"))
     assert skin["sucker"].lower() == GOLD
+
+
+# --------------------------------------------------------------------------- the eyelids
+#
+# The lid comes down from ABOVE. The SVG renderer had the old sum, which shut the eye at 0.5, showed
+# the top half at 0 -- so he looked half asleep in every picture -- and at 1 covered the BOTTOM half,
+# an eye closing upwards from the chin. `parts` had been corrected and `markup` had not.
+def _eye_in_picture(face, px=300):
+    """The left eye's circle, in the rendered picture's own pixels.
+
+    Taken from the SVG rather than from `parts`: the two describe the same octopus in different
+    coordinates, and `parts({size: 300})` put the eye in the corner of a 300px render. The markup
+    carries its own viewBox, so the mapping is in the file and does not have to be guessed."""
+    markup = _node("require(process.env.GEEKOC); const G = globalThis.GeekOc;"
+                   "process.stdout.write(G.svg({pose: 'idle', face: process.env.FACE,"
+                   " t: 1.4, still: true, size: " + str(px) + "}));", FACE=face)
+    box = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', markup)
+    assert box, "the SVG has no viewBox to scale by"
+    scale = px / float(box.group(1))
+    eyes = re.findall(r'<circle cx="([-\d.]+)" cy="([-\d.]+)" r="30" fill="#ffffff"', markup)
+    assert eyes, "no eye white found in the markup"
+    x, y = (float(v) for v in eyes[0])
+    return x * scale, y * scale, 30 * scale
+
+
+def _white_above_and_below(face):
+    """How much of the eye's white shows in its top half, and in its bottom half."""
+    image = _render("idle", face)
+    cx, cy, r = _eye_in_picture(face)
+    above = below = 0
+    for dy in range(-int(r) + 2, int(r) - 1):
+        for dx in range(-int(r) + 2, int(r) - 1):
+            if dx * dx + dy * dy > (r - 2) ** 2:
+                continue
+            pixel = image.pixel(int(cx) + dx, int(cy) + dy)
+            if (pixel >> 16 & 255) > 220 and (pixel >> 8 & 255) > 220 and (pixel & 255) > 220:
+                if dy < 0:
+                    above += 1
+                else:
+                    below += 1
+    return above, below
+
+
+def test_a_wide_open_eye_is_not_half_covered():
+    above, below = _white_above_and_below("happy")
+    assert above > 0 and below > 0, "no white in the eye at all"
+    assert above > below * 0.6, (
+        f"only {above} white pixels in the top half against {below} below: the lid is sitting on a "
+        "wide-open eye, which is what made him look half asleep in every picture")
+
+
+def test_a_lowered_lid_covers_the_top_of_the_eye_not_the_bottom():
+    above, below = _white_above_and_below("shy")          # lids 0.35
+    assert below > above, (
+        f"{above} white pixels above the middle and {below} below: the lid is closing from underneath")
+
+
+def test_asleep_means_the_eye_is_covered():
+    above, below = _white_above_and_below("sleepy")       # lids 1
+    assert above + below < 40, f"{above + below} white pixels still showing on a shut eye"
