@@ -158,3 +158,45 @@ def test_a_long_hard_crash_keeps_its_cause_and_the_crashed_thread():
     body = parse_qs(urlparse(url).query)["body"][0]
     assert "Fatal Python error: Aborted" in body and "Current thread" in body and "…" in body
     assert len(url) <= crashreport.MAX_URL
+
+
+def _block(version: str, command: str, func: str, what: str, lines: int = 90) -> str:
+    """One report file's worth of text: a six-line header, then a traceback of its own."""
+    return (f"myGeeKy {version} (command line)\nPython 3.12.10 at ~\\python.exe\n"
+            f"Windows-11-10.0.26200-SP0\nCommand: ~\\mygeeky\\__main__.py {command}\n\n"
+            f"What went wrong: {what}\n\n"
+            + "Traceback (most recent call last):\n"
+            + "".join(f'  File "~\\mygeeky\\cli.py", line {1000 + i} in middle_{i}\n' for i in range(lines))
+            + f'  File "~\\mygeeky\\cli.py", line 1418, in {func}\n    click.echo(something)\n{what}\n')
+
+
+def test_a_burst_of_reports_keeps_each_header_with_its_own_traceback():
+    """issue #6: the newest report's header sat above an older report's traceback.
+
+    The header said `profile show` and the traceback below it was in `interests_cmd`, so the report
+    named a command that had not failed -- and the diagnosis started in the wrong place."""
+    newest = _block("0.25.0", "interests", "interests_cmd", "OSError: [Errno 22] Invalid argument")
+    older = _block("0.24.0", "profile show", "profile_show", "UnicodeEncodeError: 'charmap' codec")
+    url = crashreport.issue_url(newest + "\n\n=====\n\n" + older)
+    body = parse_qs(urlparse(url).query)["body"][0]
+
+    assert len(url) <= crashreport.MAX_URL
+    for shown in [b for b in body.split("=====") if "Command:" in b]:
+        command = [ln for ln in shown.splitlines() if ln.startswith("Command:")][0]
+        if "interests_cmd" in shown:
+            assert command.endswith("interests"), f"header does not match its traceback:\n{command}"
+            assert "profile_show" not in shown, "two different crashes in one block"
+        if "profile_show" in shown:
+            assert command.endswith("profile show"), f"header does not match its traceback:\n{command}"
+
+
+def test_an_older_report_is_dropped_whole_rather_than_spliced():
+    """When it will not all fit, a whole report goes -- never a header without its traceback."""
+    blocks = [_block("0.25.0", f"cmd{i}", f"func_{i}", f"Error number {i}", lines=400) for i in range(3)]
+    url = crashreport.issue_url("\n\n=====\n\n".join(blocks))
+    body = parse_qs(urlparse(url).query)["body"][0]
+
+    assert len(url) <= crashreport.MAX_URL
+    assert "Command: ~\\mygeeky\\__main__.py cmd0" in body, "the newest report is the one to keep"
+    assert "func_0" in body, "the newest report lost its own traceback"
+    assert "left out to keep this link short" in body, "silently dropped the older reports"

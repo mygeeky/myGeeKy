@@ -156,6 +156,58 @@ def _printable() -> None:
             pass
 
 
+def _output_is_gone(exc: BaseException) -> bool:
+    """True when the only thing that went wrong is that nobody is reading our output any more.
+
+    `mygeeky interests | head` closes the pipe the moment head has the lines it wanted, and the panel
+    stops reading when the view that asked for a command is closed. Neither is a fault.
+
+    POSIX raises BrokenPipeError for that write. Windows raises a plain OSError with errno 22
+    (EINVAL) instead, which reads like a real failure -- so it was caught below, written up as a
+    crash report and shown to the person as "myGeeKy hit a problem: Invalid argument". That is what
+    issue #6 is: three reports for output going nowhere.
+
+    EINVAL on its own is far too broad to treat as harmless, so the failure must *also* have come out
+    of an output call rather than from anywhere else in the program."""
+    import errno
+    if isinstance(exc, BrokenPipeError):
+        return True
+    if not (isinstance(exc, OSError) and exc.errno in (errno.EPIPE, errno.EINVAL)):
+        return False
+    tb = exc.__traceback__
+    while tb is not None:
+        code = tb.tb_frame.f_code
+        if (code.co_name in ("echo", "secho", "write", "flush", "_write", "writelines")
+                or code.co_filename.replace("\\", "/").endswith("click/utils.py")):
+            return True
+        tb = tb.tb_next
+    return False
+
+
+def _give_up_on_output() -> None:
+    """Send our own stdout and stderr to nowhere, for an exit with no reader left.
+
+    Without this the interpreter flushes the dead stream itself on the way out, prints its own
+    "Exception ignored in: <_io.TextIOWrapper name='<stdout>'>" that we just took care not to show,
+    and exits 120."""
+    import os
+    try:
+        spare = os.open(os.devnull, os.O_WRONLY)
+    except OSError:
+        return
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if stream is not None:
+                stream.flush()
+        except Exception:
+            pass                # the broken one: nothing to flush it to yet
+        try:
+            if stream is not None:
+                os.dup2(spare, stream.fileno())
+        except Exception:
+            pass                # not a real file descriptor (captured, embedded): nothing to point away
+
+
 def entry() -> None:
     """The `mygeeky` command: main(), but an unexpected failure gets a clear
     sentence and a saved report instead of a raw traceback."""
@@ -165,14 +217,20 @@ def entry() -> None:
     except KeyboardInterrupt:
         raise SystemExit(130)
     except Exception as exc:   # click already handled its own errors and SystemExit
+        if _output_is_gone(exc):
+            _give_up_on_output()       # normal: `| head`, or a panel that stopped listening
+            raise SystemExit(0)
         from .config import LOG_DIR
         from .errors import ISSUES_URL, describe, save_crash_report
         report = save_crash_report(exc, LOG_DIR, "command line")
-        click.secho(f"myGeeKy hit a problem: {describe(exc)}", fg="red", err=True)
-        if report:
-            click.echo(f"Full details were saved to {report}", err=True)
-        click.echo(f"If it keeps happening, please open an issue at {ISSUES_URL} and attach that file.",
-                   err=True)
+        try:
+            click.secho(f"myGeeKy hit a problem: {describe(exc)}", fg="red", err=True)
+            if report:
+                click.echo(f"Full details were saved to {report}", err=True)
+            click.echo(f"If it keeps happening, please open an issue at {ISSUES_URL} and attach that "
+                       "file.", err=True)
+        except Exception:
+            _give_up_on_output()       # saying what went wrong must not itself become the failure
         raise SystemExit(1)
 
 

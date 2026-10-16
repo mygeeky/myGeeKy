@@ -108,27 +108,50 @@ def headline(report: str) -> str:
     return (f"{exc} in {func}" if exc and func else exc or func or "Crash").strip()
 
 
+SEPARATOR = "\n\n=====\n\n"        # how a burst of reports arrives here, newest first
+
+
 def issue_url(report: str, login: str = "", note: str = "") -> str:
-    """A prefilled 'new issue' page with the cleaned report (you submit it)."""
+    """A prefilled 'new issue' page with the cleaned report (you submit it).
+
+    Every report is trimmed inside its own boundaries. A burst of errors arrives as several reports
+    joined by `=====`; this used to keep the first six lines of the whole lot and the last seventy,
+    which spliced the *first* report's header onto the *last* report's traceback with a '…' between
+    them. Issue #6 came in that shape: the header said `profile show` while the traceback below it
+    was in `interests_cmd`, and the version named was not the version that crashed either. A report
+    that cannot be trusted to say which command failed costs more time than the trimming saves, so a
+    whole older report is dropped rather than half of one."""
     clean = redact(report, login)
-    lines = clean.splitlines()
-    head, tail = lines[:6], lines[6:]                 # the start: where, version, and a hard crash's cause
-    if len(tail) > 70:
-        tail = tail[-70:]                             # the end: the error, or the thread that crashed
-    def joined(rest: list[str]) -> str:
-        return "\n".join(head + (["…"] if len(rest) < len(lines) - 6 else []) + rest)
-    body_report = joined(tail)
+    blocks = [b.strip() for b in clean.split(SEPARATOR.strip("\n")) if b.strip()] or [clean]
     intro = (note.strip() + "\n\n") if note.strip() else "**What were you doing when it happened?**\n\n\n"
-    def build(rep: str) -> str:
-        body = f"{intro}**Crash report** (sent from myGeeKy, personal details removed):\n```\n{rep}\n```"
+
+    def trim(block: str) -> str:
+        lines = block.splitlines()
+        head, rest = lines[:6], lines[6:]             # where, version, command, a hard crash's cause
+        kept = rest[-70:] if len(rest) > 70 else rest  # the end: the error, or the thread that crashed
+        return "\n".join(head + (["…"] if len(kept) < len(rest) else []) + kept)
+
+    def build(body_report: str) -> str:
+        body = f"{intro}**Crash report** (sent from myGeeKy, personal details removed):\n```\n{body_report}\n```"
         return f"https://github.com/{REPO}/issues/new?" + urlencode(
             {"title": f"💥 {headline(report)}", "body": body, "labels": "crash"})
-    url = build(body_report)
-    while len(url) > MAX_URL and len(tail) > 4:            # still long: drop from the middle
-        tail = tail[len(tail) // 4:]
-        body_report = joined(tail)
-        url = build(body_report)
-    return url
+
+    newest, others = trim(blocks[0]), [trim(b) for b in blocks[1:]]
+    while True:
+        left_out = len(blocks) - 1 - len(others)
+        tail_note = f"{SEPARATOR}(and {left_out} earlier report(s), left out to keep this link short)" \
+            if left_out else ""
+        url = build(SEPARATOR.join([newest] + others) + tail_note)
+        if len(url) <= MAX_URL:
+            return url
+        if others:
+            others.pop()                              # a whole older report goes, never part of one
+            continue
+        lines = newest.splitlines()
+        if len(lines) <= 10:
+            return url                                # as short as this can honestly be made
+        head, rest = lines[:6], lines[6:]             # its own header stays with its own traceback
+        newest = "\n".join(head + ["…"] + rest[len(rest) // 4:])
 
 
 # --------------------------------------------------------------------------- which reports to offer
