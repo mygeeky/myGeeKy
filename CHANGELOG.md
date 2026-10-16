@@ -3,6 +3,25 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.26.0 (2026-10-16): the phone, one more computer in sync (phone app 1.9.0)
+
+- **The phone reads and writes your private data repo**, like one more computer in sync. Give it its own
+  fine-grained token (that repo only, Contents: Read and write) and it shows your real model -- the interest map,
+  what teaches it, room to explore, who follows you back, the weights and the AUC trend, all computed exactly as
+  the desktop does -- your badges, and your profile, so every list on the phone is ranked by you. What you open
+  on the phone goes back as interest events and usage lines, which your computers learn from.
+- **The maker's admin on the phone**, behind GitHub's word on who you are and the phone's own fingerprint or
+  PIN: adoption, listings to review (accept, edit, reject), quizzes, the ideas inbox and people to invite. The
+  phone never edits the shared files: it appends to `admin_actions.jsonl`, which your computers apply at sync
+  (`src/mygeeky/adminlog.py`) -- once, in order, never over a later undo. `scout.json` and `quizwriter.json` now
+  sync so the phone can show them; keys never leave the computer.
+- **"Not taking signals right now" works from the phone too.** It is written to your beacon with when it changed,
+  and a computer takes up a later change instead of publishing over it (`beacon.adopt_quiet`).
+- **On the phone**, brought level with the desktop: 🛠 Repos to help out and 📈 Rising (the market board) in
+  Repos; 💬 Papers & discussions (arXiv, bioRxiv, Hacker News) in News; headings, abstracts, summaries, authors
+  and code links on Papers, News and AI models; Seasons as the desktop shows them; ⚙ Settings with the three
+  themes; 💡 Ideas; new things marked with a dot and counted on the planets; warnings before a token expires.
+
 ## 0.25.0 (2026-10-15): start with nothing but your own words
 
 - **You can use myGeeKy without a GitHub account, an ORCID, or an account anywhere** (`src/mygeeky/fieldstart.py`).
