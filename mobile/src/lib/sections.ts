@@ -2,6 +2,7 @@
 import type Ionicons from '@expo/vector-icons/Ionicons';
 import { timeAgo } from './app-state';
 import type { BoardRow } from './board';
+import { NEWS_BADGES, type NewsItem } from './news';
 import type { Contribution } from './contribute';
 import { Repo } from './github';
 import { Headline, kindOf } from './headlines';
@@ -15,7 +16,7 @@ import { C, BADGES, tint } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
 export type SectionId = 'live' | 'people' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
-  | 'chances' | 'you' | 'market';     // market: Repos → 📈 Rising (not a planet of its own)
+  | 'chances' | 'you' | 'market' | 'discuss';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
 
 export type Section = { id: SectionId; label: string; color: string; icon: IconName; about: string };
 
@@ -32,6 +33,7 @@ export const SECTIONS: Record<SectionId, Section> = {
   launches: { id: 'launches', label: 'Launches', color: '#ff6fd8', icon: 'rocket-outline', about: 'Today on Product Hunt, the ones in your field first.' },
   chances: { id: 'chances', label: 'Chances', color: '#f472b6', icon: 'briefcase-outline', about: 'Verified jobs, funding and conferences, checked by hand.' },
   market: { id: 'market', label: 'Repos', color: '#7fd8ff', icon: 'trending-up-outline', about: 'The popular, active projects your field runs on, ranked by momentum like a market board.' },
+  discuss: { id: 'discuss', label: 'News', color: '#eab308', icon: 'chatbubbles-outline', about: 'New preprints and discussions matching your interests: arXiv, bioRxiv and Hacker News.' },
   you: { id: 'you', label: 'You', color: '#ffd24a', icon: 'person-outline', about: 'Your model, your badges and your settings.' },
 };
 
@@ -72,6 +74,7 @@ export type Feeds = {
   research?: { rising: Paper[]; tools: Paper[] } | null;
   repos?: { contribute: Contribution[] | null; popular: Repo[] } | null;
   market?: { rows: BoardRow[]; updatedAt: string } | null;
+  discuss?: { items: NewsItem[]; errors: string[] } | null;
   models?: { field: Model[]; trending: Model[] } | null;
   launches?: Launch[] | null;
 };
@@ -129,6 +132,20 @@ export function rowsFor(id: SectionId, f: Feeds): Row[] {
         letter: String(i + 1), letterBg: tint(0.10), letterFg: C.text, kind: 'repo',
         learn: { kind: 'repo', text: `${r.full_name.replace('/', ' ')} ${r.description ?? ''} ${r.language ?? ''}`, topics: r.topics ?? [], source: r.full_name },
       }));
+    case 'discuss':
+      return (f.discuss?.items ?? []).map((n) => {
+        const [badge, color] = NEWS_BADGES[n.source];
+        return {
+          id: `d${n.id}`, title: n.title, url: n.url, right: timeAgo(n.published),
+          sub: [n.explore ? '🔭' : '', badge, n.category ?? '', n.source === 'hackernews' ? n.summary : n.match.slice(0, 2).join(', ')].filter(Boolean).join(' · '),
+          action: n.source === 'hackernews' ? 'Read the discussion' : `Read on ${badge}`,
+          letter: ({ arxiv: 'aX', biorxiv: 'bR', hackernews: 'HN' } as const)[n.source], letterBg: color, letterFg: '#ffffff', kind: n.source === 'hackernews' ? 'news' : 'paper', explore: n.explore,
+          section: n.explore ? '🔭 NEW TERRITORY' : 'FOR YOUR WORK',
+          more: { text: n.source === 'hackernews' ? [] : [n.summary].filter(Boolean),
+            links: n.story_url ? [['🔗 The story itself', n.story_url] as [string, string]] : [] },
+          learn: { kind: 'news', text: n.title, topics: n.match, source: n.id },
+        };
+      });
     case 'market':
       return (f.market?.rows ?? []).map((b) => {
         const [owner, name] = b.repo.split('/');

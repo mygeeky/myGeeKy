@@ -26,6 +26,7 @@ import { fetchModels } from '../lib/models';
 import { adminLogin } from '../lib/admin';
 import { type BoardRow, loadBoard } from '../lib/board';
 import { loadContributions } from '../lib/contribute';
+import { fetchNews } from '../lib/news';
 import { recordInterest } from '../lib/model-repo';
 import { loadSeen, markSeen } from '../lib/seen';
 import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
@@ -37,6 +38,8 @@ import { C, ink, tint } from '../lib/theme';
 
 
 const HINT_KEY = 'mygeeky.orbitHinted';
+type NewsPart = 'headlines' | 'discuss';
+const NEWS_PARTS: [NewsPart, string][] = [['headlines', '📰 Headlines'], ['discuss', '💬 Papers & discussions']];
 type RepoPart = 'help' | 'rising';
 const REPO_PARTS: [RepoPart, string][] = [['help', '🛠 Help out'], ['rising', '📈 Rising']];
 type YouPart = 'model' | 'badges' | 'more' | 'ideas' | 'admin';
@@ -178,6 +181,7 @@ export default function Home() {
     : Promise.resolve({ followBack: [], field: [] }));
   const headlines = useFeed('headlines', 3, (p) => fetchHeadlines(p.weights));
   const research = useFeed('research', 12, (p) => fetchResearch(p));
+  const discuss = useFeed('news-discuss', 3, (p) => fetchNews(p.weights, settings?.exploreShare ?? 0.2));
   const market = useFeed('market-board', 6, async () => (await loadBoard().catch(() => null)) ?? { rows: [], updatedAt: '' });
   const repos = useFeed('repos-contribute', 3, async (p) => {   // from your computers' runs; else popular in your field
     const contribute = await loadContributions().catch(() => null);
@@ -186,8 +190,8 @@ export default function Home() {
   const models = useFeed('models', 6, (p) => fetchModels(p.weights, keywords));
   const launches = useFeed('launches', 6, (p) => fetchLaunches(p.weights));
   const feedsOf: Record<SectionId, { loading: boolean; error: string | null; at: string | null; refresh: () => Promise<void> }[]> = {
-    live: [live, people], activity: [live], people: [people], signals: [], news: [headlines], papers: [research],
-    repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market],
+    live: [live, people], activity: [live], people: [people], signals: [], news: [headlines, discuss], papers: [research],
+    repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market], discuss: [discuss],
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
@@ -196,6 +200,7 @@ export default function Home() {
     : user ? 'live' : 'papers');                          // without GitHub, start where your field is
   const [collapsed, setCollapsed] = useState(params.fold === '1');
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
+  const [newsPart, setNewsPart] = useState<NewsPart>('headlines');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' ? params.part : 'model');
   // the maker's Admin part: only for the account GitHub says owns the connected data repo (lib/admin.ts)
@@ -218,7 +223,7 @@ export default function Home() {
 
   const data = {
     live: live.data, people: people.data, headlines: headlines.data, research: research.data,
-    repos: repos.data, models: models.data, launches: launches.data, market: market.data,
+    repos: repos.data, models: models.data, launches: launches.data, market: market.data, discuss: discuss.data,
   };
   // what is new to you (lib/seen.ts): the planets count only those
   const [seen, setSeen] = useState<Set<string> | null>(null);
@@ -229,10 +234,11 @@ export default function Home() {
     const c: Partial<Record<SectionId, number>> = {};
     for (const id of [...INNER, ...OUTER]) c[id] = rowsFor(id, data).filter((r) => !seen?.has(r.id)).length;
     c.repos = (c.repos ?? 0) + rowsFor('market', data).filter((r) => !seen?.has(r.id)).length;
+    c.news = (c.news ?? 0) + rowsFor('discuss', data).filter((r) => !seen?.has(r.id)).length;
     return c;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live.data, people.data, headlines.data, research.data, repos.data, models.data, launches.data, market.data, seen]);
-  const view: SectionId = sel === 'repos' && repoPart === 'rising' ? 'market' : sel;
+  }, [live.data, people.data, headlines.data, research.data, repos.data, models.data, launches.data, market.data, discuss.data, seen]);
+  const view: SectionId = sel === 'repos' && repoPart === 'rising' ? 'market' : sel === 'news' && newsPart === 'discuss' ? 'discuss' : sel;
   const listed = rowsFor(view, data);
   // opening a list marks what is in it as seen; what was new keeps its dot until you leave
   const listedKey = listed.map((r) => r.id).join('|');
@@ -329,6 +335,7 @@ export default function Home() {
           <Text style={st.meta}>{loading ? 'updating…' : at ? `updated ${timeAgo(at)} · pull down to refresh` : ''}</Text>
         ) : null}
         {error ? <Text style={st.error}>{error}</Text> : null}
+        {sel === 'news' ? <View style={{ marginTop: 10 }}><Segments value={newsPart} options={NEWS_PARTS} onChange={setNewsPart} /></View> : null}
         {sel === 'repos' ? <View style={{ marginTop: 10 }}><Segments value={repoPart} options={REPO_PARTS} onChange={setRepoPart} /></View> : null}
         {sel === 'you' ? <View style={{ marginTop: 10 }}><Segments value={youPart} options={admin ? [...YOU_PARTS, ['admin', 'Admin'] as [YouPart, string]] : YOU_PARTS} onChange={setYouPart} /></View> : null}
 

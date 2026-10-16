@@ -1,7 +1,7 @@
 // Your interests as weighted terms, and matching text against them: a port of
 // the desktop's interests.py (profile_terms, match, mix, explore_terms), so the
 // phone ranks things the same way.
-const STOPWORDS = new Set(
+export const STOPWORDS = new Set(
   (
     'a about above after again all also am an and any are as at be because been before being below between both but by ' +
     'can could did do does doing down during each few for from further had has have having he her here hers him his how ' +
