@@ -3,6 +3,21 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.26.1 (2026-10-16): output going nowhere is not a crash
+
+- **`mygeeky ... | head` no longer reports a crash** (`src/mygeeky/cli.py`). Closing the pipe is what
+  `head` does once it has its lines, and the panel stops reading when the view that asked for a command
+  is closed. Windows calls that write "Invalid argument" (errno 22) rather than a broken pipe, so it was
+  caught as an unexpected failure, saved as a crash report and shown as "myGeeKy hit a problem" --
+  [issue #6](https://github.com/mygeeky/myGeeKy/issues/6). A command whose reader has gone now ends
+  quietly. A real errno 22 from anywhere else is still reported, and saying what went wrong no longer
+  depends on output still working.
+- **A crash report keeps each header with its own traceback** (`src/mygeeky/crashreport.py`). A burst of
+  errors was shortened by keeping the first lines of the whole bundle and the last, which put the newest
+  report's header above an older report's traceback: #6 named `profile show` while the traceback was in
+  `interests_cmd`, and the version it named was not the version that crashed. Reports are now trimmed
+  one at a time, and a whole older report is dropped -- and said to be dropped -- rather than half of one.
+
 ## 0.26.0 (2026-10-16): the phone, one more computer in sync (phone app 1.9.0)
 
 - **The phone reads and writes your private data repo**, like one more computer in sync. Give it its own
