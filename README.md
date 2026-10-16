@@ -52,7 +52,8 @@
   <a href="#-helps-you-learn-what-comes-next">Learn</a> ·
   <a href="#-helps-you-meet-the-people-working-on-the-same-problems">Meet</a> ·
   <a href="#-helps-you-catch-the-opportunities-while-they-are-still-open">Catch</a> ·
-  <a href="#-why-it-is-not-like-the-others">Why it's different</a> ·
+  <a href="#-for-anyone-who-works-alone">Working alone</a> ·
+  <a href="#-what-it-will-never-do">Never does</a> ·
   <a href="#-try-it">Try it</a> ·
   <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md">The full guide</a>
 </p>
@@ -210,14 +211,34 @@ year's date: a window it read on a page says **open now**, anything ahead says *
 
 ---
 
-## 💡 Why it is not like the others
+## 🤫 For anyone who works alone
+
+<table>
+<tr>
+<td width="20%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-hero.png" width="160" alt="GeekOc waving">
+</td>
+<td valign="middle">
+
+> *“You might be the only one in your building who does this. You are not the only one in the world.”*
+
+The student in a lab where nobody else writes code. The researcher in a city with nobody in their field.
+The one who has the questions and no one to ask.
+
+**myGeeKy finds the others — and lets you reach them without becoming someone who posts.**
+
+</td>
+</tr>
+</table>
 
 |  |  |
 |---|---|
-| 🧠 **It thinks on your machine.** | The model that ranks all of this is **on your computer** — not on a server, because there is no server. No account, no sign-up, no telemetry. If you sync between computers or to your phone, it travels through a **private repo you own**. |
-| 🎯 **Chances expire.** | Every job, grant and conference is verified against its own page and **removed once the deadline passes**. A board that never forgets is a board you cannot trust. |
-| 📚 **The learning is checked.** | Code in a question is **run**, sums are **recomputed**, and every answer shows the **source and the sentence** it came from — before the question is ever shipped to you. |
-| ✋ **It never acts for you.** | It never follows, stars, forks, posts or messages anybody. **There is no code for it anywhere in the project.** You look, you decide, you act. |
+| 🔕 **No noise** | No feed, no likes, no streaks, no notifications competing for you. |
+| 👋 **Friends, not followers** | People near your work, and how likely each is to answer. |
+| 🤝 **Thanks, privately** | A 🙏 only the person you send it to can read. No counter, no audience. |
+| 🚪 **Nobody sees you looking** | No account, no sign-up, no telemetry. There is no server to see you from. |
+| 🌙 **It waits** | Close it and nothing keeps running. It never pings you to come back. |
+| 🧰 **Yours to keep** | MIT, and open to read — every promise on this page is a file you can check. |
 
 ---
 
@@ -300,12 +321,15 @@ with your thumb; tap to read and the rings fold into a slim dock. Set it up with
 
 > *“I keep all of this on your computer. I never post for you, and I never tell anyone you were here.”*
 
-- **Never follows, stars, forks, posts or comments for you** — no code for it exists in the project.
-- **No server, no account, no telemetry.** It talks only to public research APIs and GitHub.
-- **Your data stays yours** — on your computer, plus a **private** repo you own if you want sync.
-- **Tokens only in your OS keyring**, checked for least privilege, never logged or printed.
-- **Nothing is ever sent automatically.** If it breaks, you see the whole report — your name, email, tokens and
-  folders already removed — and you decide whether to send it.
+- ✋ **Never acts as you.** It never follows, stars, forks, posts or comments — **there is no code for it
+  anywhere in the project.** You look, you decide, you act.
+- 🧠 **Never leaves your machine.** The model that ranks all of this runs on your computer, because there is
+  no server. No account, no sign-up, no telemetry.
+- 🔑 **Never holds your keys.** Tokens live in your operating system's keyring, checked for least privilege,
+  **never logged and never printed.**
+- 📦 **Never takes your data.** It stays on your computer — plus a **private repo you own**, if you want sync.
+- 📨 **Never sends anything behind your back.** If it breaks, you read the whole report first — your name,
+  email, tokens and folders already stripped out — and **you** decide whether it goes.
 
 <sub><a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#safety">Safety in full</a> ·
 <a href="https://github.com/mygeeky/myGeeKy/blob/main/stability/PROTOCOL.md">how each release is checked</a></sub>
