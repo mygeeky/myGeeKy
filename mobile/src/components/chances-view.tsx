@@ -2,14 +2,15 @@
 // checked by hand. Matched to you here, on the phone; each one disappears after its
 // deadline. 👍/👎 teach your model, 🚩 tells the maker one looks fake.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text,
+import { ActionSheetIOS, Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput,
   View } from 'react-native';
 import { quickProfile, useApp } from '../lib/app-state';
+import { adminLogin } from '../lib/admin';
 import { countriesIn } from '../lib/countries';
 import { type Item, JOB_TYPES, languagesOf, type ListName, loadLists, type Lists, ranked, type Ranked,
   reportLinks, type Said, VOTE_KIND } from '../lib/curated';
 import * as seasons from '../lib/seasons';
-import { C } from '../lib/theme';
+import { C, ink, tint } from '../lib/theme';
 import * as taste from '../lib/taste';
 import { GCard, Hidden, s, Thumbs } from './growth-parts';
 import { Empty, open, Segments } from './ui';
@@ -96,10 +97,10 @@ function Translations({ it, onClose }: { it: Item; onClose: () => void }) {
 
 const t = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#17171f', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16,
+  sheet: { backgroundColor: C.sheet, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16,
     maxHeight: '82%' },
   tabs: { gap: 7, paddingBottom: 12 },
-  tab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)' },
+  tab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: tint(0.1) },
   tabOn: { backgroundColor: 'rgba(255,111,216,0.35)' },
   tabText: { color: C.muted, fontSize: 13 },
   tabTextOn: { color: '#ffffff', fontWeight: '700' },
@@ -157,50 +158,42 @@ const STATE: Record<string, [string, 'good' | 'warn' | 'muted']> = {
 
 /** One recurring programme: where it stands, what it wants prepared, and the sentence that proves it
  *  ever ran. A future date is always labelled as expected -- next year's call has no page yet. */
-function SeasonCard({ it }: { it: seasons.Dated }) {
-  const [why, setWhy] = useState(false);
+// As the desktop's SeasonCard (gui/growth_ui.py): where it stands and how much to trust that, who it is
+// for, what to have ready -- always, since the preparing takes longer than the applying -- and the
+// sentence myGeeKy actually found, with its page.
+function SeasonCard({ it, unverified }: { it: seasons.Dated; unverified: boolean }) {
   const [mark, tone] = STATE[it.when.state] ?? STATE.unknown;
-  const occurrence = it.occurrence;
-  const said = seasons.noticeText(it.when);
-  const bits = [it.org, it.through && `through ${it.through}`, it.goes_to && `in ${it.goes_to}`,
-    it.levels.length ? it.levels.join(' · ') : ''].filter(Boolean);
-  const years = it.when.years;
+  const st = it.when;
+  const by = [it.org, it.through ? `through ${it.through}` : ''].filter(Boolean).join(' · ');
+  const years = st.years;
+  const where = [seasons.noticeText(st), st.opens && !st.confirmed ? `${st.opens} → ${st.closes}` : '',
+    !years ? 'no history yet' : years === 1 ? '1 year of evidence' : `${years} years of evidence`].filter(Boolean).join(' · ');
+  const who = it.for.length ? it.for.join(', ') : 'anyone';
+  const forLine = [`for ${who}`, it.goes_to ? `→ ${it.goes_to}` : '', it.levels.join('/')].filter(Boolean).join(' · ');
+  const now = seasons.prepareNow(it);
+  const seen = it.seen.find((x) => x.checked);
   return (
     <GCard>
-      <View style={s.head}>
-        <Pressable style={{ flex: 1 }} onPress={() => open(it.url)}>
-          <Text style={s.title}>{mark} {it.title}</Text>
-        </Pressable>
-      </View>
-      {bits.length ? <Text style={s.muted}>{bits.join(' · ')}</Text> : null}
-      <Text style={tone === 'good' ? s.good : tone === 'warn' ? s.warn : s.muted}>{said}</Text>
+      <Pressable onPress={() => open(it.url)}>
+        <Text style={s.title}>{mark} {it.title}</Text>
+      </Pressable>
+      {by ? <Text style={s.muted}>{by}</Text> : null}
+      <Text style={tone === 'good' ? s.good : tone === 'warn' ? s.warn : s.muted}>{where}</Text>
+      <Text style={s.muted}>{forLine}</Text>
+      {unverified ? <Text style={s.warn}>⏳ Not confirmed against its own page yet: only you see it</Text> : null}
       {it.summary ? <Text style={s.body}>{it.summary}</Text> : null}
-      {it.for.length ? <Text style={s.muted}>Open to: {it.for.join(', ')}</Text> : null}
-      {it.prepare.length && seasons.prepareNow(it) ? (
-        <View style={{ marginTop: 6 }}>
-          <Text style={s.warn}>Worth starting now — {it.prepare_weeks} week
-            {it.prepare_weeks === 1 ? '' : 's'} of paperwork:</Text>
-          {it.prepare.slice(0, 5).map((step, i) => (
-            <Text key={i} style={s.muted}>· {step}</Text>
-          ))}
-        </View>
-      ) : null}
-      <View style={[s.row, { justifyContent: 'space-between' }]}>
-        <Text style={s.muted}>
-          {years ? `seen ${years} year${years === 1 ? '' : 's'}` : 'not seen yet'}
-          {occurrence?.confirmed ? ' · this one was read on the page' : ''}
+      <View style={{ marginTop: 6 }}>
+        <Text style={now ? s.warn : s.muted}>
+          {now ? '⚠ Start preparing now' : 'Start preparing'} — it wants about {it.prepare_weeks} weeks:
         </Text>
-        {occurrence?.quote ? (
-          <Pressable onPress={() => setWhy(!why)} accessibilityLabel="Why myGeeKy believes this" hitSlop={8}>
-            <Text style={s.link}>{why ? 'Hide the proof' : 'Why?'}</Text>
-          </Pressable>
-        ) : null}
+        {it.prepare.map((step, i) => <Text key={i} style={s.muted}>□ {step}</Text>)}
       </View>
-      {why && occurrence ? (
+      {seen ? (
         <View style={{ marginTop: 6 }}>
-          <Text style={s.muted}>“{occurrence.quote}”</Text>
-          <Pressable onPress={() => open(occurrence.url)}>
-            <Text style={s.link}>The page it came from ↗</Text>
+          <Text style={s.good}>✓ seen open {seen.opens || '?'} → {seen.closes}</Text>
+          <Text style={[s.muted, { fontStyle: 'italic' }]}>“{seen.quote.slice(0, 160)}”</Text>
+          <Pressable onPress={() => open(seen.url)} hitSlop={6}>
+            <Text style={s.link}>Open the page it was found on ↗</Text>
           </Pressable>
         </View>
       ) : null}
@@ -213,25 +206,65 @@ function SeasonCard({ it }: { it: seasons.Dated }) {
 function Picker<T extends string>({ value, options, onChange, label }: {
   value: T; options: [T, string][]; onChange: (v: T) => void; label: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const [find, setFind] = useState('');
   if (options.length < 2) return null;
+  const current = options.find(([v]) => v === value)?.[1] ?? options[0][1];
+  const shown = find.trim() ? options.filter(([, text]) => text.toLowerCase().includes(find.trim().toLowerCase())) : options;
+  const close = () => { setOpen(false); setFind(''); };
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={p.row}
-               accessibilityLabel={label}>
-      {options.map(([v, text]) => (
-        <Pressable key={v} onPress={() => onChange(v)} style={[p.chip, v === value && p.chipOn]}>
-          <Text style={[p.chipText, v === value && p.chipTextOn]} numberOfLines={1}>{text}</Text>
-        </Pressable>
-      ))}
-    </ScrollView>
+    <>
+      <Pressable onPress={() => setOpen(true)} style={({ pressed }) => [p.button, pressed && { opacity: 0.7 }]}
+                 accessibilityRole="button" accessibilityLabel={`${label}: ${current}`} accessibilityHint="Opens the list">
+        <Text style={p.buttonLabel}>{label}</Text>
+        <Text style={p.buttonValue} numberOfLines={1}>{current}</Text>
+        <Text style={p.caret}>▾</Text>
+      </Pressable>
+      <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
+        <Pressable style={p.backdrop} onPress={close} accessibilityLabel="Close" />
+        <View style={p.sheet}>
+          <View style={p.grip} />
+          <Text style={p.sheetTitle}>{label}</Text>
+          {options.length > 8 ? (
+            <TextInput style={p.find} value={find} onChangeText={setFind} placeholder="Search…" placeholderTextColor={C.muted}
+                       autoCorrect={false} autoCapitalize="none" clearButtonMode="while-editing" />
+          ) : null}
+          <ScrollView keyboardShouldPersistTaps="handled">
+            {shown.map(([v, text]) => (
+              <Pressable key={v} onPress={() => { onChange(v); close(); }}
+                         style={({ pressed }) => [p.option, v === value && p.optionOn, pressed && { opacity: 0.7 }]}
+                         accessibilityRole="button" accessibilityState={{ selected: v === value }}>
+                <Text style={[p.optionText, v === value && p.optionTextOn]} numberOfLines={1}>{text}</Text>
+                {v === value ? <Text style={p.check}>✓</Text> : null}
+              </Pressable>
+            ))}
+            {!shown.length ? <Text style={p.none}>Nothing matches.</Text> : null}
+          </ScrollView>
+        </View>
+      </Modal>
+    </>
   );
 }
 
 const p = StyleSheet.create({
-  row: { gap: 6, paddingVertical: 6, paddingRight: 16 },
-  chip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.08)' },
-  chipOn: { backgroundColor: 'rgba(244,114,182,0.35)' },
-  chipText: { color: C.muted, fontSize: 12.5 },
-  chipTextOn: { color: '#ffffff', fontWeight: '700' },
+  button: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginVertical: 5, paddingHorizontal: 14,
+            borderRadius: 12, backgroundColor: tint(0.08), borderWidth: 1, borderColor: 'rgba(244,114,182,0.35)' },
+  buttonLabel: { color: C.muted, fontSize: 12.5 },
+  buttonValue: { flex: 1, color: C.text, fontSize: 15, fontWeight: '700' },
+  caret: { color: C.pink, fontSize: 16 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
+  sheet: { maxHeight: '72%', backgroundColor: C.sheet, borderTopLeftRadius: 22, borderTopRightRadius: 22,
+           paddingHorizontal: 16, paddingBottom: 28 },
+  grip: { alignSelf: 'center', width: 44, height: 4, borderRadius: 2, backgroundColor: ink(0.28), marginTop: 8 },
+  sheetTitle: { color: C.text, fontSize: 17, fontWeight: '800', marginTop: 12, marginBottom: 8 },
+  find: { backgroundColor: C.card, borderColor: C.line, borderWidth: 1, borderRadius: 12, color: C.text,
+          paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 6 },
+  option: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingHorizontal: 12, borderRadius: 12 },
+  optionOn: { backgroundColor: 'rgba(244,114,182,0.18)' },
+  optionText: { flex: 1, color: C.text, fontSize: 15 },
+  optionTextOn: { fontWeight: '800' },
+  check: { color: C.pink, fontSize: 16, fontWeight: '800' },
+  none: { color: C.muted, fontSize: 13, padding: 12 },
 });
 
 export function ChancesView() {
@@ -257,7 +290,12 @@ export function ChancesView() {
 
   // Seasons come out of the same downloaded file, read here rather than ranked: a season is placed by
   // its dates, not by how well it matches you.
-  const windows = useMemo(() => (lists ? seasons.windows(seasons.seasonsOf(lists)) : []), [lists]);
+  // the maker also sees seasons not yet confirmed against their own page, marked, as on the desktop -- decided
+  // by GitHub (lib/admin.ts: who owns the connected data repo), never by a username saved in the app
+  const [maker, setMaker] = useState(false);
+  useEffect(() => { adminLogin().then((login) => setMaker(!!login)).catch(() => setMaker(false)); }, []);
+  const windows = useMemo(() => (lists ? seasons.windows(seasons.seasonsOf(lists), undefined, '', [], !maker) : []), [lists, maker]);
+  const unconfirmed = useMemo(() => (lists ? seasons.seasonsOf(lists).filter((x) => !seasons.evidenced(x)).length : 0), [lists]);
   const offered = useMemo(() => seasons.around(windows), [windows]);
   const showing = (picked ? offered.find((w) => w.id === picked) : undefined)
     ?? offered[seasons.current(offered)] ?? offered[0];
@@ -281,19 +319,24 @@ export function ChancesView() {
     <View>
       {/* Both pickers sit ABOVE the kinds, because both apply to all of them: a filter under one tab
           reads as belonging to that tab alone. */}
-      <Picker label="Where" value={country} options={[[EVERYWHERE, '🌍 Everywhere'] as [string, string],
+      <Picker label="Where" value={country} options={[[EVERYWHERE, '🌍 Anywhere'] as [string, string],
         ...places.map((c) => [c, c] as [string, string])]} onChange={setCountry} />
       {mode === 'seasons' && offered.length ? (
         <Picker label="Which period" value={showing?.id ?? ''}
-          options={offered.map((w) => [w.id, `${w.now ? '▸ ' : ''}${w.label}`] as [string, string])}
+          options={offered.map((w) => [w.id, `${w.label}${w.now ? ' (now)' : w.past ? ' (just gone)' : ''}`] as [string, string])}
           onChange={setPicked} />
       ) : null}
       <View style={{ marginHorizontal: -16 }}><Segments value={mode} options={MODES} onChange={setMode} /></View>
       <Text style={s.muted}>{ABOUT[mode]}{mode === 'seasons' ? '' : ' Each one disappears after its deadline.'} 👍 / 👎 teach your model; 🚩 tells the maker one looks fake.</Text>
 
       {mode === 'seasons' ? (<>
-        {!lists ? <Empty>Loading…</Empty> : !inSeason.length ? <Empty>{NONE.seasons}</Empty> : null}
-        {inSeason.map((it) => <SeasonCard key={`${it.id}${it.occurrence?.opens ?? ''}`} it={it} />)}
+        {showing ? <Text style={s.muted}>Opening {showing.from} to {showing.opens_to} · everything in it closed by {showing.to}</Text> : null}
+        {!lists ? <Empty>Loading…</Empty> : !offered.length ? <Empty>No seasons yet. They arrive with the lists, which myGeeKy checks every few hours.</Empty>
+          : !inSeason.length ? <Empty>{country === EVERYWHERE ? NONE.seasons
+            : `Nothing in this period leads to ${country}. Try another period, or 🌍 Anywhere.`}</Empty> : null}
+        {inSeason.map((it) => <SeasonCard key={`${it.id}${it.occurrence?.opens ?? ''}`} it={it} unverified={!seasons.evidenced(it)} />)}
+        {maker && unconfirmed ? <Text style={s.warn}>{unconfirmed} season(s) have no sentence found on their own page yet, so only you
+          see them. Run the season check on your computer to confirm or drop them.</Text> : null}
       </>) : (<>
         {!lists ? <Empty>Loading…</Empty> : !shown.length ? <Empty>{NONE[mode]}</Empty> : null}
         {shown.map((it) => (

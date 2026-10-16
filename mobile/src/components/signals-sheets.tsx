@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CALL_DAYS, CALL_LEVELS, CALL_TIMES, listRepos, MAX_CALL_SKILLS, MAX_CALLS, MAX_NOTE, type Person } from '../lib/signals';
-import { C } from '../lib/theme';
+import { C, ink } from '../lib/theme';
 
 function Sheet({ title, iconName, onClose, children }: {
   title: string; iconName: 'person-add-outline' | 'paper-plane-outline'; onClose: () => void; children: React.ReactNode;
@@ -260,8 +260,8 @@ export function SendSheet({ people, token, to: initialTo, gesture: initialGestur
 }
 
 const st = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(8,8,12,0.6)' },
-  sheet: { backgroundColor: '#17171f', borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '92%',
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
+  sheet: { backgroundColor: C.sheet, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '92%',
            paddingHorizontal: 16, paddingTop: 14, borderTopWidth: 1, borderColor: C.line },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   title: { color: C.text, fontSize: 18, fontWeight: '800', flex: 1 },
@@ -276,7 +276,7 @@ const st = StyleSheet.create({
   chipTextOn: { color: '#fff', fontWeight: '700' },
   input: { borderWidth: 1, borderColor: C.line, borderRadius: 10, color: C.text, paddingHorizontal: 10, paddingVertical: 9, marginTop: 8, fontSize: 14 },
   count: { color: C.muted, fontSize: 11, textAlign: 'right', marginTop: 4 },
-  preview: { borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(240,240,245,0.25)', borderRadius: 12, padding: 10, gap: 3, marginTop: 6 },
+  preview: { borderWidth: 1, borderStyle: 'dashed', borderColor: ink(0.25), borderRadius: 12, padding: 10, gap: 3, marginTop: 6 },
   repo: { color: C.cyan, fontSize: 13, fontWeight: '700' },
   note: { color: C.text, fontSize: 13.5, lineHeight: 19 },
   msg: { color: C.amber, fontSize: 13, marginTop: 10 },

@@ -12,7 +12,7 @@ import * as P from '../lib/protocols';
 import * as Q from '../lib/quiz';
 import type { Doc } from '../lib/skills';
 import * as taste from '../lib/taste';
-import { C } from '../lib/theme';
+import { C, tint } from '../lib/theme';
 import type { MyRepo } from '../lib/wins';
 import { Button, GCard, s, Thumbs } from './growth-parts';
 import { Empty, open } from './ui';
@@ -110,8 +110,8 @@ function StepBar({ steps, selected, onSelect }: { steps: P.Step[]; selected: str
           <Pressable key={x.id} onPress={() => onSelect(x.id)} style={[st.stepCol, { flex: chosen ? Math.max(2.2, n / 2) : 1 }]}
                      accessibilityLabel={`Step ${x.number}: ${x.title}, ${x.statusLabel}`} accessibilityState={{ selected: chosen }}>
             {/* the road: the half before this circle, and the half after it */}
-            {i > 0 ? <View style={[st.roadHalf, { left: 0, backgroundColor: done(steps[i - 1]) ? C.green : 'rgba(255,255,255,0.14)' }]} /> : null}
-            {i < n - 1 ? <View style={[st.roadHalf, { right: 0, backgroundColor: done(x) ? C.green : 'rgba(255,255,255,0.14)' }]} /> : null}
+            {i > 0 ? <View style={[st.roadHalf, { left: 0, backgroundColor: done(steps[i - 1]) ? C.green : tint(0.14) }]} /> : null}
+            {i < n - 1 ? <View style={[st.roadHalf, { right: 0, backgroundColor: done(x) ? C.green : tint(0.14) }]} /> : null}
             <View style={[st.ring, chosen && { borderColor: C.text }]}>
               <View style={[st.dot, { backgroundColor: on ? statusColor(x.status) : '#3a3a4a' }]}>
                 <Text style={st.dotText}>{done(x) ? '✓' : x.number}</Text>
@@ -128,7 +128,7 @@ function StepBar({ steps, selected, onSelect }: { steps: P.Step[]; selected: str
 function Dots({ steps }: { steps: P.Step[] }) {
   return (
     <View style={{ flexDirection: 'row', gap: 4, marginTop: 6 }}>
-      {steps.map((x) => <View key={x.id} style={[st.miniDot, { backgroundColor: x.status === 'todo' ? 'rgba(255,255,255,0.12)' : statusColor(x.status) }]} />)}
+      {steps.map((x) => <View key={x.id} style={[st.miniDot, { backgroundColor: x.status === 'todo' ? tint(0.12) : statusColor(x.status) }]} />)}
     </View>
   );
 }
@@ -280,7 +280,7 @@ export function QuestionDots({ questions, at, answers, attempt }: {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 8 }}>
       {questions.map((q, i) => {
         const done = answers[i] >= 0;
-        const colour = !done ? 'rgba(255,255,255,0.14)'
+        const colour = !done ? tint(0.14)
           : attempt ? (answers[i] === q.answer ? C.green : '#f87171') : C.violet;
         return <View key={q.id} style={[st.dotMark, { backgroundColor: colour },
           i === at && !attempt ? st.dotNow : null]} />;
@@ -644,7 +644,7 @@ const st = StyleSheet.create({
   option: { paddingVertical: 8, paddingHorizontal: 6, borderRadius: 8, marginTop: 4 },
   optionOn: { backgroundColor: 'rgba(122,92,255,0.25)' },
   stage: { marginTop: 10, padding: 8, borderRadius: 10 },
-  stageNow: { backgroundColor: 'rgba(255,255,255,0.05)' },
+  stageNow: { backgroundColor: tint(0.05) },
   item: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, marginLeft: 10 },
   road: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 10 },
   stepCol: { alignItems: 'center', paddingHorizontal: 2, minWidth: 0 },
@@ -658,18 +658,18 @@ const st = StyleSheet.create({
   panel: { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10, marginTop: 4 },
   kicker: { color: C.muted, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8 },
   chip: { fontSize: 11.5, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, overflow: 'hidden' },
-  resCard: { flexDirection: 'row', gap: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 10, marginTop: 8 },
+  resCard: { flexDirection: 'row', gap: 10, backgroundColor: tint(0.05), borderRadius: 12, padding: 10, marginTop: 8 },
   resIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   resLabel: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.7 },
   resBtn: { alignSelf: 'flex-start', borderRadius: 9, paddingHorizontal: 12, paddingVertical: 7, marginTop: 8 },
   resBtnText: { color: C.text, fontSize: 13, fontWeight: '700' },
-  answer: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'transparent', borderRadius: 10,
+  answer: { backgroundColor: tint(0.06), borderWidth: 1, borderColor: 'transparent', borderRadius: 10,
     paddingHorizontal: 10, paddingVertical: 9, marginTop: 6 },
   code: { color: C.text, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 12.5,
-    backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 8, padding: 9, marginTop: 8 },
-  quote: { color: C.muted, fontSize: 12.5, fontStyle: 'italic', backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: tint(0.07), borderRadius: 8, padding: 9, marginTop: 8 },
+  quote: { color: C.muted, fontSize: 12.5, fontStyle: 'italic', backgroundColor: tint(0.06),
     borderRadius: 8, padding: 8, marginTop: 8 },
-  quizRow: { backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 9, marginTop: 8 },
+  quizRow: { backgroundColor: tint(0.06), borderRadius: 10, padding: 9, marginTop: 8 },
   dotMark: { width: 9, height: 9, borderRadius: 5 },
   dotNow: { width: 13, height: 13, borderRadius: 7, borderWidth: 2, borderColor: C.text },
 });

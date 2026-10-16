@@ -3,7 +3,8 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { logOpenToday } from './badges';
 import { Profile } from './interests';
-import { buildProfile } from './profile';
+import { type Brain, syncModel } from './model-repo';
+import { buildProfile, loadDictionary } from './profile';
 import { getToken, isStale, loadSettings, readCache, saveSettings, setToken, Settings, writeCache } from './storage';
 
 type AppState = {
@@ -25,6 +26,18 @@ export function quickProfile(s: Settings): Profile {
   return { weights, topicIds: [], field: [...(s.field ?? [])] };
 }
 
+/** Settings with your profile from your data repo (as a pairing scan would set it); null when nothing changes.
+ *  Keywords and topics added on the phone are kept alongside your computers'. */
+export function withRepoProfile(s: Settings, b: Brain): Settings | null {
+  if (!b.profile) return null;
+  const union = (a: string[], c: string[]) => [...new Map([...c, ...a].map((x) => [x.toLowerCase(), x])).values()];
+  const next: Settings = {
+    ...s, orcid: s.orcid || b.profile.orcid, keywords: union(s.keywords, b.profile.keywords), topics: union(s.topics, b.profile.topics),
+    interests: b.profile.interests, field: b.field.length ? b.field : s.field,
+  };
+  return JSON.stringify(next) === JSON.stringify(s) ? null : next;
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -44,6 +57,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setProfile(await buildProfile(s, t));  // ...and sharpen when your full profile is ready
       } catch {
         /* offline: the quick profile stays */
+      }
+      // connected to your data repo: you as your computers know you, every time the app starts -- what
+      // "Connect your phone" brings, kept up to date without scanning (lib/model-repo.ts)
+      try {
+        const r = await syncModel(await loadDictionary());
+        const next = r ? withRepoProfile(s, r.brain) : null;
+        if (next) {
+          await saveSettings(next);
+          setSettings(next);
+          setProfile(quickProfile(next));
+          setProfile(await buildProfile(next, t, true));
+        }
+      } catch {
+        /* offline or not connected: keep what the phone has */
       }
     })();
   }, []);
@@ -84,6 +111,10 @@ export function useApp(): AppState {
 }
 
 /** Cached data first, then a fresh load when it's older than `hours` (or on pull-to-refresh). */
+/** What a list was ranked by: when your profile changes, every list is fetched again, not just when stale. */
+const profileSig = (p: Profile) => JSON.stringify([Object.entries(p.weights).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([t]) => t),
+  p.topicIds.map((t) => t.id)]);
+
 export function useFeed<T>(key: string, hours: number, load: (p: Profile) => Promise<T>) {
   const { profile } = useApp();
   const [data, setData] = useState<T | null>(null);
@@ -104,6 +135,7 @@ export function useFeed<T>(key: string, hours: number, load: (p: Profile) => Pro
       setData(fresh);
       setAt(new Date().toISOString());
       await writeCache(key, fresh);
+      await writeCache(`${key}:for`, profileSig(profile));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -114,13 +146,13 @@ export function useFeed<T>(key: string, hours: number, load: (p: Profile) => Pro
   useEffect(() => {
     let alive = true;
     (async () => {
-      const cached = await readCache<T>(key);
+      const [cached, madeFor] = await Promise.all([readCache<T>(key), readCache<string>(`${key}:for`)]);
       if (!alive) return;
       if (cached) {
         setData(cached.data);
         setAt(cached.at);
       }
-      if (profile && (!cached || isStale(cached.at, hours))) refresh();
+      if (profile && (!cached || isStale(cached.at, hours) || madeFor?.data !== profileSig(profile))) refresh();
     })();
     return () => {
       alive = false;

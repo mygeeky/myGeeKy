@@ -3,7 +3,7 @@
 // else wrote, so it's always plain Text (React Native never renders markup).
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { C } from '../lib/theme';
+import { C, tint } from '../lib/theme';
 
 export function Thumbs({ vote, onVote }: { vote: number; onVote: (up: boolean) => Promise<number> }) {
   const [v, setV] = useState(vote);
@@ -60,11 +60,11 @@ export const s = StyleSheet.create({
   link: { color: C.cyan, fontSize: 12.5, textDecorationLine: 'underline' },
   hiddenRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginVertical: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' },
-  btn: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: 'rgba(255,255,255,0.08)' },
+  btn: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: tint(0.08) },
   btnText: { color: C.text, fontSize: 13, fontWeight: '700' },
   section: { color: C.text, fontSize: 12, fontWeight: '800', letterSpacing: 0.8, marginTop: 14, marginBottom: 8 },
   step: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginTop: 10 },
-  box: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)' },
-  bar: { height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.10)', marginTop: 8, overflow: 'hidden' },
+  box: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: tint(0.06) },
+  bar: { height: 4, borderRadius: 2, backgroundColor: tint(0.10), marginTop: 8, overflow: 'hidden' },
   barFill: { height: 4, backgroundColor: C.green },
 });

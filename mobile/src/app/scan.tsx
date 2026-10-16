@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../lib/app-state';
 import { parsePairing } from '../lib/pairing';
-import { C } from '../lib/theme';
+import { C, tint } from '../lib/theme';
 
 // Scan the QR code from myGeeKy on your computer (⚙ → Connect your phone).
 export default function Scan() {
@@ -62,7 +62,7 @@ const st = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: C.bg },
   overlay: { flex: 1, alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.25)' },
   title: { color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 12, textAlign: 'center' },
-  body: { color: 'rgba(255,255,255,0.85)', fontSize: 14, textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  body: { color: tint(0.85), fontSize: 14, textAlign: 'center', marginTop: 8, lineHeight: 20 },
   frame: { width: 250, height: 250, marginTop: 36, borderWidth: 3, borderColor: C.pink, borderRadius: 24 },
   message: { color: '#fff', backgroundColor: 'rgba(0,0,0,0.6)', padding: 10, borderRadius: 10, marginTop: 20, textAlign: 'center' },
   button: { backgroundColor: C.violet, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 22, marginTop: 22 },

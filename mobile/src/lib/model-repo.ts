@@ -57,6 +57,8 @@ export type Brain = {
   weights: { feature: string; label: string; weight: number }[];
   // what badges count (achievements.counts' inputs): usage.jsonl, your interest events' kinds, signals sent
   usage: Usage[]; eventKinds: { at: string; kind: string }[]; sent: number; keywords: number; syncing: boolean;
+  // you, as "Connect your phone" would bring you (pairing.payload): what every list on the phone is ranked by
+  profile: { orcid: string; keywords: string[]; topics: string[]; interests: Record<string, number> };
 };
 export type Usage = { at: string; what: string; kind?: string; cat?: string; explore?: boolean };
 
@@ -64,7 +66,7 @@ type Event = { at: string; kind: string; terms: Record<string, number> };
 type SyncedConfig = {
   github_username: string; topics: string[]; keywords: string[]; languages: string[];
   interest_learning: boolean; interest_half_life_days: number; explore_share: number;
-  sync_repo: string; training_mass_follow_outlier: number;
+  sync_repo: string; training_mass_follow_outlier: number; orcid_id: string;
 };
 
 // ---- the token and repo
@@ -163,6 +165,7 @@ function parseConfig(text: string | null): SyncedConfig {
     explore_share: num(c.explore_share, 0.2),
     sync_repo: typeof c.sync_repo === 'string' ? c.sync_repo.slice(0, 140) : '',
     training_mass_follow_outlier: num(c.training_mass_follow_outlier, 3000),
+    orcid_id: typeof c.orcid_id === 'string' && /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(c.orcid_id) ? c.orcid_id : '',
   };
 }
 
@@ -313,13 +316,20 @@ export function scholarCorpus(text: string | null): string {
 // max_features=size) -- your most frequent words and word pairs. Ties at the cut are broken
 // alphabetically; scikit-learn leaves their order open, so a tie can rarely land differently.
 export function domainVocabulary(corpus: string, size: number): string[] {
+  return domainWeights(corpus, size).map(([t]) => t);
+}
+
+/** build_domain_vocabulary with its weights: each term's count over the top term's. */
+export function domainWeights(corpus: string, size: number): [string, number][] {
   const tokens = (corpus.toLowerCase().match(/[\p{L}\p{N}_]{2,}/gu) ?? []).filter((t) => !SKLEARN_STOP.has(t));
   const counts = new Map<string, number>();
   tokens.forEach((t, i) => {
     counts.set(t, (counts.get(t) ?? 0) + 1);
     if (i + 1 < tokens.length) { const pair = `${t} ${tokens[i + 1]}`; counts.set(pair, (counts.get(pair) ?? 0) + 1); }
   });
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, size).map(([t]) => t);
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, size);
+  const most = top[0]?.[1] ?? 1;
+  return top.map(([t, n]) => [t, n / most] as [string, number]);
 }
 
 // papers.your_topics: your OpenAlex author's topics, then your stated topics, Scholar interests
@@ -468,6 +478,27 @@ export async function fetchBrain(repo: string, token: string, dict: Dict | null)
   for (const t of domainVocabulary(corpus, 60)) if (!STOPWORDS.has(t)) known.add(t);
   for (const [t] of learnedTerms(events, cfg, 15)) known.add(t);
 
+  // interests.profile_terms, then pairing._learned's cut: your top 30 terms, 0..1
+  const terms: Record<string, number> = {};
+  const setdefault = (t: string, w: number) => { if (!(t in terms)) terms[t] = w; };
+  for (const t of [...cfg.topics, ...cfg.keywords]) terms[t.toLowerCase().replace(/-/g, ' ')] = 1;
+  for (const [phrase, w] of Object.entries(expand(dict, [...cfg.topics, ...cfg.keywords]))) if (phrase.length >= 3) setdefault(phrase, w);
+  for (const t of cfg.languages) terms[t.toLowerCase()] = 0.4;
+  if (corpus.trim()) for (const [t, w] of domainWeights(corpus, 60)) if (!STOPWORDS.has(t)) setdefault(t, 0.8 * w);
+  const learned15 = learnedTerms(events, cfg, 15);
+  if (learned15.length) {
+    const top = learned15[0][1];
+    for (const [t, w] of learned15) terms[t] = Math.max(terms[t] ?? 0, 0.3 + (0.7 * w) / top);
+  }
+  const langs = new Set(cfg.languages.map((x) => x.toLowerCase()));
+  const interests: Record<string, number> = {};
+  for (const [t, w] of Object.entries(terms).sort((a, b) => b[1] - a[1])) {
+    if (t.length >= 2 && t.length <= 40 && /^[\x00-\x7f]+$/.test(t) && /[a-z]/i.test(t) && !langs.has(t)) {
+      interests[t] = Math.round(Math.min(Math.max(w, 0), 1) * 100) / 100;
+    }
+    if (Object.keys(interests).length >= 30) break;
+  }
+
   const since = Date.now() - 30 * 86400000;
   const taught = { clicks: 0, follows: 0, stars: 0, forks: 0 };
   for (const ev of events) {
@@ -490,6 +521,7 @@ export async function fetchBrain(repo: string, token: string, dict: Dict | null)
     history, weights: retrainWeights(trainingText, history.at(-1)?.timestamp ?? null, cfg.training_mass_follow_outlier),
     usage: parseUsage(usageText), eventKinds: events.map((e) => ({ at: e.at, kind: e.kind })),
     sent: sentSignals(beaconText), keywords: cfg.keywords.length, syncing: !!cfg.sync_repo,
+    profile: { orcid: cfg.orcid_id, keywords: cfg.keywords, topics: cfg.topics, interests },
   };
   await writeCache(CACHE_KEY, brain);
   return brain;
@@ -552,7 +584,7 @@ export async function flushInterests(repo: string, token: string): Promise<numbe
 }
 
 /** Append one queue's lines to its .jsonl file; once more if a computer pushed in between. */
-async function flushQueue(repo: string, token: string, file: string, key: string, what: string): Promise<number> {
+export async function flushQueue(repo: string, token: string, file: string, key: string, what: string): Promise<number> {
   const queue = JSON.parse((await AsyncStorage.getItem(key)) ?? '[]');
   if (!Array.isArray(queue) || !queue.length) return 0;
   const lines = queue.map((e) => JSON.stringify(e)).join('\n') + '\n';
@@ -641,4 +673,26 @@ export async function syncModel(dict: Dict | null): Promise<{ brain: Brain; sent
   if (!link) return null;
   const sent = await flushInterests(link.repo, link.token);
   return { brain: await fetchBrain(link.repo, link.token, dict), sent };
+}
+
+// ---- for the maker's admin part (admin.ts): one file from your data repo, and who the token belongs to
+/** A file from your data repo, read with this phone's token; null when not connected or not synced. */
+export async function readRepoFile(file: string): Promise<string | null> {
+  const link = await modelLink();
+  return link ? raw(link.repo, link.token, file) : null;
+}
+
+/** The GitHub account the phone's data-repo token belongs to, as GitHub itself says -- not a name typed
+ *  anywhere in the app -- and only if that account owns the repo the token reads. */
+export async function verifiedOwner(): Promise<string | null> {
+  const link = await modelLink();
+  if (!link) return null;
+  try {
+    const r = await api('/user', link.token);
+    if (!r.ok) return null;
+    const login = String((await r.json())?.login ?? '');
+    return login && link.repo.split('/')[0].toLowerCase() === login.toLowerCase() ? login : null;
+  } catch {
+    return null;
+  }
 }

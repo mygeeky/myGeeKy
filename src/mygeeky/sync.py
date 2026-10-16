@@ -51,8 +51,6 @@ interest_seen.json
 curated.json
 skills_history.json
 my_repos.json
-scout.json
-quizwriter.json
 questions.json
 github_cache.json
 wins.json
@@ -313,6 +311,15 @@ def _init(repo: str) -> str:
     return "\n".join(messages)
 
 
+def _apply_admin_log() -> int:
+    """The maker's admin actions made on the phone (adminlog.py). Never lets a sync fail."""
+    try:
+        from . import adminlog
+        return adminlog.apply()
+    except Exception:  # noqa: BLE001
+        return 0
+
+
 def pull() -> str:
     _require_git()
     if not is_initialized():
@@ -327,6 +334,7 @@ def pull() -> str:
     _git("merge", "-q", "--no-edit", "-X", "theirs", "origin/main")
     after = _git("rev-parse", "HEAD").stdout.strip()
     import_config()
+    _apply_admin_log()
     return "Already up to date." if before == after else "Pulled updates from GitHub."
 
 
@@ -339,6 +347,8 @@ def push() -> str:
     if _remote_has_main():
         _git("merge", "-q", "--no-edit", "-X", "theirs", "origin/main")
         import_config()
+        if _apply_admin_log():
+            _commit_local(f"myGeeKy sync from {_stamp()}")     # what the phone asked for, applied, goes up too
     _git("push", "-q", "-u", "origin", "main")
     return "Pushed to GitHub." if committed else "Nothing new to push (remote is up to date)."
 

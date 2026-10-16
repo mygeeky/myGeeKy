@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Linking, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, StyleSheet, Text,
+import { Image, LayoutAnimation, Linking, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, StyleSheet, Text,
          useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Orbit, orbitHeight } from '../components/orbit';
@@ -14,21 +14,28 @@ import { ChancesView } from '../components/chances-view';
 import { GrowView } from '../components/grow-view';
 import { SignalsView } from '../components/signals-view';
 import { Empty, open, Segments } from '../components/ui';
+import { AdminPart } from '../components/admin-part';
+import { IdeaForm } from '../components/idea-sheet';
 import { BadgesPart, ModelPart, MorePart } from '../components/you-parts';
 import { timeAgo, useApp, useFeed } from '../lib/app-state';
 import { fetchHeadlines } from '../lib/headlines';
 import { fetchLive } from '../lib/live';
 import { fetchLaunches, fetchRepos } from '../lib/market';
 import { fetchModels } from '../lib/models';
+import { adminLogin } from '../lib/admin';
+import { loadContributions } from '../lib/contribute';
 import { recordInterest } from '../lib/model-repo';
+import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
 import { fetchPeople } from '../lib/people';
 import { fetchResearch } from '../lib/research';
 import { INNER, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
-import { C } from '../lib/theme';
+import { C, ink, tint } from '../lib/theme';
+
+
 
 const HINT_KEY = 'mygeeky.orbitHinted';
-type YouPart = 'model' | 'badges' | 'more';
-const YOU_PARTS: [YouPart, string][] = [['model', 'Your model'], ['badges', 'Badges'], ['more', 'More']];
+type YouPart = 'model' | 'badges' | 'more' | 'ideas' | 'admin';
+const YOU_PARTS: [YouPart, string][] = [['model', 'Model'], ['badges', 'Badges'], ['more', 'Settings'], ['ideas', 'Ideas']];
 const DOCK: SectionId[] = ['you', ...INNER, ...OUTER];
 
 const EMPTY: Partial<Record<SectionId, string>> = {
@@ -36,8 +43,8 @@ const EMPTY: Partial<Record<SectionId, string>> = {
   activity: "The people you follow haven't done anything public lately.",
   people: 'No one found for your keywords yet: add a few in You → Your model.',
   news: 'No headlines yet. Pull down to load them.',
-  papers: 'No rising papers found yet. Adding your ORCID (You → More → Start over) finds your exact field.',
-  repos: 'Nothing found for your keywords yet: add a few in You → Your model.',
+  papers: 'No rising papers found yet. Connecting your data repo (You → Model) or adding your ORCID (You → Settings → Start over) finds your exact field.',
+  repos: 'No repos yet: your computer finds them (Repos tab there), and they arrive with its next sync.',
   models: 'No trending models yet. Pull down to load them.',
   launches: 'No launches yet. Pull down to load them.',
 };
@@ -84,6 +91,14 @@ function RowView({ r, color, isOpen, onPick }: { r: Row; color: string; isOpen: 
         </View>
         {r.right ? <Text style={st.right}>{r.right}</Text> : null}
       </Pressable>
+      {isOpen && r.more ? (
+        <View style={{ paddingBottom: 8, gap: 6 }}>
+          {r.more.text.map((t) => <Text key={t} style={st.sub}>{t}</Text>)}
+          {r.more.links.map(([label, url]) => (
+            <Pressable key={url} onPress={() => open(url, r.kind)} style={st.issue}><Text style={st.issueText}>{label}</Text></Pressable>
+          ))}
+        </View>
+      ) : null}
       {isOpen && r.kind === 'person' && r.login ? <PersonCard login={r.login} onClose={onPick} /> : null}
       {isOpen && r.kind !== 'person' && card && r.login ? <PersonCard login={r.login} onClose={() => setCard(false)} /> : null}
       {isOpen && r.kind !== 'person' ? (
@@ -115,7 +130,10 @@ export default function Home() {
     : Promise.resolve({ followBack: [], field: [] }));
   const headlines = useFeed('headlines', 3, (p) => fetchHeadlines(p.weights));
   const research = useFeed('research', 12, (p) => fetchResearch(p));
-  const repos = useFeed('market-repos', 24, (p) => fetchRepos(p.weights, token));
+  const repos = useFeed('repos-contribute', 3, async (p) => {   // from your computers' runs; else popular in your field
+    const contribute = await loadContributions().catch(() => null);
+    return { contribute, popular: contribute ? [] : await fetchRepos(p.weights, token) };
+  });
   const models = useFeed('models', 6, (p) => fetchModels(p.weights, keywords));
   const launches = useFeed('launches', 6, (p) => fetchLaunches(p.weights));
   const feedsOf: Record<SectionId, { loading: boolean; error: string | null; at: string | null; refresh: () => Promise<void> }[]> = {
@@ -130,6 +148,11 @@ export default function Home() {
   const [collapsed, setCollapsed] = useState(params.fold === '1');
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' ? params.part : 'model');
+  // the maker's Admin part: only for the account GitHub says owns the connected data repo (lib/admin.ts)
+  const [admin, setAdmin] = useState<string | null>(null);
+  useEffect(() => {
+    if (sel === 'you') adminLogin().then(setAdmin).catch(() => setAdmin(null));
+  }, [sel]);
   const [hint, setHint] = useState(false);
   const [viewH, setViewH] = useState(0);
 
@@ -161,14 +184,39 @@ export default function Home() {
   const error = fs.map((f) => f.error).find(Boolean) ?? null;
   const at = fs.map((f) => f.at).filter(Boolean).sort()[0] ?? null;
 
+  // the icon dock folds down to a thin handle when you leave it alone; one tap brings it back
+  const [dockOpen, setDockOpen] = useState(true);
+  const [dockTouched, setDockTouched] = useState(0);
+  const fold = () => {                                    // the rings fold away: the dock first, then idle
+    if (!collapsed) setDockOpen(true);
+    setCollapsed(true);
+  };
+  const dockUsed = () => setDockTouched((n) => n + 1);
+  const [dockIdle, setDockIdle] = useState(DOCK_IDLE_DEFAULT);       // ⚙ Settings → Look
+  useEffect(() => { dockIdleMs().then(setDockIdle); }, [sel]);
+  useEffect(() => {
+    if (!collapsed || !dockOpen || !dockIdle) return;
+    const t = setTimeout(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setDockOpen(false);
+    }, dockIdle);
+    return () => clearTimeout(t);
+  }, [collapsed, dockOpen, dockTouched, dockIdle]);
+  const showDock = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setDockOpen(true);
+    dockUsed();
+  };
+
   const pick = (id: SectionId) => {
+    dockUsed();
     setSel(id);
     setOpenId(null);
     touched();
   };
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
-    if (y > 24 && !collapsed) setCollapsed(true);
+    if (y > 24 && !collapsed) fold();
     else if (y <= 0 && collapsed) setCollapsed(false);
   };
   const ringsH = collapsed ? 0 : orbitHeight(width);
@@ -178,6 +226,7 @@ export default function Home() {
   const lastTap = useRef(0);
   const [tapAgain, setTapAgain] = useState(false);
   const spinTap = () => {
+    dockUsed();
     const now = Date.now();
     if (now - lastTap.current < 400) {
       lastTap.current = 0;
@@ -202,7 +251,7 @@ export default function Home() {
           <Text style={st.meta}>{loading ? 'updating…' : at ? `updated ${timeAgo(at)} · pull down to refresh` : ''}</Text>
         ) : null}
         {error ? <Text style={st.error}>{error}</Text> : null}
-        {sel === 'you' ? <View style={{ marginTop: 10 }}><Segments value={youPart} options={YOU_PARTS} onChange={setYouPart} /></View> : null}
+        {sel === 'you' ? <View style={{ marginTop: 10 }}><Segments value={youPart} options={admin ? [...YOU_PARTS, ['admin', 'Admin'] as [YouPart, string]] : YOU_PARTS} onChange={setYouPart} /></View> : null}
 
         <ScrollView
           onLayout={(e) => setViewH(e.nativeEvent.layout.height)}
@@ -214,7 +263,7 @@ export default function Home() {
         >
           {sel === 'you' ? (
             <View style={{ marginHorizontal: -4 }}>
-              {youPart === 'model' ? <ModelPart /> : youPart === 'badges' ? <BadgesPart /> : <MorePart />}
+              {youPart === 'model' ? <ModelPart /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart me={admin} /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
             </View>
           ) : !user && NEEDS_GITHUB[sel] ? (
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />
@@ -228,7 +277,7 @@ export default function Home() {
             <RowView key={r.id} r={r} color={section.color} isOpen={openId === r.id || (openId === 'first' && i === 0)}
                      onPick={() => {
                        setOpenId(openId === r.id ? null : r.id);
-                       setCollapsed(true);                // reading: the rings make room
+                       fold();                            // reading: the rings make room
                        touched();
                      }} />
           )) : (
@@ -237,7 +286,12 @@ export default function Home() {
         </ScrollView>
       </View>
 
-      {collapsed ? (
+      {collapsed && !dockOpen ? (
+        <Pressable onPress={showDock} style={st.handle} accessibilityRole="button" accessibilityLabel="Show the sections">
+          <View style={st.handleBar} />
+          <Ionicons name="chevron-up" size={14} color={C.muted} />
+        </Pressable>
+      ) : collapsed ? (
         <View style={st.dock}>
           <Pressable onPress={spinTap} style={st.unfold} accessibilityLabel="Show the rings" accessibilityHint="Double-tap"
                      onAccessibilityTap={() => setCollapsed(false)}>
@@ -252,9 +306,10 @@ export default function Home() {
                 return (
                   <Pressable key={id} onPress={() => pick(id)} style={({ pressed }) => [st.dockBtn, pressed && { opacity: 0.6 }]}
                              accessibilityRole="button" accessibilityLabel={`${s.label}${counts[id] ? `, ${counts[id]} new` : ''}`}>
-                    <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: s.color, backgroundColor: on ? s.color : '#1c1c2c' }]}>
+                    <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: s.color, backgroundColor: on ? s.color : C.raised }]}>
                       <Ionicons name={s.icon} size={Math.round(dot * 0.46)} color={on ? '#0d0d16' : s.color} />
                     </View>
+                    <Text style={[st.dockLabel, on && { color: s.color }]} numberOfLines={1}>{s.label}</Text>
                   </Pressable>
                 );
               })}
@@ -265,7 +320,7 @@ export default function Home() {
         <View style={{ height: ringsH }}>
           <Orbit width={width} sel={sel} counts={counts} onSelect={pick} hint={hint} onTouched={touched}
                  youLetter={(user[0] ?? '?').toUpperCase()} />
-          <Pressable onPress={() => setCollapsed(true)} style={[st.fold, { top: ringsH - 50 }]} accessibilityLabel="Fold the rings away">
+          <Pressable onPress={() => fold()} style={[st.fold, { top: ringsH - 50 }]} accessibilityLabel="Fold the rings away">
             <Ionicons name="chevron-down" size={20} color={C.muted} />
           </Pressable>
         </View>
@@ -284,9 +339,9 @@ const st = StyleSheet.create({
   ghAdd: { backgroundColor: '#24292f', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 },
   ghAddText: { color: '#fff', fontWeight: '800', fontSize: 14 },
   ghNew: { color: C.cyan, fontSize: 13 },
-  safe: { flex: 1, backgroundColor: '#0d0d16' },
-  panel: { flex: 1, backgroundColor: '#14141f', borderBottomLeftRadius: 26, borderBottomRightRadius: 26,
-           borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.10)', paddingTop: 12, overflow: 'hidden' },
+  safe: { flex: 1, backgroundColor: C.deep },
+  panel: { flex: 1, backgroundColor: C.panel, borderBottomLeftRadius: 26, borderBottomRightRadius: 26,
+           borderBottomWidth: 1, borderColor: tint(0.10), paddingTop: 12, overflow: 'hidden' },
   head: { flexDirection: 'row', alignItems: 'baseline', gap: 10, paddingHorizontal: 20 },
   h1: { color: C.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.4 },
   ring: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
@@ -294,8 +349,8 @@ const st = StyleSheet.create({
   meta: { color: C.muted, fontSize: 11, paddingHorizontal: 20, marginTop: 4 },
   error: { color: C.red, fontSize: 13, paddingHorizontal: 20, marginTop: 6 },
   list: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 16 },
-  rowBox: { borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
-  rowOpen: { backgroundColor: 'rgba(255,255,255,0.04)', marginHorizontal: -12, paddingHorizontal: 12, borderRadius: 14 },
+  rowBox: { borderBottomWidth: 1, borderColor: tint(0.07) },
+  rowOpen: { backgroundColor: tint(0.04), marginHorizontal: -12, paddingHorizontal: 12, borderRadius: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.cardHi, alignItems: 'center', justifyContent: 'center' },
   letter: { width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
@@ -303,17 +358,22 @@ const st = StyleSheet.create({
   title: { color: C.text, fontSize: 15, fontWeight: '700', lineHeight: 20 },
   sub: { color: C.muted, fontSize: 12, marginTop: 3 },
   right: { color: C.muted, fontSize: 12 },
+  issue: { backgroundColor: tint(0.07), borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+  issueText: { color: C.text, fontSize: 13 },
   actions: { flexDirection: 'row', gap: 8, paddingBottom: 12 },
   go: { flex: 1, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
   goText: { color: '#0d0d16', fontSize: 14, fontWeight: '800' },
-  close: { width: 44, minHeight: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  close: { width: 44, minHeight: 44, borderRadius: 12, backgroundColor: tint(0.08), alignItems: 'center', justifyContent: 'center' },
   closeText: { color: C.text, fontSize: 20 },
   dock: { paddingHorizontal: 6, paddingTop: 2 },
+  handle: { height: 34, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  handleBar: { width: 44, height: 4, borderRadius: 2, backgroundColor: ink(0.28) },
   unfold: { height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   unfoldText: { color: C.muted, fontSize: 12, fontWeight: '700' },
   dockRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  dockBtn: { flex: 1, minHeight: 58, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 },
+  dockBtn: { flex: 1, minHeight: 64, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 },
+  dockLabel: { color: C.muted, fontSize: 10, fontWeight: '600', marginTop: 3 },
   dockDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  fold: { position: 'absolute', right: 10, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.06)',
+  fold: { position: 'absolute', right: 10, width: 44, height: 44, borderRadius: 22, backgroundColor: tint(0.06),
           alignItems: 'center', justifyContent: 'center' },
 });

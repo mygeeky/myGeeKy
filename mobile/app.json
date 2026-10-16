@@ -50,6 +50,12 @@
             "image": "./assets/splash-blank.png"
           }
         }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "myGeeKy asks for Face ID only to open the maker's admin part."
+        }
       ]
     ],
     "scheme": "mygeeky",

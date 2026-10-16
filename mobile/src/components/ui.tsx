@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { timeAgo } from '../lib/app-state';
 import { logClick } from '../lib/badges';
-import { BADGES, C } from '../lib/theme';
+import { C, BADGES, tint } from '../lib/theme';
 
 /** A small switch between the parts of a tab (e.g. Headlines | Papers). */
 export function Segments<T extends string>({ value, options, onChange }: {
@@ -78,7 +78,7 @@ export const s = StyleSheet.create({
   title: { color: C.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4, flex: 1 },
   strip: { flexDirection: 'row', gap: 4 },
   stripIcon: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center',
-               backgroundColor: 'rgba(255,255,255,0.06)' },
+               backgroundColor: tint(0.06) },
   segments: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 6, padding: 3, borderRadius: 12,
               backgroundColor: C.card, borderWidth: 1, borderColor: C.line },
   segment: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },

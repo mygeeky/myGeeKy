@@ -7,7 +7,7 @@ import { Animated, Easing, Image, Platform, Pressable, StyleSheet, Text, View } 
 import { open } from './ui';
 import { timeAgo, useApp } from '../lib/app-state';
 import { Card, CardRepo, fetchCard, LinkKind } from '../lib/profile-card';
-import { C } from '../lib/theme';
+import { C, tint } from '../lib/theme';
 
 const MARKS: Record<LinkKind, { label: string; color: string; icon?: keyof typeof Ionicons.glyphMap; text?: string }> = {
   linkedin: { label: 'LinkedIn', color: '#0a66c2', icon: 'logo-linkedin' },
@@ -136,9 +136,9 @@ export function PersonCard({ login, onClose }: { login: string; onClose?: () => 
 }
 
 const st = StyleSheet.create({
-  box: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(127,216,255,0.5)', borderWidth: 1, borderRadius: 14,
+  box: { backgroundColor: tint(0.04), borderColor: 'rgba(127,216,255,0.5)', borderWidth: 1, borderRadius: 14,
          padding: 14, marginBottom: 12, gap: 2 },
-  track: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden', marginTop: 10 },
+  track: { height: 5, borderRadius: 3, backgroundColor: tint(0.10), overflow: 'hidden', marginTop: 10 },
   glow: { position: 'absolute', top: 0, bottom: 0, flexDirection: 'row', borderRadius: 3, overflow: 'hidden' },
   x: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   head: { flexDirection: 'row', gap: 12, alignItems: 'center' },

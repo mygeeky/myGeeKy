@@ -1,6 +1,7 @@
 // The orbit's planets: what each one is, and its list of things, built from the feeds.
 import type Ionicons from '@expo/vector-icons/Ionicons';
 import { timeAgo } from './app-state';
+import type { Contribution } from './contribute';
 import { Repo } from './github';
 import { Headline, kindOf } from './headlines';
 import { Event } from './live';
@@ -9,7 +10,7 @@ import type { Learn } from './model-repo';
 import { Model } from './models';
 import { Person } from './people';
 import { Paper } from './research';
-import { BADGES } from './theme';
+import { C, BADGES, tint } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
 export type SectionId = 'live' | 'people' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
@@ -25,7 +26,7 @@ export const SECTIONS: Record<SectionId, Section> = {
   grow: { id: 'grow', label: 'Grow', color: '#4ade80', icon: 'leaf-outline', about: 'Rising skills to learn, protocols to learn them, your wins and collaborators.' },
   news: { id: 'news', label: 'News', color: '#eab308', icon: 'newspaper-outline', about: 'AI labs, journals and the tech press, ranked by your interests.' },
   papers: { id: 'papers', label: 'Papers', color: '#22c55e', icon: 'document-text-outline', about: 'Rising in your field: papers gaining citations fastest.' },
-  repos: { id: 'repos', label: 'Repos', color: '#7fd8ff', icon: 'git-branch-outline', about: 'The popular, active projects your field runs on.' },
+  repos: { id: 'repos', label: 'Repos', color: '#7fd8ff', icon: 'git-branch-outline', about: 'Repos in your field where your skills would be welcome, with open starter issues.' },
   models: { id: 'models', label: 'AI models', color: '#ffc457', icon: 'hardware-chip-outline', about: 'Trending on Hugging Face: your field first, then everywhere.' },
   launches: { id: 'launches', label: 'Launches', color: '#ff6fd8', icon: 'rocket-outline', about: 'Today on Product Hunt, the ones in your field first.' },
   chances: { id: 'chances', label: 'Chances', color: '#f472b6', icon: 'briefcase-outline', about: 'Verified jobs, funding and conferences, checked by hand.' },
@@ -40,6 +41,7 @@ export type Row = {
   id: string; title: string; sub: string; right?: string; url: string; action: string;
   avatar?: string; letter?: string; letterBg?: string; letterFg?: string; login?: string;
   kind: string; cat?: string; explore?: boolean;      // what opening it counts as, for badges
+  more?: { text: string[]; links: [string, string][] };  // shown when the row is open (a repo's why and starter issues)
   learn?: Learn;                                      // what it teaches your model (as the desktop's record_click)
 };
 
@@ -64,7 +66,7 @@ export type Feeds = {
   people?: { followBack: Person[]; field: Person[] } | null;
   headlines?: { items: Headline[] } | null;
   research?: { rising: Paper[]; tools: Paper[] } | null;
-  repos?: Repo[] | null;
+  repos?: { contribute: Contribution[] | null; popular: Repo[] } | null;
   models?: { field: Model[]; trending: Model[] } | null;
   launches?: Launch[] | null;
 };
@@ -98,10 +100,22 @@ export function rowsFor(id: SectionId, f: Feeds): Row[] {
         learn: { kind: 'news', text: p.title, topics: p.match, source: p.id },
       }));
     case 'repos':
-      return (f.repos ?? []).map((r, i) => ({
+      if (f.repos?.contribute) {          // the desktop's Repos: where your skills would be welcome
+        return f.repos.contribute.map((r) => ({
+          id: `c${r.full_name}`, title: r.full_name, sub: [r.explore ? '🔭' : '', r.language, `★${fmt(r.stars)}`,
+            r.starter_issues.length ? `${r.starter_issues.length} starter issue${r.starter_issues.length === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · '),
+          right: r.score ? r.score.toFixed(2) : '', url: r.repo_url, action: 'Open on GitHub', avatar: r.owner_avatar_url || undefined,
+          letter: '📦', letterBg: tint(0.10), letterFg: C.text, kind: 'repo', explore: r.explore,
+          more: { text: [r.description.slice(0, 160), r.reasons.length ? `why: ${r.reasons.join('; ')}` : ''].filter(Boolean),
+            links: [...r.starter_issues.slice(0, 2).map((i) => [`→ ${i.title.length > 100 ? `${i.title.slice(0, 97)}…` : i.title}`, i.url] as [string, string]),
+              ['🍴 Fork it on GitHub', r.fork_url]] },
+          learn: { kind: 'repo', text: `${r.full_name.replace('/', ' ')} ${r.description} ${r.language}`, topics: r.topics, source: r.full_name },
+        }));
+      }
+      return (f.repos?.popular ?? []).map((r, i) => ({
         id: `g${r.full_name}`, title: r.full_name.split('/')[1], sub: [r.full_name.split('/')[0], r.language, `pushed ${timeAgo(r.pushed_at)}`].filter(Boolean).join(' · '),
         right: `★ ${fmt(r.stargazers_count)}`, url: r.html_url, action: 'Open on GitHub',
-        letter: String(i + 1), letterBg: 'rgba(255,255,255,0.10)', letterFg: '#f0f0f5', kind: 'repo',
+        letter: String(i + 1), letterBg: tint(0.10), letterFg: C.text, kind: 'repo',
         learn: { kind: 'repo', text: `${r.full_name.replace('/', ' ')} ${r.description ?? ''} ${r.language ?? ''}`, topics: r.topics ?? [], source: r.full_name },
       }));
     case 'models': {

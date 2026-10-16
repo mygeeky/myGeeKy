@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { GestureResponderEvent, Platform, StyleSheet, Text, View } from 'react-native';
 import { INNER, OUTER, SECTIONS, SectionId } from '../lib/sections';
-import { C } from '../lib/theme';
+import { C, tint } from '../lib/theme';
 
 type Ring = 'inner' | 'outer';
 const TAU = Math.PI * 2;
@@ -25,16 +25,18 @@ function nearest(ring: Ring, rot: number) {
   return ((Math.round(-rot / (TAU / n)) % n) + n) % n;
 }
 
+const SCALE = 0.765;                     // the rings take this share of the size they used to: room for the list
+
 export function orbitHeight(width: number) {
-  return Math.round(410 * (width / 390));
+  return Math.round(410 * (width / 390) * SCALE);
 }
 
 export function Orbit({ width, sel, counts, onSelect, hint, onTouched, youLetter }: {
   width: number; sel: SectionId; counts: Partial<Record<SectionId, number>>;
   onSelect: (id: SectionId) => void; hint: boolean; onTouched: () => void; youLetter: string;
 }) {
-  const k = width / 390;
-  const geo = { cx: 195 * k, cy: 210 * k, r: { inner: 88 * k, outer: 160 * k }, size: { inner: 46 * k, outer: 56 * k }, split: 125 * k, center: 40 * k };
+  const k = (width / 390) * SCALE;
+  const geo = { cx: width / 2, cy: 210 * k, r: { inner: 88 * k, outer: 160 * k }, size: { inner: 46 * k, outer: 56 * k }, split: 125 * k, center: 40 * k };
   const [rot, setRot] = useState<Record<Ring, number>>({ inner: 0, outer: 0 });
 
   // latest values for the touch handlers (they're created once)
@@ -165,7 +167,7 @@ export function Orbit({ width, sel, counts, onSelect, hint, onTouched, youLetter
       <View pointerEvents="none" accessible accessibilityRole="button" accessibilityLabel="You: your model, badges and settings"
             onAccessibilityTap={() => onSelect('you')}
             style={[st.center, { left: geo.cx - 38 * k, top: geo.cy - 38 * k, width: 76 * k, height: 76 * k, borderRadius: 38 * k,
-                                 backgroundColor: youOn ? '#3a3320' : '#22223a' }, youOn && st.youGlow]}>
+                                 backgroundColor: youOn ? (C.dark ? '#3a3320' : '#fff1bf') : (C.dark ? '#22223a' : C.raised) }, youOn && st.youGlow]}>
         <Text style={{ color: C.text, fontSize: 22 * k, fontWeight: '800' }}>{youLetter}</Text>
         <Text style={{ color: C.muted, fontSize: 9 * k, fontWeight: '800', letterSpacing: 0.8 }}>YOU</Text>
       </View>
@@ -177,7 +179,7 @@ export function Orbit({ width, sel, counts, onSelect, hint, onTouched, youLetter
               style={{ position: 'absolute', left: p.x - 40, top: p.y - p.d / 2 - (p.nearTop && !p.on ? 17 : 0), width: 80, alignItems: 'center' }}>
           {p.nearTop && !p.on ? <Text style={[st.label, { marginTop: 0, marginBottom: 3 }]} numberOfLines={1}>{p.s.label}</Text> : null}
           <View style={[st.planet, { width: p.d, height: p.d, borderRadius: p.d / 2, borderColor: p.s.color,
-                                     backgroundColor: p.on ? p.s.color : '#1c1c2c' },
+                                     backgroundColor: p.on ? p.s.color : C.raised },
                         p.on && { shadowColor: p.s.color, shadowOpacity: 0.8, shadowRadius: 14, elevation: 10 }]}>
             <Ionicons name={p.s.icon} size={Math.round(p.d * 0.44)} color={p.on ? '#0d0d16' : p.s.color} />
             {p.count ? <View style={st.count}><Text style={st.countText}>{p.count > 99 ? '99+' : p.count}</Text></View> : null}
@@ -196,16 +198,16 @@ export function Orbit({ width, sel, counts, onSelect, hint, onTouched, youLetter
 }
 
 const st = StyleSheet.create({
-  ring: { position: 'absolute', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)' },
-  dashed: { borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.16)' },
+  ring: { position: 'absolute', borderWidth: 1, borderColor: tint(0.10) },
+  dashed: { borderStyle: 'dashed', borderColor: tint(0.16) },
   lens: { position: 'absolute', height: 8, borderRadius: 4 },
   center: { position: 'absolute', borderWidth: 2, borderColor: '#ffd24a', alignItems: 'center', justifyContent: 'center' },
   youGlow: { shadowColor: '#ffd24a', shadowOpacity: 0.6, shadowRadius: 16, elevation: 8 },
   planet: { borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   count: { position: 'absolute', top: -5, right: -7, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9,
-           backgroundColor: '#f0f0f5', alignItems: 'center', justifyContent: 'center' },
-  countText: { color: '#0d0d16', fontSize: 10, fontWeight: '800' },
+           backgroundColor: C.text, alignItems: 'center', justifyContent: 'center' },
+  countText: { color: C.bg, fontSize: 10, fontWeight: '800' },
   label: { color: C.muted, fontSize: 11, fontWeight: '700', marginTop: 3 },
-  hint: { position: 'absolute', width: 200, borderRadius: 999, backgroundColor: '#f0f0f5', paddingVertical: 6, alignItems: 'center' },
-  hintText: { color: '#0d0d16', fontSize: 12, fontWeight: '700' },
+  hint: { position: 'absolute', width: 200, borderRadius: 999, backgroundColor: C.text, paddingVertical: 6, alignItems: 'center' },
+  hintText: { color: C.bg, fontSize: 12, fontWeight: '700' },
 });

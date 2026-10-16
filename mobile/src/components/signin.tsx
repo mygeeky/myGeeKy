@@ -5,7 +5,7 @@ import { Linking, Pressable, StyleSheet, Text } from 'react-native';
 import { startLogin, waitForGrant, whoAmI } from '../lib/github-login';
 import { type OrcidMe, orcidSignInAvailable, signInWithOrcid } from '../lib/orcid-login';
 import { saveSignin } from '../lib/storage';
-import { C } from '../lib/theme';
+import { C, tint } from '../lib/theme';
 
 export function SignInButton({ onSignedIn, signedInAs }: {
   onSignedIn: (login: string, token: string) => void | Promise<void>; signedInAs?: string;
@@ -85,7 +85,7 @@ const st = StyleSheet.create({
   orcid: { backgroundColor: '#a6ce39', borderRadius: 14, paddingVertical: 14, marginTop: 10, alignItems: 'center' },
   orcidText: { color: '#1d2b0a', fontSize: 16, fontWeight: '800' },
   gh: { backgroundColor: '#24292f', borderRadius: 14, paddingVertical: 14, marginTop: 12, alignItems: 'center',
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+        borderWidth: 1, borderColor: tint(0.15) },
   ghText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   code: { color: C.pink, fontSize: 30, fontWeight: '900', letterSpacing: 4, textAlign: 'center', marginTop: 12 },
   hint: { color: C.muted, fontSize: 12, marginTop: 8, lineHeight: 17 },

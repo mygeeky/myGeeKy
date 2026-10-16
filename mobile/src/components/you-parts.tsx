@@ -7,13 +7,15 @@ import { InterestMap, MAP_EXPLORE, MAP_FIELD, MAP_LEARNED } from './interest-map
 import { AucGauge, aucVerdict, ExploreDonut, StatTiles, TrendChart, WeightBars } from './model-plots';
 import { SignInButton } from './signin';
 import { Card, Empty, open, s, Section, timeAgo } from './ui';
-import { useApp } from '../lib/app-state';
-import { Achievement, earned, Earned, githubAchievements, TIER_COLORS } from '../lib/badges';
+import { useApp, withRepoProfile } from '../lib/app-state';
+import { Achievement, earned, Earned, githubAchievements, TIER_COLORS, TIERS } from '../lib/badges';
 import { Dict, lookup } from '../lib/interests';
 import { badgeCounts, type Brain, cachedBrain, connectModel, disconnectModel, MODEL_TOKEN_PAGE, modelLink, queuedUsage, syncModel } from '../lib/model-repo';
 import { loadDictionary } from '../lib/profile';
+import { signalsToken } from '../lib/signals';
 import { clearAll } from '../lib/storage';
-import { C } from '../lib/theme';
+import { C, setTheme, THEME, THEME_LABELS, type ThemeName } from '../lib/theme';
+import { DOCK_IDLE_CHOICES, DOCK_IDLE_DEFAULT, dockIdleMs, setDockIdleMs } from '../lib/prefs';
 
 
 export function ModelPart() {
@@ -59,7 +61,7 @@ export function ModelPart() {
       <Card>
         <Text style={st.body}>
           {profile?.field.length ? profile.field.join(' · ') :
-            settings.orcid ? 'Looking it up from your ORCID…' : 'Add your ORCID (More → Start over) to find your exact research field.'}
+            settings.orcid ? 'Looking it up from your ORCID…' : 'Add your ORCID (Settings → Start over) to find your exact research field.'}
         </Text>
         {settings.orcid ? <Text style={st.link} onPress={() => open(`https://orcid.org/${settings.orcid}`)}>ORCID {settings.orcid} ↗</Text> : null}
       </Card>
@@ -76,6 +78,7 @@ export function ModelPart() {
 
 // Your interest map, from your private data repo -- the same map as the desktop's Model tab.
 function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
+  const { settings, save } = useApp();
   const [brain, setBrain] = useState<Brain | null>(null);
   const [linked, setLinked] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -87,6 +90,10 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
     setBusy(true);
     try {
       const r = await syncModel(dict);
+      if (r && settings) {                              // every list is ranked by you, as your computers know you
+        const next = withRepoProfile(settings, r.brain);
+        if (next) await save(next);
+      }
       if (r) { setBrain(r.brain); setNote(r.sent ? `Sent ${r.sent} thing${r.sent === 1 ? '' : 's'} you opened here to your computers.` : ''); }
     } catch (e) {
       setNote(e instanceof Error ? e.message : 'Couldn\'t reach your data repo. Showing the last copy.');
@@ -245,10 +252,26 @@ export function BadgesPart() {
     })();
     if (settings?.username) githubAchievements(settings.username).then(setGh);
   }, [settings]);
+  // by score: gold, silver, bronze, not yet -- and within each, closest to the next tier first
+  const level = (b: Earned) => (b.tier ? TIERS.indexOf(b.tier as typeof TIERS[number]) + 1 : 0);
+  const progress = (b: Earned) => (b.next ? b.count / b.next : 1);
+  const ranked = [...mine].sort((x, y) => level(y) - level(x) || progress(y) - progress(x) || x.name.localeCompare(y.name));
   return (
     <>
+      <Section>🐙 ON GITHUB</Section>
+      {gh.length ? (
+        <View style={st.chips}>
+          {gh.map((a) => (
+            <View key={a.name} style={{ alignItems: 'center', width: 76 }}>
+              <Image source={{ uri: a.image }} style={{ width: 56, height: 56 }} />
+              <Text style={[s.small, { textAlign: 'center' }]} numberOfLines={2}>{a.name}</Text>
+            </View>
+          ))}
+        </View>
+      ) : <Empty>No GitHub achievements found on your profile yet.</Empty>}
+
       <Section>🏅 MYGEEKY BADGES</Section>
-      {mine.map((b) => (
+      {ranked.map((b) => (
         <Card key={b.id}>
           <View style={[s.row, { alignItems: 'center' }]}>
             <View style={[st.medal, { borderColor: b.tier ? TIER_COLORS[b.tier] : C.line, opacity: b.tier ? 1 : 0.45 }]}>
@@ -261,24 +284,31 @@ export function BadgesPart() {
           </View>
         </Card>
       ))}
-      <Section>🐙 ON GITHUB</Section>
-      {gh.length ? (
-        <View style={st.chips}>
-          {gh.map((a) => (
-            <View key={a.name} style={{ alignItems: 'center', width: 76 }}>
-              <Image source={{ uri: a.image }} style={{ width: 56, height: 56 }} />
-              <Text style={[s.small, { textAlign: 'center' }]} numberOfLines={2}>{a.name}</Text>
-            </View>
-          ))}
-        </View>
-      ) : <Empty>No GitHub achievements found on your profile yet.</Empty>}
     </>
   );
 }
 
+// ⚙ Settings: what the desktop's ⚙ holds that means something on a phone -- your setup, sync with your data
+// repo, Signals, the 💡 -- and none of its window controls (transparency, panel height, place on screen).
 export function MorePart() {
   const { settings, token, save } = useApp();
+  const [repo, setRepo] = useState<string | null>(null);
+  const [signals, setSignals] = useState(false);
+  useEffect(() => {
+    modelLink().then((l) => setRepo(l?.repo ?? null)).catch(() => setRepo(null));
+    signalsToken().then((t) => setSignals(!!t)).catch(() => setSignals(false));
+  }, []);
+  const [dockIdle, setDockIdle] = useState(DOCK_IDLE_DEFAULT);
+  useEffect(() => { dockIdleMs().then(setDockIdle); }, []);
   if (!settings) return null;
+  const pickTheme = (name: ThemeName) => {
+    if (name === THEME) return;
+    Alert.alert('Change the theme?', 'myGeeKy restarts to draw every screen in the new colours.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Change it', onPress: async () => { if (!(await setTheme(name))) Alert.alert('Theme', 'Saved: close and open myGeeKy to see it.'); } },
+    ]);
+  };
+  const pickDock = async (ms: number) => { setDockIdle(ms); await setDockIdleMs(ms); };
   const reset = async () => {
     const go = async () => {
       await clearAll();
@@ -297,7 +327,8 @@ export function MorePart() {
     ['From computer', Object.keys(settings.interests ?? {}).length
       ? `${Object.keys(settings.interests).length} interests, ${settings.field?.length ?? 0} research topics, ${settings.desktopBadges?.length ?? 0} badges`
       : 'nothing yet: scan the code above', Object.keys(settings.interests ?? {}).length > 0],
-    ['Signals', 'on the 📡 Signals planet', true],
+    ['Sync', repo ? `✓ on: ${repo} (your model, badges and clicks)` : 'off: connect your data repo in Your model', !!repo],
+    ['Signals', signals ? '✓ on: you send and receive on this phone' : 'off (turn it on in the 📡 Signals planet)', signals],
     ['App version', Constants.expoConfig?.version ?? '', true],
   ];
   return (
@@ -307,6 +338,31 @@ export function MorePart() {
         <Text style={st.scanSub}>On your computer: ⚙ → Connect your phone. One scan brings over your profile, your
           interests and your badges (do it again any time to refresh them).</Text>
       </Pressable>
+
+      <Section>🎨 LOOK</Section>
+      <Card>
+        <Text style={st.setupKey}>Theme</Text>
+        <View style={st.choices}>
+          {THEME_LABELS.map(([name, label]) => (
+            <Pressable key={name} onPress={() => pickTheme(name)} accessibilityRole="radio" accessibilityState={{ selected: THEME === name }}
+                       style={[st.choice, THEME === name && st.choiceOn]}>
+              <Text style={[st.choiceText, THEME === name && { color: '#fff' }]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={[st.setupKey, { marginTop: 12, width: undefined }]}>The dock folds away after</Text>
+        <View style={st.choices}>
+          {DOCK_IDLE_CHOICES.map(([ms, label]) => (
+            <Pressable key={ms} onPress={() => pickDock(ms)} accessibilityRole="radio" accessibilityState={{ selected: dockIdle === ms }}
+                       style={[st.choice, dockIdle === ms && st.choiceOn]}>
+              <Text style={[st.choiceText, dockIdle === ms && { color: '#fff' }]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={[s.small, { marginTop: 10 }]}>The same three themes as on your computer. The computer&apos;s window settings
+          (transparency, panel height, place on screen, stay on top, floating hearts) belong to its floating panel and have no
+          phone equivalent; Start over below is the phone&apos;s uninstall.</Text>
+      </Card>
 
       <Section>⚙️ YOUR SETUP</Section>
       <Card>
@@ -332,6 +388,13 @@ export function MorePart() {
         ) : null}
       </Card>
 
+      <Section>☁️ SYNC WITH YOUR COMPUTERS</Section>
+      <Card>
+        <Text style={st.body}>{repo
+          ? `Your model, badges and what you open here travel through your private repo ${repo}, like one more computer in sync. Its token is only on this phone, in the secure store.`
+          : 'Connect your private data repo (the one `mygeeky sync` uses) in Your model: the phone then shows your real model and badges, and teaches your computers too.'}</Text>
+      </Card>
+
       <Section>📡 SIGNALS</Section>
       <Card>
         <Text style={st.body}>Private thank-yous and collab invites between myGeeKy users. Open the 📡 Signals planet
@@ -340,8 +403,8 @@ export function MorePart() {
 
       <Section>🔒 PRIVACY</Section>
       <Card>
-        <Text style={st.body}>Everything stays on this phone. myGeeKy only reads public data (news feeds, OpenAlex,
-          Hugging Face, Product Hunt, GitHub) and never posts, follows or stars anything for you.</Text>
+        <Text style={st.body}>{repo ? 'Your data stays on this phone and in your own private repo.' : 'Everything stays on this phone.'} myGeeKy
+          reads public data (news feeds, OpenAlex, Hugging Face, Product Hunt, GitHub) and never posts, follows or stars anything for you.</Text>
       </Card>
 
       <Pressable onPress={() => open('https://mygeeky.org')}>
@@ -382,5 +445,9 @@ const st = StyleSheet.create({
   sub: { color: C.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginTop: 14, marginBottom: 4 },
   tokenButton: { alignSelf: 'flex-start', paddingVertical: 10, marginTop: 10 },
   field: { marginTop: 10, flex: 0 },
+  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+  choice: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 12, backgroundColor: C.cardHi, minHeight: 40, justifyContent: 'center' },
+  choiceOn: { backgroundColor: C.violet },
+  choiceText: { color: C.text, fontSize: 14, fontWeight: '700' },
   medal: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
 });

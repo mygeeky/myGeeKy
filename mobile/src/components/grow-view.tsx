@@ -218,7 +218,7 @@ export function GrowView() {
       ) : null}
 
       {mode === 'collab' ? (
-        !me ? <Empty>Collaborator matching uses Signals, which needs GitHub: add it in You → More.</Empty>
+        !me ? <Empty>Collaborator matching uses Signals, which needs GitHub: add it in You → Settings.</Empty>
         : signals === false ? <Empty>Collaborator matching uses Signals: turn it on in the Signals planet, and people who complement you show up here.</Empty>
         : busy || !people ? <ActivityIndicator color={C.pink} style={{ marginTop: 16 }} />
         : (

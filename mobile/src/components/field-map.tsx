@@ -4,7 +4,7 @@
 // desktop (src/mygeeky/gui/signals_ui.py).
 import { useState } from 'react';
 import { Image, type LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
-import { C } from '../lib/theme';
+import { C, ink } from '../lib/theme';
 
 export type Dot = { id: string; login: string; label: string; fit: number; call: boolean };
 
@@ -91,11 +91,11 @@ export function FieldMap({ dots, selected, unfolded, onPick }: {
 
 const st = StyleSheet.create({
   axis: { position: 'absolute', height: 2, borderRadius: 1, backgroundColor: 'rgba(139,109,255,0.7)' },
-  tick: { position: 'absolute', width: 1, height: 8, backgroundColor: 'rgba(236,236,248,0.3)' },
+  tick: { position: 'absolute', width: 1, height: 8, backgroundColor: ink(0.3) },
   far: { position: 'absolute', left: 0, width: 24, textAlign: 'center', color: C.muted, fontSize: 9 },
   meSmall: { position: 'absolute', width: 18, height: 18, borderRadius: 9 },
   me: { position: 'absolute', width: 34, height: 34, borderRadius: 17 },
-  ring: { position: 'absolute', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(236,236,248,0.16)' },
+  ring: { position: 'absolute', borderWidth: 1, borderStyle: 'dashed', borderColor: ink(0.16) },
   dot: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   ini: { color: '#15151f', fontWeight: '800' },
   none: { position: 'absolute', left: 0, right: 0, top: 22, textAlign: 'center', color: C.muted, fontSize: 12 },

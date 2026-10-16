@@ -904,8 +904,12 @@ def forget_github_cache() -> int:
 
 
 def admin_data(cfg: MyGeekyConfig) -> dict[str, Any]:
-    """The admin tab from local state (no network)."""
-    from .. import admin
+    """The admin tab from local state (no network), after anything the phone asked for (adminlog.py)."""
+    from .. import admin, adminlog
+    try:
+        adminlog.apply(cfg)
+    except Exception:  # noqa: BLE001
+        pass
     state = admin.load()
     return {"prospects": admin.prospects(state), "funnel": admin.funnel(state),
             "invited_today": admin.invited_today(state), "inbox": state.get("inbox") or [],

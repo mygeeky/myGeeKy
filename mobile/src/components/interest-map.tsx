@@ -4,7 +4,7 @@
 // desktop (InterestMap in src/mygeeky/gui/qt_panel.py).
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, type LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
-import { C } from '../lib/theme';
+import { C, ink } from '../lib/theme';
 
 export const MAP_FIELD = '#7fd8ff';    // your research field
 export const MAP_LEARNED = '#ff6fd8';  // what you're into lately
@@ -111,7 +111,7 @@ export function InterestMap({ center, field, learned, explore }: {
             {radii.map((rad, i) => (
               <View key={`ring${i}`} style={[st.ring, {
                 left: cx - rad * intro, top: cy - rad * intro, width: 2 * rad * intro, height: 2 * rad * intro, borderRadius: rad,
-                borderStyle: i === 2 ? 'dashed' : 'solid', borderColor: i < 2 ? 'rgba(240,240,245,0.12)' : 'rgba(240,240,245,0.16)',
+                borderStyle: i === 2 ? 'dashed' : 'solid', borderColor: i < 2 ? ink(0.12) : ink(0.16),
                 transform: [{ scaleY: SQUASH }] }]} />
             ))}
             {/* threads from you to each point */}
