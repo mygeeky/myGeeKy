@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GeekOc, Moving</title>
+<!--
+  A page that just runs him. Open it in a browser -- locally, straight off the disk, or served.
+
+  This exists because the design canvas renders its boards as stills, so every move built so far was
+  only ever verified by measurement, never watched. Numbers are good for catching a hundred-and-eighty
+  degree snap; they are no substitute for seeing whether the thing looks alive.
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="geekoc.js"></script>
+<script src="geekoc3d.js"></script>
+<style>
+  :root {
+    --ink: #f2f2f7; --dim: rgba(242,242,247,.64); --line: rgba(255,255,255,.14);
+    --bg: #0b1020; --panel: #17131f; --violet: #7a5cff; --cyan: #7fd8ff; --pink: #ff6fd8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: Nunito, ui-rounded, "Segoe UI", system-ui, sans-serif; color: var(--ink);
+    background:
+      radial-gradient(70% 80% at 50% 0%, rgba(122,92,255,.22), transparent 70%),
+      linear-gradient(180deg, #11121c 0%, var(--bg) 100%);
+    background-color: var(--bg);
+    display: flex; flex-direction: column; min-height: 100%;
+  }
+  header { padding: 18px 20px 6px; }
+  h1 { margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -.3px; }
+  header p { margin: 4px 0 0; font-size: 13.5px; color: var(--dim); max-width: 62ch; line-height: 1.5; }
+  main { flex: 1 1 auto; min-height: 320px; padding: 10px 16px 0; }
+  #stage, #flat {
+    display: block; width: 100%; height: 100%; border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.08); touch-action: none;
+  }
+  #stage { cursor: grab; } #stage:active { cursor: grabbing; }
+  #flat { display: none; }
+  #flat svg { width: 100%; height: 100%; }
+  footer { padding: 12px 16px 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .group { min-width: 190px; }
+  .label { font-size: 10.5px; font-weight: 700; letter-spacing: .9px; color: rgba(242,242,247,.5); margin-bottom: 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  button {
+    font: 700 12.5px inherit; color: var(--dim); cursor: pointer; min-height: 40px;
+    padding: 7px 12px; border-radius: 10px; border: 1px solid var(--line);
+    background: rgba(255,255,255,.05);
+  }
+  button:hover { color: var(--ink); border-color: rgba(255,255,255,.3); }
+  button[aria-pressed="true"] { color: #fff; border-color: var(--cyan); background: rgba(127,216,255,.18); }
+  label.slide { display: block; font-size: 12px; color: var(--dim); margin-top: 2px; }
+  input[type=range] { width: 100%; accent-color: var(--pink); height: 38px; }
+  #says { font-size: 12.5px; color: var(--dim); line-height: 1.5; max-width: 46ch; margin: 6px 0 0; }
+  #trouble { margin: 0 16px 16px; padding: 12px 15px; border-radius: 12px; background: var(--panel);
+             font-size: 13px; color: var(--dim); display: none; line-height: 1.55; }
+  @media (max-width: 720px) { main { min-height: 42vh; } h1 { font-size: 19px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GeekOc, moving</h1>
+  <p>
+    Pick a way of moving. Nothing tells the arms to follow &mdash; they are simulated in world space, so
+    carrying him drags their roots and the rest catches up late. Drag the picture to walk around him.
+  </p>
+</header>
+
+<main>
+  <canvas id="stage"></canvas>
+  <div id="flat" aria-label="GeekOc, drawn flat"></div>
+</main>
+
+<p id="trouble"></p>
+
+<footer>
+  <div class="group" style="flex: 1 1 280px">
+    <div class="label">HOW HE MOVES</div>
+    <div class="row" id="moves"></div>
+    <p id="says"></p>
+  </div>
+
+  <div class="group">
+    <div class="label">DRAWN</div>
+    <div class="row">
+      <button id="is3d" aria-pressed="true">In three dimensions</button>
+      <button id="isFlat" aria-pressed="false">Flat</button>
+    </div>
+  </div>
+
+  <div class="group" style="flex: 0 1 230px">
+    <label class="slide" for="speed">Speed &mdash; <span id="speedOut">1.00&times;</span></label>
+    <input id="speed" type="range" min="20" max="200" value="100">
+    <label class="slide" for="trail">Arms trail &mdash; <span id="trailOut">some</span></label>
+    <input id="trail" type="range" min="8" max="60" value="26">
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  var G = window.GeekOc, T = window.GeekOc3D;
+  var canvas = document.getElementById('stage');
+  var flatBox = document.getElementById('flat');
+  var trouble = document.getElementById('trouble');
+
+  var SAYS = {
+    cross: 'Across the front and back, banking round at each end rather than snapping about.',
+    dive: 'Straight at the camera and away again — the shot the flat version cannot take.',
+    orbit: 'A circuit of the scene, always facing the way he is going.',
+    spiral: 'The same circuit, rising and sinking through it.',
+    jet: 'Bursts and glides, the real gait. The arms snap shut on each burst and stream on each glide.',
+    hover: 'Hanging still, turning slowly: the resting loop.',
+  };
+
+  var state = { move: 'cross', flat: false, speed: 100, trail: 26 };
+  var clock = 0, orbit = 0, last = 0, drag = null;
+  var scene = null, life = null;
+
+  function say(words) {
+    trouble.textContent = words;
+    trouble.style.display = words ? 'block' : 'none';
+  }
+
+  // ------------------------------------------------------------------ three dimensions
+  if (!window.THREE) {
+    say('three.js did not load, so the three-dimensional view is unavailable. The flat one still works.');
+    state.flat = true;
+  } else {
+    try {
+      scene = T.create(canvas);
+    } catch (err) {
+      say('This browser has no WebGL, so the three-dimensional view is unavailable. The flat one still works.');
+      state.flat = true;
+    }
+  }
+
+  // ------------------------------------------------------------------ flat, the same rig
+  if (G && G.Life) life = new G.Life();
+
+  function fit() {
+    var box = canvas.parentNode.getBoundingClientRect();
+    if (scene && box.width > 0) scene.resize(Math.round(box.width), Math.round(box.height));
+  }
+  window.addEventListener('resize', fit);
+
+  /* Dragging swings the CAMERA round him, not him: while he is swimming his own heading belongs to the
+   * move, and two things fighting over one number makes both feel broken. */
+  canvas.addEventListener('pointerdown', function (e) {
+    drag = { x: e.clientX, orbit: orbit };
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* older browsers */ }
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (drag) orbit = drag.orbit + (e.clientX - drag.x) * 0.006;
+  });
+  canvas.addEventListener('pointerup', function () { drag = null; });
+
+  function frame(now) {
+    var dt = last ? Math.min((now - last) / 1000, 0.05) : 1 / 60;
+    last = now;
+    clock += dt * (state.speed / 100);
+
+    if (!state.flat && scene) {
+      scene.stiff = state.trail / 100;
+      var m = scene.follow(state.move, clock);
+      scene.step(m.pose, dt);
+      scene.camera.position.set(Math.sin(orbit) * 1150, 70, Math.cos(orbit) * 1150);
+      scene.camera.lookAt(0, -10, 0);
+      scene.draw();
+    } else if (life) {
+      /* The flat engine has its own moves under its own names; where a 3D name has no flat counterpart,
+       * fall back to the nearest rather than freezing. */
+      var flatName = G.MOVES[state.move] ? state.move
+        : ({ dive: 'hover', orbit: 'circle', spiral: 'circle' })[state.move] || 'cross';
+      life.stiff = state.trail / 100;
+      var fm = life.follow(flatName, clock);
+      life.step(fm.pose, null, dt);
+      // the same shape render.js writes its frames from: the SIMULATED arms, not the posed ones
+      var fp = life.parts(fm.pose, null);
+      flatBox.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-245 200 1190 455" role="img" ' +
+        'aria-label="GeekOc swimming, drawn flat"><g transform="' + fp.flipT + '">' +
+        G.markup(fp.raw, { id: 'live' }) + '</g></svg>';
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ------------------------------------------------------------------ the controls
+  var moveRow = document.getElementById('moves');
+  var names = T && T.MOVES3 ? Object.keys(T.MOVES3) : Object.keys(G.MOVES || {});
+  names.forEach(function (n) {
+    var b = document.createElement('button');
+    b.textContent = n;
+    b.setAttribute('aria-pressed', String(n === state.move));
+    b.addEventListener('click', function () {
+      state.move = n;
+      clock = 0;
+      Array.prototype.forEach.call(moveRow.children, function (c) {
+        c.setAttribute('aria-pressed', String(c.textContent === n));
+      });
+      document.getElementById('says').textContent = SAYS[n] || '';
+    });
+    moveRow.appendChild(b);
+  });
+  document.getElementById('says').textContent = SAYS[state.move] || '';
+
+  var b3d = document.getElementById('is3d'), bFlat = document.getElementById('isFlat');
+  function showKind() {
+    canvas.style.display = state.flat ? 'none' : 'block';
+    flatBox.style.display = state.flat ? 'block' : 'none';
+    b3d.setAttribute('aria-pressed', String(!state.flat));
+    bFlat.setAttribute('aria-pressed', String(state.flat));
+    if (!state.flat) fit();
+  }
+  b3d.addEventListener('click', function () {
+    if (!scene) return say('The three-dimensional view is unavailable in this browser.');
+    state.flat = false; showKind();
+  });
+  bFlat.addEventListener('click', function () { state.flat = true; showKind(); });
+
+  document.getElementById('speed').addEventListener('input', function (e) {
+    state.speed = Number(e.target.value);
+    document.getElementById('speedOut').textContent = (state.speed / 100).toFixed(2) + '×';
+  });
+  document.getElementById('trail').addEventListener('input', function (e) {
+    state.trail = Number(e.target.value);
+    document.getElementById('trailOut').textContent =
+      state.trail < 16 ? 'a lot' : state.trail > 42 ? 'barely' : 'some';
+  });
+
+  showKind();
+  fit();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
