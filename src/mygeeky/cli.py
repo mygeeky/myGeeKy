@@ -167,6 +167,16 @@ def _output_is_gone(exc: BaseException) -> bool:
     crash report and shown to the person as "myGeeKy hit a problem: Invalid argument". That is what
     issue #6 is: three reports for output going nowhere.
 
+    Why this is a Windows bug and not a bug everywhere: click already handles a broken pipe in
+    `BaseCommand.main`, but only when the errno is exactly EPIPE --
+
+        except OSError as e:
+            if e.errno == errno.EPIPE: ... sys.exit(1)
+            else: raise
+
+    -- so on Linux and macOS (EPIPE) click exits quietly on its own and this function is never
+    reached, while on Windows (EINVAL) the `else: raise` hands the failure straight to us.
+
     EINVAL on its own is far too broad to treat as harmless, so the failure must *also* have come out
     of an output call rather than from anywhere else in the program."""
     import errno

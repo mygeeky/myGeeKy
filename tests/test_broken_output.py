@@ -13,10 +13,11 @@ from __future__ import annotations
 
 import errno
 import io
-import os
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 from mygeeky import cli
 
@@ -81,6 +82,29 @@ time.sleep(1.0)                                     # let the parent's close lan
 cli.entry()
 """
 
+# The same run, but with the write failing as POSIX reports it. Click's own EPIPE branch is not
+# platform-specific, so this exercises the Linux/macOS path on any machine -- which is the thing
+# that made the first version of these tests pass on Windows and fail on macOS.
+CHILD_EPIPE = r"""
+import errno, io, pathlib, sys
+sys.argv = ["mygeeky", "--help"]
+from mygeeky import config
+config.LOG_DIR = pathlib.Path(__LOG_DIR__)
+
+class Gone(io.TextIOBase):
+    encoding = "utf-8"
+    def write(self, text):
+        raise OSError(errno.EPIPE, "Broken pipe")
+    def flush(self):
+        raise OSError(errno.EPIPE, "Broken pipe")
+    def isatty(self):
+        return False
+
+sys.stdout = Gone()
+from mygeeky import cli
+cli.entry()
+"""
+
 
 def _run_with_no_reader(log_dir, without_the_guard=False):
     """Start `mygeeky --help`, take the read end away, and report how it ended."""
@@ -96,22 +120,33 @@ def _run_with_no_reader(log_dir, without_the_guard=False):
     return proc.returncode, said, sorted(log_dir.glob("error-*.txt"))
 
 
+# A quiet ending looks different on each platform, and both are correct:
+#   Windows -- errno is EINVAL, click re-raises it, myGeeKy's own guard ends the command with 0.
+#   POSIX   -- errno is EPIPE, which click handles in BaseCommand.main by silencing the streams and
+#              exiting 1. myGeeKy's guard is never reached there, and does not need to be.
+# What must hold on both: no crash report, nothing blamed on the person, and no "Exception ignored".
+QUIET_EXIT = 0 if sys.platform == "win32" else 1
+
+
 def test_a_reader_that_goes_away_exits_quietly_and_files_no_report(tmp_path):
     log_dir = tmp_path / "logs"
     log_dir.mkdir()
     code, said, reports = _run_with_no_reader(log_dir)
 
     assert not reports, f"a report was filed for output going nowhere: {reports[0].read_text()[:400]}"
-    assert code == 0, f"exit {code}, not a quiet 0. stderr: {said[:400]}"
+    assert code == QUIET_EXIT, f"exit {code}, not a quiet {QUIET_EXIT}. stderr: {said[:400]}"
     assert "hit a problem" not in said, said[:400]
     assert "Exception ignored" not in said, f"the interpreter's own exit-time flush still shows: {said[:400]}"
 
 
+@pytest.mark.skipif(sys.platform != "win32",
+                    reason="only Windows reaches myGeeKy's guard: on POSIX the errno is EPIPE, which "
+                           "click converts to a quiet exit itself, so there is no #6 to demonstrate")
 def test_without_the_guard_the_same_run_is_issue_6(tmp_path):
     """Proof that the test above is testing the guard, and a record of what the person saw.
 
     With the guard removed, this exact run is the bug as reported: a crash report on disk and
-    "myGeeKy hit a problem: Invalid argument" (on Windows; "Broken pipe" elsewhere)."""
+    "myGeeKy hit a problem: Invalid argument"."""
     log_dir = tmp_path / "logs"
     log_dir.mkdir()
     code, said, reports = _run_with_no_reader(log_dir, without_the_guard=True)
@@ -123,3 +158,23 @@ def test_without_the_guard_the_same_run_is_issue_6(tmp_path):
     assert "hit a problem" in said, f"the person was not shown the bogus failure: {said[:400]}"
     filed = reports[0].read_text(encoding="utf-8", errors="replace")
     assert "Invalid argument" in filed or "Broken pipe" in filed, filed[:400]
+
+
+def test_a_broken_pipe_reported_as_epipe_is_click_s_to_handle_and_files_no_report(tmp_path):
+    """The Linux/macOS path, exercised anywhere.
+
+    There the errno is EPIPE, which click converts to a quiet exit in BaseCommand.main before
+    myGeeKy sees it. Either way the rule is the same: no crash report, and nothing blamed on the
+    person. The first version of these tests assumed myGeeKy's own guard ran on every platform,
+    passed on Windows and failed on macOS for exactly this reason."""
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    child = CHILD_EPIPE.replace("__LOG_DIR__", repr(str(log_dir)))
+    proc = subprocess.run([sys.executable, "-c", child], capture_output=True, timeout=120,
+                          cwd=str(Path(cli.__file__).parents[2]))
+    said = proc.stderr.decode("utf-8", "replace")
+
+    assert not list(log_dir.glob("error-*.txt")), "a report was filed for a broken pipe"
+    assert proc.returncode == 1, f"exit {proc.returncode}: {said[:400]}"
+    assert "hit a problem" not in said, said[:400]
+    assert "Traceback" not in said, f"the person was shown a traceback: {said[:400]}"
