@@ -143,7 +143,10 @@ WORDS = [   # (the word, when it fades in, when it fades out, its colour)
     # funding and scholarships, which is what 🎯 Chances is for -- and the colour money has
     ("opportunity",   0.60, 0.78, "#c06a12"),
 ]
-WORD_AT = (800, 240)     # all four in the same place, so each replaces the last
+WORD_AT = (800, 240)     # while it is animating, all four share this spot and take turns in it
+# ...and where they sit when it is NOT animating: a list, so a still of this file is a finished
+# picture rather than four words printed on top of each other.
+STACKED = [174, 220, 266, 312]
 
 # ...and the last thing to arrive is the name, in his own two colours: a blue taken from his glasses
 # and the dark gold off his suckers, both deepened until they read on white as well as on dark.
@@ -193,7 +196,14 @@ def words() -> str:
         last = i == len(WORDS) - 1
         fade = 0.035
         out.append(
-            f'<text x="{WORD_AT[0]}" y="{WORD_AT[1]}" text-anchor="middle" opacity="0"'
+            # THE BASE STATE IS THE FALLBACK, and it has to be a finished picture rather than the
+            # wreckage of an unplayed animation: every word visible, stacked into a list so they do
+            # not sit on top of each other. An animation REPLACES both of these, so when it does run
+            # all four come back to the one shared spot and take turns there. If it never runs --
+            # GitHub refusing the file, a reader that strips SMIL, a thumbnail -- what shows is the
+            # grown plant with all four words beside it, and no name.
+            f'<text x="{WORD_AT[0]}" y="{WORD_AT[1]}" text-anchor="middle" opacity="1"'
+            f' transform="translate(0,{STACKED[i] - WORD_AT[1]})"'
             f' font-family="Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif"'
             f' font-size="34" font-weight="700" fill="{colour}">{text}'
             f'<animate attributeName="opacity" values="0;0;1;1;0;0"'
@@ -330,6 +340,11 @@ def main() -> int:
     # of a thing that grows is nothing -- so rasterising the real file gave a picture of an empty
     # pot. Without the animations the groups keep their own transforms, which are the grown ones.
     still = re.sub(r"<animate(?:Transform)?\b[^>]*/>", "", OUT_SVG.read_text(encoding="utf-8"))
+    # ...and with the words taken out of it as well, to be drawn back in below with a real font.
+    # Offscreen Qt has no font at all here: it draws every letter as an empty box, which would have
+    # made the fallback picture -- the one that exists for when the animation does NOT play -- a row
+    # of little squares. The shapes it rasterises perfectly well; the type it cannot.
+    still = re.sub(r"<text\b.*?</text>", "", still, flags=re.S)
     renderer = QSvgRenderer(QByteArray(still.encode("utf-8")))
     if not renderer.isValid():
         raise SystemExit("the SVG this wrote is not readable")
@@ -341,8 +356,36 @@ def main() -> int:
     painter.end()
     png = OUT_SVG.with_suffix(".png")
     image.save(str(png))
+    _write_the_words_on(png)
     print(f"  {png}  ({png.stat().st_size // 1024} KB)")
     return 0
+
+
+def _write_the_words_on(png: Path) -> None:
+    """Draw the four words onto the still with a font that exists, in their own colours.
+
+    The PNG is the picture for anywhere the animated SVG does not play, so it has to say the same
+    thing the animation says: the plant, and all four words beside it. The name is deliberately NOT
+    here -- it is the one thing that only happens at the end of a performance."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError:
+        print("  (Pillow not here: the still has no words on it)")
+        return
+    for candidate in ("segoeuib.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf"):
+        try:
+            font = ImageFont.truetype(f"C:/Windows/Fonts/{candidate}", 34 * 2)
+            break
+        except OSError:
+            continue
+    else:
+        print("  (no bold font found: the still has no words on it)")
+        return
+    sheet = Image.open(png).convert("RGBA")
+    draw = ImageDraw.Draw(sheet)
+    for (text, _on, _off, colour), y in zip(WORDS, STACKED):
+        draw.text((WORD_AT[0] * 2, y * 2), text, font=font, fill=colour, anchor="ms")
+    sheet.save(png)
 
 
 if __name__ == "__main__":
