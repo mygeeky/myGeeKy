@@ -1,0 +1,162 @@
+"""Repair the generated character clip, keeping its white wall exactly as it is.
+
+    python launch/video/fix_clip.py <clip.mp4> [name]   ->  launch/video/intro/<name>-fixed.mp4
+
+The generator gets the character right and the physics wrong. Two faults in this clip, both visible once
+you step through it, and both repairable because the wall behind him is one flat colour: the figure can be
+lifted off, moved or resized, and put back on a clean plate of that same wall with no seam to hide.
+
+  THE ABORTED STEP.  A step swings the legs from about 218px apart to about 157 (legs together) and out
+  again, over roughly eleven frames. Between frames 45 and 52 the clip does it in seven, and the legs only
+  close to 180 before swinging back out -- which is seen as the foot stepping BACKWARD. There is no way to
+  interpolate a step that was never there, so a correct one is borrowed from later in the clip, where the
+  walk is clean, and placed along the path he is actually travelling.
+
+  THE SIZE JUMP.  At frame 97 he suddenly stands 380px tall instead of 450 -- fifteen percent smaller, and
+  nineteen pixels higher off the floor. Every frame from there on is scaled back up about his feet, so he
+  keeps one height for the whole clip.
+
+Nothing else is touched: same wall, same colours, same length, same audio.
+"""
+from __future__ import annotations
+
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageFilter
+from scipy import ndimage
+
+OUT = Path(__file__).parent / "intro"
+
+PALE, FLAT = 228, 16          # what counts as the wall: this bright, and this close to colourless
+
+# The broken step, and the clean one it is rebuilt from. The donor is sampled across a whole correct
+# stride, so the legs close and open once, in the right order, in the frames available.
+BROKEN = range(46, 52)
+DONOR = (74, 76, 78, 80, 82, 84)
+
+SHRINKS_AT = 97               # from this frame on, he is suddenly smaller
+
+
+def wall(frames: list[Path]) -> Image.Image:
+    """A clean plate of the background, taken as the BRIGHTEST each pixel ever is.
+
+    The median is the obvious choice and it is wrong here: he walks in and then stands in one place for
+    three fifths of the clip, so the median of that spot is him, and the plate comes out with a ghost
+    standing in it. He is darker than the wall everywhere, and every pixel of the wall is uncovered at
+    some point while he walks in, so taking a high percentile over time removes him completely."""
+    stack = np.stack([np.asarray(Image.open(p).convert("RGB")) for p in frames[::4]])
+    return Image.fromarray(np.percentile(stack, 92, axis=0).astype(np.uint8), "RGB")
+
+
+def figure(path: Path) -> Image.Image:
+    """Him, lifted off the wall, with his shadow.
+
+    Found by flood-filling the wall in from the frame's border rather than by brightness: his FACE is
+    nearly as pale as the wall, and anything keying on brightness erases it."""
+    rgb = np.asarray(Image.open(path).convert("RGB")).astype(int)
+    pale = (rgb.min(axis=2) > PALE) & ((rgb.max(axis=2) - rgb.min(axis=2)) < FLAT)
+    lab, _ = ndimage.label(pale)
+    edge = {*lab[0].tolist(), *lab[-1].tolist(), *lab[:, 0].tolist(), *lab[:, -1].tolist()} - {0}
+    alpha = np.where(np.isin(lab, list(edge)), 0, 255).astype(np.uint8)
+    img = Image.fromarray(np.dstack([rgb.astype(np.uint8), alpha]), "RGBA")
+    img.putalpha(img.getchannel("A").filter(ImageFilter.GaussianBlur(0.8)))
+    return img
+
+
+def where(img: Image.Image) -> tuple[int, int, int, int]:
+    return img.getchannel("A").point(lambda v: 255 if v > 60 else 0).getbbox()
+
+
+def put(plate: Image.Image, fig: Image.Image, foot_x: float, foot_y: float, scale: float = 1.0):
+    """Stand him on the plate: `foot_x` is the middle of him, `foot_y` the ground under his shoes."""
+    box = where(fig)
+    crop = fig.crop(box)
+    if scale != 1.0:
+        crop = crop.resize((max(1, round(crop.width * scale)), max(1, round(crop.height * scale))),
+                           Image.LANCZOS)
+    out = plate.convert("RGBA").copy()
+    out.alpha_composite(crop, (round(foot_x - crop.width / 2), round(foot_y - crop.height)))
+    return out.convert("RGB")
+
+
+def main(argv: list[str]) -> int:
+    if not argv:
+        raise SystemExit(__doc__)
+    src = Path(argv[0])
+    if not src.exists():
+        raise SystemExit(f"no such clip: {src}")
+    name = argv[1] if len(argv) > 1 else src.stem
+    import imageio_ffmpeg
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    raw, done = OUT / f"{name}-src", OUT / f"{name}-fixed"
+    for d in (raw, done):
+        shutil.rmtree(d, ignore_errors=True)
+        d.mkdir(parents=True)
+    run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(src), str(raw / "f_%04d.png")])
+    frames = sorted(raw.glob("*.png"))
+    print(f"  {len(frames)} frames")
+
+    plate = wall(frames)
+    spot = {}                                     # frame -> (middle of him, the ground under him, height)
+    for i, p in enumerate(frames, 1):
+        x0, y0, x1, y1 = where(figure(p))
+        spot[i] = ((x0 + x1) / 2, y1, y1 - y0)
+
+    tall = float(np.median([spot[i][2] for i in range(1, SHRINKS_AT)]))
+    small = float(np.median([spot[i][2] for i in range(SHRINKS_AT, len(frames) + 1)]))
+    grow = tall / small
+    print(f"  he is {tall:.0f}px tall, then {small:.0f}px from frame {SHRINKS_AT}: scaling those by {grow:.3f}")
+
+    # the two frames the broken step has to join up with
+    before, after = min(BROKEN) - 1, max(BROKEN) + 1
+    for n, p in enumerate(frames, 1):
+        if n in BROKEN:
+            k = (n - before) / (after - before)
+            fx = spot[before][0] + (spot[after][0] - spot[before][0]) * k
+            fy = spot[before][1] + (spot[after][1] - spot[before][1]) * k
+            donor = frames[DONOR[list(BROKEN).index(n)] - 1]
+            img = put(plate, figure(donor), fx, fy, tall / spot[DONOR[list(BROKEN).index(n)]][2])
+        elif n >= SHRINKS_AT:
+            fx, fy, _ = spot[n]
+            # his feet go back down to the floor he was standing on before he shrank
+            img = put(plate, figure(p), spot[SHRINKS_AT - 1][0] + (fx - spot[SHRINKS_AT][0]) * grow,
+                      spot[SHRINKS_AT - 1][1], grow)
+        else:
+            img = Image.open(p).convert("RGB")
+        img.save(done / f"f_{n:04d}.png")
+    print(f"  rebuilt: step {min(BROKEN)}-{max(BROKEN)}, size {SHRINKS_AT}-{len(frames)}")
+
+    out = OUT / f"{name}-fixed.mp4"
+    run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-framerate", str(fps(ffmpeg, src)),
+         "-i", str(done / "f_%04d.png"), "-i", str(src), "-map", "0:v", "-map", "1:a?",
+         "-c:v", "libx264", "-crf", "17", "-pix_fmt", "yuv420p", "-shortest", str(out)])
+    print(f"  {out}  ({out.stat().st_size // 1024} KB)")
+    shutil.rmtree(raw, ignore_errors=True)
+    return 0
+
+
+def fps(ffmpeg: str, src: Path) -> int:
+    said = subprocess.run([ffmpeg, "-hide_banner", "-i", str(src)], capture_output=True, text=True).stderr
+    for part in (said or "").split(","):
+        if " fps" in part:
+            try:
+                return int(round(float(part.strip().split()[0])))
+            except ValueError:
+                pass
+    return 24
+
+
+def run(cmd: list[str]) -> None:
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise SystemExit((r.stderr or "")[-800:])
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
