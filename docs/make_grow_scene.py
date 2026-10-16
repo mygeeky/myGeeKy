@@ -117,36 +117,39 @@ def placed(markup: str, x: int, y: int, size: int) -> str:
     return f'<g transform="translate({x},{y}) scale({k:.4f})">{inner}</g>'
 
 
-CYCLE = "19s"            # a word needs time to be read, and three of them need it three times
+CYCLE = "21s"            # a word needs time to be read, and there are four of them now
 
 # The cycle, as fractions of it. The stem has to REACH its height before a leaf opens, or a leaf
 # hangs in the air above a stem that has not got there yet -- which is exactly what it was doing.
-RISE_END = 0.24          # the stem is at full height here, carrying its leaves still folded
+RISE_END = 0.20          # the stem is at full height here, carrying its leaves still folded
 HOLD_END = 0.95          # it stays grown for most of the cycle, then folds away
 
 # Each leaf opens, and the word it stands for takes the place of the one before it. The leaves are
-# spread much further apart than the growing alone needed, because the pace is now set by reading
-# rather than by the plant: three words a third of a second apart would be a flicker, not a sentence.
+# spread much further apart than the growing alone needed, because the pace is set by reading rather
+# than by the plant: four words a third of a second apart would be a flicker, not a sentence.
 LEAVES = [  # (opens, finished opening)
-    (0.27, 0.34),
-    (0.41, 0.48),
-    (0.55, 0.62),
+    (0.23, 0.29),
+    (0.35, 0.41),
+    (0.47, 0.53),
+    (0.59, 0.65),
 ]
-# A colour each, and all three chosen to clear 3:1 against BOTH a white README and a dark one --
-# large bold text, so 3:1 is the bar. The pretty versions of these (the pale glass blue, the light
-# pink) sit at about 2:1 on white and vanish there, which is the same mistake the suckers made.
+# A colour each, every one of them measured against BOTH a white README and a dark one -- large bold
+# text, so 3:1 is the bar. The pretty versions fail it: the leaf teal sits at 2.51 on white and the
+# glasses blue at 2.97, which is the same mistake the suckers made, so these are the deepened ones.
 WORDS = [   # (the word, when it fades in, when it fades out, its colour)
-    ("skills",        0.28, 0.44, "#0f9880"),   # the leaf teal, deepened until white can hold it
-    ("knowledge",     0.42, 0.58, "#7a5cff"),   # the brand purple
-    ("collaboration", 0.56, 0.80, "#d94fb0"),   # pink, the third hue the badge carries
+    ("skills",        0.24, 0.37, "#0f9880"),   # the leaf teal, deepened until white can hold it
+    ("knowledge",     0.36, 0.49, "#7a5cff"),   # the brand purple
+    ("collaboration", 0.48, 0.61, "#d94fb0"),   # pink, the third hue the badge carries
+    # funding and scholarships, which is what 🎯 Chances is for -- and the colour money has
+    ("opportunity",   0.60, 0.78, "#c06a12"),
 ]
-WORD_AT = (800, 240)     # all three in the same place, so each replaces the last
+WORD_AT = (800, 240)     # all four in the same place, so each replaces the last
 
-# ...and the last thing to arrive is the name, in his own two colours: the gold off his suckers and
-# a blue taken from his glasses and deepened until it reads on white as well as on dark.
-NAME_ON, NAME_OFF = 0.83, 0.98
-NAME_GOLD = "#c9871a"
-NAME_BLUE = "#2789bd"
+# ...and the last thing to arrive is the name, in his own two colours: a blue taken from his glasses
+# and the dark gold off his suckers, both deepened until they read on white as well as on dark.
+NAME_ON, NAME_OFF = 0.82, 0.98
+NAME_BLUE = "#2789bd"    # 3.89 on white, 4.87 on dark
+NAME_GOLD = "#b87b12"    # 3.57 on white, 5.30 on dark
 
 
 def scaled(inner: str, ox: float, oy: float, values: str, keytimes: str, splines: str) -> str:
@@ -237,7 +240,7 @@ def name() -> str:
     return (f'<text x="{x}" y="{y}" text-anchor="middle" opacity="0"'
             f' font-family="Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif"'
             f' font-size="52" font-weight="700" letter-spacing="-0.5">'
-            f'<tspan fill="{NAME_GOLD}">my</tspan><tspan fill="{NAME_BLUE}">GeeKy</tspan>'
+            f'<tspan fill="{NAME_BLUE}">my</tspan><tspan fill="{NAME_GOLD}">GeeKy</tspan>'
             f'<animate attributeName="opacity" values="0;0;1;1;0;0"'
             f' keyTimes="0;{NAME_ON:.3f};{NAME_ON + snap:.3f};'
             f'{NAME_OFF - snap:.3f};{NAME_OFF:.3f};1"'
@@ -264,12 +267,16 @@ def plant() -> str:
     out.append(f'<path d="M506 332 L664 332 L646 420 Q585 434 524 420 Z" fill="{POT}"/>')
     out.append(f'<path d="M506 332 L664 332 L658 358 Q585 372 512 358 Z" fill="{POT_DEEP}"/>')
 
-    stem = (f'<path d="M588 334 C585 290 572 258 580 206" fill="none" stroke="{STEM}"'
+    # A fourth word needs a fourth leaf: every word in this picture rides one, and an `opportunity`
+    # with nothing under it would be the only one that is just text. So the stem is taller and the
+    # four alternate up it, each a little larger than the one below.
+    stem = (f'<path d="M588 334 C585 296 574 252 582 178" fill="none" stroke="{STEM}"'
             f' stroke-width="15"/>')
     leaves = "".join([
-        leaf("M584 318 C546 316 526 294 528 268 C564 266 586 292 584 318Z", LEAF_DEEP, 584, 318, 0),
-        leaf("M583 274 C629 272 656 240 650 208 C606 210 580 240 583 274Z", LEAF, 583, 276, 1),
-        leaf("M580 224 C538 214 514 174 522 136 C570 146 590 186 580 224Z", LEAF, 580, 226, 2),
+        leaf("M585 320 C551 320 529 302 530 278 C562 278 584 300 585 320Z", LEAF_DEEP, 585, 320, 0),
+        leaf("M583 282 C623 282 652 260 650 232 C610 234 581 258 583 282Z", LEAF, 583, 284, 1),
+        leaf("M580 240 C538 238 512 212 514 180 C556 184 582 212 580 240Z", LEAF, 580, 242, 2),
+        leaf("M582 196 C628 192 660 162 656 126 C610 132 578 162 582 196Z", LEAF, 582, 198, 3),
     ])
     # the stem and its leaves rise together, out of the soil
     out.append(scaled(stem + leaves, *SOIL,
@@ -277,9 +284,9 @@ def plant() -> str:
                       keytimes=f"0;{RISE_END};{HOLD_END};1",
                       splines=".25 .7 .35 1;0 0 1 1;.7 0 .9 .4"))
     out.append('</g>')
-    out.append(spark(664, 132, 21, 0))
-    out.append(spark(520, 92, 15, 1))
-    out.append(spark(624, 60, 12, 2))
+    out.append(spark(686, 104, 20, 0))
+    out.append(spark(504, 128, 15, 1))
+    out.append(spark(614, 46, 12, 2))
     return (chr(10) + "  ").join(out)
 
 
