@@ -214,19 +214,19 @@ year's date: a window it read on a page says **open now**, anything ahead says *
 ## 🤫 For anyone who works alone
 
 <p align="center">
-  <i>“You might be the only one in your building who does this. You are not the only one in the world.”</i>
+  <img alt="find friends" src="https://img.shields.io/badge/find-friends-7a5cff?style=for-the-badge" height="34">
+  <img alt="collaborate" src="https://img.shields.io/badge/-collaborate-35e0c1?style=for-the-badge" height="34">
+  <img alt="away from noise" src="https://img.shields.io/badge/away%20from-noise-ff6fd8?style=for-the-badge" height="34">
 </p>
 
 <p align="center">
-  The student in a lab where nobody else writes code. The researcher in a city with nobody in their field.<br>
-  The one who has the questions and no one to ask.<br>
-  <b>myGeeKy finds the others — and lets you reach them without becoming someone who posts.</b>
+  <i>“You might be the only one in your building who does this. You are not the only one in the world.”</i>
 </p>
 
 <table>
 <tr>
-<td width="46%" align="center" valign="middle">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/character.jpg" width="400" alt="A geek in a hoodie sitting against a brick wall with a laptop on their legs, a myGeeKy sticker on the lid: find friends, collaborate, away from noise">
+<td width="44%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/alone.png" width="400" alt="A geek in a hoodie sitting against a brick wall with a laptop on their legs and a myGeeKy sticker on the lid, the background fading away around them">
 </td>
 <td valign="middle">
 <table>
@@ -237,6 +237,24 @@ year's date: a window it read on a page says **open now**, anything ahead says *
 <tr><td>🌙 <b>It waits</b></td><td>Close it and nothing keeps running. It never pings you to come back.</td></tr>
 <tr><td>🧰 <b>Yours to keep</b></td><td>MIT, and open to read — every promise on this page is a file you can check.</td></tr>
 </table>
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="20%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-hero.png" width="150" alt="GeekOc waving">
+</td>
+<td valign="middle">
+
+> *“I'll find them. You decide who to say hello to.”*
+
+The student in a lab where nobody else writes code. The researcher in a city with nobody in their field.
+The one who has the questions and no one to ask.
+
+**myGeeKy finds the others — and lets you reach them without becoming someone who posts.**
+
 </td>
 </tr>
 </table>
