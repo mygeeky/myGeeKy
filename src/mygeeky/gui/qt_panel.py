@@ -160,6 +160,19 @@ def _alive(w: QWidget) -> bool:
         return False
 
 
+def _reconnect(signal: Any, slot: Any) -> None:
+    """Give a button one job, replacing whatever it did before.
+
+    A button that changes what it means (Update becoming "Copy the command") must not keep its old
+    connection as well, or one click does both. Disconnecting a signal that has nothing connected
+    raises, so that case is simply allowed to happen."""
+    try:
+        signal.disconnect()
+    except (RuntimeError, TypeError):
+        pass
+    signal.connect(slot)
+
+
 def _short(text: str, n: int) -> str:
     """A label that fits: cut on a word boundary and end with an ellipsis. Buttons can't shrink below
     their own text, so a long title in a button makes the whole panel wider than it is."""
@@ -5089,15 +5102,51 @@ class MyGeekyPanel(QWidget):
     def _on_update_done(self, result: Any) -> None:
         result = result if isinstance(result, dict) else {"ok": False, "message": str(result)}
         if result.get("ok"):
+            # "already the latest" is a success with nothing to restart for
+            if "already the latest" in str(result.get("message", "")):
+                self.update_label.setText(f"✓ {result['message']}")
+                self.update_btn.setVisible(False)
+                self.later_btn.setEnabled(True)
+                return
             self.update_label.setText(f"✓ {result['message']} Restarting…")
             from .. import updates
             updates.relaunch_panel_after_exit()
             QTimer.singleShot(600, QApplication.instance().quit)
             return
-        self.update_label.setText(f"Couldn't update: {result.get('message', 'unknown error')}")
-        self.update_btn.setText("Try again")
-        for b in (self.update_btn, self.later_btn):
+        self._show_update_fallback(result)
+
+    def _show_update_fallback(self, result: dict) -> None:
+        """An update that could not be installed still has to leave the person somewhere.
+
+        "Couldn't update" and a Try again button is a dead end when trying again cannot work: a
+        Python that needs administrator rights will refuse every time, and a developer install is
+        never meant to be replaced by pip. So the reason is said in plain words, and the way this
+        particular install is updated by hand is offered next to it -- one button to copy the command,
+        one to open the download page."""
+        steps = result.get("steps") or {}
+        why = str(result.get("message", "")) or "unknown error"
+        what = str(steps.get("what", "")).strip()
+        self.update_label.setText(f"Couldn't update: {why}" + (f"\n{what}" if what else ""))
+
+        command = str(steps.get("command", ""))
+        if command:
+            self.update_btn.setText("Copy the command")
+            self.update_btn.setToolTip(command)
+            self.update_btn.setVisible(True)
+            _reconnect(self.update_btn.clicked, lambda: self._copy_update_command(command))
+        else:
+            self.update_btn.setVisible(False)
+
+        url = str(steps.get("url", ""))
+        self.whats_new_btn.setText("How to update" if url else "What's new")
+        _reconnect(self.whats_new_btn.clicked,
+                   lambda: logic.open_link(url or self._update_info.get("releases_url", "")))
+        for b in (self.update_btn, self.later_btn, self.whats_new_btn):
             b.setEnabled(True)
+
+    def _copy_update_command(self, command: str) -> None:
+        QApplication.clipboard().setText(command)
+        self.update_label.setText(f"Copied. Run it in a terminal:\n{command}")
 
     def _build_token_banner(self) -> QFrame:
         banner = QFrame()

@@ -314,10 +314,19 @@ def dismiss_update(cfg: MyGeekyConfig, version: str) -> None:
 
 
 def install_update() -> dict[str, Any]:
-    """Only ever called from a click on the banner's Update button."""
+    """Only ever called from a click on the banner's Update button.
+
+    The banner may have been on screen for hours, so what was true when it appeared may not be true
+    now: the copy may already have been updated another way, or (on a maker's machine) have become a
+    developer install. Either way the answer is not an error, so the state is read again here rather
+    than trusted from when the banner went up.
+
+    Whatever happens, the manual steps for this install travel back with the result, so the panel can
+    offer a way forward instead of only "Try again"."""
     from .. import updates
     ok, message = updates.run_upgrade()
-    return {"ok": ok, "message": message}
+    return {"ok": ok, "message": message, "editable": updates.is_editable(),
+            "current": updates.__version__, "steps": updates.manual_steps()}
 
 
 def get_token_warnings(cfg: MyGeekyConfig) -> list[dict[str, Any]]:

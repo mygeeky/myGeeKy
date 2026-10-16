@@ -133,7 +133,8 @@ def update(only_check: bool) -> None:
     click.echo("Updating...")
     ok, message = updates.run_upgrade()
     if not ok:
-        raise click.ClickException(message)
+        steps = updates.manual_steps()
+        raise click.ClickException(f"{message}\n\nTo do it yourself:\n  {steps['command']}")
     click.secho(message, fg="green")
     click.echo("If the panel is open, it picks up the new version the next time it starts "
                "(or click Update in the panel).")

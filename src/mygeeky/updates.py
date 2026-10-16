@@ -107,8 +107,65 @@ def upgrade_command() -> list[str]:
     return [sys.executable, "-m", "pip", "install", "--upgrade", "--disable-pip-version-check", "mygeeky"]
 
 
+INSTALL_URL = "https://mygeeky.org/#get"
+
+
+def manual_steps() -> dict[str, str]:
+    """How *this* install is updated by hand, for when the button cannot do it.
+
+    An update that fails has to end somewhere other than "Couldn't update". Whatever went wrong --
+    no network, a Python that needs administrator rights to write to, a pip that isn't there -- the
+    person still has a way forward, and it is not the same way for every install, so it is worked out
+    from the install rather than written into the message."""
+    if is_editable():
+        return {"how": "git pull",
+                "what": "This copy is a developer install, which pip must never overwrite.",
+                "command": "git pull",
+                "url": ""}
+    if is_uv_tool():
+        return {"how": "uv",
+                "what": "myGeeKy was installed with uv.",
+                "command": "uv tool upgrade mygeeky",
+                "url": INSTALL_URL}
+    return {"how": "pip",
+            "what": "myGeeKy is a pip package for the Python it runs on.",
+            "command": f'"{sys.executable}" -m pip install --upgrade mygeeky',
+            "url": INSTALL_URL}
+
+
+def explain_failure(output: str) -> str:
+    """Say what pip's failure means, in words that suggest what to do about it.
+
+    pip's last three lines are written for people who already know pip. These are the failures that
+    actually happen on other people's computers, and each one has a different answer."""
+    said = (output or "").lower()
+    if any(w in said for w in ("temporary failure in name resolution", "max retries", "read timed out",
+                               "connection refused", "network is unreachable", "failed to establish",
+                               "proxyerror", "sslerror", "certificate verify failed")):
+        return ("Couldn't reach PyPI to download the update. Check your internet connection -- and if "
+                "you are on a work network, it may be blocking pypi.org.")
+    if any(w in said for w in ("permission denied", "access is denied", "winerror 5", "errno 13",
+                               "consider using the `--user` option", "could not install packages due to"
+                               " an environmentror")):
+        return ("This Python needs administrator rights to change, so pip was not allowed to write the "
+                "update.")
+    if "no module named pip" in said or "no such file or directory: 'pip'" in said:
+        return "The Python myGeeKy runs on has no pip, so it cannot update itself."
+    if "no space left" in said or "not enough space" in said:
+        return "There is not enough free disk space to download and unpack the update."
+    if "no matching distribution" in said or "could not find a version" in said:
+        return "PyPI did not offer a version this Python can install."
+    return ""
+
+
 def run_upgrade() -> tuple[bool, str]:
     """Upgrade in place. (ok, message) -- never raises."""
+    # "Nothing to do" comes first, and is not a failure: a banner can sit on screen for hours, and by
+    # the time it is clicked this copy may already have been updated some other way (a `git pull`, a
+    # pip run in a terminal, another computer's sync). Telling someone their update failed when they
+    # already have the new version is the worst of the three answers.
+    if not check().get("newer"):
+        return True, f"myGeeKy {__version__} is already the latest."
     if is_editable():
         return False, ("This is a developer install (pip install -e). Update it with `git pull` in your "
                        "myGeeKy folder instead.")
@@ -116,11 +173,16 @@ def run_upgrade() -> tuple[bool, str]:
     try:
         r = winproc.run(upgrade_command(), capture_output=True, text=True, timeout=900,
                            creationflags=flags, encoding="utf-8", errors="replace")
+    except subprocess.TimeoutExpired:
+        return False, ("The update took too long and was stopped, so nothing was changed. This is "
+                       "usually a very slow connection.")
     except (OSError, subprocess.SubprocessError) as exc:
         return False, f"Couldn't run the updater: {exc}"
     if r.returncode != 0:
-        tail = (r.stderr or r.stdout).strip().splitlines()[-3:]
-        return False, "Couldn't update myGeeKy:\n" + "\n".join(tail)
+        output = (r.stderr or "") + "\n" + (r.stdout or "")
+        why = explain_failure(output)
+        tail = "\n".join(output.strip().splitlines()[-3:])
+        return False, (why or "Couldn't update myGeeKy:\n" + tail)
     installed = installed_version()
     return True, f"Updated to myGeeKy {installed}." if installed else "Updated."
 
