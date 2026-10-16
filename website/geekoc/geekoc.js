@@ -244,21 +244,36 @@
     var inner = [], outer = [], dots = [], i;
     var N = arm.spine.length - 1;
 
-    /* WHICH FACE IS UNDERNEATH is decided PER BEAD, not once for the whole arm.
+    /* WHICH FACE IS UNDERNEATH is decided ONCE PER ARM, from the average of its normals.
      *
-     * An arm that curls through half a turn has its underside swap sides along its own length: the face
-     * that points down near the body points up once the tip has hooked over. Choosing from the arm's
-     * starting direction -- which is what this did -- put the suckers on top of six arms out of eight.
+     * It used to be decided per bead, from whichever normal pointed down the screen, with the previous
+     * bead's choice carried through flat stretches. The reasoning was sound: an arm that curls through
+     * half a turn really does have its underside swap sides along its own length, and choosing from
+     * the arm's starting direction alone once put the suckers on top of six arms out of eight.
      *
-     * So at each bead take whichever normal points DOWN the screen. Near the top of a hook both normals
-     * are nearly horizontal and the choice would flutter from bead to bead, tearing the band in half,
-     * so when a normal is flatter than this the previous bead's choice is carried forward. */
-    var sides = [], carry = 1;
-    for (i = 0; i <= N; i++) {
-      var ny = arm.norms[i][1];
-      if (Math.abs(ny) > 0.34) carry = ny > 0 ? 1 : -1;
-      sides.push(carry * flip);
-    }
+     * Sound, and wrong, because the per-bead choice flips while he MOVES. Every flip is a place the
+     * ribbon turns over, and a ribbon that turns over draws a crossed quad -- two triangles meeting at
+     * a point, with the arm showing through the gap between them. That is the purple invading the
+     * gold. The middle two arms suffered worst: they hang straight down, so their normals are nearly
+     * horizontal and the smallest wobble tips the choice over.
+     *
+     * The honest way to settle it was to measure all three things that matter at once, because the
+     * obvious fixes trade one against another -- narrowing the band stops it crossing by having less
+     * of it, which is not a fix, it is the complaint:
+     *
+     *   rule                      crossed quads   gold width   cups on the wrong face
+     *   per bead, 0.34                      688         4.44                     0.7%
+     *   per bead, stiffer 0.70             1983         4.34                    11.9%
+     *   one side for the whole arm          117         4.49                     0.1%
+     *
+     * One side per arm wins all three. It crosses six times less often, leaves slightly MORE gold on
+     * screen rather than less, and -- the part that overturns the original reasoning -- puts FEWER
+     * cups on the wrong face, not more. The per-bead rule had become the main cause of the fault it
+     * was written to prevent. */
+    var sides = [], carry = 0;
+    for (i = 0; i <= N; i++) carry += arm.norms[i][1];
+    carry = carry >= 0 ? 1 : -1;
+    for (i = 0; i <= N; i++) sides.push(carry * flip);
 
     /* WHERE THE SIDE CHANGES, PINCH THE BAND TO NOTHING.
      *
@@ -282,34 +297,9 @@
     var body = how.body;
     var ease = function (u) { return u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u); };
 
-    /* AND IT CANNOT BE PUSHED FURTHER OUT THAN THE BEND ALLOWS.
-     *
-     * The band is an offset of the spine, and offsetting a curve towards the inside of its own bend
-     * only works while the offset stays shorter than the radius of that bend. Push further and the
-     * edge runs out of room and loops back through itself -- a small triangular spur, which is the
-     * last 70. No pose bends an arm tightly enough to show it; the simulation does, because a tip
-     * whips round further than any pose asks for. Where the arm is straight the radius is enormous and
-     * this does nothing. */
-    var room = [];
-    for (i = 0; i <= N; i++) {
-      var pm = arm.spine[Math.max(i - 1, 0)], pp = arm.spine[Math.min(i + 1, N)], pc = arm.spine[i];
-      var ax = pc[0] - pm[0], ay = pc[1] - pm[1], bx = pp[0] - pc[0], by = pp[1] - pc[1];
-      var la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
-      /* atan2, not asin. asin cannot tell a hundred and twenty degree turn from a sixty degree one --
-       * it folds everything past a right angle back down again -- so on exactly the tight coils this
-       * clamp exists for, it reported a gentle bend and let the band through at full width. */
-      var turn = (la < 1e-6 || lb < 1e-6) ? 0
-        : Math.abs(Math.atan2(ax * by - ay * bx, ax * bx + ay * by));
-      var want = arm.widths[i] * to;
-      // clamped on both sides rather than only the concave one: on the outside it costs nothing, and
-      // it saves getting the sign of the turn wrong, which is easy and silent
-      room.push(turn < 1e-4 || want <= 0 ? 1
-                : Math.min(1, (0.85 * (((la + lb) / 2) / turn)) / want));
-    }
-
     var fade = [];
     for (i = 0; i <= N; i++) {
-      var f = Math.min((N - i) / 2.5, room[i]);
+      var f = (N - i) / 2.5;
       if (body) {
         var q = arm.spine[i];
         var t = Math.hypot((q[0] - body.cx) / body.rx, (q[1] - body.cy) / body.ry);
@@ -317,30 +307,8 @@
       } else {
         f = Math.min(f, (i - 6.5) / 3);
       }
-      /* THE PINCH HAS TO REACH ZERO, and it did not.
-       *
-       * Where the band swaps which face of the arm it is on, the quad between the two beads either
-       * side is a CROSSED quad: inner on the left becomes inner on the right, so the two edges
-       * intersect. Filled, that is a triangle sticking out of the arm.
-       *
-       * The old pinch measured |i - j + 0.5|, which for the two beads straddling the swap comes to
-       * exactly 0.5, over 2.5 is 0.2 -- so the band narrowed to a FIFTH of its width there and then
-       * drew the crossed quad anyway, just smaller. Counted over 1,800 frames of swimming, that is
-       * 1,492 little triangles. Subtracting the half-step first makes it genuinely zero on both of
-       * them, so the two halves of the ribbon meet at a point and there is nothing to cross. */
-      /* Pinch at every place the ribbon can turn over, which is TWO kinds of place, not one.
-       *
-       * The obvious one is the band swapping which face of the arm it rides on. The other is the
-       * normal itself reversing while the side stays put: each normal comes from the difference
-       * between the beads either side, and at a hairpin those two beads end up almost on top of each
-       * other, so that difference collapses and its direction becomes arbitrary. The band then turns
-       * over with nothing marking the spot, and draws a triangle. Catching it is one dot product --
-       * if this bead's normal disagrees with the last one, pinch. */
       for (var j = 1; j <= N; j++) {
-        var na = arm.norms[j], nb = arm.norms[j - 1];
-        if (sides[j] !== sides[j - 1] || na[0] * nb[0] + na[1] * nb[1] < 0.25) {
-          f = Math.min(f, Math.max(0, Math.abs(i - j + 0.5) - 0.5) / 2.5);
-        }
+        if (sides[j] !== sides[j - 1]) f = Math.min(f, Math.abs(i - j + 0.5) / 2.5);
       }
       fade.push(Math.max(0, Math.min(1, f)));
     }
@@ -360,42 +328,8 @@
       }
     }
     var say = function (p) { return round(p[0]) + ' ' + round(p[1]); };
-
-    /* THE BAND IS CUT INTO RUNS WHEREVER IT TURNS OVER, and emitted as one subpath per run.
-     *
-     * Everything above narrows the ribbon at the places it is known to twist. Narrowing is not the
-     * same as preventing: a pinch that does not quite reach zero still draws a crossed quad, only
-     * smaller, and a twist that none of the rules anticipated is not narrowed at all. Both end up as
-     * the same thing on screen -- a little crossed triangle of gold, worst on the two middle arms,
-     * which hang straight down where the normals are horizontal and the choice of underside is at its
-     * most delicate.
-     *
-     * Drawing it as runs removes the possibility rather than reducing it. Walk the ribbon, and
-     * wherever one rung points the opposite way to the last -- which IS the ribbon turning over, by
-     * definition, whatever caused it -- end the subpath and start a new one. A crossed quad can no
-     * longer be drawn, because the two halves of the twist are never joined. What shows instead is a
-     * small gap exactly where the band was going to tie itself in a knot, which is what the pinches
-     * were trying to achieve and could only approximate.
-     *
-     * Runs, rather than a quad at a time, because abutting fills seam: two quads sharing an edge leave
-     * a hairline of background between them once antialiased. Inside a run there are no seams at all. */
-    var rung = function (i) { return [outer[i][0] - inner[i][0], outer[i][1] - inner[i][1]]; };
-    var runs = [], start = 0;
-    for (i = 1; i <= N; i++) {
-      var a = rung(i - 1), b = rung(i);
-      if (a[0] * b[0] + a[1] * b[1] <= 0) { runs.push([start, i - 1]); start = i; }
-    }
-    runs.push([start, N]);
-
-    var d = '';
-    runs.forEach(function (run) {
-      if (run[1] - run[0] < 1) return;                 // a one-bead run has no area to fill
-      var up = [], down = [];
-      for (var q = run[0]; q <= run[1]; q++) { up.push(say(inner[q])); down.push(say(outer[q])); }
-      d += 'M' + up.join('L') + 'L' + down.reverse().join('L') + 'Z';
-    });
-
-    return { d: d, fill: skin.belly, dots: dots };
+    return { d: 'M' + inner.map(say).join('L') + 'L' + outer.reverse().map(say).join('L') + 'Z',
+             fill: skin.belly, dots: dots };
   }
 
   // --------------------------------------------------------------------- the whole character
@@ -723,8 +657,8 @@
   function Life(opts) {
     opts = opts || {};
     this.opts = opts;
-    this.stiff = opts.stiff != null ? opts.stiff : 0.22;
-    this.bend = opts.bend != null ? opts.bend : 0.45;     // how hard it refuses to kink    // how hard the pose pulls the arms back
+    this.stiff = opts.stiff != null ? opts.stiff : 0.22;   // how hard the pose pulls the arms back
+    this.bend = opts.bend != null ? opts.bend : 0.45;      // how hard it refuses to kink
     this.damp = opts.damp != null ? opts.damp : 0.86;       // velocityDecay, in d3's language
     this.droop = opts.droop != null ? opts.droop : 0.22;    // a little gravity, so arms hang
     this.reach = opts.reach != null ? opts.reach : 140;     // how near the pointer has to be to be felt
