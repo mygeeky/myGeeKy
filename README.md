@@ -11,10 +11,14 @@
 </p>
 
 <p align="center">
-  <b>myGeeKy is a quiet companion that helps you grow.</b><br>
-  Tell it what you work on. It brings back what to learn next, what is rising in your field,<br>
-  who works on the same problems, and <b>the opportunities open to you right now</b> —<br>
-  <b>and then checks that you really learned it.</b>
+  <b>myGeeKy, a quiet companion that helps you grow.</b>
+</p>
+
+<p align="center">
+  Helps you <b>see</b> what is moving in your field.<br>
+  Helps you <b>learn</b> what comes next.<br>
+  Helps you <b>meet</b> the people working on the same problems.<br>
+  Helps you <b>catch</b> the opportunities while they are still open.
 </p>
 
 <p align="center">
