@@ -254,38 +254,58 @@ def spark(x: float, y: float, r: float, order: float) -> str:
 
 
 def name() -> str:
-    """The last thing to arrive: the name, where the words were.
+    """The last thing to arrive: the badge, where the words were.
 
-    It takes the place of `collaboration` rather than sitting somewhere else, so the sequence reads
-    as one sentence ending in who said it -- skills, knowledge, collaboration, myGeeKy. It comes up
-    a little and settles, which is what makes it land rather than merely appear."""
+    It takes the place of `opportunity` rather than sitting somewhere else, so the sequence reads as
+    one sentence ending in who said it -- skills, knowledge, collaboration, opportunity, myGeeKy.
+
+    THIS IS THE REAL MARK, docs/logo.png, not the name typeset here. Setting it in type was wrong
+    twice over. A README SVG cannot carry a typeface -- it gets whatever the reader's machine has,
+    which is a different drawing of the name on every computer -- and the colours then have to survive
+    both a white page and a dark one, which is what the whole halo apparatus was for. The badge solves
+    both by being a picture: it brings its own letterforms and its own dark disc, so it is the same
+    mark everywhere and legible on any background without a single trick.
+
+    It is embedded rather than linked because a README image is fetched through GitHub's proxy and an
+    SVG rendered as an image may not load anything external. WebP at this size costs about 19 KB."""
+    size = 210
+    x, y = WORD_AT[0] - size // 2, WORD_AT[1] - size // 2
+    img = (f'<image x="{x}" y="{y}" width="{size}" height="{size}"'
+           # `xlink:href` alone, not both spellings: every current browser still honours it, older
+           # ones need it, and carrying the same 19 KB payload twice is 19 KB for nothing
+           f' xlink:href="{_badge_uri()}"/>')
     snap = 0.02
-    x, y = WORD_AT[0], WORD_AT[1] + 6
-    return (f'<text x="{x}" y="{y}" text-anchor="middle" opacity="0"'
-            f' font-family="Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif"'
-            # only the G and the K are bold; everything else sits at a normal weight
-            f' font-size="52" font-weight="400" letter-spacing="-0.5"'
-            # the halo: stroked first, under the fill, so a white page never sees it and a dark one
-            # gets an outline round every letter instead of a black word it cannot read
-            f' stroke="{NAME_HALO}" stroke-width="{NAME_HALO_W}" stroke-linejoin="round"'
-            f' paint-order="stroke">'
-            f'<tspan fill="{NAME_SKY}">my</tspan>'
-            f'<tspan fill="{NAME_INK}" font-weight="700">G</tspan>'
-            f'<tspan fill="{NAME_GOLD}">ee</tspan>'
-            f'<tspan fill="{NAME_INK}" font-weight="700">K</tspan>'
-            f'<tspan fill="{NAME_SKY}">y</tspan>'
+    # it comes up to size rather than simply appearing, which is what makes a mark LAND
+    popped = scaled(img, WORD_AT[0], WORD_AT[1],
+                    values="0.74 0.74;0.74 0.74;1 1;1 1",
+                    keytimes=f"0;{NAME_ON:.3f};{NAME_ON + snap * 2:.3f};1",
+                    splines="0 0 1 1;.2 .9 .3 1;0 0 1 1")
+    return (f'<g opacity="0">'
             f'<animate attributeName="opacity" values="0;0;1;1;0;0"'
             f' keyTimes="0;{NAME_ON:.3f};{NAME_ON + snap:.3f};'
             f'{NAME_OFF - snap:.3f};{NAME_OFF:.3f};1"'
             f' dur="{CYCLE}" calcMode="spline"'
             f' keySplines="0 0 1 1;.3 .7 .4 1;0 0 1 1;.4 0 .7 .3;0 0 1 1" repeatCount="indefinite"/>'
-            f'<animateTransform attributeName="transform" type="translate"'
-            f' values="0 18;0 18;0 0;0 0;0 0;0 0"'
-            f' keyTimes="0;{NAME_ON:.3f};{NAME_ON + snap * 2:.3f};'
-            f'{NAME_OFF - snap:.3f};{NAME_OFF:.3f};1"'
-            f' dur="{CYCLE}" calcMode="spline"'
-            f' keySplines="0 0 1 1;.2 .9 .3 1;0 0 1 1;0 0 1 1;0 0 1 1" repeatCount="indefinite"/>'
-            f'</text>')
+            f'{popped}</g>')
+
+
+def _badge_uri(_cache: list[str] = []) -> str:
+    """The round myGeeKy badge, as a data URI. Read once and reused for both href spellings."""
+    if _cache:
+        return _cache[0]
+    import base64
+    import io
+
+    from PIL import Image
+
+    src = Path(__file__).parent / "logo.png"
+    if not src.exists():
+        raise SystemExit(f"the badge is missing: {src}")
+    buf = io.BytesIO()
+    Image.open(src).convert("RGBA").resize((256, 256), Image.LANCZOS).save(
+        buf, "WEBP", quality=88, method=6)
+    _cache.append("data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode())
+    return _cache[0]
 
 
 def plant() -> str:
@@ -385,7 +405,8 @@ def cloche() -> str:
 
 
 def scene() -> str:
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" \
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" \
+viewBox="0 0 {W} {H}" width="{W}" height="{H}" \
 role="img" aria-label="GeekOc, the myGeeKy octopus, watching a plant grow skills, knowledge, \
 collaboration and opportunity, with a glass cloche coming down over it to keep it safe">
   <title>GeekOc watching a plant grow, safe under glass</title>
@@ -431,6 +452,10 @@ def main() -> int:
     # made the fallback picture -- the one that exists for when the animation does NOT play -- a row
     # of little squares. The shapes it rasterises perfectly well; the type it cannot.
     still = re.sub(r"<text\b.*?</text>", "", still, flags=re.S)
+    # ...and the badge with them. The still deliberately has no mark on it -- that is the one thing
+    # that only happens at the end of a performance -- and Qt's WebP support is a plugin that may or
+    # may not be installed, so carrying it here would risk a grey box in the fallback picture.
+    still = re.sub(r"<image\b[^>]*/>", "", still)
     renderer = QSvgRenderer(QByteArray(still.encode("utf-8")))
     if not renderer.isValid():
         raise SystemExit("the SVG this wrote is not readable")
