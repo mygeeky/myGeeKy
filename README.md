@@ -7,23 +7,34 @@
 <h3 align="center">Your geeky friend who helps you grow, quietly.</h3>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-grows.svg" width="660" alt="GeekOc, the myGeeKy octopus, watching a plant grow">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-grows.svg" width="660" alt="GeekOc, the myGeeKy octopus, watching a plant grow skills, knowledge, collaboration and opportunity, safe under glass">
 </p>
 
 <p align="center">
-  A road map for any skill · questions that cite their sources · the skills rising in your field<br>
-  · the jobs, funding and conferences that want them — <b>and proof you learned it</b>.
+  <b>myGeeKy is a quiet companion that helps you grow.</b><br>
+  Tell it what you work on. It brings back what to learn next, what is rising in your field,<br>
+  who works on the same problems, and what is open to apply for before it closes —<br>
+  <b>and then checks that you really learned it.</b>
 </p>
 
 <p align="center">
-  <b>No feed. No likes. No posting. Nothing to scroll.</b><br>
-  It runs on your computer, needs no account, and never acts for you.
+  It lives on your own computer, in a narrow panel beside your work.<br>
+  <b>No feed. No likes. No posting. Nothing to scroll.</b>
 </p>
 
 <p align="center">
   <a href="https://github.com/mygeeky/myGeeKy/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/%E2%AC%87%20Download%20for%20Windows-MyGeeKySetup.exe-ff6fd8?style=for-the-badge&logo=windows&logoColor=white" height="42"></a>
   &nbsp;
   <a href="https://pypi.org/project/mygeeky/"><img alt="pip install mygeeky" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-pip%20install%20mygeeky-7a5cff?style=for-the-badge&logo=python&logoColor=white" height="42"></a>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/tour.gif" width="380" alt="The myGeeKy panel in use: live activity, repos ranked by momentum, people near your work, and a skill road map">
+</p>
+
+<p align="center">
+  <b>This is the whole program.</b> Eleven tabs, one click each, open beside what you were already doing.<br>
+  <sub>No window to manage, no dashboard to log into. Close it and nothing keeps running.</sub>
 </p>
 
 <p align="center">
@@ -40,6 +51,7 @@
   <a href="https://mygeeky.org">Website</a> ·
   <a href="#-learn-something-and-prove-it">Learn</a> ·
   <a href="#-what-is-open-right-now">Chances</a> ·
+  <a href="#-your-whole-field-in-one-place">Your field</a> ·
   <a href="#-why-it-is-not-like-the-others">Why it's different</a> ·
   <a href="#-try-it">Try it</a> ·
   <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md">The full guide</a>
@@ -91,13 +103,17 @@ to *statistics for experiments: which test, and why*.
 
 <table>
 <tr>
-<td align="center" width="50%">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-skills.png" width="400" alt="Rising skills in your field"><br>
-  <sub><b>What's rising that you don't have yet</b> — and why it says so</sub>
+<td align="center" width="33%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-skills.png" width="300" alt="Rising skills in your field"><br>
+  <sub><b>1. What's rising that you don't have yet</b><br>— and why it says so</sub>
 </td>
-<td align="center" width="50%">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-protocols.png" width="400" alt="A protocol as a road map"><br>
-  <sub><b>The road map</b> — the step you're on makes room for itself</sub>
+<td align="center" width="33%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-learn.png" width="300" alt="A skill broken into stages"><br>
+  <sub><b>2. Pick one, and it becomes stages</b><br>— starting past what you know</sub>
+</td>
+<td align="center" width="33%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-protocols.png" width="300" alt="A protocol as a road map"><br>
+  <sub><b>3. The road map</b><br>— the step you're on makes room for itself</sub>
 </td>
 </tr>
 </table>
@@ -120,9 +136,18 @@ a question you think is wrong.
 </tr>
 </table>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-question.png" width="760" alt="A quiz question, answered, showing why and the source it came from">
-</p>
+<table>
+<tr>
+<td align="center" width="62%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-question.png" width="520" alt="A quiz question, answered, showing why and the source it came from"><br>
+  <sub><b>Answer, and it shows you why</b> — and the sentence it came from</sub>
+</td>
+<td align="center" width="38%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-score.png" width="300" alt="A quiz score and the badge it earns"><br>
+  <sub><b>Then it's yours</b> — a badge you can actually point at</sub>
+</td>
+</tr>
+</table>
 
 ---
 
@@ -183,10 +208,16 @@ and GitHub. <b>GitHub is one of them, not the point.</b></sub>
 
 <table>
 <tr>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/research.png" width="260" alt="Research"><br><sub>Papers and the tools behind them</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/market.png" width="260" alt="Market"><br><sub>Your field as a daily market</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/suggestions.png" width="260" alt="People"><br><sub>People likely to follow back</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/model.png" width="260" alt="Your model"><br><sub>What it knows about you</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/research.png" width="250" alt="Research"><br><sub><b>Research</b><br>papers, and the tools behind them</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/market.png" width="250" alt="Market"><br><sub><b>Market</b><br>your field as a daily market</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/repos.png" width="250" alt="Repos"><br><sub><b>Repos</b><br>ranked by who actually merges</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/news.png" width="250" alt="News"><br><sub><b>News</b><br>labs, journals and the press</sub></td>
+</tr>
+<tr>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/suggestions.png" width="250" alt="People"><br><sub><b>People</b><br>likely to follow back</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/live.png" width="250" alt="Live"><br><sub><b>Live</b><br>who moved in the last hour</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/signals.png" width="250" alt="Signals"><br><sub><b>Signals</b><br>a quiet room, if you want one</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/model.png" width="250" alt="Your model"><br><sub><b>Model</b><br>what it knows about you</sub></td>
 </tr>
 </table>
 
@@ -236,6 +267,19 @@ mygeeky setup
 
 <sub>Run the one-liner again to update. Macs get <b>myGeeKy.app</b> in Launchpad and Spotlight.</sub>
 
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td align="center" width="50%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/setup-welcome.png" width="420" alt="The setup window, asking what you work on"><br>
+  <sub><b>It asks what you work on.</b> That's the whole setup.</sub>
+</td>
+<td align="center" width="50%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/setup-finish.png" width="420" alt="The last setup step, done"><br>
+  <sub><b>Then it's yours.</b> A GitHub account is optional, and later.</sub>
 </td>
 </tr>
 </table>
