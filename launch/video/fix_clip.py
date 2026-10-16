@@ -33,10 +33,17 @@ OUT = Path(__file__).parent / "intro"
 
 PALE, FLAT = 228, 16          # what counts as the wall: this bright, and this close to colourless
 
-# The broken step, and the clean one it is rebuilt from. The donor is sampled across a whole correct
-# stride, so the legs close and open once, in the right order, in the frames available.
-BROKEN = range(46, 52)
-DONOR = (74, 76, 78, 80, 82, 84)
+# The broken stride is CUT OUT, not patched. Patching was tried first and it does not work: this walk's
+# steps land every 8 to 13 frames, never the same twice, so no borrowed stride lines up at both ends --
+# and squeezing a correct step into the seven frames available makes the legs move at double speed, which
+# is just as wrong as the original, only differently.
+#
+# Frames 40 and 57 are both legs-together beats and their poses match closely (scored on the pose AND on the
+# frame each runs into next, which is what separates a clean join from one that stalls), so the clip can simply skip from one to the other.
+# What that leaves is a jump FORWARD of about 150px, because he walked during the frames being dropped --
+# and that is the part the flat wall pays for: every later frame is lifted off it and set back down
+# further left, so the walk carries straight on.
+JOIN = (39, 57)
 
 SHRINKS_AT = 97               # from this frame on, he is suddenly smaller
 
@@ -113,24 +120,29 @@ def main(argv: list[str]) -> int:
     grow = tall / small
     print(f"  he is {tall:.0f}px tall, then {small:.0f}px from frame {SHRINKS_AT}: scaling those by {grow:.3f}")
 
-    # the two frames the broken step has to join up with
-    before, after = min(BROKEN) - 1, max(BROKEN) + 1
-    for n, p in enumerate(frames, 1):
-        if n in BROKEN:
-            k = (n - before) / (after - before)
-            fx = spot[before][0] + (spot[after][0] - spot[before][0]) * k
-            fy = spot[before][1] + (spot[after][1] - spot[before][1]) * k
-            donor = frames[DONOR[list(BROKEN).index(n)] - 1]
-            img = put(plate, figure(donor), fx, fy, tall / spot[DONOR[list(BROKEN).index(n)]][2])
-        elif n >= SHRINKS_AT:
-            fx, fy, _ = spot[n]
-            # his feet go back down to the floor he was standing on before he shrank
-            img = put(plate, figure(p), spot[SHRINKS_AT - 1][0] + (fx - spot[SHRINKS_AT][0]) * grow,
-                      spot[SHRINKS_AT - 1][1], grow)
-        else:
+    cut_from, cut_to = JOIN
+    # how far he travels in one frame while walking, so the join advances by a step rather than freezing
+    pace = (spot[cut_from][0] - spot[20][0]) / (cut_from - 20)
+    shift = spot[cut_to][0] - (spot[cut_from][0] + pace)
+    print(f"  joining {cut_from} to {cut_to}: dropping {cut_to - cut_from - 1} frames"
+          f" and sliding everything after back {shift:.0f}px")
+
+    kept = list(range(1, cut_from + 1)) + list(range(cut_to, len(frames) + 1))
+    for out_n, n in enumerate(kept, 1):
+        p = frames[n - 1]
+        if n <= cut_from:
             img = Image.open(p).convert("RGB")
-        img.save(done / f"f_{n:04d}.png")
-    print(f"  rebuilt: step {min(BROKEN)}-{max(BROKEN)}, size {SHRINKS_AT}-{len(frames)}")
+        elif n < SHRINKS_AT:
+            fx, fy, _ = spot[n]
+            img = put(plate, figure(p), fx - shift, fy)
+        else:
+            fx, _, _ = spot[n]
+            # he also goes back to the size and the floor he had before he shrank
+            img = put(plate, figure(p),
+                      spot[SHRINKS_AT - 1][0] - shift + (fx - spot[SHRINKS_AT][0]) * grow,
+                      spot[SHRINKS_AT - 1][1], grow)
+        img.save(done / f"f_{out_n:04d}.png")
+    print(f"  {len(kept)} frames out ({len(kept) / 24:.2f}s), size fixed from {SHRINKS_AT} on")
 
     out = OUT / f"{name}-fixed.mp4"
     run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-framerate", str(fps(ffmpeg, src)),
