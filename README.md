@@ -134,37 +134,6 @@ to *statistics for experiments: which test, and why*.
 </tr>
 </table>
 
-<table>
-<tr>
-<td width="20%" align="center" valign="middle">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-quiz.png" width="160" alt="GeekOc cheering">
-</td>
-<td valign="middle">
-
-> *“Ten questions. Every one of them tells you where the answer came from.”*
-
-**258 questions across those 14 protocols.** Half basics, then applied, then the real pitfalls. Every question
-is written **from a source and quotes the sentence it came from**, code questions are **run** and sums are
-**recomputed** before the question ever ships. Only your best score counts, one attempt a day, and 🚩 throws out
-a question you think is wrong.
-
-</td>
-</tr>
-</table>
-
-<table>
-<tr>
-<td align="center" width="62%">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-question.png" width="520" alt="A quiz question, answered, showing why and the source it came from"><br>
-  <sub><b>Answer, and it shows you why</b> — and the sentence it came from</sub>
-</td>
-<td align="center" width="38%">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-score.png" width="300" alt="A quiz score and the badge it earns"><br>
-  <sub><b>Then it's yours</b> — a badge you can actually point at</sub>
-</td>
-</tr>
-</table>
-
 ---
 
 ## 👥 Helps you meet the people working on the same problems
