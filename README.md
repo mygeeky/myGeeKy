@@ -213,32 +213,33 @@ year's date: a window it read on a page says **open now**, anything ahead says *
 
 ## 🤫 For anyone who works alone
 
+<p align="center">
+  <i>“You might be the only one in your building who does this. You are not the only one in the world.”</i>
+</p>
+
+<p align="center">
+  The student in a lab where nobody else writes code. The researcher in a city with nobody in their field.<br>
+  The one who has the questions and no one to ask.<br>
+  <b>myGeeKy finds the others — and lets you reach them without becoming someone who posts.</b>
+</p>
+
 <table>
 <tr>
-<td width="20%" align="center" valign="middle">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-hero.png" width="160" alt="GeekOc waving">
+<td width="46%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/works-alone.svg" width="440" alt="Someone working alone at a desk, seen from behind, with three other people further off joined to them by dotted threads, and GeekOc beside them pointing the way">
 </td>
 <td valign="middle">
-
-> *“You might be the only one in your building who does this. You are not the only one in the world.”*
-
-The student in a lab where nobody else writes code. The researcher in a city with nobody in their field.
-The one who has the questions and no one to ask.
-
-**myGeeKy finds the others — and lets you reach them without becoming someone who posts.**
-
+<table>
+<tr><td>🔕 <b>No noise</b></td><td>No feed, no likes, no streaks, no notifications competing for you.</td></tr>
+<tr><td>👋 <b>Friends, not followers</b></td><td>People near your work, and how likely each is to answer.</td></tr>
+<tr><td>🤝 <b>Thanks, privately</b></td><td>A 🙏 only the person you send it to can read. No counter, no audience.</td></tr>
+<tr><td>🚪 <b>Nobody sees you looking</b></td><td>No account, no sign-up, no telemetry. There is no server to see you from.</td></tr>
+<tr><td>🌙 <b>It waits</b></td><td>Close it and nothing keeps running. It never pings you to come back.</td></tr>
+<tr><td>🧰 <b>Yours to keep</b></td><td>MIT, and open to read — every promise on this page is a file you can check.</td></tr>
+</table>
 </td>
 </tr>
 </table>
-
-|  |  |
-|---|---|
-| 🔕 **No noise** | No feed, no likes, no streaks, no notifications competing for you. |
-| 👋 **Friends, not followers** | People near your work, and how likely each is to answer. |
-| 🤝 **Thanks, privately** | A 🙏 only the person you send it to can read. No counter, no audience. |
-| 🚪 **Nobody sees you looking** | No account, no sign-up, no telemetry. There is no server to see you from. |
-| 🌙 **It waits** | Close it and nothing keeps running. It never pings you to come back. |
-| 🧰 **Yours to keep** | MIT, and open to read — every promise on this page is a file you can check. |
 
 ---
 
