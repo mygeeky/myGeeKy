@@ -4,12 +4,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { quickProfile, timeAgo, useApp } from '../lib/app-state';
 import {
   blockPerson, type CallForMe, closeCall, createCall, GESTURES, hideCall, isSetUp, joinCall, leaveCall, loadBeacons,
   loadMyCalls, type MyCall, type Parsed, type Person, reportUrl, send, setUp, type SignalsData, signalsData, turnOff,
-  unblockPerson,
+  readQuiet, setQuiet as setQuietOn, unblockPerson,
 } from '../lib/signals';
 import { C } from '../lib/theme';
 import { type Dot, FieldMap } from './field-map';
@@ -33,6 +33,7 @@ export function SignalsView() {
   const [picked, setPicked] = useState<string | null>(null);
   const [sheet, setSheet] = useState<null | { kind: 'invite' } | { kind: 'send'; to?: string; gesture?: string }>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [quiet, setQuiet] = useState(false);
   const weights = useMemo(() => profile?.weights ?? (settings ? quickProfile(settings).weights : {}), [profile, settings]);
   const share = settings?.exploreShare ?? 0.2;
 
@@ -41,8 +42,9 @@ export function SignalsView() {
     setLoading(true);
     setNote('');
     try {
-      const [found, mine] = await Promise.all([loadBeacons(me, token), loadMyCalls(me, token)]);
+      const [found, mine, q] = await Promise.all([loadBeacons(me, token), loadMyCalls(me, token), readQuiet(me)]);
       setUsers(found);
+      setQuiet(q);
       setData(await signalsData(me, weights, found, mine, share));
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Couldn't reach GitHub. Try Refresh.");
@@ -168,8 +170,21 @@ export function SignalsView() {
         </View>
       </View>
 
-      <Section>FOR YOU {data.inbox.length ? data.inbox.length : ''}</Section>
-      {data.inbox.length ? data.inbox.map((g) => (
+      <View style={st.quietRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={st.quietTitle}>🔕 Not taking signals right now</Text>
+          <Text style={st.quietSub}>{quiet ? 'On: nobody can send you a signal. The ones that came are kept for later.'
+            : 'Turn on when you need a break. It applies on your computers too.'}</Text>
+        </View>
+        <Switch value={quiet} disabled={busy === 'quiet'} accessibilityLabel="Not taking signals right now"
+                onValueChange={(v) => run('quiet', async () => { await setQuietOn(me, v); setQuiet(v); },
+                  v ? 'Quiet: nobody can send you signals until you turn this off.' : 'Taking signals again.')} />
+      </View>
+
+      <Section>FOR YOU {!quiet && data.inbox.length ? data.inbox.length : ''}</Section>
+      {quiet ? (
+        <Empty>{data.inbox.length ? `${data.inbox.length} waiting: turn quiet off to see them.` : 'Nothing waiting.'}</Empty>
+      ) : data.inbox.length ? data.inbox.map((g) => (
         <Card key={`${g.from}-${g.type}-${g.at}`} onPress={() => open(`https://github.com/${g.from}`, 'person')}>
           <View style={st.row}>
             <Image source={{ uri: `${g.avatar}${g.avatar.includes('?') ? '&' : '?'}s=88` }} style={st.avatar} />
@@ -370,6 +385,9 @@ function SetupCard({ me, onDone }: { me: string; onDone: () => void }) {
 }
 
 const st = StyleSheet.create({
+  quietRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14, padding: 12, borderRadius: 14, backgroundColor: C.card },
+  quietTitle: { color: C.text, fontSize: 14, fontWeight: '700' },
+  quietSub: { color: C.muted, fontSize: 12, marginTop: 2, lineHeight: 16 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.cardHi },

@@ -511,6 +511,7 @@ def public_beacon(beacon: dict[str, Any], cfg: MyGeekyConfig, my_public_key: str
         "keys": keys[:MAX_KEYS],
         "status": cfg.beacon_status if cfg.beacon_status in STATUSES else "",
         "quiet": bool(cfg.beacon_quiet),
+        "quiet_at": cfg.beacon_quiet_at,
         "interests": _interests(cfg) if cfg.beacon_share_interests else [],
         "sealed": sorted(sealed.values(), key=lambda s: s["at"]),
         "calls": calls_in({"calls": calls if calls is not None else remote.get("calls") or []}, now),
@@ -699,6 +700,10 @@ def refresh(client: GitHubClient, cfg: MyGeekyConfig, force: bool = False,
             except Exception:
                 cache["mine"] = prev_mine.get("mine")
         cache["mine_pushed_at"] = pushed
+        try:
+            adopt_quiet(cfg, cache.get("mine"))
+        except Exception:  # noqa: BLE001 -- never let it stop a refresh
+            pass
     save_cache(cache)
     return cache
 
@@ -997,7 +1002,9 @@ def publish(cfg: MyGeekyConfig, beacon: dict[str, Any], writer: BeaconWriter | N
     writer = writer or writer_for(cfg)
     _, my_pub = my_keypair(cfg.github_username)
     beacon = prune(beacon, cfg.beacon_gesture_ttl_days)
-    writer.publish(public_beacon(beacon, cfg, my_pub, writer.read()))
+    remote = writer.read()
+    adopt_quiet(cfg, remote)            # turned quiet on the phone since: keep it, don't publish over it
+    writer.publish(public_beacon(beacon, cfg, my_pub, remote))
     save_my_beacon({**beacon, "published_key": my_pub})
 
 
@@ -1035,9 +1042,22 @@ def unsend(cfg: MyGeekyConfig, to: str, gesture: str | None = None,
     return removed
 
 
+def adopt_quiet(cfg: MyGeekyConfig, remote: dict[str, Any] | None) -> bool:
+    """Your published "not taking signals" switch, if it was changed after this computer last changed it
+    (the phone sets it too, with `quiet_at`). True if this computer's setting changed."""
+    from .config import save_config
+    at = remote.get("quiet_at") if isinstance(remote, dict) else None
+    if not isinstance(at, str) or not _parse_time(at) or at <= (cfg.beacon_quiet_at or ""):
+        return False
+    cfg.beacon_quiet, cfg.beacon_quiet_at = remote.get("quiet") is True, at
+    save_config(cfg)
+    return True
+
+
 def set_quiet(cfg: MyGeekyConfig, quiet: bool, writer: BeaconWriter | None = None) -> None:
     from .config import save_config
     cfg.beacon_quiet = quiet
+    cfg.beacon_quiet_at = _now().isoformat(timespec="seconds")
     publish(cfg, load_my_beacon(), writer)
     save_config(cfg)
 

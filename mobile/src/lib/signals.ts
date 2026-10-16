@@ -252,21 +252,40 @@ async function writeMine(me: string, token: string, beacon: Record<string, unkno
 /** Read, add, write; once more if one of your computers wrote in between. `changeCalls`
  *  edits your published calls (it sees what's published right now). */
 async function publish(me: string, newBoxes: string[], message: string,
-                       opts: { changeCalls?: (current: Call[]) => Call[]; removeBoxes?: string[] } = {}): Promise<void> {
+                       opts: { changeCalls?: (current: Call[]) => Call[]; removeBoxes?: string[]; quiet?: boolean } = {}): Promise<void> {
   const token = await signalsToken();
   const key = await phoneKey();
   if (!token || !key) throw new Error('Set up Signals on this phone first.');
   for (let attempt = 0; attempt < 2; attempt++) {
     const { raw, sha } = await readMine(me, token);
     const calls = opts.changeCalls ? opts.changeCalls(callsIn(raw)) : undefined;
-    const status = await writeMine(me, token, mergeIntoBeacon(raw, key.pub, newBoxes, Date.now(),
-      { calls, removeBoxes: opts.removeBoxes }), sha, message);
+    const merged = mergeIntoBeacon(raw, key.pub, newBoxes, Date.now(), { calls, removeBoxes: opts.removeBoxes });
+    // beacon.adopt_quiet: the later change wins, so your computers keep this instead of publishing over it
+    const beacon = opts.quiet === undefined ? merged
+      : { ...merged, quiet: opts.quiet, quiet_at: `${new Date().toISOString().slice(0, 19)}+00:00` };
+    const status = await writeMine(me, token, beacon, sha, message);
     if (status === 200 || status === 201) return;
     if (status === 401 || status === 403) throw new Error(`This Signals token can't write to ${me}/${BEACON_REPO}. ` +
       'It needs Contents: Read and write on that repo.');
     if (status !== 409) throw new Error(`Writing your beacon failed (GitHub said ${status}).`);
   }
   throw new Error('Your beacon changed while sending. Try again.');
+}
+
+/** "Not taking signals right now", as published in your beacon (beacon.set_quiet). */
+export async function readQuiet(me: string): Promise<boolean> {
+  const token = await signalsToken();
+  if (!token) return false;
+  try {
+    return (await readMine(me, token)).raw.quiet === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Turn "not taking signals" on or off for you, on every device: others can't send while it's on. */
+export async function setQuiet(me: string, quiet: boolean): Promise<void> {
+  await publish(me, [], quiet ? 'Not taking signals right now' : 'Taking signals again', { quiet });
 }
 
 /** One-time setup: keep this phone's token, make its key, add the key to your beacon. */

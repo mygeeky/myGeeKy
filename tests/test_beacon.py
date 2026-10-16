@@ -206,7 +206,7 @@ def test_public_beacon_reveals_nothing_about_who_was_signalled():
     alice = Person("alice")
     b = bc.add_signal(bc.empty_beacon(), "me", "alice", "thanks", None, cfg, alice.parsed())
     pub = bc.public_beacon(b, cfg, my_pub)
-    assert set(pub) == {"mygeeky_beacon", "keys", "status", "quiet", "interests", "sealed", "calls"}
+    assert set(pub) == {"mygeeky_beacon", "keys", "status", "quiet", "quiet_at", "interests", "sealed", "calls"}
     assert pub["calls"] == []                                                # no calls unless you post one
     text = json.dumps(pub)
     assert "alice" not in text and "thanks" not in text                     # who and what stay sealed
@@ -448,3 +448,19 @@ def test_beacon_init_walks_through_repo_and_token_and_retries_a_bad_token(monkey
     assert published == ["Bearer bad", "Bearer good"]
     assert stored == [(cli.auth.BEACON_SERVICE_NAME, "me", "good")]   # only the token that worked is kept
     assert "Your beacon is live" in result.output
+
+
+def test_quiet_set_on_the_phone_is_kept_not_published_over(monkeypatch):
+    """The phone writes quiet + quiet_at into your beacon; a later desktop publish must keep it."""
+    import mygeeky.config as cfgmod
+    monkeypatch.setattr(cfgmod, "save_config", lambda cfg: None)
+    cfg = MyGeekyConfig(github_username="me", beacon_quiet=False, beacon_quiet_at="2026-10-01T10:00:00+00:00")
+    assert bc.adopt_quiet(cfg, {"quiet": True, "quiet_at": "2026-10-16T09:00:00+00:00"}) is True
+    assert cfg.beacon_quiet is True and cfg.beacon_quiet_at.startswith("2026-10-16")
+    out = bc.public_beacon(bc.empty_beacon(), cfg, "k" * 44, {"quiet": True, "quiet_at": cfg.beacon_quiet_at})
+    assert out["quiet"] is True and out["quiet_at"] == cfg.beacon_quiet_at
+    # an older change elsewhere doesn't win over a newer one here
+    assert bc.adopt_quiet(cfg, {"quiet": False, "quiet_at": "2026-10-02T00:00:00+00:00"}) is False
+    assert cfg.beacon_quiet is True
+    for junk in (None, {}, {"quiet": False}, {"quiet": False, "quiet_at": "not a time"}):
+        assert bc.adopt_quiet(cfg, junk) is False

@@ -200,6 +200,7 @@ class MyGeekyConfig:
     beacon_weekly_new_people: int = 5       # people you can start signalling per week
     badges_seen: list[str] = field(default_factory=list)   # "id:tier" you've already been shown
     beacon_quiet: bool = False              # "not taking signals right now": others can't send to you
+    beacon_quiet_at: str = ""               # when it last changed, here or on the phone: the later one wins
     beacon_muted: list[str] = field(default_factory=list)  # hide their signals (they're not told)
     beacon_gesture_ttl_days: int = 90       # signals expire (yours are pruned, others' ignored) after this
     beacon_refresh_minutes: int = 30        # min minutes between re-reading everyone's beacons
