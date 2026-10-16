@@ -27,6 +27,7 @@ import { adminLogin } from '../lib/admin';
 import { type BoardRow, loadBoard } from '../lib/board';
 import { loadContributions } from '../lib/contribute';
 import { fetchNews } from '../lib/news';
+import { checkTokens, SETTINGS_URL, type TokenState } from '../lib/tokens';
 import { recordInterest } from '../lib/model-repo';
 import { loadSeen, markSeen } from '../lib/seen';
 import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
@@ -200,6 +201,8 @@ export default function Home() {
     : user ? 'live' : 'papers');                          // without GitHub, start where your field is
   const [collapsed, setCollapsed] = useState(params.fold === '1');
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
+  const [tokenWarn, setTokenWarn] = useState<TokenState | null>(null);   // a token about to stop working
+  useEffect(() => { checkTokens().then((t) => setTokenWarn(t.find((x) => x.warn) ?? null)).catch(() => undefined); }, []);
   const [newsPart, setNewsPart] = useState<NewsPart>('headlines');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' ? params.part : 'model');
@@ -331,6 +334,12 @@ export default function Home() {
           <Text style={[st.ring, { color: section.color }]}>{ring}</Text>
         </View>
         <Text style={st.about}>{section.about}</Text>
+        {tokenWarn ? (
+          <Pressable onPress={() => open(SETTINGS_URL)} style={st.warn} accessibilityRole="button">
+            <Text style={st.warnText}>⚠ {tokenWarn.message}</Text>
+            <Text style={[st.warnText, { fontWeight: '800', marginTop: 2 }]}>Open your GitHub tokens ↗</Text>
+          </Pressable>
+        ) : null}
         {fs.length ? (
           <Text style={st.meta}>{loading ? 'updating…' : at ? `updated ${timeAgo(at)} · pull down to refresh` : ''}</Text>
         ) : null}
@@ -439,6 +448,8 @@ const st = StyleSheet.create({
   meta: { color: C.muted, fontSize: 11, paddingHorizontal: 20, marginTop: 4 },
   error: { color: C.red, fontSize: 13, paddingHorizontal: 20, marginTop: 6 },
   list: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 16 },
+  warn: { backgroundColor: 'rgba(248,113,113,0.14)', borderColor: 'rgba(248,113,113,0.5)', borderWidth: 1, borderRadius: 12, padding: 10, marginHorizontal: 20, marginTop: 8 },
+  warnText: { color: C.text, fontSize: 13, lineHeight: 18 },
   part: { color: C.muted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginTop: 14, marginBottom: 2 },
   seenLine: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 14, marginBottom: 4 },
   rowBox: { borderBottomWidth: 1, borderColor: tint(0.07) },

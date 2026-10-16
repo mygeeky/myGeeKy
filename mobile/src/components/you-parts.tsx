@@ -13,6 +13,7 @@ import { Dict, lookup } from '../lib/interests';
 import { badgeCounts, type Brain, cachedBrain, connectModel, disconnectModel, MODEL_TOKEN_PAGE, modelLink, queuedUsage, syncModel } from '../lib/model-repo';
 import { loadDictionary } from '../lib/profile';
 import { signalsToken } from '../lib/signals';
+import { checkTokens, type TokenState } from '../lib/tokens';
 import { clearAll } from '../lib/storage';
 import { C, setTheme, THEME, THEME_LABELS, type ThemeName } from '../lib/theme';
 import { DOCK_IDLE_CHOICES, DOCK_IDLE_DEFAULT, dockIdleMs, setDockIdleMs } from '../lib/prefs';
@@ -298,6 +299,8 @@ export function MorePart() {
     modelLink().then((l) => setRepo(l?.repo ?? null)).catch(() => setRepo(null));
     signalsToken().then((t) => setSignals(!!t)).catch(() => setSignals(false));
   }, []);
+  const [tokens, setTokens] = useState<TokenState[]>([]);
+  useEffect(() => { checkTokens().then(setTokens).catch(() => undefined); }, []);
   const [dockIdle, setDockIdle] = useState(DOCK_IDLE_DEFAULT);
   useEffect(() => { dockIdleMs().then(setDockIdle); }, []);
   if (!settings) return null;
@@ -329,6 +332,7 @@ export function MorePart() {
       : 'nothing yet: scan the code above', Object.keys(settings.interests ?? {}).length > 0],
     ['Sync', repo ? `✓ on: ${repo} (your model, badges and clicks)` : 'off: connect your data repo in Your model', !!repo],
     ['Signals', signals ? '✓ on: you send and receive on this phone' : 'off (turn it on in the 📡 Signals planet)', signals],
+    ...tokens.map((t) => [t.name === 'signals' ? 'Signals token' : 'Data token', t.message.replace(`${t.label} `, '').replace(`${t.label}: `, ''), !t.warn] as [string, string, boolean]),
     ['App version', Constants.expoConfig?.version ?? '', true],
   ];
   return (
