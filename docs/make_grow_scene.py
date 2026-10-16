@@ -151,17 +151,22 @@ STACKED = [174, 220, 266, 312]
 # ...and the last thing to arrive is the name: "my" and the last "y" in light blue, the G and the K
 # black and bold, the "ee" in dark gold. Only the G and the K are bold.
 #
-# Two of those three cannot be one fixed colour. Black is invisible on GitHub's dark README, and a
-# LIGHT blue is invisible on the white one -- 1.6:1, which is worse than the pale suckers were. So
-# the name carries its own `prefers-color-scheme` rule: an SVG referenced as an image is still
-# rendered by the browser, so a media query inside it works, and each of the two swaps for its
-# counterpart on the other background. The gold reads on both and never changes.
+# Black disappears on a dark README and light blue disappears on a white one, so the first attempt
+# swapped both with a `prefers-color-scheme` rule inside the file. THAT WAS WRONG, and how it is
+# wrong is worth keeping: prefers-color-scheme follows the OPERATING SYSTEM, not the theme GitHub is
+# set to. A reader whose computer is dark but whose GitHub is light -- an ordinary combination, and
+# the one it was caught on -- got the dark-mode colours on a white page: white letters on white.
+#
+# So the colours are fixed, and legibility comes from a HALO instead. Every letter is stroked in
+# white underneath its own fill (`paint-order="stroke"`), which on a white page is invisible and on
+# a dark one outlines the letters so they read anyway. One file, and nothing depending on anybody's
+# settings.
 NAME_ON, NAME_OFF = 0.82, 0.98
-NAME_GOLD = "#b87b12"            # 3.57 on white, 5.30 on dark -- the same gold as his suckers
-NAME_INK_LIGHT = "#12101c"       # the "black" of G and K on a white page
-NAME_INK_DARK = "#f0f6fc"        # ...and what it has to become on a dark one, or it is not there
-NAME_SKY_LIGHT = "#2f9fd8"       # "light blue" that a white page can still hold
-NAME_SKY_DARK = "#7fd8ff"        # ...and the real light blue, off his glasses, where it belongs
+NAME_GOLD = "#b87b12"            # the same dark gold as his suckers
+NAME_INK = "#12101c"             # the black of the G and the K
+NAME_SKY = "#5cc6f5"             # the light blue, off his glasses
+NAME_HALO = "#ffffff"
+NAME_HALO_W = 7
 
 
 def scaled(inner: str, ox: float, oy: float, values: str, keytimes: str, splines: str) -> str:
@@ -259,10 +264,16 @@ def name() -> str:
     return (f'<text x="{x}" y="{y}" text-anchor="middle" opacity="0"'
             f' font-family="Segoe UI,Helvetica Neue,Helvetica,Arial,sans-serif"'
             # only the G and the K are bold; everything else sits at a normal weight
-            f' font-size="52" font-weight="400" letter-spacing="-0.5">'
-            f'<tspan class="sky">my</tspan><tspan class="ink">G</tspan>'
-            f'<tspan fill="{NAME_GOLD}">ee</tspan><tspan class="ink">K</tspan>'
-            f'<tspan class="sky">y</tspan>'
+            f' font-size="52" font-weight="400" letter-spacing="-0.5"'
+            # the halo: stroked first, under the fill, so a white page never sees it and a dark one
+            # gets an outline round every letter instead of a black word it cannot read
+            f' stroke="{NAME_HALO}" stroke-width="{NAME_HALO_W}" stroke-linejoin="round"'
+            f' paint-order="stroke">'
+            f'<tspan fill="{NAME_SKY}">my</tspan>'
+            f'<tspan fill="{NAME_INK}" font-weight="700">G</tspan>'
+            f'<tspan fill="{NAME_GOLD}">ee</tspan>'
+            f'<tspan fill="{NAME_INK}" font-weight="700">K</tspan>'
+            f'<tspan fill="{NAME_SKY}">y</tspan>'
             f'<animate attributeName="opacity" values="0;0;1;1;0;0"'
             f' keyTimes="0;{NAME_ON:.3f};{NAME_ON + snap:.3f};'
             f'{NAME_OFF - snap:.3f};{NAME_OFF:.3f};1"'
@@ -316,14 +327,6 @@ def scene() -> str:
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" \
 role="img" aria-label="GeekOc, the myGeeKy octopus, watching a plant grow">
   <title>GeekOc watching a plant grow</title>
-  <style>
-    .ink {{ fill: {NAME_INK_LIGHT}; font-weight: 700; }}
-    .sky {{ fill: {NAME_SKY_LIGHT}; }}
-    @media (prefers-color-scheme: dark) {{
-      .ink {{ fill: {NAME_INK_DARK}; }}
-      .sky {{ fill: {NAME_SKY_DARK}; }}
-    }}
-  </style>
   <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0;0 -4;0 0"
        keyTimes="0;0.25;0.5;0.75;1" dur="3.6s" calcMode="spline"
        keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" repeatCount="indefinite"/>
