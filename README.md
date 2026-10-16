@@ -56,25 +56,6 @@
   <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md">The full guide</a>
 </p>
 
-<table>
-<tr>
-<td width="20%" align="center" valign="middle">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-hero.png" width="170" alt="GeekOc waving">
-</td>
-<td valign="middle">
-
-### “Tell me what you work on. I'll do the looking.”
-
-I'm **GeekOc**, and I do the digging so you don't have to scroll. Type a few keywords — *GWAS*, *single-cell*,
-*Nextflow*, *web apps* — and I'll bring back what is rising in your field, what you could learn next, who works
-on the same things, and what is open to apply for before it closes.
-
-**You don't need an account anywhere to start.** Not GitHub, not ORCID, not even an email.
-
-</td>
-</tr>
-</table>
-
 ---
 
 ## 🌱 Learn something, and prove it
