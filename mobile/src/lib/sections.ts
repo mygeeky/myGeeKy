@@ -41,7 +41,8 @@ export type Row = {
   id: string; title: string; sub: string; right?: string; url: string; action: string;
   avatar?: string; letter?: string; letterBg?: string; letterFg?: string; login?: string;
   kind: string; cat?: string; explore?: boolean;      // what opening it counts as, for badges
-  more?: { text: string[]; links: [string, string][] };  // shown when the row is open (a repo's why and starter issues)
+  more?: { text: string[]; links: [string, string][] };  // shown when the row is open (a summary, a repo's why and starter issues)
+  section?: string;                                     // a heading above the first row of each part, as on the desktop
   learn?: Learn;                                      // what it teaches your model (as the desktop's record_click)
 };
 
@@ -89,12 +90,18 @@ export function rowsFor(id: SectionId, f: Feeds): Row[] {
           right: timeAgo(h.published), url: h.link, action: `Read on ${h.source}`,
           letter: l, letterBg: BADGES[l].color, letterFg: BADGES[l].text,
           kind: l === 'P' ? 'paper' : 'headline', cat: h.category, explore: h.explore,
+          section: h.explore ? '🌍 THE BIG PICTURE' : 'FOR YOUR WORK',
+          more: h.summary ? { text: [h.summary], links: [] } : undefined,
           learn: { kind: 'news', text: h.title, topics: h.match, source: h.id },
         };
       });
     case 'papers':
-      return [...(f.research?.rising ?? []), ...(f.research?.tools ?? [])].map((p, i) => ({
-        id: `r${i}${p.id}`, title: p.title, sub: `🔥 ${p.velocity}/month · ${p.venue || 'preprint'} · cited ${p.cited}`,
+      return [...(f.research?.rising ?? []).map((p) => [p, false] as const), ...(f.research?.tools ?? []).map((p) => [p, true] as const)].map(([p, tool], i) => ({
+        id: `r${i}${p.id}`, title: p.title,
+        sub: tool ? `cited ${p.cited} · ${p.venue || 'preprint'}${p.repos[0] ? ` · code: ${p.repos[0]}` : ''}` : `🔥 ${p.velocity}/month · ${p.venue || 'preprint'} · cited ${p.cited}`,
+        section: tool ? '🛠️ TOOLS WITH PAPERS' : '🔥 RISING IN YOUR FIELD',
+        more: { text: [p.authors.length ? `by ${p.authors.slice(0, 3).join(', ')}${p.authors.length > 3 ? ' et al.' : ''}` : '', p.summary ?? ''].filter(Boolean),
+          links: p.repos.slice(0, 2).map((r) => [`💻 Code: ${r}`, `https://github.com/${r}`] as [string, string]) },
         right: p.date ? p.date.slice(0, 4) : '', url: p.url, action: 'Read the paper',
         letter: 'P', letterBg: BADGES.P.color, letterFg: BADGES.P.text, kind: 'paper', cat: 'science',
         learn: { kind: 'news', text: p.title, topics: p.match, source: p.id },
@@ -120,8 +127,12 @@ export function rowsFor(id: SectionId, f: Feeds): Row[] {
       }));
     case 'models': {
       const seen = new Set<string>();
-      return [...(f.models?.field ?? []), ...(f.models?.trending ?? [])].filter((m) => !seen.has(m.id) && seen.add(m.id)).map((m) => ({
-        id: `m${m.id}`, title: m.id.split('/')[1] ?? m.id, sub: [m.id.split('/')[0], m.pipeline.replace(/-/g, ' ')].filter(Boolean).join(' · '),
+      return [...(f.models?.field ?? []).map((m) => [m, true] as const), ...(f.models?.trending ?? []).map((m) => [m, false] as const)]
+        .filter(([m]) => !seen.has(m.id) && seen.add(m.id)).map(([m, mine]) => ({
+        id: `m${m.id}`, title: m.id.split('/')[1] ?? m.id,
+        sub: [m.id.split('/')[0], m.pipeline.replace(/-/g, ' '), `↓ ${fmt(m.downloads)}`, m.trending ? `🔥 ${fmt(m.trending)}` : ''].filter(Boolean).join(' · '),
+        section: mine ? 'IN YOUR FIELD' : '🌍 TRENDING EVERYWHERE',
+        more: { text: [m.match.length ? `matches ${m.match.slice(0, 4).join(', ')}` : '', m.tags.length ? `tags: ${m.tags.slice(0, 8).join(', ')}` : ''].filter(Boolean), links: [] },
         right: `♥ ${fmt(m.likes)}`, url: m.url, action: 'Open on Hugging Face',
         letter: 'M', letterBg: '#ffc457', letterFg: '#1a1a1a', kind: 'model', cat: 'ai',
         learn: { kind: 'repo', text: `${m.id.replace('/', ' ')} ${m.pipeline}`, topics: m.tags, source: m.id },

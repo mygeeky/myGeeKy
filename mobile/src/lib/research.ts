@@ -6,7 +6,7 @@ import { match, Profile } from './interests';
 
 export type Paper = {
   id: string; title: string; url: string; date: string; venue: string; cited: number;
-  authors: string[]; repos: string[]; velocity: number; match: string[]; score: number; kind: 'P';
+  authors: string[]; repos: string[]; velocity: number; match: string[]; score: number; kind: 'P'; summary?: string;
 };
 
 const SELECT = 'id,doi,title,publication_date,cited_by_count,authorships,primary_location,abstract_inverted_index';
@@ -76,6 +76,7 @@ export async function fetchResearch(profile: Profile, months = 12, size = 20): P
   rising.sort((a, b) => b.score - a.score);
   const tools = Array.from(new Map(toolsRaw.filter((p) => p.repos.length).map((p) => [p.id, p])).values())
     .sort((a, b) => b.velocity - a.velocity || b.cited - a.cited);
-  const slim = (p: Paper) => ({ ...p, abstract: undefined }) as Paper;
+  // a short abstract travels with each paper, to read before opening it (the desktop's tooltip)
+  const slim = (p: Paper) => ({ ...p, abstract: undefined, summary: String((p as any).abstract ?? '').slice(0, 320) }) as Paper;
   return { rising: rising.slice(0, size).map(slim), tools: tools.slice(0, size).map(slim) };
 }

@@ -197,8 +197,13 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel, listedKey, seen === null]);
   const fresh = (r: Row) => newHere.has(r.id);
-  const rows = [...listed.filter(fresh), ...listed.filter((r) => !fresh(r))];
-  const firstSeen = rows.findIndex((r) => !fresh(r));
+  // new ones first -- within each part, so the parts (Rising, Tools…) keep their order and headings
+  const parts = [...new Set(listed.map((r) => r.section ?? ''))];
+  const rows = parts.flatMap((p) => {
+    const inPart = listed.filter((r) => (r.section ?? '') === p);
+    return [...inPart.filter(fresh), ...inPart.filter((r) => !fresh(r))];
+  });
+  const firstSeen = parts.length > 1 ? -1 : rows.findIndex((r) => !fresh(r));
   const section = SECTIONS[sel];
   const ring = INNER.includes(sel) ? RING_NAME.inner : OUTER.includes(sel) ? RING_NAME.outer : RING_NAME.you;
   const fs = feedsOf[sel];
@@ -296,6 +301,7 @@ export default function Home() {
           ) : sel === 'chances' ? (
             <ChancesView />
           ) : rows.length ? rows.map((r, i) => (<View key={r.id}>
+            {r.section && r.section !== rows[i - 1]?.section ? <Text style={st.part}>{r.section}</Text> : null}
             {i === firstSeen ? (
               <Text style={st.seenLine}>{firstSeen === 0 ? '✔ You\'re all caught up · seen earlier' : 'Seen earlier'}</Text>
             ) : null}
@@ -374,6 +380,7 @@ const st = StyleSheet.create({
   meta: { color: C.muted, fontSize: 11, paddingHorizontal: 20, marginTop: 4 },
   error: { color: C.red, fontSize: 13, paddingHorizontal: 20, marginTop: 6 },
   list: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 16 },
+  part: { color: C.muted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginTop: 14, marginBottom: 2 },
   seenLine: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 14, marginBottom: 4 },
   rowBox: { borderBottomWidth: 1, borderColor: tint(0.07) },
   rowOpen: { backgroundColor: tint(0.04), marginHorizontal: -12, paddingHorizontal: 12, borderRadius: 14 },

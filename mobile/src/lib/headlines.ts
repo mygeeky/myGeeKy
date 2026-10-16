@@ -140,7 +140,7 @@ export function select(items: Headline[], weights: Weights, size = 30, share = 0
       taken.add(x.id);
     }
   }
-  return picks.map((x) => ({ ...x, summary: '' }));
+  return picks.map((x) => ({ ...x, summary: x.summary.slice(0, 280) }));         // a few lines to read before opening
 }
 
 export async function fetchHeadlines(weights: Weights): Promise<{ items: Headline[]; errors: string[] }> {
