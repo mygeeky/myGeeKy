@@ -43,11 +43,17 @@
     belly: '#ffdcae', spot: '#7d36d6',
     outline: '#2a0f4e', outlineWidth: 7,
     glass: '#7fd8ff', ink: '#1a1428', mouth: '#2a0f4e',
-    /* The cups are DARKER than the band they sit in, not lighter. Pale cups on a cream belly were
-     * invisible at every size an arm can actually carry -- thirty-six of them drawn and not one
-     * readable. Amber on cream reads at a glance, which is the whole job. Two tints, one per row, so
-     * the zigzag reads as two rows rather than one wavy one. */
-    sucker: '#e9a259', sucker2: '#d98f45', white: '#ffffff',
+    /* The cups are DARKER than the band they sit in, and the amount that matters is VALUE, not hue.
+     *
+     * The obvious answer to "make the suckers show" is a bright yellow, and it is wrong. Measured
+     * against the cream belly, a bright #ffc62e comes out at 1.20:1 -- the worst of every colour tried,
+     * worse than the muddy tan it was meant to replace. It looks vivid at full size and dissolves the
+     * moment he is drawn small, because cream and bright yellow are nearly the same lightness and only
+     * lightness survives shrinking. A dark gold keeps the yellow and buys back the contrast: same hue
+     * family, 2.39:1, still legible at a favicon.
+     *
+     * Two tints, one per row, so a two-row arm reads as two rows rather than one wavy one. */
+    sucker: '#c9871a', sucker2: '#b0720f', white: '#ffffff',
   };
 
   /* Where the darker freckles sit on the mantle, as fractions of its box. Fixed rather than random, so
