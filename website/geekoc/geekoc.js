@@ -117,14 +117,24 @@
   var POSES = {
     idle:    { swing: [0, 0, 0, 0, 0, 0, 0, 0], curl: [152, 124, 96, 69, -69, -96, -124, -152],
                len: 1, face: 'happy' },
-    wave:    { swing: [0, 0, 0, 0, 0, -6, -18, -44], curl: [152, 124, 96, 69, -69, -92, -92, -72],
-               len: 1, face: 'excited' },
-    point:   { swing: [0, 0, 0, 0, 0, -4, -12, 14], curl: [152, 124, 96, 69, -69, -90, -80, -28],
-               len: 1, face: 'curious' },
-    think:   { swing: [0, 0, 0, 0, 0, -8, -24, -38], curl: [152, 124, 96, 69, -69, -104, -120, -150],
-               len: 0.97, face: 'thinking' },
-    cheer:   { swing: [24, 15, 5, 0, 0, -5, -15, -24], curl: [146, 120, 94, 67, -67, -94, -120, -146],
-               len: 1.05, face: 'excited' },
+    /* The four below say something, so they have to SHOW it in a single frame. They used to be worth
+     * two or three percent of the picture against `idle` -- measured, by counting the pixels that
+     * differ -- which is nothing. Waving looked exactly like standing. The rig was built to be
+     * watched moving, where the arms trail and the smallest change is obvious; a README, a poster and
+     * a tour card are all still. So each of these now swings an outer arm far enough to change the
+     * SILHOUETTE, which is the only part of him that survives being shrunk. */
+    wave:    { swing: [0, 0, 0, 0, 0, -10, -28, -74], curl: [152, 124, 96, 69, -69, -92, -82, -46],
+               len: 1.14, face: 'excited' },
+    point:   { swing: [0, 0, 0, 0, 0, -4, -8, -26], curl: [152, 124, 96, 69, -69, -94, -90, 10],
+               len: 1.16, face: 'curious' },
+    /* Thinking is the one that cannot be said by raising an arm: the gesture for it is a hand at the
+     * chin, and an arm folded up there crosses the face. So he gathers instead -- every arm drawn in
+     * and tightly coiled, shorter than usual. Against an open, spread `idle` that reads immediately,
+     * and it reads as being wrapped up in something. */
+    think:   { swing: [-10, -6, 0, 0, 0, -16, -44, -70], curl: [128, 108, 88, 64, -64, -116, -150, -186],
+               len: 0.92, face: 'thinking' },
+    cheer:   { swing: [66, 30, 8, 0, 0, -8, -30, -66], curl: [52, 104, 92, 67, -67, -92, -104, -52],
+               len: 1.14, face: 'excited' },
     sleep:   { swing: [-22, -14, -5, 0, 0, 5, 14, 22], curl: [116, 96, 78, 56, -56, -78, -96, -116],
                len: 0.92, face: 'sleepy' },
     /* SWIMMING. The arms are gathered and barely curled, so they stream instead of hooking; the trail
@@ -134,8 +144,10 @@
     /* JETTING: everything pulled into a point behind him, the way an octopus actually moves fast. */
     jet:     { swing: [26, 18, 8, 2, -2, -8, -18, -26], curl: [22, 18, 14, 10, -10, -14, -18, -22],
                len: 1.16, face: 'excited' },
-    present: { swing: [5, 3, 0, 0, 0, 0, -3, -5], curl: [120, 100, 80, 57, -57, -80, -100, -120],
-               len: 1.05, face: 'proud' },
+    /* Presenting: both outer arms swept wide and nearly straight, the way someone says "here it is"
+     * with two open hands. The outer pair carries it; the inner six stay where they were. */
+    present: { swing: [44, 10, 0, 0, 0, 0, -10, -44], curl: [36, 104, 82, 57, -57, -82, -104, -36],
+               len: 1.12, face: 'proud' },
   };
 
   /* Mix two poses. This is the whole reason a pose is numbers: GeekOc can be 40% of the way from
@@ -373,8 +385,19 @@
       var ax = cx + base.spot * 78 * headK;
       var ay = cy + (146 - Math.abs(base.spot) * 22) * headK;
       var into = rad(base.dir + (pose.swing[i] || 0));
+      /* The push backwards has to end up INSIDE the body, and that is not the same as "opposite the
+       * way the arm leaves". Every resting direction heads downwards, so for years subtracting the
+       * arm's own heading moved the root upwards, under the mantle, which is what hid it.
+       *
+       * Swing an arm up to wave and the vertical half of that flips: the root is pushed DOWN instead,
+       * out past the skirt, and its blunt start shows under the body as a dark wedge. It only
+       * appeared once a pose raised an arm far enough to matter, which no pose used to do.
+       *
+       * So the sideways push stays as it was, and the vertical one is only ever allowed to move the
+       * root up. An arm that leaves upwards simply keeps its root on the skirt, where the body covers
+       * it anyway. */
       ax -= Math.cos(into) * 104 * headK;
-      ay -= Math.sin(into) * 104 * headK;
+      ay -= Math.max(0, Math.sin(into)) * 104 * headK;
       var spine = (opts.spines && opts.spines[i])
         || walk(ax, ay, ang, (base.len + 104) * (pose.len || 1) * armK, pose.curl[i] || 0,
                 opts.still ? 0 : 1, t * 1.6 + i * 0.8);
@@ -383,7 +406,13 @@
        * mouth height -- so the pair nearest the middle sat across his smile. Putting them behind fixes
        * that and the join in one move: nothing of an arm's blunt start, or its outline, ever crosses
        * the body. Depth is carried by shade and by draw order instead of by overlap, which is how the
-       * reference art does it too. */
+       * reference art does it too.
+       *
+       * This is also why a pose raises an arm UP AND OUT rather than up across the body. Drawing the
+       * raised arm in front was tried, so that it would not disappear behind the mantle, and it put
+       * the blunt start -- the 104 units that live inside the body -- as a dark slab across his
+       * chest. An arm swung outwards past the body's edge stays visible with none of that, because
+       * there is nothing in front of it to hide behind. */
       arms.push({ d: arm.d, tip: arm.tip, spine: arm.spine, norms: arm.norms, widths: arm.widths,
                   side: arm.side, back: true, i: i, spot: base.spot,
                   fill: Math.abs(base.spot) > 0.55 ? SKIN.deep : SKIN.dark });
