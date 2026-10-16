@@ -65,7 +65,9 @@ export function LoadingIntro({ onDone }: { onDone: () => void }) {
           {LAYERS.map(([name, src]) => {
             const f = INTRO[name];
             const [cx, cy] = INTRO.centres[name];
-            const origin = `${cx * 100}% ${cy * 100}%`;
+            // in pixels, as an array: React Native's string parser takes only whole-number
+            // percentages, so "50.13%" reads as x=50, y=13%, z=13% and throws
+            const origin = [cx * size, cy * size, 0];
             return [
               <Animated.Image key={name} source={src} resizeMode="contain"
                 style={[st.layer, { transformOrigin: origin }, poseStyle(t, f, size)]} />,

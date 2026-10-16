@@ -3,11 +3,12 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Image, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { InterestMap, MAP_EXPLORE, MAP_FIELD, MAP_LEARNED } from './interest-map';
 import { SignInButton } from './signin';
 import { Card, Empty, open, s, Section } from './ui';
 import { useApp } from '../lib/app-state';
 import { Achievement, earned, Earned, githubAchievements, TIER_COLORS } from '../lib/badges';
-import { Dict, lookup } from '../lib/interests';
+import { Dict, exploreTerms, lookup } from '../lib/interests';
 import { loadDictionary } from '../lib/profile';
 import { clearAll } from '../lib/storage';
 import { C } from '../lib/theme';
@@ -28,6 +29,8 @@ export function ModelPart() {
     await save({ ...settings, keywords: [...settings.keywords, w] });
   };
   const removeKeyword = (k: string) => save({ ...settings, keywords: settings.keywords.filter((x) => x !== k) });
+  const weights = profile?.weights ?? {};
+  const learned = Object.entries(weights).sort((a, b) => b[1] - a[1]).slice(0, 10);
   return (
     <>
       <Section>🔤 YOUR KEYWORDS</Section>
@@ -48,6 +51,15 @@ export function ModelPart() {
       </View>
       <Text style={s.small}>Green keywords carry their related words with them. Red ones are new to myGeeKy, so
         they only match as written.</Text>
+
+      <Section>🧭 YOUR INTEREST MAP</Section>
+      <InterestMap center={settings.username} field={profile?.field ?? []} learned={learned}
+                   explore={settings.exploreShare > 0 ? exploreTerms(weights, 3) : []} />
+      <Text style={s.small}>
+        <Text style={{ color: MAP_FIELD }}>●</Text> your research field   <Text style={{ color: MAP_LEARNED }}>●</Text> what
+        you&apos;re into (bigger = stronger)   <Text style={{ color: MAP_EXPLORE }}>◌</Text> new territory today. Tap a point for more.
+        {learned.length ? '' : '\nNothing learned yet: add keywords, or connect your phone to myGeeKy on your computer.'}
+      </Text>
 
       <Section>🧭 YOUR RESEARCH FIELD</Section>
       <Card>
