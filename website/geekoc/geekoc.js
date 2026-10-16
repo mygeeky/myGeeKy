@@ -628,6 +628,11 @@
       frontArms: [],
       arms: g.arms,
       headD: head(cx, cy, k),
+      /* The mantle's top and bottom in world units. The SVG writer puts a gradient on the head through
+       * <defs>; a canvas needs the two numbers instead, and working them out by re-parsing the path
+       * every frame would be silly when build() already knows them. -140 and +164 are the crown and
+       * the hem of the dome. */
+      headTop: round(cy - 140 * k), headBottom: round(cy + 164 * k),
       bellyY: round(cy + 42 * k), bellyRx: round(86 * k), bellyRy: round(60 * k),
       blushY: round(cy + 64 * k), blushX: round(82 * k),
       eyeL: eye(0), eyeR: eye(1),
