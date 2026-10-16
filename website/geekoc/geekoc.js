@@ -32,7 +32,14 @@
     light: '#9a5cf0', mid: '#8b45e0', dark: '#7430cf', deep: '#5f23b4',
     belly: '#ffc457', spot: '#6a28c0',
     outline: '#2b1053', outlineWidth: 7,
-    glass: '#7fd8ff', ink: '#1a1428', mouth: '#2b1053', sucker: '#ffe0a3', white: '#ffffff',
+    /* THE SUCKERS ARE DARK GOLD, and the obvious answer -- a bright yellow -- is the wrong one.
+     * Measured against the cream belly they sit on, a bright #ffc62e comes out at 1.20:1, the worst
+     * of every colour tried; this dark gold is 2.39:1. Value is what survives being shrunk to a
+     * README thumbnail or a favicon, and hue is not.
+     *
+     * This was lost once already: it went in, and then a later revert of the whole appearance took it
+     * back out with everything else, so he spent a while with pale cups nobody could see. */
+    glass: '#7fd8ff', ink: '#1a1428', mouth: '#2b1053', sucker: '#c9871a', white: '#ffffff',
   };
 
   /* Where the darker freckles sit on the mantle, as fractions of its box. Fixed rather than random, so
@@ -487,6 +494,27 @@
     out.push('</defs>');
 
     back.forEach(function (a) { out.push('<path d="' + a.d + '" fill="' + a.fill + '"/>'); });
+
+    /* The pale undersides and their gold suckers. These were missing from the SVG entirely: only the
+     * canvas renderer drew them, so every still exported from here -- the README's pictures, the
+     * poster's, the app tours' -- was an octopus with no suckers at all, which is the one detail that
+     * says "octopus" fastest. The canvas was right and this was not; both now lay them in the same
+     * place, over the arms and under the mantle, and the outer arms go down first so a crossing arm
+     * covers the one behind it rather than showing a band through it. */
+    var bands = g.arms.slice().sort(function (p, q) {
+      return Math.abs(q.spot) - Math.abs(p.spot);
+    }).map(function (arm) {
+      return underside(arm, s, Object.assign({
+        body: { cx: cx, cy: cy + 12, rx: 136, ry: 152 },
+      }, (opts || {}).band));
+    });
+    bands.forEach(function (u) {
+      out.push('<path d="' + u.d + '" fill="' + u.fill + '"/>');
+      u.dots.forEach(function (dot) {
+        out.push('<circle cx="' + round(dot.cx) + '" cy="' + round(dot.cy) +
+                 '" r="' + round(dot.r) + '" fill="' + s.sucker + '"/>');
+      });
+    });
 
     out.push('<path d="' + head(cx, cy) + '" fill="url(#' + id + '-skin)"/>');
     out.push('<ellipse cx="' + cx + '" cy="' + (cy + 42) + '" rx="86" ry="60" fill="#fff" opacity=".10"/>');

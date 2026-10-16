@@ -131,3 +131,31 @@ def test_the_poses_the_website_moves_with_are_left_alone():
     assert poses["swim"]["curl"] == [54, 48, 42, 34, -34, -42, -48, -54]
     assert poses["jet"]["swing"] == [26, 18, 8, 2, -2, -8, -18, -26]
     assert poses["jet"]["curl"] == [22, 18, 14, 10, -10, -14, -18, -22]
+
+
+# --------------------------------------------------------------------------- the suckers
+#
+# The single detail that says "octopus" fastest, and it went missing twice in different ways. First
+# the colour: dark gold went in, and a later revert of the whole appearance took it back out with
+# everything else, leaving pale cups nobody could see. Then the renderer: `markup` never drew the
+# undersides at all -- only the canvas did -- so every still exported for the README, the poster and
+# the app tours was an octopus with no suckers on it.
+GOLD = "#c9871a"
+
+
+def test_the_suckers_are_drawn_in_the_svg_and_not_only_on_the_canvas():
+    for pose in ("idle", "wave", "point", "swim", "jet"):
+        markup = _node("require(process.env.GEEKOC); const G = globalThis.GeekOc;"
+                       "process.stdout.write(G.svg({pose: process.env.POSE, face: 'happy',"
+                       " t: 1.4, still: true, size: 400}));", POSE=pose)
+        cups = markup.lower().count(GOLD)
+        assert cups >= 8, f"{pose}: only {cups} suckers in the SVG; the canvas draws them, this must too"
+        assert "ffc457" in markup.lower(), f"{pose}: the pale underside band is missing"
+
+
+def test_the_sucker_colour_stays_the_measured_one():
+    """Bright yellow measures 1.20:1 against the cream band and this gold 2.39:1. Value is what
+    survives a thumbnail; hue is not. Anything lighter than this has been tried and was wrong."""
+    skin = json.loads(_node("require(process.env.GEEKOC);"
+                            "console.log(JSON.stringify(globalThis.GeekOc.SKIN));"))
+    assert skin["sucker"].lower() == GOLD
