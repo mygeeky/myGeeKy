@@ -15,10 +15,10 @@
 </p>
 
 <p align="center">
-  Helps you <b>see</b> what is moving in your field.<br>
-  Helps you <b>learn</b> what comes next.<br>
-  Helps you <b>meet</b> the people working on the same problems.<br>
-  Helps you <b>catch</b> the opportunities while they are still open.
+  <a href="#-helps-you-see-what-is-moving-in-your-field">Helps you <b>see</b> what is moving in your field.</a><br>
+  <a href="#-helps-you-learn-what-comes-next">Helps you <b>learn</b> what comes next.</a><br>
+  <a href="#-helps-you-meet-the-people-working-on-the-same-problems">Helps you <b>meet</b> the people working on the same problems.</a><br>
+  <a href="#-helps-you-catch-the-opportunities-while-they-are-still-open">Helps you <b>catch</b> the opportunities while they are still open.</a>
 </p>
 
 <p align="center">
@@ -48,9 +48,10 @@
 <p align="center">
   <a href="https://youtu.be/fPQHOnYs8sA"><b>▶ Watch it in 2 minutes</b></a> ·
   <a href="https://mygeeky.org">Website</a> ·
-  <a href="#-learn-something-and-prove-it">Learn</a> ·
-  <a href="#-what-is-open-right-now">Chances</a> ·
-  <a href="#-your-whole-field-in-one-place">Your field</a> ·
+  <a href="#-helps-you-see-what-is-moving-in-your-field">See</a> ·
+  <a href="#-helps-you-learn-what-comes-next">Learn</a> ·
+  <a href="#-helps-you-meet-the-people-working-on-the-same-problems">Meet</a> ·
+  <a href="#-helps-you-catch-the-opportunities-while-they-are-still-open">Catch</a> ·
   <a href="#-why-it-is-not-like-the-others">Why it's different</a> ·
   <a href="#-try-it">Try it</a> ·
   <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md">The full guide</a>
@@ -58,7 +59,42 @@
 
 ---
 
-## 🌱 Learn something, and prove it
+## 👀 Helps you see what is moving in your field
+
+<table>
+<tr>
+<td width="20%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-hero.png" width="160" alt="GeekOc waving">
+</td>
+<td valign="middle">
+
+> *“I read the twenty sites, so you read one.”*
+
+**Papers** gaining citations fastest and the tools behind them · your field as a **daily market**, with what
+rose and fell since yesterday · **models** trending on Hugging Face · **news** from labs, journals and the press.
+
+Everything is ranked for *your* keywords, not for everybody's — and the **Model** tab shows you exactly what it
+thinks you care about, so you can correct it.
+
+<sub>It reads OpenAlex, arXiv, bioRxiv, Hacker News, PyPI, Hugging Face, Product Hunt, ORCID, Google Scholar —
+and GitHub. <b>GitHub is one of them, not the point.</b></sub>
+
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/research.png" width="250" alt="Research"><br><sub><b>Research</b><br>papers, and the tools behind them</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/market.png" width="250" alt="Market"><br><sub><b>Market</b><br>what rose and fell since yesterday</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/news.png" width="250" alt="News"><br><sub><b>News</b><br>labs, journals and the press</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/model.png" width="250" alt="Your model"><br><sub><b>Model</b><br>what it thinks you care about</sub></td>
+</tr>
+</table>
+
+---
+
+## 🌱 Helps you learn what comes next
 
 <table>
 <tr>
@@ -131,7 +167,42 @@ a question you think is wrong.
 
 ---
 
-## 🎯 What is open right now
+## 👥 Helps you meet the people working on the same problems
+
+<table>
+<tr>
+<td width="20%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-people.png" width="160" alt="GeekOc presenting">
+</td>
+<td valign="middle">
+
+> *“These four work on what you work on — and they tend to follow back.”*
+
+**People near your work**, with how likely each is to follow back · what they **pushed in the last hour** ·
+**repos worth your first pull request**, ranked by whether the maintainers actually merge outside work ·
+and **Signals**, a quiet room for the people who opted into one.
+
+There is also a private 🙏 *thank you* — **only the person you send it to can read it.** No public counter, no
+leaderboard, nothing for anyone else to see.
+
+**You follow, star and message by hand, always.** myGeeKy introduces; it never acts for you.
+
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/suggestions.png" width="250" alt="People"><br><sub><b>People</b><br>near your work, and likely to follow back</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/live.png" width="250" alt="Live"><br><sub><b>Live</b><br>who moved in the last hour</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/repos.png" width="250" alt="Repos"><br><sub><b>Repos</b><br>where your pull request has a chance</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/signals.png" width="250" alt="Signals"><br><sub><b>Signals</b><br>a quiet room, if you want one</sub></td>
+</tr>
+</table>
+
+---
+
+## 🎯 Helps you catch the opportunities while they are still open
 
 <table>
 <tr>
@@ -158,46 +229,6 @@ its own page, then shown to you in English. Filter by country, because that appl
 <td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-jobs.png" width="300" alt="Jobs"><br><sub><b>Jobs</b>, deadline first</sub></td>
 <td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-funding.png" width="300" alt="Funding"><br><sub><b>Funding</b> you can still apply for</sub></td>
 <td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-conferences.png" width="300" alt="Conferences"><br><sub><b>Conferences</b> before the abstract closes</sub></td>
-</tr>
-</table>
-
----
-
-## 🔭 Your whole field, in one place
-
-<table>
-<tr>
-<td width="20%" align="center" valign="middle">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-people.png" width="160" alt="GeekOc presenting">
-</td>
-<td valign="middle">
-
-> *“These four work on what you work on — and they tend to follow back.”*
-
-**Papers** gaining citations fastest and the tools behind them · **models** trending on Hugging Face ·
-**news** from labs, journals and the press · **repos** worth improving, ranked by whether their maintainers
-actually merge outside work · **people** near your work, and a private 🙏 *thank you* that **only the recipient
-can read**.
-
-<sub>It reads OpenAlex, arXiv, bioRxiv, Hacker News, PyPI, Hugging Face, Product Hunt, ORCID, Google Scholar —
-and GitHub. <b>GitHub is one of them, not the point.</b></sub>
-
-</td>
-</tr>
-</table>
-
-<table>
-<tr>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/research.png" width="250" alt="Research"><br><sub><b>Research</b><br>papers, and the tools behind them</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/market.png" width="250" alt="Market"><br><sub><b>Market</b><br>your field as a daily market</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/repos.png" width="250" alt="Repos"><br><sub><b>Repos</b><br>ranked by who actually merges</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/news.png" width="250" alt="News"><br><sub><b>News</b><br>labs, journals and the press</sub></td>
-</tr>
-<tr>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/suggestions.png" width="250" alt="People"><br><sub><b>People</b><br>likely to follow back</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/live.png" width="250" alt="Live"><br><sub><b>Live</b><br>who moved in the last hour</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/signals.png" width="250" alt="Signals"><br><sub><b>Signals</b><br>a quiet room, if you want one</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/model.png" width="250" alt="Your model"><br><sub><b>Model</b><br>what it knows about you</sub></td>
 </tr>
 </table>
 
