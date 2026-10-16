@@ -1,5 +1,5 @@
 // "Your interest map": you in the middle, your research field on the inner ring, what you're
-// into on the middle ring (bigger = stronger, gently pulsing), and today's new territory on a
+// into lately on the middle ring (bigger = stronger, gently pulsing), and today's new territory on a
 // dashed outer ring, all slowly turning. Tap a point for what it is. Same layout as the
 // desktop (InterestMap in src/mygeeky/gui/qt_panel.py).
 import { useEffect, useState } from 'react';
@@ -7,7 +7,7 @@ import { AccessibilityInfo, type LayoutChangeEvent, Pressable, StyleSheet, Text,
 import { C } from '../lib/theme';
 
 export const MAP_FIELD = '#7fd8ff';    // your research field
-export const MAP_LEARNED = '#ff6fd8';  // what you're into
+export const MAP_LEARNED = '#ff6fd8';  // what you're into lately
 export const MAP_EXPLORE = '#9b87ff';  // today's new territory
 
 type Node = { ring: 0 | 1 | 2; label: string; size: number; color: string; tip: string; angle: number };
@@ -29,7 +29,7 @@ function buildNodes(field: string[], learned: [string, number][], explore: strin
     ...field.slice(0, 6).map((t) => ({ ring: 0 as const, label: short(t), size: 8, color: MAP_FIELD,
       tip: `${t}\nYour research field (OpenAlex topics, Scholar interests, your topics)` })),
     ...learned.slice(0, 10).map(([t, w]) => ({ ring: 1 as const, label: t, size: 5 + 9 * (w / top), color: MAP_LEARNED,
-      tip: `${t}\nWhat you're into: strength ${w}, from your keywords and what your computer learned` })),
+      tip: `${t}\nWhat you're into lately: strength ${w}, learned from your clicks, follows, stars and forks` })),
     ...explore.slice(0, 4).map((t) => ({ ring: 2 as const, label: t, size: 6, color: MAP_EXPLORE,
       tip: `${t}\nNew territory today: outside your usual interests, on purpose` })),
   ];

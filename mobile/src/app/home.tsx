@@ -1,10 +1,10 @@
 // The whole app on one screen: what you picked on top, the orbit below (under
 // your thumb, clear of the phone's own buttons). Reading folds the orbit into a
-// slim dock; scrolling back to the top, or "Spin the rings", brings it back.
+// dock of two rows; scrolling back to the top, or double-tapping "Spin the rings", brings it back.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Linking, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, StyleSheet, Text,
          useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ import { fetchHeadlines } from '../lib/headlines';
 import { fetchLive } from '../lib/live';
 import { fetchLaunches, fetchRepos } from '../lib/market';
 import { fetchModels } from '../lib/models';
+import { recordInterest } from '../lib/model-repo';
 import { fetchPeople } from '../lib/people';
 import { fetchResearch } from '../lib/research';
 import { INNER, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
@@ -87,7 +88,7 @@ function RowView({ r, color, isOpen, onPick }: { r: Row; color: string; isOpen: 
       {isOpen && r.kind !== 'person' && card && r.login ? <PersonCard login={r.login} onClose={() => setCard(false)} /> : null}
       {isOpen && r.kind !== 'person' ? (
         <View style={st.actions}>
-          <Pressable onPress={() => open(r.url, r.kind, r.cat, r.explore)} style={[st.go, { backgroundColor: color }]}>
+          <Pressable onPress={() => { if (r.learn) recordInterest(r.learn); open(r.url, r.kind, r.cat, r.explore); }} style={[st.go, { backgroundColor: color }]}>
             <Text style={st.goText}>{r.action}</Text>
           </Pressable>
           {r.login ? (
@@ -171,7 +172,23 @@ export default function Home() {
     else if (y <= 0 && collapsed) setCollapsed(false);
   };
   const ringsH = collapsed ? 0 : orbitHeight(width);
-  const dot = Math.min(34, Math.floor((width - 12) / DOCK.length) - 4);      // every planet fits the dock
+  const perRow = Math.ceil(DOCK.length / 2);                                   // two rows, so each is a finger wide
+  const dot = Math.min(46, Math.floor((width - 12) / perRow) - 14);
+  // the rings open on a double tap, so a near miss on a dock button doesn't spin them
+  const lastTap = useRef(0);
+  const [tapAgain, setTapAgain] = useState(false);
+  const spinTap = () => {
+    const now = Date.now();
+    if (now - lastTap.current < 400) {
+      lastTap.current = 0;
+      setTapAgain(false);
+      setCollapsed(false);
+    } else {
+      lastTap.current = now;
+      setTapAgain(true);
+      setTimeout(() => setTapAgain(false), 1500);
+    }
+  };
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
@@ -222,24 +239,27 @@ export default function Home() {
 
       {collapsed ? (
         <View style={st.dock}>
-          <Pressable onPress={() => setCollapsed(false)} style={st.unfold} accessibilityLabel="Show the rings">
+          <Pressable onPress={spinTap} style={st.unfold} accessibilityLabel="Show the rings" accessibilityHint="Double-tap"
+                     onAccessibilityTap={() => setCollapsed(false)}>
             <Ionicons name="chevron-up" size={16} color={C.muted} />
-            <Text style={st.unfoldText}>Spin the rings</Text>
+            <Text style={st.unfoldText}>{tapAgain ? 'Tap again to spin the rings' : 'Double-tap to spin the rings'}</Text>
           </Pressable>
-          <View style={st.dockRow}>
-            {DOCK.map((id) => {
-              const s = SECTIONS[id];
-              const on = sel === id;
-              return (
-                <Pressable key={id} onPress={() => pick(id)} style={st.dockBtn} accessibilityRole="button"
-                           accessibilityLabel={`${s.label}${counts[id] ? `, ${counts[id]} new` : ''}`}>
-                  <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: s.color, backgroundColor: on ? s.color : '#1c1c2c' }]}>
-                    <Ionicons name={s.icon} size={Math.round(dot * 0.44)} color={on ? '#0d0d16' : s.color} />
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+          {[DOCK.slice(0, perRow), DOCK.slice(perRow)].map((row, r) => (
+            <View key={r} style={st.dockRow}>
+              {row.map((id) => {
+                const s = SECTIONS[id];
+                const on = sel === id;
+                return (
+                  <Pressable key={id} onPress={() => pick(id)} style={({ pressed }) => [st.dockBtn, pressed && { opacity: 0.6 }]}
+                             accessibilityRole="button" accessibilityLabel={`${s.label}${counts[id] ? `, ${counts[id]} new` : ''}`}>
+                    <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: s.color, backgroundColor: on ? s.color : '#1c1c2c' }]}>
+                      <Ionicons name={s.icon} size={Math.round(dot * 0.46)} color={on ? '#0d0d16' : s.color} />
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
         </View>
       ) : (
         <View style={{ height: ringsH }}>
@@ -292,7 +312,7 @@ const st = StyleSheet.create({
   unfold: { height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   unfoldText: { color: C.muted, fontSize: 12, fontWeight: '700' },
   dockRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  dockBtn: { flex: 1, height: 48, alignItems: 'center', justifyContent: 'center' },
+  dockBtn: { flex: 1, minHeight: 58, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 },
   dockDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   fold: { position: 'absolute', right: 10, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.06)',
           alignItems: 'center', justifyContent: 'center' },

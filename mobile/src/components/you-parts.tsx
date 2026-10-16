@@ -4,11 +4,13 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Image, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { InterestMap, MAP_EXPLORE, MAP_FIELD, MAP_LEARNED } from './interest-map';
+import { AucGauge, aucVerdict, ExploreDonut, StatTiles, TrendChart, WeightBars } from './model-plots';
 import { SignInButton } from './signin';
-import { Card, Empty, open, s, Section } from './ui';
+import { Card, Empty, open, s, Section, timeAgo } from './ui';
 import { useApp } from '../lib/app-state';
 import { Achievement, earned, Earned, githubAchievements, TIER_COLORS } from '../lib/badges';
-import { Dict, exploreTerms, lookup } from '../lib/interests';
+import { Dict, lookup } from '../lib/interests';
+import { badgeCounts, type Brain, cachedBrain, connectModel, disconnectModel, MODEL_TOKEN_PAGE, modelLink, queuedUsage, syncModel } from '../lib/model-repo';
 import { loadDictionary } from '../lib/profile';
 import { clearAll } from '../lib/storage';
 import { C } from '../lib/theme';
@@ -29,8 +31,6 @@ export function ModelPart() {
     await save({ ...settings, keywords: [...settings.keywords, w] });
   };
   const removeKeyword = (k: string) => save({ ...settings, keywords: settings.keywords.filter((x) => x !== k) });
-  const weights = profile?.weights ?? {};
-  const learned = Object.entries(weights).sort((a, b) => b[1] - a[1]).slice(0, 10);
   return (
     <>
       <Section>🔤 YOUR KEYWORDS</Section>
@@ -53,13 +53,7 @@ export function ModelPart() {
         they only match as written.</Text>
 
       <Section>🧭 YOUR INTEREST MAP</Section>
-      <InterestMap center={settings.username} field={profile?.field ?? []} learned={learned}
-                   explore={settings.exploreShare > 0 ? exploreTerms(weights, 3) : []} />
-      <Text style={s.small}>
-        <Text style={{ color: MAP_FIELD }}>●</Text> your research field   <Text style={{ color: MAP_LEARNED }}>●</Text> what
-        you&apos;re into (bigger = stronger)   <Text style={{ color: MAP_EXPLORE }}>◌</Text> new territory today. Tap a point for more.
-        {learned.length ? '' : '\nNothing learned yet: add keywords, or connect your phone to myGeeKy on your computer.'}
-      </Text>
+      <ModelMap username={settings.username} dict={dict} />
 
       <Section>🧭 YOUR RESEARCH FIELD</Section>
       <Card>
@@ -80,12 +74,175 @@ export function ModelPart() {
   );
 }
 
+// Your interest map, from your private data repo -- the same map as the desktop's Model tab.
+function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
+  const [brain, setBrain] = useState<Brain | null>(null);
+  const [linked, setLinked] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState('');
+  const [repo, setRepo] = useState(username ? `${username}/mygeeky-data` : '');
+  const [token, setToken] = useState('');
+
+  const refresh = async () => {
+    setBusy(true);
+    try {
+      const r = await syncModel(dict);
+      if (r) { setBrain(r.brain); setNote(r.sent ? `Sent ${r.sent} thing${r.sent === 1 ? '' : 's'} you opened here to your computers.` : ''); }
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : 'Couldn\'t reach your data repo. Showing the last copy.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  useEffect(() => {
+    (async () => {
+      const link = await modelLink();
+      setLinked(!!link);
+      if (!link) return;
+      setRepo(link.repo);
+      const cached = await cachedBrain();
+      if (cached?.data) setBrain(cached.data);
+      if (dict) refresh();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dict]);
+
+  const connect = async () => {
+    setBusy(true);
+    setNote('Checking the token…');
+    try {
+      await connectModel(repo, token);
+      setToken('');
+      setLinked(true);
+      setNote('');
+      await refresh();
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : 'That didn\'t work. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const disconnect = () => Alert.alert('Disconnect your data repo?', 'The phone forgets its token and the map. Your repo is not touched.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Disconnect', style: 'destructive', onPress: async () => { await disconnectModel(); setBrain(null); setLinked(false); setNote(''); } },
+  ]);
+
+  if (linked === null) return null;
+  if (!linked) {
+    return (
+      <View style={st.scan}>
+        <Text style={st.scanTitle}>Your map lives in your private data repo</Text>
+        <Text style={st.scanSub}>
+          It&apos;s what myGeeKy learned on your computers (every click, follow, star and fork), kept in the private repo
+          they sync to. Give this phone its own token for it:{'\n'}
+          1. On GitHub: Fine-grained token → Only select repositories → your data repo → Permissions → Contents → Read and
+          write.{'\n'}
+          2. Paste it here and tap Connect. What you open on the phone then teaches your computers too.
+        </Text>
+        <Pressable onPress={() => Linking.openURL(MODEL_TOKEN_PAGE)} style={[st.add, st.tokenButton]}>
+          <Text style={st.addText}>Make the token on GitHub ↗</Text>
+        </Pressable>
+        <TextInput style={[st.input, st.field]} value={repo} onChangeText={setRepo} autoCapitalize="none" autoCorrect={false}
+                   placeholder="you/mygeeky-data" placeholderTextColor={C.muted} />
+        <TextInput style={[st.input, st.field]} value={token} onChangeText={setToken} autoCapitalize="none" autoCorrect={false}
+                   secureTextEntry placeholder="github_pat_…" placeholderTextColor={C.muted} />
+        <Pressable onPress={connect} disabled={busy || !token.trim()} style={[st.add, st.tokenButton, (busy || !token.trim()) && { opacity: 0.5 }]}>
+          <Text style={st.addText}>{busy ? 'Connecting…' : 'Connect'}</Text>
+        </Pressable>
+        {note ? <Text style={[st.scanSub, { color: C.red }]}>{note}</Text> : null}
+      </View>
+    );
+  }
+  if (!brain) return <Text style={s.small}>{busy ? 'Reading your data repo…' : note || 'No map yet.'}</Text>;
+  const t = brain.taught;
+  const history = brain.history ?? [];
+  const latest = history.at(-1);
+  const prev = history.at(-2);
+  const auc = latest?.auc ?? null;
+  const [grade, explanation] = aucVerdict(auc);
+  const diff = auc !== null && prev?.auc != null ? auc - prev.auc : null;
+  const delta = diff === null ? '' : `${diff > 0.001 ? '▲' : diff < -0.001 ? '▼' : '●'} ${diff >= 0 ? '+' : ''}${diff.toFixed(3)} since the previous retrain`;
+  const nTrain = latest?.n_train ?? 0;
+  const nPos = latest?.n_pos ?? 0;
+  return (
+    <>
+      <InterestMap center={brain.user || username} field={brain.field} learned={brain.learned} explore={brain.explore} />
+      <Text style={s.small}>
+        <Text style={{ color: MAP_FIELD }}>●</Text> your research field   <Text style={{ color: MAP_LEARNED }}>●</Text> what
+        you&apos;re into lately (bigger = stronger)   <Text style={{ color: MAP_EXPLORE }}>◌</Text> new territory today. Tap a
+        point for more.
+        {brain.learned.length ? '' : '\nNothing learned yet: click people, repos and news, or follow, star and fork on GitHub, and your map grows.'}
+      </Text>
+
+      <Section>🧠 WHAT TEACHES IT (LAST 30 DAYS)</Section>
+      <StatTiles tiles={[[String(t.clicks), 'clicks'], [String(t.follows), 'follows'], [String(t.stars), 'stars'], [String(t.forks), 'forks']]} />
+      <Text style={[s.small, { marginTop: 6 }]}>
+        {brain.learning
+          ? `Each action fades to half after ${brain.halfLife} days, so your map follows where your work is going. Forks count most, then follows and stars, then clicks.`
+          : 'Learning is off (mygeeky config set interest_learning true).'}
+      </Text>
+
+      <Section>🔭 ROOM TO EXPLORE</Section>
+      <View style={st.hero}>
+        <ExploreDonut share={brain.exploreShare} />
+        <Text style={[s.small, { flex: 1 }]}>
+          {brain.exploreShare > 0
+            ? `${Math.round(brain.exploreShare * 100)}% of every list (People, Repos, News, Research) is kept for things outside your usual interests, marked 🔭.${brain.explore.length ? ` Today: ${brain.explore.join(', ')}.` : ''}`
+            : 'Exploration is off (mygeeky config set explore_share 0.2 turns it on).'}
+        </Text>
+      </View>
+
+      <Section>👥 WHO FOLLOWS YOU BACK</Section>
+      <View style={st.hero}>
+        <AucGauge auc={auc} />
+        <View style={{ flex: 1 }}>
+          <Text style={st.grade}>{grade}</Text>
+          <Text style={s.small}>{explanation}</Text>
+          {delta ? <Text style={[s.small, { marginTop: 4 }]}>{delta}</Text> : null}
+        </View>
+      </View>
+      <StatTiles tiles={[[String(nTrain), 'examples'], [String(nPos), 'follow-backs'],
+        [`${nTrain ? Math.round((100 * nPos) / nTrain) : 0}%`, 'follow-back rate'], [String(brain.history.length), 'retrains']]} />
+      <Text style={st.sub}>WHAT IT HAS LEARNED</Text>
+      <WeightBars weights={brain.weights} />
+      <Text style={s.small}>Right = makes a follow-back more likely; left = less likely.</Text>
+      <Text style={st.sub}>GETTING SHARPER?</Text>
+      <TrendChart history={brain.history} />
+      <Text style={[s.small, { marginTop: 4 }]}>
+        {latest ? `Last retrained ${timeAgo(latest.timestamp)}. Follow people you like, then run mygeeky learn -- every follow-back you get teaches it more. Tap the chart for details.`
+          : 'No retrains yet -- run mygeeky bootstrap, then mygeeky learn.'}
+      </Text>
+
+      <Text style={[s.small, { marginTop: 6 }]}>
+        From {brain.repo}{brain.syncedAt ? ` · your computers synced ${timeAgo(brain.syncedAt)}` : ''}.{' '}
+        <Text style={st.link} onPress={busy ? undefined : refresh}>{busy ? 'Refreshing…' : 'Refresh'}</Text>{'   '}
+        <Text style={[st.link, { color: C.muted }]} onPress={disconnect}>Disconnect</Text>
+      </Text>
+      {note ? <Text style={[s.small, { marginTop: 4 }]}>{note}</Text> : null}
+    </>
+  );
+}
+
 export function BadgesPart() {
   const { settings } = useApp();
   const [mine, setMine] = useState<Earned[]>([]);
   const [gh, setGh] = useState<Achievement[]>([]);
   useEffect(() => {
-    earned(settings?.keywords.length ?? 0, settings?.desktopBadges ?? []).then(setMine);
+    (async () => {
+      const show = async (brain: Brain | null | undefined) => {
+        // connected: the desktop's own counts (achievements.counts), your computers and this phone together
+        const fromRepo = brain?.usage ? badgeCounts(brain, await queuedUsage()) : undefined;
+        setMine(await earned(settings?.keywords.length ?? 0, settings?.desktopBadges ?? [], fromRepo));
+      };
+      const cached = await cachedBrain();
+      await show(cached?.data);
+      if (await modelLink()) {                          // then fresh from your data repo
+        try {
+          const r = await syncModel(await loadDictionary());
+          if (r) await show(r.brain);
+        } catch { /* offline: the saved copy stays */ }
+      }
+    })();
     if (settings?.username) githubAchievements(settings.username).then(setGh);
   }, [settings]);
   return (
@@ -220,5 +377,10 @@ const st = StyleSheet.create({
   setupRow: { flexDirection: 'row', paddingVertical: 4, gap: 10 },
   setupKey: { color: C.muted, fontSize: 13, width: 92 },
   setupVal: { color: C.text, fontSize: 13, flex: 1 },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 },
+  grade: { color: C.text, fontSize: 18, fontWeight: '800', marginBottom: 2 },
+  sub: { color: C.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginTop: 14, marginBottom: 4 },
+  tokenButton: { alignSelf: 'flex-start', paddingVertical: 10, marginTop: 10 },
+  field: { marginTop: 10, flex: 0 },
   medal: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
 });

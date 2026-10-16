@@ -5,6 +5,7 @@ import { Repo } from './github';
 import { Headline, kindOf } from './headlines';
 import { Event } from './live';
 import { Launch } from './market';
+import type { Learn } from './model-repo';
 import { Model } from './models';
 import { Person } from './people';
 import { Paper } from './research';
@@ -39,6 +40,7 @@ export type Row = {
   id: string; title: string; sub: string; right?: string; url: string; action: string;
   avatar?: string; letter?: string; letterBg?: string; letterFg?: string; login?: string;
   kind: string; cat?: string; explore?: boolean;      // what opening it counts as, for badges
+  learn?: Learn;                                      // what it teaches your model (as the desktop's record_click)
 };
 
 const fmt = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n));
@@ -53,7 +55,8 @@ function eventRow(e: Event): Row {
 }
 
 function personRow(p: Person, why = p.why): Row {
-  return { id: `p${p.login}`, title: p.login, sub: why, url: profile(p.login), action: 'At a glance', avatar: p.avatar, kind: 'person', login: p.login };
+  return { id: `p${p.login}`, title: p.login, sub: why, url: profile(p.login), action: 'At a glance', avatar: p.avatar, kind: 'person', login: p.login,
+    learn: { kind: 'person', text: `${p.why} ${p.repo ?? ''}`, source: p.login } };
 }
 
 export type Feeds = {
@@ -84,6 +87,7 @@ export function rowsFor(id: SectionId, f: Feeds): Row[] {
           right: timeAgo(h.published), url: h.link, action: `Read on ${h.source}`,
           letter: l, letterBg: BADGES[l].color, letterFg: BADGES[l].text,
           kind: l === 'P' ? 'paper' : 'headline', cat: h.category, explore: h.explore,
+          learn: { kind: 'news', text: h.title, topics: h.match, source: h.id },
         };
       });
     case 'papers':
@@ -91,12 +95,14 @@ export function rowsFor(id: SectionId, f: Feeds): Row[] {
         id: `r${i}${p.id}`, title: p.title, sub: `🔥 ${p.velocity}/month · ${p.venue || 'preprint'} · cited ${p.cited}`,
         right: p.date ? p.date.slice(0, 4) : '', url: p.url, action: 'Read the paper',
         letter: 'P', letterBg: BADGES.P.color, letterFg: BADGES.P.text, kind: 'paper', cat: 'science',
+        learn: { kind: 'news', text: p.title, topics: p.match, source: p.id },
       }));
     case 'repos':
       return (f.repos ?? []).map((r, i) => ({
         id: `g${r.full_name}`, title: r.full_name.split('/')[1], sub: [r.full_name.split('/')[0], r.language, `pushed ${timeAgo(r.pushed_at)}`].filter(Boolean).join(' · '),
         right: `★ ${fmt(r.stargazers_count)}`, url: r.html_url, action: 'Open on GitHub',
         letter: String(i + 1), letterBg: 'rgba(255,255,255,0.10)', letterFg: '#f0f0f5', kind: 'repo',
+        learn: { kind: 'repo', text: `${r.full_name.replace('/', ' ')} ${r.description ?? ''} ${r.language ?? ''}`, topics: r.topics ?? [], source: r.full_name },
       }));
     case 'models': {
       const seen = new Set<string>();
@@ -104,6 +110,7 @@ export function rowsFor(id: SectionId, f: Feeds): Row[] {
         id: `m${m.id}`, title: m.id.split('/')[1] ?? m.id, sub: [m.id.split('/')[0], m.pipeline.replace(/-/g, ' ')].filter(Boolean).join(' · '),
         right: `♥ ${fmt(m.likes)}`, url: m.url, action: 'Open on Hugging Face',
         letter: 'M', letterBg: '#ffc457', letterFg: '#1a1a1a', kind: 'model', cat: 'ai',
+        learn: { kind: 'repo', text: `${m.id.replace('/', ' ')} ${m.pipeline}`, topics: m.tags, source: m.id },
       }));
     }
     case 'launches':

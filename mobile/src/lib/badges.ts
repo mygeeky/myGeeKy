@@ -3,6 +3,7 @@
 // links), plus your GitHub achievements read from your public profile.
 import { fetchT } from './net';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { queueUsage } from './model-repo';
 import { isStale, readCache, writeCache } from './storage';
 
 const USAGE_KEY = 'mygeeky.usage';
@@ -54,19 +55,24 @@ function update(fn: (u: Usage) => void) {
 export function logOpenToday() {
   const day = new Date().toISOString().slice(0, 10);
   update((u) => {
-    if (!u.days.includes(day)) u.days.push(day);
+    if (!u.days.includes(day)) {
+      u.days.push(day);
+      queueUsage({ what: 'open' });       // your computers count it too, once your data repo is connected
+    }
   });
 }
 
 /** kind: headline | news | paper | model | repo | person | launch */
 export function logClick(kind: string, cat?: string, explore?: boolean) {
   update((u) => u.clicks.push({ kind, cat, explore }));
+  queueUsage({ what: 'click', kind, cat, explore });
 }
 
 export type Earned = { id: string; emoji: string; name: string; what: string; count: number; tier: string; next: number | null };
 
-/** Every badge, at the best tier earned here or on your computer. */
-export async function earned(keywords: number, desktop: string[] = []): Promise<Earned[]> {
+/** Every badge, at the best tier earned here or on your computer. With your data repo connected,
+ *  `fromRepo` holds the desktop's own counts (your computers and this phone together). */
+export async function earned(keywords: number, desktop: string[] = [], fromRepo?: Record<string, number>): Promise<Earned[]> {
   const fromDesktop: Record<string, number> = {};
   for (const b of desktop) {
     const [id, tier] = b.split(':');
@@ -74,7 +80,7 @@ export async function earned(keywords: number, desktop: string[] = []): Promise<
   }
   const u = await load();
   const k = (x: string) => u.clicks.filter((c) => c.kind === x).length;
-  const counts: Record<string, number> = {
+  const counts: Record<string, number> = fromRepo ?? {
     active: u.days.length, clicker: u.clicks.length, reader: k('headline') + k('news'), analyst: k('paper'),
     ai: u.clicks.filter((c) => c.cat === 'ai' || c.kind === 'model').length, models: k('model'),
     explorer: u.clicks.filter((c) => c.explore).length, wordsmith: keywords, early: u.first < '2027-01-01' ? 1 : 0,
