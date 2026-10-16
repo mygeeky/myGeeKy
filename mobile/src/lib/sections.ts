@@ -1,6 +1,7 @@
 // The orbit's planets: what each one is, and its list of things, built from the feeds.
 import type Ionicons from '@expo/vector-icons/Ionicons';
 import { timeAgo } from './app-state';
+import type { BoardRow } from './board';
 import type { Contribution } from './contribute';
 import { Repo } from './github';
 import { Headline, kindOf } from './headlines';
@@ -14,7 +15,7 @@ import { C, BADGES, tint } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
 export type SectionId = 'live' | 'people' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
-  | 'chances' | 'you';
+  | 'chances' | 'you' | 'market';     // market: Repos → 📈 Rising (not a planet of its own)
 
 export type Section = { id: SectionId; label: string; color: string; icon: IconName; about: string };
 
@@ -30,6 +31,7 @@ export const SECTIONS: Record<SectionId, Section> = {
   models: { id: 'models', label: 'AI models', color: '#ffc457', icon: 'hardware-chip-outline', about: 'Trending on Hugging Face: your field first, then everywhere.' },
   launches: { id: 'launches', label: 'Launches', color: '#ff6fd8', icon: 'rocket-outline', about: 'Today on Product Hunt, the ones in your field first.' },
   chances: { id: 'chances', label: 'Chances', color: '#f472b6', icon: 'briefcase-outline', about: 'Verified jobs, funding and conferences, checked by hand.' },
+  market: { id: 'market', label: 'Repos', color: '#7fd8ff', icon: 'trending-up-outline', about: 'The popular, active projects your field runs on, ranked by momentum like a market board.' },
   you: { id: 'you', label: 'You', color: '#ffd24a', icon: 'person-outline', about: 'Your model, your badges and your settings.' },
 };
 
@@ -43,6 +45,7 @@ export type Row = {
   kind: string; cat?: string; explore?: boolean;      // what opening it counts as, for badges
   more?: { text: string[]; links: [string, string][] };  // shown when the row is open (a summary, a repo's why and starter issues)
   section?: string;                                     // a heading above the first row of each part, as on the desktop
+  board?: BoardRow;                                     // a row of the 📈 Rising board: drawn with its rank, movement and sparkline
   learn?: Learn;                                      // what it teaches your model (as the desktop's record_click)
 };
 
@@ -68,6 +71,7 @@ export type Feeds = {
   headlines?: { items: Headline[] } | null;
   research?: { rising: Paper[]; tools: Paper[] } | null;
   repos?: { contribute: Contribution[] | null; popular: Repo[] } | null;
+  market?: { rows: BoardRow[]; updatedAt: string } | null;
   models?: { field: Model[]; trending: Model[] } | null;
   launches?: Launch[] | null;
 };
@@ -125,6 +129,16 @@ export function rowsFor(id: SectionId, f: Feeds): Row[] {
         letter: String(i + 1), letterBg: tint(0.10), letterFg: C.text, kind: 'repo',
         learn: { kind: 'repo', text: `${r.full_name.replace('/', ' ')} ${r.description ?? ''} ${r.language ?? ''}`, topics: r.topics ?? [], source: r.full_name },
       }));
+    case 'market':
+      return (f.market?.rows ?? []).map((b) => {
+        const [owner, name] = b.repo.split('/');
+        return {
+          id: `b${b.repo}`, title: name, sub: owner, url: b.url, action: 'Open on GitHub', avatar: b.avatar || undefined,
+          letter: '📈', letterBg: tint(0.10), letterFg: C.text, kind: 'repo', board: b,
+          more: b.description ? { text: [b.description, b.pypi ? `on PyPI as ${b.pypi}` : ''].filter(Boolean), links: [] } : undefined,
+          learn: { kind: 'repo', text: `${b.repo.replace('/', ' ')} ${b.description} ${b.language}`, source: b.repo },
+        };
+      });
     case 'models': {
       const seen = new Set<string>();
       return [...(f.models?.field ?? []).map((m) => [m, true] as const), ...(f.models?.trending ?? []).map((m) => [m, false] as const)]

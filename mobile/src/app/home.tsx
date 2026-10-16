@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, LayoutAnimation, Linking, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, StyleSheet, Text,
          useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Polyline } from 'react-native-svg';
 import { Orbit, orbitHeight } from '../components/orbit';
 import { PersonCard } from '../components/person-card';
 import { ChancesView } from '../components/chances-view';
@@ -23,6 +24,7 @@ import { fetchLive } from '../lib/live';
 import { fetchLaunches, fetchRepos } from '../lib/market';
 import { fetchModels } from '../lib/models';
 import { adminLogin } from '../lib/admin';
+import { type BoardRow, loadBoard } from '../lib/board';
 import { loadContributions } from '../lib/contribute';
 import { recordInterest } from '../lib/model-repo';
 import { loadSeen, markSeen } from '../lib/seen';
@@ -35,6 +37,8 @@ import { C, ink, tint } from '../lib/theme';
 
 
 const HINT_KEY = 'mygeeky.orbitHinted';
+type RepoPart = 'help' | 'rising';
+const REPO_PARTS: [RepoPart, string][] = [['help', '🛠 Help out'], ['rising', '📈 Rising']];
 type YouPart = 'model' | 'badges' | 'more' | 'ideas' | 'admin';
 const YOU_PARTS: [YouPart, string][] = [['model', 'Model'], ['badges', 'Badges'], ['more', 'Settings'], ['ideas', 'Ideas']];
 const DOCK: SectionId[] = ['you', ...INNER, ...OUTER];
@@ -81,6 +85,7 @@ function RowView({ r, color, isOpen, onPick, isNew = false }: { r: Row; color: s
   return (
     <View style={[st.rowBox, isOpen && st.rowOpen, !isNew && !isOpen && { opacity: 0.72 }]}>
       <Pressable onPress={onPick} style={st.row} accessibilityRole="button" accessibilityLabel={`${r.title}. ${r.sub}`}>
+        {r.board ? <BoardRank b={r.board} /> : null}
         {r.avatar ? (
           <Image source={{ uri: `${r.avatar}${r.avatar.includes('?') ? '&' : '?'}s=80` }} style={st.avatar} />
         ) : (
@@ -91,7 +96,9 @@ function RowView({ r, color, isOpen, onPick, isNew = false }: { r: Row; color: s
           <Text style={st.sub} numberOfLines={isOpen ? undefined : 1}>{r.sub}</Text>
         </View>
         {r.right ? <Text style={st.right}>{r.right}</Text> : null}
+        {r.board ? <Spark values={r.board.spark} trend={r.board.trend} /> : null}
       </Pressable>
+      {r.board ? <BoardStats b={r.board} /> : null}
       {isOpen && r.more ? (
         <View style={{ paddingBottom: 8, gap: 6 }}>
           {r.more.text.map((t) => <Text key={t} style={st.sub}>{t}</Text>)}
@@ -119,6 +126,46 @@ function RowView({ r, color, isOpen, onPick, isNew = false }: { r: Row; color: s
   );
 }
 
+const UP = '#34d399';
+const DOWN = '#f87171';
+const count = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n));
+
+/** The board's rank and movement since the last ranked day (the desktop's MarketRow). */
+function BoardRank({ b }: { b: BoardRow }) {
+  const [text, color] = b.movement === 'new' ? ['NEW', C.cyan] : typeof b.movement === 'number' && b.movement > 0 ? [`▲${b.movement}`, UP]
+    : typeof b.movement === 'number' && b.movement < 0 ? [`▼${-b.movement}`, DOWN] : ['–', C.muted];
+  return (
+    <View style={{ width: 34, alignItems: 'center' }}>
+      <Text style={{ color: C.text, fontWeight: '800', fontSize: 14 }}>#{b.rank}</Text>
+      <Text style={{ color, fontWeight: '800', fontSize: 11 }}>{text}</Text>
+    </View>
+  );
+}
+
+/** ★ stars (+ this week) · ↓ downloads/wk (▲ change) · commits/4wk -- coloured as on the desktop. */
+function BoardStats({ b }: { b: BoardRow }) {
+  return (
+    <Text style={[st.sub, { marginTop: -6, marginBottom: 10, marginLeft: 46 }]}>
+      ★ {count(b.stars)}{b.stars_week ? <Text style={{ color: b.stars_week > 0 ? UP : DOWN }}> {b.stars_week > 0 ? '+' : ''}{b.stars_week}</Text> : null}
+      {b.downloads_week !== null ? <Text> · ↓ {count(b.downloads_week)}/wk{b.downloads_change !== null
+        ? <Text style={{ color: b.downloads_change >= 0 ? UP : DOWN }}> {b.downloads_change >= 0 ? '▲' : '▼'}{Math.round(Math.abs(b.downloads_change) * 100)}%</Text> : null}</Text> : null}
+      {b.commits_4w !== null ? ` · ${b.commits_4w} commits/4wk` : ''}
+    </Text>
+  );
+}
+
+/** Twelve weeks of downloads (or commits) as a small line, green going up and red going down. */
+function Spark({ values, trend }: { values: number[]; trend: 'up' | 'down' | null }) {
+  if (values.length < 2) return null;
+  const [w, h] = [54, 22];
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - 2 - ((v - lo) / (hi - lo || 1)) * (h - 4)}`).join(' ');
+  return (
+    <Svg width={w} height={h}><Polyline points={pts} fill="none" stroke={trend === 'up' ? UP : trend === 'down' ? DOWN : C.muted} strokeWidth={1.8} /></Svg>
+  );
+}
+
 export default function Home() {
   const { settings, token } = useApp();
   const insets = useSafeAreaInsets();
@@ -131,6 +178,7 @@ export default function Home() {
     : Promise.resolve({ followBack: [], field: [] }));
   const headlines = useFeed('headlines', 3, (p) => fetchHeadlines(p.weights));
   const research = useFeed('research', 12, (p) => fetchResearch(p));
+  const market = useFeed('market-board', 6, async () => (await loadBoard().catch(() => null)) ?? { rows: [], updatedAt: '' });
   const repos = useFeed('repos-contribute', 3, async (p) => {   // from your computers' runs; else popular in your field
     const contribute = await loadContributions().catch(() => null);
     return { contribute, popular: contribute ? [] : await fetchRepos(p.weights, token) };
@@ -139,7 +187,7 @@ export default function Home() {
   const launches = useFeed('launches', 6, (p) => fetchLaunches(p.weights));
   const feedsOf: Record<SectionId, { loading: boolean; error: string | null; at: string | null; refresh: () => Promise<void> }[]> = {
     live: [live, people], activity: [live], people: [people], signals: [], news: [headlines], papers: [research],
-    repos: [repos], models: [models], launches: [launches], you: [], grow: [], chances: [],
+    repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market],
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
@@ -148,6 +196,7 @@ export default function Home() {
     : user ? 'live' : 'papers');                          // without GitHub, start where your field is
   const [collapsed, setCollapsed] = useState(params.fold === '1');
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
+  const [repoPart, setRepoPart] = useState<RepoPart>('help');
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' ? params.part : 'model');
   // the maker's Admin part: only for the account GitHub says owns the connected data repo (lib/admin.ts)
   const [admin, setAdmin] = useState<string | null>(null);
@@ -169,7 +218,7 @@ export default function Home() {
 
   const data = {
     live: live.data, people: people.data, headlines: headlines.data, research: research.data,
-    repos: repos.data, models: models.data, launches: launches.data,
+    repos: repos.data, models: models.data, launches: launches.data, market: market.data,
   };
   // what is new to you (lib/seen.ts): the planets count only those
   const [seen, setSeen] = useState<Set<string> | null>(null);
@@ -179,23 +228,25 @@ export default function Home() {
   const counts = useMemo(() => {
     const c: Partial<Record<SectionId, number>> = {};
     for (const id of [...INNER, ...OUTER]) c[id] = rowsFor(id, data).filter((r) => !seen?.has(r.id)).length;
+    c.repos = (c.repos ?? 0) + rowsFor('market', data).filter((r) => !seen?.has(r.id)).length;
     return c;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live.data, people.data, headlines.data, research.data, repos.data, models.data, launches.data, seen]);
-  const listed = rowsFor(sel, data);
+  }, [live.data, people.data, headlines.data, research.data, repos.data, models.data, launches.data, market.data, seen]);
+  const view: SectionId = sel === 'repos' && repoPart === 'rising' ? 'market' : sel;
+  const listed = rowsFor(view, data);
   // opening a list marks what is in it as seen; what was new keeps its dot until you leave
   const listedKey = listed.map((r) => r.id).join('|');
   useEffect(() => {
     if (!seen || !listed.length) return;
     const fresh = listed.filter((r) => !seen.has(r.id)).map((r) => r.id);
-    const same = shownFor.current === sel;            // the same list refreshed: keep this visit's dots
-    shownFor.current = sel;
+    const same = shownFor.current === view;           // the same list refreshed: keep this visit's dots
+    shownFor.current = view;
     Promise.resolve().then(async () => {
       setNewHere((prev) => new Set([...(same ? [...prev] : []), ...fresh]));
       if (fresh.length) setSeen(await markSeen(seen, fresh));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel, listedKey, seen === null]);
+  }, [view, listedKey, seen === null]);
   const fresh = (r: Row) => newHere.has(r.id);
   // new ones first -- within each part, so the parts (Rising, Tools…) keep their order and headings
   const parts = [...new Set(listed.map((r) => r.section ?? ''))];
@@ -204,9 +255,9 @@ export default function Home() {
     return [...inPart.filter(fresh), ...inPart.filter((r) => !fresh(r))];
   });
   const firstSeen = parts.length > 1 ? -1 : rows.findIndex((r) => !fresh(r));
-  const section = SECTIONS[sel];
+  const section = SECTIONS[view];
   const ring = INNER.includes(sel) ? RING_NAME.inner : OUTER.includes(sel) ? RING_NAME.outer : RING_NAME.you;
-  const fs = feedsOf[sel];
+  const fs = feedsOf[view];
   const loading = fs.some((f) => f.loading);
   const error = fs.map((f) => f.error).find(Boolean) ?? null;
   const at = fs.map((f) => f.at).filter(Boolean).sort()[0] ?? null;
@@ -278,6 +329,7 @@ export default function Home() {
           <Text style={st.meta}>{loading ? 'updating…' : at ? `updated ${timeAgo(at)} · pull down to refresh` : ''}</Text>
         ) : null}
         {error ? <Text style={st.error}>{error}</Text> : null}
+        {sel === 'repos' ? <View style={{ marginTop: 10 }}><Segments value={repoPart} options={REPO_PARTS} onChange={setRepoPart} /></View> : null}
         {sel === 'you' ? <View style={{ marginTop: 10 }}><Segments value={youPart} options={admin ? [...YOU_PARTS, ['admin', 'Admin'] as [YouPart, string]] : YOU_PARTS} onChange={setYouPart} /></View> : null}
 
         <ScrollView
