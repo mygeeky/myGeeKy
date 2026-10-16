@@ -360,8 +360,42 @@
       }
     }
     var say = function (p) { return round(p[0]) + ' ' + round(p[1]); };
-    return { d: 'M' + inner.map(say).join('L') + 'L' + outer.reverse().map(say).join('L') + 'Z',
-             fill: skin.belly, dots: dots };
+
+    /* THE BAND IS CUT INTO RUNS WHEREVER IT TURNS OVER, and emitted as one subpath per run.
+     *
+     * Everything above narrows the ribbon at the places it is known to twist. Narrowing is not the
+     * same as preventing: a pinch that does not quite reach zero still draws a crossed quad, only
+     * smaller, and a twist that none of the rules anticipated is not narrowed at all. Both end up as
+     * the same thing on screen -- a little crossed triangle of gold, worst on the two middle arms,
+     * which hang straight down where the normals are horizontal and the choice of underside is at its
+     * most delicate.
+     *
+     * Drawing it as runs removes the possibility rather than reducing it. Walk the ribbon, and
+     * wherever one rung points the opposite way to the last -- which IS the ribbon turning over, by
+     * definition, whatever caused it -- end the subpath and start a new one. A crossed quad can no
+     * longer be drawn, because the two halves of the twist are never joined. What shows instead is a
+     * small gap exactly where the band was going to tie itself in a knot, which is what the pinches
+     * were trying to achieve and could only approximate.
+     *
+     * Runs, rather than a quad at a time, because abutting fills seam: two quads sharing an edge leave
+     * a hairline of background between them once antialiased. Inside a run there are no seams at all. */
+    var rung = function (i) { return [outer[i][0] - inner[i][0], outer[i][1] - inner[i][1]]; };
+    var runs = [], start = 0;
+    for (i = 1; i <= N; i++) {
+      var a = rung(i - 1), b = rung(i);
+      if (a[0] * b[0] + a[1] * b[1] <= 0) { runs.push([start, i - 1]); start = i; }
+    }
+    runs.push([start, N]);
+
+    var d = '';
+    runs.forEach(function (run) {
+      if (run[1] - run[0] < 1) return;                 // a one-bead run has no area to fill
+      var up = [], down = [];
+      for (var q = run[0]; q <= run[1]; q++) { up.push(say(inner[q])); down.push(say(outer[q])); }
+      d += 'M' + up.join('L') + 'L' + down.reverse().join('L') + 'Z';
+    });
+
+    return { d: d, fill: skin.belly, dots: dots };
   }
 
   // --------------------------------------------------------------------- the whole character
