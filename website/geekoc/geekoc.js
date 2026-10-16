@@ -112,7 +112,7 @@
     happy:     { mouth: 'smile', brow: 0.3, lids: 0, look: [0, 0] },
     excited:   { mouth: 'open', brow: 0.8, lids: 0, look: [0, -0.15] },
     curious:   { mouth: 'smile', brow: 0.45, lids: 0, look: [0.5, -0.1] },
-    thinking:  { mouth: 'flat', brow: 0.5, lids: 0.25, look: [-0.2, -0.4] },
+    thinking:  { mouth: 'hmm', brow: 0.5, lids: 0.25, look: [-0.2, -0.4] },
     proud:     { mouth: 'grin', brow: 0.2, lids: 0.15, look: [0, -0.05] },
     surprised: { mouth: 'oh', brow: 1, lids: 0, look: [0, -0.1] },
     shy:       { mouth: 'tiny', brow: 0.1, lids: 0.35, look: [-0.45, 0.25] },
@@ -138,8 +138,13 @@
      * chin, and an arm folded up there crosses the face. So he gathers instead -- every arm drawn in
      * and tightly coiled, shorter than usual. Against an open, spread `idle` that reads immediately,
      * and it reads as being wrapped up in something. */
-    think:   { swing: [-10, -6, 0, 0, 0, -16, -44, -70], curl: [128, 108, 88, 64, -64, -116, -150, -186],
-               len: 0.92, face: 'thinking' },
+    /* One arm comes up BESIDE the head and curves back towards it -- the octopus version of a hand at
+     * the temple. The curl on that arm is POSITIVE where every other right-hand arm's is negative,
+     * and that sign is the whole gesture: curled the usual way it hooks back behind the mantle and
+     * nothing of it shows at all, which is what it did at first. Curled the other way it arcs outside
+     * the body's edge, stays in sight, and its tip turns in towards his head. */
+    think:   { swing: [-10, -6, 0, 0, 0, -16, -14, -70], curl: [128, 108, 88, 64, -64, -116, -150, 30],
+               len: 1.02, face: 'thinking' },
     cheer:   { swing: [66, 30, 8, 0, 0, -8, -30, -66], curl: [52, 104, 92, 67, -67, -92, -104, -52],
                len: 1.14, face: 'excited' },
     sleep:   { swing: [-22, -14, -5, 0, 0, 5, 14, 22], curl: [116, 96, 78, 56, -56, -78, -96, -116],
@@ -468,6 +473,13 @@
     if (kind === 'oh')      return { d: 'M' + round(x) + ' ' + round(y - 11 * k) +
                                      'a' + round(9 * k) + ' ' + round(11 * k) + ' 0 1 0 0.1 0Z',
                                      fill: SKIN.mouth };
+    /* "hmm": a small round mouth pushed to one side, which is the shape a face makes while it is
+     * working something out. A flat line said nothing -- it reads as a face waiting, not thinking.
+     * It sits on the side he is NOT looking towards, because a mouth pulled one way and a gaze going
+     * the other is what makes it read as pondering rather than as a face drawn off-centre. */
+    if (kind === 'hmm')     return { d: 'M' + round(x + 13 * k) + ' ' + round(y - 8 * k) +
+                                     'a' + round(9 * k) + ' ' + round(9.5 * k) + ' 0 1 0 0.1 0Z',
+                                     fill: SKIN.mouth };
     if (kind === 'flat')    return C([-18, 2], [-6, -3], [6, -3], [18, 2]);
     if (kind === 'worried') return C([-18, 6], [-10, -6], [10, -6], [18, 6]);
     if (kind === 'tiny')    return C([-9, 0], [-4, 7], [4, 7], [9, 0]);
@@ -522,12 +534,19 @@
     front.forEach(function (a) { out.push('<path d="' + a.d + '" fill="' + a.fill + '"/>'); });
 
     g.eyes.forEach(function (e, i) {
-      var drop = 30 + e.lid * 62;
+      /* THE LID comes down from ABOVE, and it has to travel its own height PLUS the eye's: at 0 its
+       * bottom edge rests on the eye's top (nothing covered), at 1 its top edge does (everything
+       * covered). `parts` already worked this out -- the old sum here shut the eye at 0.5, showed the
+       * top half at 0, and at 1 covered the BOTTOM half, so asleep looked like an eye closing upwards
+       * from the chin. The canvas renderer had been corrected and this one had not; they now use the
+       * same two numbers. */
+      var h = 66;                              // tall enough to cover the whole eye in one move
+      var ly = round(e.y - 30 - h + e.lid * h);
       out.push('<g clip-path="url(#' + id + '-eye' + i + ')">' +
         '<circle cx="' + e.x + '" cy="' + e.y + '" r="30" fill="' + s.white + '"/>' +
         '<circle cx="' + round(e.px) + '" cy="' + round(e.py) + '" r="12.5" fill="' + s.ink + '"/>' +
         '<circle cx="' + round(e.px - 4.5) + '" cy="' + round(e.py - 5) + '" r="4.4" fill="' + s.white + '" opacity=".95"/>' +
-        '<rect x="' + (e.x - 34) + '" y="' + (e.y - 92 + drop) + '" width="68" height="62" fill="' + s.mid + '"/>' +
+        '<rect x="' + (e.x - 34) + '" y="' + ly + '" width="68" height="' + h + '" fill="' + s.mid + '"/>' +
         '</g>');
     });
 
