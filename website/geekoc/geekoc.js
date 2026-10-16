@@ -28,11 +28,26 @@
   var round = function (n) { return Math.round(n * 10) / 10; };
 
   // --------------------------------------------------------------------- the look
+  /* Four purples, and they are a DEPTH LADDER rather than four decorative choices: `mid` is the
+   * mantle, and an arm is painted lighter or darker by how far out in the fan it sits, so the eight of
+   * them read as a crowd standing at different distances instead of a flat star. The earlier palette
+   * had only two arm tones and the middle of the fan merged into one mass.
+   *
+   * The purples carry a little more red than they did. A blue-leaning violet on a dark page reads cold
+   * and slightly dead; warming it is most of what makes him look friendly rather than deep-sea.
+   *
+   * The belly went the other way -- from a saturated marigold to cream. At full saturation the
+   * undersides fought the face for attention, and the face has to win: it is where the character is. */
   var SKIN = {
-    light: '#9a5cf0', mid: '#8b45e0', dark: '#7430cf', deep: '#5f23b4',
-    belly: '#ffc457', spot: '#6a28c0',
-    outline: '#2b1053', outlineWidth: 7,
-    glass: '#7fd8ff', ink: '#1a1428', mouth: '#2b1053', sucker: '#ffe0a3', white: '#ffffff',
+    light: '#b07cf7', mid: '#9450ea', armMid: '#8340dd', dark: '#7431ce', deep: '#5e22a8',
+    belly: '#ffdcae', spot: '#7d36d6',
+    outline: '#2a0f4e', outlineWidth: 7,
+    glass: '#7fd8ff', ink: '#1a1428', mouth: '#2a0f4e',
+    /* The cups are DARKER than the band they sit in, not lighter. Pale cups on a cream belly were
+     * invisible at every size an arm can actually carry -- thirty-six of them drawn and not one
+     * readable. Amber on cream reads at a glance, which is the whole job. Two tints, one per row, so
+     * the zigzag reads as two rows rather than one wavy one. */
+    sucker: '#e9a259', sucker2: '#d98f45', white: '#ffffff',
   };
 
   /* Where the darker freckles sit on the mantle, as fractions of its box. Fixed rather than random, so
@@ -63,14 +78,14 @@
      * the outer pair is long and sweeps. Nothing runs alongside anything. */
     /* The two in the middle used to leave four degrees apart, so they never parted and read as one
      * forked arm. Every neighbour now differs by at least fourteen. */
-    { spot: -1.00, dir: 146, len: 192, w: 46, back: true },
-    { spot: -0.70, dir: 131, len: 198, w: 50, back: true },
-    { spot: -0.40, dir: 117, len: 182, w: 53, back: true },
-    { spot: -0.14, dir: 103, len: 176, w: 55, back: true },
-    { spot: 0.14, dir: 77, len: 176, w: 55, back: true },
-    { spot: 0.40, dir: 63, len: 182, w: 53, back: true },
-    { spot: 0.70, dir: 49, len: 198, w: 50, back: true },
-    { spot: 1.00, dir: 34, len: 192, w: 46, back: true },
+    { spot: -1.00, dir: 146, len: 192, w: 62, back: true },
+    { spot: -0.70, dir: 131, len: 198, w: 67, back: true },
+    { spot: -0.40, dir: 117, len: 182, w: 71, back: true },
+    { spot: -0.14, dir: 103, len: 176, w: 74, back: true },
+    { spot: 0.14, dir: 77, len: 176, w: 74, back: true },
+    { spot: 0.40, dir: 63, len: 182, w: 71, back: true },
+    { spot: 0.70, dir: 49, len: 198, w: 67, back: true },
+    { spot: 1.00, dir: 34, len: 192, w: 62, back: true },
   ];
 
   /* The drawing grid. Real tentacles need the room: at the old 400 the arms either escaped the box or
@@ -178,7 +193,10 @@
     var N = SEGS, a = rad(deg), step = len / N, i;
     var weights = [], total = 0;
     for (i = 1; i <= N; i++) {
-      var k = i / N, wgt = 0.25 + k * k * 2.2;
+      /* The turn gathers towards the tip so the arm COILS instead of bending. The fifth-power term is
+       * what makes the last few beads curl tightly back on themselves -- an octopus arm at rest ends in
+       * a little spiral, and without it the arm merely arcs, like a drawn bow. */
+      var k = i / N, wgt = 0.25 + k * k * 1.55 + Math.pow(k, 5) * 3.1;
       weights.push(wgt);
       total += wgt;
     }
@@ -202,12 +220,17 @@
       var dx = ahead[0] - behind[0], dy = ahead[1] - behind[1];
       var m = Math.hypot(dx, dy) || 1;
       var nx = -dy / m, ny = dx / m, kk = i / N;
-      /* A STEADY taper, not a square one. `1 - 0.82k^2` keeps almost the full width until four fifths
-       * of the way along and then drops away fast, which reads fine on a long curling arm and reads as
-       * a CLUB on a short straight one -- blunt for most of its length, then a sudden point, with the
-       * pale band pooling in the end of it. Taking most of the width off linearly and the rest by the
-       * square narrows the arm the whole way down. */
-      var r = (w * Math.max(0.10, 1 - 0.56 * kk - 0.34 * kk * kk)) / 2;
+      /* A taper that holds its width and then WHIPS.
+       *
+       * An octopus arm is thick and muscular for most of its length and then runs out to something
+       * nearly hair-fine. Stopping the taper at a tenth of the base width, as this did, leaves every
+       * arm ending in a blunt little paddle about five units across -- eight paddles, and the single
+       * biggest reason the silhouette read as a cartoon starfish rather than an octopus.
+       *
+       * Linear plus square plus cube: the linear and square terms barely bite early on, so the arm
+       * keeps three quarters of its width to halfway, and the cube takes over at the end and runs it
+       * down to a point. */
+      var r = (w * Math.max(0.045, 1 - 0.20 * kk - 0.20 * kk * kk - 0.62 * kk * kk * kk)) / 2;
       norms.push([nx, ny]);
       widths.push(r);
       left.push([p[0] + nx * r, p[1] + ny * r]);
@@ -235,10 +258,23 @@
    * arm curls towards, so it stays visible however the arm turns. */
   function underside(arm, skin, how) {
     how = how || {};
-    var from = how.from != null ? how.from : 0.04;     // where the band starts, across the arm
-    var to = how.to != null ? how.to : 0.80;           // ...and where it ends
-    var every = how.every || 4;                        // a cup every N beads
-    var cup = how.cup != null ? how.cup : 0.34;        // how big a cup is, against the arm's half-width
+    var from = how.from != null ? how.from : 0.06;     // where the band starts, across the arm
+    /* An UNDERSIDE, not a racing stripe. At 0.86 the cream took more of the arm than the purple did,
+     * so the arms read as striped rather than as having a pale belly -- and a pale band that wide
+     * competes with the face, which has to win. */
+    var to = how.to != null ? how.to : 0.66;
+    var every = how.every || 3;                        // a cup every N beads
+    var cup = how.cup != null ? how.cup : 0.26;        // how big a cup is, against the arm's half-width
+    /* ONE ROW OF BIG CUPS, and that is a drawing decision rather than an anatomical one.
+     *
+     * A real octopus carries its suckers in two staggered rows, and two rows were drawn and looked at
+     * side by side with one. At the size an arm is actually printed, two do not read as two rows --
+     * they read as speckle, like a leopard. Worse, cups big enough to see at all spill past the edges
+     * of the cream band and sit on the purple, which looks like dirt rather than anatomy. One row down
+     * the middle, each cup big enough to be a distinct circle, is what reads as an octopus at a glance.
+     *
+     * The list stays a list, so two rows are one option away: `band: { rows: [0.3, 0.7], cup: 0.17 }`. */
+    var rows = how.rows || [0.5];
     var flip = how.flip ? -1 : 1;                      // true puts the band on top instead
     var inner = [], outer = [], dots = [], i;
     var N = arm.spine.length - 1;
@@ -301,14 +337,17 @@
       var p = arm.spine[i], n = arm.norms[i], r = arm.widths[i] * fade[i], s = sides[i];
       inner.push([p[0] + n[0] * r * from * s, p[1] + n[1] * r * from * s]);
       outer.push([p[0] + n[0] * r * to * s, p[1] + n[1] * r * to * s]);
-      // fewer, bigger rings: a dense dotted line reads as texture, where an octopus should read as a
-      // row of distinct cups.
-      if (i > 2 && i % every === 0 && r > 5 && fade[i] > 0.85) {
-        var mid = (from + to) / 2;
-        dots.push({ cx: round(p[0] + n[0] * r * mid * s), cy: round(p[1] + n[1] * r * mid * s),
-                    // capped: a third of the half-width is a saucer where the arm is thickest, and the
-                    // reference keeps its rings near enough one size the whole way down
-                    r: round(Math.min(r * cup, 7.5)) });
+      /* Stop the cups before they become specks. The taper now runs the arm out to about a unit
+         * across, and a cup a unit and a half wide next to a seven-wide outline is not a sucker, it is
+         * a speck of dust -- so the rows thin out and stop in the last third, which is where an
+         * octopus's own suckers shrink away too. */
+      if (i > 2 && i % every === 0 && r > 7.5 && fade[i] > 0.75) {
+        var which = Math.floor(i / every) % rows.length;         // alternates only if asked to
+        var across = from + (to - from) * rows[which];
+        dots.push({ cx: round(p[0] + n[0] * r * across * s), cy: round(p[1] + n[1] * r * across * s),
+                    // capped, because a third of the half-width is a saucer where the arm is thickest
+                    r: round(Math.min(r * cup, 7.4)),
+                    row: which });
       }
     }
     var say = function (p) { return round(p[0]) + ' ' + round(p[1]); };
@@ -370,7 +409,12 @@
        * reference art does it too. */
       arms.push({ d: arm.d, tip: arm.tip, spine: arm.spine, norms: arm.norms, widths: arm.widths,
                   side: arm.side, back: true, i: i, spot: base.spot,
-                  fill: Math.abs(base.spot) > 0.55 ? SKIN.deep : SKIN.dark });
+                  /* Three tones across the fan, not two. The arms at the ends of the hem are
+                   * furthest from the eye, the ones in the middle nearest; painting the middle pair a
+                   * step lighter is what separates them from the pair behind instead of letting four
+                   * arms merge into one dark mass. */
+                  fill: Math.abs(base.spot) > 0.55 ? SKIN.deep
+                      : Math.abs(base.spot) > 0.25 ? SKIN.dark : SKIN.armMid });
     }
 
     // a blink has its own clock so it never lines up with the breathing and look mechanical
@@ -555,7 +599,8 @@
       stripes.push(band);
       backStripes.push(band);
       u.dots.forEach(function (dot) {
-        var ring = { cx: dot.cx, cy: dot.cy, r: dot.r, fill: s.sucker, back: arm.back };
+        var ring = { cx: dot.cx, cy: dot.cy, r: dot.r, back: arm.back,
+                     fill: dot.row ? s.sucker2 : s.sucker };
         suckers.push(ring);
         backSuckers.push(ring);
       });
