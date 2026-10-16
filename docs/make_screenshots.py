@@ -30,6 +30,7 @@ TABS = [  # (file, tab, market mode)
     ("grow-skills", "grow", "skills"), ("grow-protocols", "grow", "paths"), ("grow-quiz", "grow", "quiz"),
     ("grow-quiz-question", "grow", "quiz-run"),
     ("grow-learn", "grow", "learn"),
+    ("chances-seasons", "chances", "seasons"),
     ("chances-jobs", "chances", "jobs"), ("chances-funding", "chances", "funding"),
     ("chances-conferences", "chances", "conferences"),
 ]
@@ -178,6 +179,19 @@ def render() -> dict[str, Path]:
             box = panel._grow_scroll
             if cards:
                 box.verticalScrollBar().setValue(cards[0].mapTo(box.widget(), cards[0].rect().topLeft()).y() - 4)
+            pump(0.5)
+        if fname == "chances-seasons":
+            # Seasons opens on a month picker and a paragraph explaining itself, which is the right
+            # thing in the app and a picture of nothing in a README. Start at the first card instead:
+            # a season IS its card -- the window, the years of evidence, the sentence that was found.
+            from mygeeky.gui.growth_ui import SeasonCard
+            cards = [c for c in panel.chances_area.parentWidget().findChildren(SeasonCard) if c.isVisible()]
+            box = panel.chances_area.parentWidget()
+            while box is not None and not isinstance(box, QScrollArea):
+                box = box.parentWidget()
+            if cards and box is not None:
+                top = cards[0].mapTo(box.widget(), cards[0].rect().topLeft()).y()
+                box.verticalScrollBar().setValue(max(0, top - 4))
             pump(0.5)
         if tab == "signals":          # start the picture at "Your field" (the panel is short)
             from mygeeky.gui.signals_ui import FieldCard

@@ -189,15 +189,22 @@ a list of things you are already too late for.
 A listing written in **Arabic, French, German, Spanish or Chinese** is read, translated and still checked against
 its own page, then shown to you in English. Filter by country, because that applies to all of them.
 
+**And 🗓 Seasons, for the ones that come back every year.** A scholarship does not stop being real when it
+closes — it returns next April, and *the preparing takes longer than the applying*. So myGeeKy says
+*“expected in about 12 weeks”* while there is still time to get transcripts certified and a proposal written,
+and tells you **how many years of evidence** stand behind that expectation. It never pretends to know next
+year's date: a window it read on a page says **open now**, anything ahead says **expected**.
+
 </td>
 </tr>
 </table>
 
 <table>
 <tr>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-jobs.png" width="300" alt="Jobs"><br><sub><b>Jobs</b>, deadline first</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-funding.png" width="300" alt="Funding"><br><sub><b>Funding</b> you can still apply for</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-conferences.png" width="300" alt="Conferences"><br><sub><b>Conferences</b> before the abstract closes</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-seasons.png" width="250" alt="Seasons: a scholarship that comes back every year, with the weeks of preparation it needs"><br><sub><b>Seasons</b><br>months of warning, and what to prepare</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-jobs.png" width="250" alt="Jobs"><br><sub><b>Jobs</b><br>deadline first</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-funding.png" width="250" alt="Funding"><br><sub><b>Funding</b><br>you can still apply for</sub></td>
+<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-conferences.png" width="250" alt="Conferences"><br><sub><b>Conferences</b><br>before the abstract closes</sub></td>
 </tr>
 </table>
 
