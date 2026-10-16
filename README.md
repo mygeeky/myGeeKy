@@ -13,7 +13,7 @@
 <p align="center">
   <b>myGeeKy is a quiet companion that helps you grow.</b><br>
   Tell it what you work on. It brings back what to learn next, what is rising in your field,<br>
-  who works on the same problems, and what is open to apply for before it closes —<br>
+  who works on the same problems, and <b>the opportunities open to you right now</b> —<br>
   <b>and then checks that you really learned it.</b>
 </p>
 
