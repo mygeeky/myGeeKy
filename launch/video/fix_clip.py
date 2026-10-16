@@ -33,6 +33,17 @@ OUT = Path(__file__).parent / "intro"
 
 PALE, FLAT = 228, 16          # what counts as the wall: this bright, and this close to colourless
 
+# The film is 1920x1080 and the generator hands back 1280x720, so the clip was being enlarged inside the
+# film -- AFTER already being enlarged here to fix his size. Two enlargements of the same pixels is what
+# made it look washed out. It is written at the film's own size instead, and the figure goes from its
+# original pixels to its final size in ONE resample: the crop is scaled by 1.5 x the size fix together,
+# rather than scaled, saved, and scaled again.
+#
+# No detail is created by any of this. The clip is 720p material and the only way to get more is to
+# generate it larger; what this avoids is throwing away what is there.
+FILM = (1920, 1080)
+SHARPEN = (1.6, 55, 3)        # radius, strength, threshold -- flat cel art takes this well, photos do not
+
 # The broken stride is CUT OUT, not patched. Patching was tried first and it does not work: this walk's
 # steps land every 8 to 13 frames, never the same twice, so no borrowed stride lines up at both ends --
 # and squeezing a correct step into the seven frames available makes the legs move at double speed, which
@@ -85,15 +96,24 @@ def where(img: Image.Image) -> tuple[int, int, int, int]:
     return img.getchannel("A").point(lambda v: 255 if v > 60 else 0).getbbox()
 
 
-def put(plate: Image.Image, fig: Image.Image, foot_x: float, foot_y: float, scale: float = 1.0):
-    """Stand him on the plate: `foot_x` is the middle of him, `foot_y` the ground under his shoes."""
-    box = where(fig)
-    crop = fig.crop(box)
-    if scale != 1.0:
-        crop = crop.resize((max(1, round(crop.width * scale)), max(1, round(crop.height * scale))),
-                           Image.LANCZOS)
+def crisp(im: Image.Image) -> Image.Image:
+    return im.filter(ImageFilter.UnsharpMask(*SHARPEN))
+
+
+def put(plate: Image.Image, fig: Image.Image, foot_x: float, foot_y: float, scale: float = 1.0,
+        up: float = 1.0):
+    """Stand him on the plate: `foot_x` is the middle of him, `foot_y` the ground under his shoes.
+
+    `scale` is the size correction and `up` the step to the film's resolution, and they are multiplied
+    into a SINGLE resize -- enlarging twice over softens him for nothing. The coordinates arrive in the
+    original clip's pixels and are taken up to the plate's here."""
+    crop = fig.crop(where(fig))
+    k = scale * up
+    if k != 1.0:
+        crop = crop.resize((max(1, round(crop.width * k)), max(1, round(crop.height * k))), Image.LANCZOS)
+        crop = crisp(crop)
     out = plate.convert("RGBA").copy()
-    out.alpha_composite(crop, (round(foot_x - crop.width / 2), round(foot_y - crop.height)))
+    out.alpha_composite(crop, (round(foot_x * up - crop.width / 2), round(foot_y * up - crop.height)))
     return out.convert("RGB")
 
 
@@ -116,7 +136,10 @@ def main(argv: list[str]) -> int:
     frames = sorted(raw.glob("*.png"))
     print(f"  {len(frames)} frames")
 
-    plate = wall(frames)
+    src_w, src_h = Image.open(frames[0]).size
+    up = FILM[0] / src_w
+    plate = crisp(wall(frames).resize(FILM, Image.LANCZOS))
+    print(f"  {src_w}x{src_h} in, {FILM[0]}x{FILM[1]} out ({up:.2f}x)")
     spot = {}                                     # frame -> (middle of him, the ground under him, height)
     for i, p in enumerate(frames, 1):
         x0, y0, x1, y1 = where(figure(p))
@@ -147,23 +170,23 @@ def main(argv: list[str]) -> int:
             shift = shift_after[n]
         p = frames[n - 1]
         if n <= first:
-            img = Image.open(p).convert("RGB")
+            img = crisp(Image.open(p).convert("RGB").resize(FILM, Image.LANCZOS))
         elif n < SHRINKS_AT:
             fx, fy, _ = spot[n]
-            img = put(plate, figure(p), fx - shift, fy)
+            img = put(plate, figure(p), fx - shift, fy, 1.0, up)
         else:
             fx, _, _ = spot[n]
             # he also goes back to the size and the floor he had before he shrank
             img = put(plate, figure(p),
                       spot[SHRINKS_AT - 1][0] - shift + (fx - spot[SHRINKS_AT][0]) * grow,
-                      spot[SHRINKS_AT - 1][1], grow)
+                      spot[SHRINKS_AT - 1][1], grow, up)
         img.save(done / f"f_{out_n:04d}.png")
     print(f"  {len(kept)} frames out ({len(kept) / 24:.2f}s), size fixed from {SHRINKS_AT} on")
 
     out = OUT / f"{name}-fixed.mp4"
     run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-framerate", str(fps(ffmpeg, src)),
          "-i", str(done / "f_%04d.png"), "-i", str(src), "-map", "0:v", "-map", "1:a?",
-         "-c:v", "libx264", "-crf", "17", "-pix_fmt", "yuv420p", "-shortest", str(out)])
+         "-c:v", "libx264", "-crf", "15", "-preset", "slow", "-pix_fmt", "yuv420p", "-shortest", str(out)])
     print(f"  {out}  ({out.stat().st_size // 1024} KB)")
     shutil.rmtree(raw, ignore_errors=True)
     return 0
