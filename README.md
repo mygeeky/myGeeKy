@@ -226,7 +226,7 @@ year's date: a window it read on a page says **open now**, anything ahead says *
 <table>
 <tr>
 <td width="46%" align="center" valign="middle">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/works-alone.svg" width="440" alt="Someone working alone at a desk, seen from behind, with three other people further off joined to them by dotted threads, and GeekOc beside them pointing the way">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/character.jpg" width="400" alt="A geek in a hoodie sitting against a brick wall with a laptop on their legs, a myGeeKy sticker on the lid: find friends, collaborate, away from noise">
 </td>
 <td valign="middle">
 <table>
