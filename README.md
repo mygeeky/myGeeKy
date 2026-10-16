@@ -22,11 +22,6 @@
 </p>
 
 <p align="center">
-  It lives on your own computer, in a narrow panel beside your work.<br>
-  <b>No feed. No likes. No posting. Nothing to scroll.</b>
-</p>
-
-<p align="center">
   <a href="https://github.com/mygeeky/myGeeKy/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/%E2%AC%87%20Download%20for%20Windows-MyGeeKySetup.exe-ff6fd8?style=for-the-badge&logo=windows&logoColor=white" height="42"></a>
   &nbsp;
   <a href="https://pypi.org/project/mygeeky/"><img alt="pip install mygeeky" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-pip%20install%20mygeeky-7a5cff?style=for-the-badge&logo=python&logoColor=white" height="42"></a>
