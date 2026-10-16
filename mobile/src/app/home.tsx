@@ -25,6 +25,7 @@ import { fetchModels } from '../lib/models';
 import { adminLogin } from '../lib/admin';
 import { loadContributions } from '../lib/contribute';
 import { recordInterest } from '../lib/model-repo';
+import { loadSeen, markSeen } from '../lib/seen';
 import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
 import { fetchPeople } from '../lib/people';
 import { fetchResearch } from '../lib/research';
@@ -75,10 +76,10 @@ function GitHubCard({ why }: { why: string }) {
   );
 }
 
-function RowView({ r, color, isOpen, onPick }: { r: Row; color: string; isOpen: boolean; onPick: () => void }) {
+function RowView({ r, color, isOpen, onPick, isNew = false }: { r: Row; color: string; isOpen: boolean; onPick: () => void; isNew?: boolean }) {
   const [card, setCard] = useState(false);          // an activity's person, unfolded on demand
   return (
-    <View style={[st.rowBox, isOpen && st.rowOpen]}>
+    <View style={[st.rowBox, isOpen && st.rowOpen, !isNew && !isOpen && { opacity: 0.72 }]}>
       <Pressable onPress={onPick} style={st.row} accessibilityRole="button" accessibilityLabel={`${r.title}. ${r.sub}`}>
         {r.avatar ? (
           <Image source={{ uri: `${r.avatar}${r.avatar.includes('?') ? '&' : '?'}s=80` }} style={st.avatar} />
@@ -86,7 +87,7 @@ function RowView({ r, color, isOpen, onPick }: { r: Row; color: string; isOpen: 
           <View style={[st.letter, { backgroundColor: r.letterBg }]}><Text style={[st.letterText, { color: r.letterFg }]}>{r.letter}</Text></View>
         )}
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={st.title} numberOfLines={isOpen ? undefined : 2}>{r.title}</Text>
+          <Text style={st.title} numberOfLines={isOpen ? undefined : 2}>{isNew ? <Text style={{ color }}>● </Text> : null}{r.title}</Text>
           <Text style={st.sub} numberOfLines={isOpen ? undefined : 1}>{r.sub}</Text>
         </View>
         {r.right ? <Text style={st.right}>{r.right}</Text> : null}
@@ -170,13 +171,34 @@ export default function Home() {
     live: live.data, people: people.data, headlines: headlines.data, research: research.data,
     repos: repos.data, models: models.data, launches: launches.data,
   };
+  // what is new to you (lib/seen.ts): the planets count only those
+  const [seen, setSeen] = useState<Set<string> | null>(null);
+  const [newHere, setNewHere] = useState<Set<string>>(new Set());   // new when you opened this list: their dots stay
+  const shownFor = useRef<SectionId | null>(null);
+  useEffect(() => { loadSeen().then(setSeen); }, []);
   const counts = useMemo(() => {
     const c: Partial<Record<SectionId, number>> = {};
-    for (const id of [...INNER, ...OUTER]) c[id] = rowsFor(id, data).length;
+    for (const id of [...INNER, ...OUTER]) c[id] = rowsFor(id, data).filter((r) => !seen?.has(r.id)).length;
     return c;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live.data, people.data, headlines.data, research.data, repos.data, models.data, launches.data]);
-  const rows = rowsFor(sel, data);
+  }, [live.data, people.data, headlines.data, research.data, repos.data, models.data, launches.data, seen]);
+  const listed = rowsFor(sel, data);
+  // opening a list marks what is in it as seen; what was new keeps its dot until you leave
+  const listedKey = listed.map((r) => r.id).join('|');
+  useEffect(() => {
+    if (!seen || !listed.length) return;
+    const fresh = listed.filter((r) => !seen.has(r.id)).map((r) => r.id);
+    const same = shownFor.current === sel;            // the same list refreshed: keep this visit's dots
+    shownFor.current = sel;
+    Promise.resolve().then(async () => {
+      setNewHere((prev) => new Set([...(same ? [...prev] : []), ...fresh]));
+      if (fresh.length) setSeen(await markSeen(seen, fresh));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sel, listedKey, seen === null]);
+  const fresh = (r: Row) => newHere.has(r.id);
+  const rows = [...listed.filter(fresh), ...listed.filter((r) => !fresh(r))];
+  const firstSeen = rows.findIndex((r) => !fresh(r));
   const section = SECTIONS[sel];
   const ring = INNER.includes(sel) ? RING_NAME.inner : OUTER.includes(sel) ? RING_NAME.outer : RING_NAME.you;
   const fs = feedsOf[sel];
@@ -273,14 +295,17 @@ export default function Home() {
             <GrowView />
           ) : sel === 'chances' ? (
             <ChancesView />
-          ) : rows.length ? rows.map((r, i) => (
-            <RowView key={r.id} r={r} color={section.color} isOpen={openId === r.id || (openId === 'first' && i === 0)}
+          ) : rows.length ? rows.map((r, i) => (<View key={r.id}>
+            {i === firstSeen ? (
+              <Text style={st.seenLine}>{firstSeen === 0 ? '✔ You\'re all caught up · seen earlier' : 'Seen earlier'}</Text>
+            ) : null}
+            <RowView isNew={fresh(r)} r={r} color={section.color} isOpen={openId === r.id || (openId === 'first' && i === 0)}
                      onPick={() => {
                        setOpenId(openId === r.id ? null : r.id);
                        fold();                            // reading: the rings make room
                        touched();
                      }} />
-          )) : (
+          </View>)) : (
             <Empty>{loading ? 'Loading…' : error ? 'Pull down to try again.' : EMPTY[sel]}</Empty>
           )}
         </ScrollView>
@@ -349,6 +374,7 @@ const st = StyleSheet.create({
   meta: { color: C.muted, fontSize: 11, paddingHorizontal: 20, marginTop: 4 },
   error: { color: C.red, fontSize: 13, paddingHorizontal: 20, marginTop: 6 },
   list: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 16 },
+  seenLine: { color: C.muted, fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 14, marginBottom: 4 },
   rowBox: { borderBottomWidth: 1, borderColor: tint(0.07) },
   rowOpen: { backgroundColor: tint(0.04), marginHorizontal: -12, paddingHorizontal: 12, borderRadius: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
