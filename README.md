@@ -1,22 +1,14 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/logo.png" width="140" alt="The myGeeKy badge: the name inside a ring of two arms hugging">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-hero.png" width="190" alt="GeekOc, the myGeeKy octopus, waving">
 </p>
 
 <h1 align="center">myGeeKy</h1>
 
-<h3 align="center">Find friends · collaborate · away from noise.</h3>
+<h3 align="center">Find the people, the jobs and the papers in your field — without the noise.</h3>
 
 <p align="center">
-  Your corner of GitHub, for research: the <b>people</b>, <b>projects</b>, <b>papers</b> and <b>pulse</b> of your field,<br>
-  found from your CV, repos, ORCID and Google Scholar, in one small glass panel on your screen.
-</p>
-
-<p align="center">
-  <b>For researchers who build things at a computer.</b><br>
-  <sub>💻 computer scientists and developers · 🧬 bioinformaticians and data scientists ·
-  📊 experimental researchers analysing their own data</sub><br>
-  <sub><em>Code, data, statistics, figures and pipelines. Never laboratory protocols or bench instructions:
-  <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#what-mygeeky-does-not-teach">why</a>.</em></sub>
+  <b>For researchers who build things at a computer</b><br>
+  <sub>💻 developers · 🧬 bioinformaticians and data scientists · 📊 anyone analysing their own data</sub>
 </p>
 
 <p align="center">
@@ -27,7 +19,6 @@
 
 <p align="center">
   <a href="https://pypi.org/project/mygeeky/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/mygeeky?color=7fd8ff&label=pypi&style=flat-square"></a>
-  <a href="https://pypi.org/project/mygeeky/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/mygeeky?color=7a5cff&style=flat-square"></a>
   <a href="https://pepy.tech/projects/mygeeky"><img alt="Downloads" src="https://img.shields.io/pepy/dt/mygeeky?color=ff6fd8&label=downloads&style=flat-square"></a>
   <a href="https://github.com/mygeeky/myGeeKy/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-35e0c1?style=flat-square"></a>
   <img alt="Auto-follow: never" src="https://img.shields.io/badge/auto--follow-never-e5484d?style=flat-square">
@@ -35,400 +26,181 @@
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/fPQHOnYs8sA"><b>▶ Watch the video</b></a> ·
+  <a href="https://youtu.be/fPQHOnYs8sA"><b>▶ Watch it in 2 minutes</b></a> ·
   <a href="https://mygeeky.org">Website</a> ·
-  <a href="#-get-started-in-3-steps">Get started</a> ·
-  <a href="#-every-tab">Every tab</a> ·
-  <a href="#-two-tokens-two-jobs">Tokens</a> ·
-  <a href="#-what-it-will-never-do">Safety</a> ·
-  <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md">Full guide</a>
+  <a href="#-try-it">Try it</a> ·
+  <a href="#-if-you-are-just-starting-out">If you're starting out</a> ·
+  <a href="#-what-it-will-never-do">What it never does</a> ·
+  <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md">The full guide</a>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/hero.png" width="920" alt="Three myGeeKy panel tabs: People likely to follow you back, what myGeeKy knows about you, and research rising in your field">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/hero.png" width="900" alt="Three myGeeKy panel tabs: people likely to follow you back, what myGeeKy knows about you, and research rising in your field">
 </p>
-<p align="center"><sub><em>Real screenshots, real data: people likely to follow you back · what myGeeKy knows about you · research rising in your field.</em></sub></p>
+
+> **GitHub has everything you need — buried under famous accounts and a feed you didn't ask for.**
+> myGeeKy gathers your field into one small panel on your screen: who to learn from, what to work on,
+> what to read, and what's open to apply for. It **never follows, stars or posts for you**.
+
+---
+
+## 👀 What you actually see
 
 <table>
 <tr>
-<td width="38%" align="center" valign="middle">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/character.jpg" width="300" alt="A geek in a hoodie working on a laptop against a brick wall, a myGeeKy sticker on the lid: find friends, collaborate, away from noise">
+<td align="center" width="25%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-jobs.png" width="250" alt="Verified jobs with deadlines"><br>
+  <b>🎯 Jobs, funding, conferences</b><br>
+  <sub>Checked against the real page, deadline first, and gone once it passes</sub>
 </td>
-<td width="62%" valign="middle">
-
-**Why this exists:** I don't have Facebook. I wanted a real circle in my field: people I can genuinely learn
-from (and who might learn something from me), projects where my work would be welcome, and a feel for where
-the field is moving. GitHub has all of that, but scattered and buried under famous accounts. myGeeKy gathers
-it in one place, **away from the noise**, and **never acts for you**.
-
-**Find friends** who work on what you work on. **Collaborate** on projects that welcome you. Do it **away from
-noise**: no feed to scroll, no likes, no posting, nothing that follows or stars for you.
-
+<td align="center" width="25%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-skills.png" width="250" alt="Rising skills in your field"><br>
+  <b>📈 What to learn next</b><br>
+  <sub>Skills growing in your field that your work doesn't show yet — and why it says so</sub>
+</td>
+<td align="center" width="25%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-question.png" width="250" alt="A quiz question, answered, with its source"><br>
+  <b>🏆 Learn by answering</b><br>
+  <sub>Every question quotes the source it came from, and shows it once you answer</sub>
+</td>
+<td align="center" width="25%">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/suggestions.png" width="250" alt="People likely to follow you back"><br>
+  <b>👥 People worth knowing</b><br>
+  <sub>Researchers near your work who are likely to follow back. You follow them, by hand</sub>
 </td>
 </tr>
 </table>
 
-<br>
+---
 
-<table>
-<tr>
-<td width="44%" align="center" valign="top">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/tour.gif" width="330" alt="Animated tour of every myGeeKy tab"><br>
-  <sub><em>Every tab, in 20 seconds</em></sub>
-</td>
-<td width="56%" valign="top">
-
-### ✨ What it does for you
-
-👥 **Finds your people.** Researchers who share your work and are likely to follow you back. It skips celebrities, mass-followers and dormant accounts.
-
-🛠️ **Finds projects that want you.** Active repos in your field with starter issues, ranked by how often their maintainers merge outside pull requests.
-
-📈 **Feels the pulse.** Your field's repos as a daily stock race (stars, commits, PyPI downloads, who moved up), 🤗 Hugging Face models trending in your field, and new Product Hunt launches.
-
-🔬 **Reads the literature.** Papers gaining citations fastest, new tools with their code, and the people behind them. One letter, one meaning: 🟩 **P** a paper, 🟨 **N** in the news, 🟦 **D** discussed on Hacker News, 🟪 **A** an announcement.
-
-🗞️ **Brings the news.** Headlines from AI labs, journals and the tech press, ranked for *your* work, plus new arXiv, bioRxiv and Hacker News items about your topics.
-
-🙏 **Says thanks, privately.** Small signals between myGeeKy users (thanks, "I learned from your work",
-"I used your tool"), sealed so **only the recipient can read them**. No reply is ever expected, and 🤝
-"let's collaborate" only shows up if you *both* choose it.
-
-🙋 **Finds you helpers.** Invite contributors to one of your repos: the skills you need and a sentence. Nobody is
-targeted. Each user's own myGeeKy decides whether your call fits *their* work, on their own device, and people
-who fit say "I'm in", privately, with the skills that matched. A thin "Your field" ruler (unfold it into a radar)
-shows everyone on Signals and every call, closer when they're closer to your work.
-
-🏅 **Rewards you for using it.** Badges under your name (Regular, Clicker, AI Fan, Analyst, Model Hunter, Networker…, in bronze, silver and gold), next to your GitHub achievements.
-
-🧭 **Gives you a road map.** Any skill becomes ordered steps, with the repos, papers, books and guides for each
-one -- and a quiz that skips what you already know. Reviewed protocols cover software and analysis:
-*Git and GitHub*, *algorithms*, *your first web app*, *machine learning*, *a first pull request*, *R* and
-*Python for data analysis*, *GWAS*, *Nextflow*, *single-cell RNA-seq*, *images into numbers with Fiji*,
-*from Excel to R*, *statistics for experiments*, *figures for papers*.
-
-🏆 **Lets you prove it, if you want to.** Each protocol has a question bank; your best score is yours, on your
-own device. Nothing about you is shown anywhere unless you ask for it, from your own GitHub account.
-
-🧠 **Learns what you're into.** Every click, follow, star and fork tunes it, and 🔭 20% of every list stays open for new territory.
-
-</td>
-</tr>
-</table>
-
-## 🚀 Get started in 3 steps
-
-<p align="center">
-  <a href="https://youtu.be/fPQHOnYs8sA"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/video-thumbnail.png" width="640" alt="Watch: install and set up myGeeKy"></a><br>
-  <sub>▶ <b>Watch the video:</b> install, set up, and a tour of the panel</sub>
-</p>
+## 🚀 Try it
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-### 🪟 Windows: one installer
+### 🪟 Windows
 
-1. Download **[MyGeeKySetup.exe](https://github.com/mygeeky/myGeeKy/releases/latest)** (under *Assets*).
-2. Click **Next → Next → Finish**.
+1. Download **[MyGeeKySetup.exe](https://github.com/mygeeky/myGeeKy/releases/latest)** (under *Assets*)
+2. **Next → Next → Finish**
 
-**You don't need anything installed first.** It sets up Python and Git if they're missing (just for you, no admin rights),
-asks who you are, checks your tokens, connects private sync, and adds a Start-menu shortcut.
+Nothing needs to be installed first — it sets up Python and Git for you, with no admin rights.
 
-<sub>Windows may say <i>"Windows protected your PC"</i> (the installer isn't code-signed yet): click <b>More info → Run anyway</b>.</sub>
+<sub>If Windows says <i>"Windows protected your PC"</i> (the installer isn't code-signed yet): <b>More info → Run anyway</b>.</sub>
 
 </td>
 <td width="50%" valign="top">
 
-### 🐧 Linux · macOS: one line
+### 🐧 Linux · 🍎 macOS · 🐍 anywhere
 
 ```bash
 curl -fsSL https://mygeeky.org/install.sh | sh
 ```
 
-It installs myGeeKy in its own folder (no sudo, no clash with conda or your system Python), adds it to your
-applications menu (on a Mac: **Applications**, so it's in Launchpad and Spotlight), then asks: set up in a
-**window** (the same as Windows: Next → Next → Finish, with **Sign in with GitHub**) or right there in the
-**terminal**. Run it again to update. More for Macs [below](#-on-a-mac).
-
-### 🐍 Or with pip, anywhere
+or, with pip:
 
 ```bash
 pip install mygeeky
-mygeeky init      # who you are, then Sign in with GitHub
-mygeeky gui       # open the panel   (mygeeky setup opens the setup window instead)
+mygeeky setup       # a window: who you are, then Sign in with GitHub
 ```
 
-Only your **GitHub username** is required. Your **CV**, **ORCID** and **Google Scholar** profile are optional,
-and they make every match much better.
-
-<sub><code>'mygeeky' is not recognized</code>? Use <code>python -m mygeeky</code>: it offers to fix your PATH.</sub>
+<sub>Run the one-liner again any time to update. Macs get <b>myGeeKy.app</b> in Launchpad and Spotlight.</sub>
 
 </td>
 </tr>
 </table>
 
-Then, any time, from the panel or the terminal:
-
-```bash
-mygeeky run           # 👥 people in your field worth following
-mygeeky contribute    # 🛠️ repos you could improve
-mygeeky market        # 📈 what's rising in your field
-mygeeky trends        # 🔬 papers and tools gaining traction
-mygeeky news          # 🗞️ news about your interests
-mygeeky beacon init   # 🙏 join Signals (optional)
-```
-
-## 🍎 On a Mac
-
-- **One line:** `curl -fsSL https://mygeeky.org/install.sh | sh`. It uses Homebrew's Python (`brew install python`),
-  the python.org one, or macOS's own (after `xcode-select --install`), and puts **myGeeKy.app** in
-  `~/Applications`: open it from Launchpad, Spotlight or the Dock.
-- **With uv:** `uv tool install mygeeky --with PySide6-Essentials`, then `mygeeky setup`. Update with
-  `uv tool upgrade mygeeky` (the panel's **Update** button does that for you).
-- **Your tokens** live in the macOS **Keychain** (look for "mygeeky" in Keychain Access), never in a file.
-- **At login and every Monday:** tick them at the end of setup, or run `mygeeky desktop install --autostart`
-  and `mygeeky schedule install --yes`. Both are small launchd agents in `~/Library/LaunchAgents`.
-- **Uninstall:** ⚙ → **Uninstall…** in the panel, or `mygeeky uninstall`. It removes the app, the login item,
-  the weekly run and the package. Your data stays unless you choose to erase it too.
-
-More in the [guide](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#macos).
-
-## 🔑 Two tokens, two jobs
-
-myGeeKy uses **two separate GitHub tokens** with very different powers. **Setup checks what each token can
-actually do** (with tests that change nothing on GitHub), and refuses a token that doesn't fit its job.
-
-| | 🔍 Token 1: read-only | ✍️ Token 2: Signals *(optional)* |
-|---|---|---|
-| **What it's for** | Reading public profiles, repos and followers | Writing your `mygeeky-beacon` repo, and nothing else |
-| **Repository access** | *Public repositories* | *Only select repositories* → `mygeeky-beacon` |
-| **Permissions** | Account → **Followers: Read-only** | Repository → **Contents: Read and write** |
-| **Refused if…** | it can write to any repo, can follow people, or is your Signals token | it can't write to `mygeeky-beacon`, or is token 1 again |
-| **Made with** | [new fine-grained token ↗](https://github.com/settings/personal-access-tokens/new) | the same page, *after* the repo exists |
-
-Both live only in your OS keyring (Windows Credential Locker / macOS Keychain / Secret Service), never in a file.
-myGeeKy reminds you a week before either one expires, and `mygeeky auth status` shows what each can do.
-
-## 🪟 Every tab
+---
 
 <table>
 <tr>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/live.png" width="260" alt="Live tab"><br><b>Live</b><br><sub>Your circle's activity and top suggestions, scrolling live</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/suggestions.png" width="260" alt="People tab"><br><b>People</b><br><sub>Likely to follow you back, plus domain experts. Click to open; you follow by hand</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/repos.png" width="260" alt="Repos tab"><br><b>Repos</b><br><sub>Projects in your field with starter issues and maintainers who merge</sub></td>
-</tr>
-<tr>
-<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/market.png" width="260" alt="Market tab"><br><b>Market</b><br><sub>Your field's repos as a stock race: stars, commits, downloads</sub></td>
-<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/research.png" width="260" alt="Research view"><br><b>Market → Research</b><br><sub>Rising papers, their code, and the people behind them (OpenAlex)</sub></td>
-<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/news.png" width="260" alt="News tab"><br><b>News</b><br><sub>Headlines from AI labs, journals and the tech press, ranked for your work; plus papers and discussions</sub></td>
-</tr>
-<tr>
-<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/activity.png" width="260" alt="Activity tab"><br><b>Activity</b><br><sub>One card per person: what they're building right now</sub></td>
-<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/signals.png" width="260" alt="Signals tab"><br><b>Signals</b><br><sub>Your field, calls for contributors, and private 🙏 📚 👀 from fellow users <i>(example people)</i></sub></td>
-<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/model.png" width="260" alt="Model tab"><br><b>Model</b><br><sub>What myGeeKy knows about you: your interest map, what teaches it, room to explore</sub></td>
-</tr>
-<tr>
-<td align="center"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/models.png" width="260" alt="Models view"><br><b>Market → 🤗 Models</b><br><sub>Hugging Face models trending in your field, and everywhere</sub></td>
-<td></td>
-<td align="center"><a href="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/launch/poster/mygeeky-poster.pdf"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/launch/poster/mygeeky-poster-preview.png" width="200" alt="The myGeeKy wall poster"></a><br><b>Wall poster</b><br><sub>Print it for your lab or department (A3, PDF)</sub></td>
-</tr>
-</table>
+<td width="16%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-quiz.png" width="150" alt="GeekOc cheering">
+</td>
+<td valign="middle">
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/hearts.png" width="120" alt="The folded icon letting out small hearts"><br>
-  <sub><b>Folded</b>, it's just a small icon on your screen edge that now and then lets out a few floating hearts (turn them off in ⚙).</sub>
-</p>
+## 🎓 If you are just starting out
 
-## 🌱 Grow, and 🎯 Chances
+**You don't need a GitHub account, an ORCID, or an account anywhere to begin.** Type a few keywords — or
+**Sign in with ORCID** — and 🎯 Chances, 🌱 Grow, 📰 News, 📄 Research and 📦 Repos work straight away.
+They search public repositories against your interests and never read an account of yours.
 
-Two planets for what comes next in your career. Everything in them is matched to you **on your own device**; your 👍
-and 👎 teach your model what to show you more and less of, and never leave your devices.
+- **🧭 A road map for any skill.** *R for data analysis* becomes: R basics → statistics with R → a real project
+  to rerun → your own work. A level check skips what you already know, using your own repos as the evidence.
+- **🏆 258 questions across 14 reviewed protocols**, ten per attempt. Every answer shows the source it came from,
+  code questions are run and sums are recomputed *before* a question ships. Only your best score counts.
+- **📈 It tells you what's rising** in your field that your profile doesn't show yet, and why.
 
-<table>
-<tr>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-skills.png" width="260" alt="Rising Skills"><br><b>📈 Rising Skills</b><br><sub>What's growing in your field and missing from you, with why</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-protocols.png" width="260" alt="A protocol as a road map"><br><b>🧭 Protocols</b><br><sub>A road map for any skill; the step you're on makes room for itself</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/chances-jobs.png" width="260" alt="Verified jobs"><br><b>🎯 Chances</b><br><sub>Verified jobs, funding and conferences, gone after the deadline</sub></td>
+<sub>Software, data, statistics, figures and pipelines — <b>never laboratory or bench protocols</b>:
+<a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#what-mygeeky-does-not-teach">why</a>.</sub>
+
+</td>
 </tr>
 </table>
 
-<table>
-<tr>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/grow-quiz.png" width="300" alt="The Quiz tab"><br><b>🏆 The Quiz tab</b><br><sub>Every protocol's quiz in one place, with your best score on each</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-question.png" width="380" alt="A quiz question, answered"><br><b>🏆 A question, answered</b><br><sub>Why that answer is right, and the source it was written from, with the sentence quoted from it</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/quiz-score.png" width="380" alt="A quiz score"><br><b>🏆 Your score</b><br><sub>How each level and each step went. Only your best counts, and it stays on your device unless you ask</sub></td>
-</tr>
-</table>
-
-**🌱 Grow**
-- **📈 Rising Skills.** Skills, tools and methods growing in your field (in the rising papers, trending repos and
-  models, and the people myGeeKy follows for you) that your profile, CV, papers and repos don't show yet. Each one says
-  why: *"in 5 repos near your work, 2 trending models; not in your profile yet"*.
-- **🧭 Protocols.** A skill as ordered stages, e.g. *R for data analysis*: R basics → statistics with R → R for data
-  analysis → a real project to rerun → your own work.
-  - **A level check skips what you already know.** Your own repos are the evidence (*"6 of your repos use R"*,
-    which you can overrule); there's also a short quiz, or "I can do these".
-  - **Reviewed protocols** are written by myGeeKy's maker:
-    💻 *Git and GitHub for working with others*, *algorithms and data structures*, *your first web app*,
-    *machine learning outside a notebook*, *your first pull request*;
-    🧬 *R and Python for data analysis*, *GWAS*, *Nextflow*, *single-cell RNA-seq*;
-    📊 and for anyone starting to analyse their own data: *From Excel to R*, *statistics for experiments:
-    which test, and why*, *figures your reviewers won't ask you to redo*, *images into numbers with Fiji*.
-  - **Never laboratory work.** myGeeKy doesn't give bench protocols, steps, recipes or troubleshooting, and
-    refuses to build one: a wrong line of R wastes an afternoon, a wrong line at a bench can hurt somebody, and
-    myGeeKy can't review bench safety or know your local rules. Analysing what an experiment produced is
-    welcome — that's what *From Excel to R* is for.
-  - **For any other skill, myGeeKy builds one.** It searches GitHub and papers, and a small model trained for
-    this (about 400 KB, running on your device) sorts what it finds into stages.
-  - **Change it as you like** (reorder, rename, add and remove), then **📤 publish it**: it goes to the maker as a
-    public GitHub issue you send yourself, so it can become a reviewed protocol for everyone and teach the next model.
-- **🏆 Quiz** (its own tab in 🌱 Grow). **258 questions across all 14 protocols**, ten drawn at random per attempt: half basics, then applied, and
-  a few real pitfalls (*"a band in the no-template control: what's the most likely cause?"*).
-  - **Every question comes from a source**, with the sentence quoted from it, and shows that source once you answer.
-    Code questions are run, and sums (dilutions, master mixes, ΔΔCt) are recomputed, before a question is ever shipped.
-  - **Only your best score counts**, one attempt a day, and 🚩 drops a question you think is wrong.
-  - **Nothing goes online unless you ask.** If you want your score on
-    [mygeeky.org](https://mygeeky.org), you say so in two separate choices (your name, and your scores) and then
-    write `accept` on a GitHub issue **from your own account** -- that's the proof, and `withdraw` undoes it. A score
-    can follow you into a job application, so it's yours to decide; low scores are never shown at all.
-- **📚 Learn.** Free courses, books, tutorials and repos picked by hand, matched to you and your rising skills.
-- **🎉 Wins.** New ⭐ stars and 🍴 forks on your repos, and new 📚 citations of your papers, with the newest paper citing
-  you. Checked once a day.
-- **🤝 Collaborators.** Fellow myGeeKy users whose skills complement yours: they bring what you don't, and you bring
-  what they don't. Asking is the sealed 🤝 signal, which they only ever see if they pick you too.
-
-**🎯 Chances**
-- **Verified jobs.** PhD places, postdocs, master's places, research jobs and internships, each one checked by hand
-  to be real -- for labs and for software teams.
-- **Funding and conferences.** Grants, fellowships, travel grants and conferences, with who can apply and what
-  students get.
-- **Each one disappears after its deadline.** A 🚩 tells the maker a listing looks fake.
-
-They're curated by hand (how: [docs/CURATED.md](docs/CURATED.md)), and nobody, not even the maker, learns what you
-looked at.
+---
 
 ## 📱 On your phone
 
-Your world, in orbit: you in the middle, **your circle** (Live, People, Activity, Signals) on the inner ring and
-**the world** (News, Papers, Repos, AI models, Launches) on the outer one, plus 🌱 Grow and 🎯 Chances. Spin a ring with your thumb; the planet
-that locks into the lens opens above. Tap something to read and the rings fold into a slim dock.
+Your world in orbit: you in the middle, your circle on the inner ring, the world on the outer one. Spin a ring
+with your thumb; tap to read and the rings fold into a slim dock. Set it up in one scan (⚙ → **Connect your
+phone**), or **Sign in with GitHub**.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/hero-phone.png" width="760" alt="The myGeeKy phone app: the orbit, the news, and reading with the rings folded">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/hero-phone.png" width="720" alt="The myGeeKy phone app: the orbit, the news, and reading with the rings folded">
 </p>
 
-<table>
-<tr>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/live.png" width="180" alt="Live"><br><sub>Live: new faces and moves around you</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/people.png" width="180" alt="People"><br><sub>People: spin to your circle</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/read.png" width="180" alt="Reading"><br><sub>Reading: the rings fold away</sub></td>
-<td align="center" width="25%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/badges.png" width="180" alt="Badges"><br><sub>You: your model, badges, settings</sub></td>
-</tr>
-</table>
+<sub align="center">On Android, coming to Google Play soon.</sub>
 
-Set it up in one scan (⚙ → **Connect your phone** on the desktop panel), or **Sign in with GitHub**. For Android,
-coming to Google Play soon.
-
-## 🔤 Keywords that mean something
-
-Add **AI** and myGeeKy also looks for LLMs, deep learning and AI agents; add **GWAS** and it brings in
-genomics and statistical genetics. A small model reads which GitHub topics go together across the most-starred
-repos, and builds a **keyword dictionary** that every myGeeKy uses.
-
-- 🟢 **Green** keywords are in the dictionary: they bring their whole meaning to People, Repos, Research and News.
-- 🔴 **Red** ones aren't yet: they still work as plain words, and they're **passed on** (through your
-  Signals beacon, or with one click as a suggestion) so the next dictionary learns them.
-
-```bash
-mygeeky keywords add AI "single cell"   # or in the panel: Model → 🔤 Your keywords
-mygeeky keywords explain gwas           # what it brings in, and how strongly
-```
-
-## 🧠 It learns, and keeps room to explore
+---
 
 <table>
 <tr>
-<td width="55%" valign="top">
-
-Everything starts from **your research field**: topics from your papers (OpenAlex), your Google Scholar
-interests, and your repos. Then it watches what you **actually do**:
-
-| You… | It learns… |
-|---|---|
-| click a person, repo, paper or news item | a little |
-| ⭐ star or 🍴 fork a repo | more |
-| follow someone | the most |
-
-Interests fade with a 30-day half-life, so it follows you as you change. And **🔭 20% of every list** is
-deliberately kept for fields you've never touched, so you don't end up in a bubble.
-
-A separate model learns **who follows you back**, from your own history, and gets sharper every week.
-
+<td width="16%" align="center" valign="middle">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-privacy.png" width="150" alt="GeekOc, quietly">
 </td>
-<td width="45%" align="center" valign="top">
-<img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/model.png" width="300" alt="Your interest map"><br>
-<sub>The Model tab: you in the middle, your field, what you're into lately, and new territory</sub>
-</td>
-</tr>
-</table>
+<td valign="middle">
 
 ## 🔒 What it will never do
 
-- **Never follows, stars, forks or comments for you.** There is no code for it anywhere in the project. You look,
-  you click, you act yourself on github.com.
-- **No server, no account, no telemetry.** It talks only to GitHub and public research APIs (OpenAlex, arXiv,
-  bioRxiv, Hacker News, PyPI).
-- **Your data stays yours:** on your computer, plus (if you choose) a **private** GitHub repo you own for sync.
+- **Never follows, stars, forks or comments for you.** There is no code for it anywhere in the project.
+- **No server, no account, no telemetry.** It talks only to GitHub and public research APIs.
+- **Your data stays yours** — on your computer, plus a **private** repo you own, if you want sync.
 - **Tokens only in your OS keyring**, checked for least privilege, never logged or printed.
+- **Nothing is ever sent automatically.** If myGeeKy breaks, it saves the report on your computer and shows you
+  exactly what is in it — your tokens, name, email and folders already removed — and you decide whether to send it.
 
-Details: [Safety](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#safety).
+<sub>Details: <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#safety">Safety</a> ·
+how each release is checked before it ships:
+<a href="https://github.com/mygeeky/myGeeKy/blob/main/stability/PROTOCOL.md">stability/PROTOCOL.md</a>.</sub>
 
-## 💡 Ideas, problems and questions
+</td>
+</tr>
+</table>
 
-Click **💡** at the top of the panel (or run `mygeeky idea "your idea"`). Pick *Idea*, *Problem* or *Question*,
-and your browser opens a ready-to-send issue in
-[myGeeKy-ideas](https://github.com/mygeeky/myGeeKy-ideas). Click **Submit** to send it. Nothing is sent
-until you do, and no token passes through myGeeKy. Issues there are public, so leave out tokens and private data.
+---
 
-**Rather write privately, or no GitHub account?** Email **[support@mygeeky.org](mailto:support@mygeeky.org)**.
+## 📚 Everything else
 
-## 🎓 No GitHub account? Start with ORCID
+**[The full guide](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md)** has the rest: every tab, the
+[two tokens and what each may do](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#install),
+[keywords](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#keywords-that-mean-something-mygeeky-keywords),
+[how it learns](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#it-learns-what-youre-into-and-keeps-room-to-explore),
+[Signals](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#join-signals-step-by-step),
+[sync](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#use-it-from-any-computer-mygeeky-sync),
+[macOS](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#macos),
+[AI agents and scripts](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#using-mygeeky-from-an-ai-agent--script)
+and [all the settings](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#all-parameters-adjustable-or-leave-at-the-defaults).
 
-GitHub is optional, and it is not the smaller half. In setup, on the computer or the phone, **Sign in with ORCID**
-(or type your ORCID iD, or a few keywords), and these work straight away for your field: **🎯 Chances** (verified
-jobs, funding, conferences and seasons), **🌱 Grow** (rising skills, protocols, the quiz), **📰 News**,
-**📄 Research**, **📈 Market** and **📦 Repos to improve** -- the last two search public repos
-against your field and never read your account, which is why they need no GitHub.
-
-What does need an account: **who'd follow you back** (it is scored against your own account), **🕒 Activity**
-(the feed of people you follow), **📡 Signals** and **🤝 Collab** -- plus **syncing to your phone**,
-which travels through your own private GitHub repo. The *other* half of 👥 People -- researchers found by
-searching your field -- works without it.
-Signing in with ORCID only confirms your iD: myGeeKy never sees your ORCID password and keeps no ORCID token.
-
-**If myGeeKy hits an error**, it saves a crash report on your computer and offers to send it. You see exactly
-what's in it (tokens, emails, your name and folders already removed), and **Report on GitHub** opens a prefilled
-issue that you submit yourself. Nothing is ever sent automatically. How myGeeKy is checked for stability before
-each release is in [stability/PROTOCOL.md](https://github.com/mygeeky/myGeeKy/blob/main/stability/PROTOCOL.md).
-
-## 📚 The full guide
-
-Everything else is in **[docs/GUIDE.md](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md)**:
-
-| | | |
-|---|---|---|
-| [How it works](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#how-it-works) | [Finding people](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#finding-people-mygeeky-run) | [Repos to improve](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#repos-you-could-improve-mygeeky-contribute) |
-| [Market board](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#your-fields-repos-as-a-market-board-mygeeky-market) | [Research trends](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#research-trends-and-the-papers-behind-repos-mygeeky-trends) | [News](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#news-for-your-field-mygeeky-news) |
-| [Your profile](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#your-profile-cv--github--orcidopenalex--google-scholar) | [Signals, step by step](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#join-signals-step-by-step) | [Sync across computers](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#use-it-from-any-computer-mygeeky-sync) |
-| [Updating](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#updating) | [Token expiry](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#token-expiry) | [Troubleshooting](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#if-something-goes-wrong-on-windows) |
-| [The panel](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#live-glass-panel-optional-gui) | [All settings](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#all-parameters-adjustable-or-leave-at-the-defaults) | [Scripts & AI agents](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#using-mygeeky-from-an-ai-agent--script) |
-| [Grow and Chances](https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md#-grow-and--chances) | [How quizzes are written](https://github.com/mygeeky/myGeeKy/blob/main/docs/QUIZZES.md) | [Scores on the website](https://github.com/mygeeky/myGeeKy/blob/main/docs/LEADERBOARD.md) |
+**An idea, a problem, a question?** Click **💡** in the panel — it opens a ready-to-send issue in
+[myGeeKy-ideas](https://github.com/mygeeky/myGeeKy-ideas) that you submit yourself. Or email
+**[support@mygeeky.org](mailto:support@mygeeky.org)**.
 
 ## License
 
 MIT. Made with ❤️ for researchers who build things at a computer.
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-swim.png" width="120" alt="GeekOc swimming"><br>
   <a href="https://github.com/mygeeky/myGeeKy"><img alt="Star myGeeKy on GitHub" src="https://img.shields.io/github/stars/mygeeky/myGeeKy?style=social"></a>
 </p>
