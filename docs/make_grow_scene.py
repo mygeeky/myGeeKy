@@ -319,19 +319,82 @@ def plant() -> str:
     out.append('</g>')
     out.append(spark(686, 104, 20, 0))
     out.append(spark(504, 128, 15, 1))
-    out.append(spark(614, 46, 12, 2))
+    # the first two glints sit INSIDE the jar, which is a gift rather than a clash -- a plant
+    # sparkling under glass. The third used to be at (614, 46), where the cloche's knob now is.
+    out.append(spark(740, 96, 14, 2))
     return (chr(10) + "  ").join(out)
+
+
+# The glass cloche: a bell jar that comes down over the grown plant and stands for PROTECTION --
+# the thing myGeeKy does that nobody sees, around work that is still small enough to be knocked over.
+#
+# It arrives LAST of the plant's events, after every leaf has opened: a cover put over something
+# already growing reads as protecting it, where a cover there from the start would read as a cage.
+#
+# Glass is drawn, not simulated. What makes a shape read as glass at thumbnail size is three things
+# together -- a pale fill you can see the plant THROUGH, one hard bright streak across it, and the
+# same ink outline every other shape here carries. A gradient would be prettier and Qt's renderer
+# handles them unevenly, so this is flat fill plus fill-opacity, which looks the same everywhere.
+GLASS = "#dff1ff"
+GLASS_ON, GLASS_DOWN = 0.68, 0.74      # it starts down after the last leaf, and settles
+GLASS_UP = 0.93                        # and lifts away just before the plant folds
+
+
+def cloche() -> str:
+    """The bell jar, descending.
+
+    Its base state -- what a reader that ignores animation draws -- is DOWN and visible, like the
+    words: the fallback picture is the grown plant with all four words and the glass over it.
+
+    Two measurements set its shape, and both were got wrong first time round. It has to STAND ON the
+    pot -- a jar wider than the pot it covers has its walls hanging in mid-air beside it -- so the
+    walls come down at x=492 and x=678, inside the pot's 506..664 rim. And it has to CLEAR the widest
+    leaf, which reaches x=656 at y=126: the walls therefore stay straight until y=180 and the dome
+    turns in high, which puts the glass about fourteen units clear of the leaf tip at its tightest."""
+    body = "M492 338 L492 180 C492 96 540 48 585 48 C630 48 678 96 678 180 L678 338 Z"
+    out = [f'<g stroke="{INK}" stroke-width="{OW}" stroke-linejoin="round" stroke-linecap="round">',
+           # the glass itself: pale, and transparent enough that the leaves read straight through it
+           f'<path d="{body}" fill="{GLASS}" fill-opacity="0.3"/>',
+           # the streak, which is the whole trick -- without it this is a pale balloon
+           f'<path d="M518 318 L518 182 C518 132 538 96 566 78" fill="none" stroke="#ffffff"'
+           f' stroke-opacity="0.85" stroke-width="13"/>',
+           f'<path d="M548 322 L548 190" fill="none" stroke="#ffffff" stroke-opacity="0.55"'
+           f' stroke-width="7"/>',
+           # the rim it stands on, and the knob you lift it by
+           f'<path d="M492 338 L678 338" fill="none"/>',
+           f'<path d="M562 50 Q585 18 608 50 Z" fill="{GLASS}" fill-opacity="0.55"/>',
+           f'<circle cx="585" cy="26" r="15" fill="{POT}"/>',
+           '</g>']
+    inner = "".join(out)
+    snap = 0.015
+    # down from above the frame, overshooting nothing: glass is heavy, so it settles rather than bounces
+    return (f'<g opacity="1">'
+            f'<animate attributeName="opacity" values="0;0;1;1;0;0"'
+            f' keyTimes="0;{GLASS_ON:.3f};{GLASS_ON + snap:.3f};'
+            f'{GLASS_UP - snap:.3f};{GLASS_UP:.3f};1"'
+            f' dur="{CYCLE}" calcMode="spline"'
+            f' keySplines="0 0 1 1;.3 .7 .4 1;0 0 1 1;.4 0 .7 .3;0 0 1 1" repeatCount="indefinite"/>'
+            f'<g transform="translate(0,0)">'
+            f'<animateTransform attributeName="transform" type="translate"'
+            f' values="0 -400;0 -400;0 0;0 0;0 -400;0 -400"'
+            f' keyTimes="0;{GLASS_ON:.3f};{GLASS_DOWN:.3f};'
+            f'{GLASS_UP - snap:.3f};{GLASS_UP:.3f};1"'
+            f' dur="{CYCLE}" calcMode="spline"'
+            f' keySplines="0 0 1 1;.25 .7 .3 1;0 0 1 1;.5 0 .8 .4;0 0 1 1" repeatCount="indefinite"/>'
+            f'{inner}</g></g>')
 
 
 def scene() -> str:
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" \
-role="img" aria-label="GeekOc, the myGeeKy octopus, watching a plant grow">
-  <title>GeekOc watching a plant grow</title>
+role="img" aria-label="GeekOc, the myGeeKy octopus, watching a plant grow skills, knowledge, \
+collaboration and opportunity, with a glass cloche coming down over it to keep it safe">
+  <title>GeekOc watching a plant grow, safe under glass</title>
   <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0;0 -4;0 0"
        keyTimes="0;0.25;0.5;0.75;1" dur="3.6s" calcMode="spline"
        keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" repeatCount="indefinite"/>
     {reacting(6, 2, 440)}</g>
   {plant()}
+  {cloche()}
   {words()}
   {name()}
 </svg>
@@ -395,18 +458,26 @@ def _write_the_words_on(png: Path) -> None:
     except ImportError:
         print("  (Pillow not here: the still has no words on it)")
         return
-    for candidate in ("segoeuib.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf"):
-        try:
-            font = ImageFont.truetype(f"C:/Windows/Fonts/{candidate}", 34 * 2)
-            break
-        except OSError:
-            continue
-    else:
+    face = next((c for c in ("segoeuib.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf")
+                 if Path(f"C:/Windows/Fonts/{c}").exists()), None)
+    if face is None:
         print("  (no bold font found: the still has no words on it)")
         return
     sheet = Image.open(png).convert("RGBA")
     draw = ImageDraw.Draw(sheet)
+    # Each word is SHRUNK TO FIT rather than drawn at the size the SVG asks for. Whatever font this
+    # machine has is not the one a browser picks, and the difference showed: `collaboration` at the
+    # nominal size ran off the right edge of the picture here while fitting comfortably in the SVG.
+    # The room is what is left between the glass and the edge, with a margin either side.
+    # Centred on WORD_AT, it may reach neither the picture's edge nor the glass at x=678.
+    room = 2 * 2 * min(W - 24 - WORD_AT[0], WORD_AT[0] - 686)
     for (text, _on, _off, colour), y in zip(WORDS, STACKED):
+        size = 34 * 2
+        while size > 20:
+            font = ImageFont.truetype(f"C:/Windows/Fonts/{face}", size)
+            if draw.textlength(text, font=font) <= room:
+                break
+            size -= 2
         draw.text((WORD_AT[0] * 2, y * 2), text, font=font, fill=colour, anchor="ms")
     sheet.save(png)
 
