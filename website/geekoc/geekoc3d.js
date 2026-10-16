@@ -54,6 +54,69 @@
     });
   }
 
+  // --------------------------------------------------------------------- ways of moving through space
+  /* The flat moves only had a left and a right. With depth there is a towards and an away, which is the
+   * whole reason to be here: he can come at the camera, pass behind, bank into a turn.
+   *
+   * Each is a pure function of seconds giving a position and a heading. Nothing moves an ARM: the arms
+   * are simulated in WORLD space, so carrying the body drags their roots and the trail follows -- which
+   * is also why they are added to the scene rather than parented to him. Parented, they would ride
+   * along rigidly and he would look like a model on a stick. */
+  var REACH = 300;
+
+  /* A heading that TURNS rather than snaps. Picking the facing from the sign of the velocity -- facing
+   * right while moving right, left while moving left -- flips a hundred and eighty degrees in a single
+   * frame at the moment the velocity passes zero, which yanks every arm to the other side of the body
+   * at once. Measured, that showed up as beads three hundred units from where they belonged: not a
+   * trail, a glitch. Softening the sign spreads the turn over about a second, which is what a turn is. */
+  function faces(v, a, b) {
+    var k = Math.tanh(v * 4);
+    return (a + b) / 2 + ((b - a) / 2) * k;
+  }
+
+  var MOVES3 = {
+    /* Across the front and back again, banking round at each end. */
+    cross: function (t) {
+      var th = (t % 8.5) / 8.5 * Math.PI * 2;
+      return { at: [Math.sin(th) * REACH, Math.sin(t * 1.0) * 26, -40],
+               turn: faces(Math.cos(th), -90, 90), pose: 'swim' };
+    },
+    /* Straight at the camera and away again -- the shot the flat version cannot take. */
+    dive: function (t) {
+      var th = (t % 10) / 10 * Math.PI * 2;
+      return { at: [Math.sin(t * 0.7) * 40, Math.sin(t * 1.2) * 24 - 10, Math.cos(th) * 260],
+               turn: faces(-Math.sin(th), 180, 0), pose: 'swim' };
+    },
+    /* A circuit of the scene, always facing the way he is going. */
+    orbit: function (t) {
+      var a = t * 0.55;
+      return { at: [Math.cos(a) * 290, Math.sin(t * 0.9) * 22, Math.sin(a) * 240],
+               turn: (-a * 180 / Math.PI) + 90, pose: 'swim' };
+    },
+    /* The same circuit, rising and sinking through it. */
+    spiral: function (t) {
+      var a = t * 0.5;
+      return { at: [Math.cos(a) * 250, Math.sin(t * 0.42) * 150, Math.sin(a) * 210],
+               turn: (-a * 180 / Math.PI) + 90, pose: 'swim' };
+    },
+    /* Bursts and glides, an octopus's real gait. The bursts walk him round a loop rather than along a
+     * line, so the path closes on itself: a line has to teleport back to the start, and a teleport
+     * drags every arm across the scene in one frame. */
+    jet: function (t) {
+      var span = 10, u = (t % span) / span;
+      var burst = Math.min(1, Math.max(0, (u % 0.25) / 0.16));
+      var eased = burst * burst * (3 - 2 * burst);
+      var a = ((Math.floor(u / 0.25) + eased) / 4) * Math.PI * 2;
+      return { at: [Math.cos(a) * REACH, Math.sin(t * 0.8) * 16 - eased * 22, Math.sin(a) * 180],
+               turn: (-a * 180 / Math.PI) + 90, pose: burst < 0.7 ? 'jet' : 'swim' };
+    },
+    /* Hanging still, turning slowly: the resting loop. */
+    hover: function (t) {
+      return { at: [Math.sin(t * 0.5) * 40, Math.sin(t * 0.85) * 26, Math.cos(t * 0.4) * 50],
+               turn: Math.sin(t * 0.25) * 40, pose: 'idle' };
+    },
+  };
+
   // --------------------------------------------------------------------- the spine, in three dimensions
   /* The flat `walk` turns a heading in a plane; this turns a DIRECTION about an axis. Same idea, same
    * tip-weighted curl, one more dimension: the arm leaves along its bearing, pitched down, and bends
@@ -176,8 +239,11 @@
     var scene = new THREE.Scene();
     scene.background = null;
 
-    var camera = new THREE.PerspectiveCamera(32, 1.9, 1, 4000);
-    camera.position.set(0, 90, 760);
+    /* Far enough back that a dive does not burst the frame. He reaches about 250 units from his own
+     * centre and comes as near as z = 260, so at this distance and angle he fills about nine tenths of
+     * the height at his closest -- dramatic, and still inside the picture. */
+    var camera = new THREE.PerspectiveCamera(34, 1.9, 1, 5000);
+    camera.position.set(0, 70, 1150);
     camera.lookAt(0, -10, 0);
 
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
@@ -225,15 +291,21 @@
     face.add(mouth);
 
     // the arms: one group each, rebuilt every frame from the simulation
+    /* THE ARMS HANG IN THE WORLD, not off him. Parented to the body they would be carried along
+     * rigidly -- a model on a stick. In world space, moving the body drags only their ROOTS, and the
+     * rest of each arm finds out by being pulled. That is where the trail comes from. */
+    var armRoot = new THREE.Group();
+    scene.add(armRoot);
     var arms = ARMS3.map(function () {
       var g = new THREE.Group();
-      him.add(g);
+      armRoot.add(g);
       return { group: g, mesh: null, edge: null };
     });
 
     var api = {
       scene: scene, camera: camera, renderer: renderer, him: him, arms: arms,
       t: 0, chains: null, spin: 0,
+      pos: new THREE.Vector3(0, 0, 0), turn: 0, stiff: opts.stiff != null ? opts.stiff : 0.26,
       /* The same verlet bargain as the flat version, in three dimensions: pull every bead towards where
        * the pose says it belongs, hold the segments at their length, damp it so it settles. */
       step: function (pose, dt) {
@@ -241,9 +313,14 @@
         api.t += dt;
         var p = (typeof pose === 'string' ? G.POSES[pose] : pose) || G.POSES.idle;
         var k = dt * 60;
+        // where each arm WANTS to be, worked out around the origin then carried to where he is now
+        var carry = new THREE.Matrix4()
+          .makeRotationY(api.turn)
+          .premultiply(new THREE.Matrix4().makeTranslation(api.pos.x, api.pos.y, api.pos.z));
         var want = ARMS3.map(function (arm, i) {
           var c = arm.curl * (0.5 + 0.5 * Math.abs((p.curl[i] || 90) / 150));
-          return walk3(arm, c, p.len || 1, api.t, api.t * 1.5 + i * 0.8);
+          return walk3(arm, c, p.len || 1, api.t, api.t * 1.5 + i * 0.8)
+            .map(function (q) { return q.clone().applyMatrix4(carry); });
         });
         if (!api.chains) {
           api.chains = want.map(function (s) {
@@ -256,7 +333,10 @@
             var b = chain[i];
             var vel = new THREE.Vector3().subVectors(b.p, b.prev).multiplyScalar(0.87);
             b.prev.copy(b.p);
-            var hold = 0.24 * (1 - 0.5 * (i / chain.length)) * k;
+            /* The further down the arm, the looser the hold: a root should follow the body closely, a
+             * tip should flick and catch up late. At a uniform hold the trail measured twelve units on
+             * a crossing -- six per cent of an arm's length, which is to say invisible. */
+            var hold = api.stiff * (1 - 0.74 * (i / chain.length)) * k;
             b.p.add(vel).add(new THREE.Vector3().subVectors(target[i], b.p).multiplyScalar(hold));
             b.p.y -= 0.5 * (i / chain.length) * k;                 // a little weight
           }
@@ -290,12 +370,26 @@
           slot.group.add(slot.edge, slot.mesh);
         });
       },
-      /* Turn him on the spot, or carry him across the scene. */
+      /* Where he is and which way he points. The body goes at once; the arms are never told, they are
+       * dragged, which is the whole trick. */
       place: function (x, y, z, turn) {
-        him.position.set(x || 0, y || 0, z || 0);
-        if (turn != null) him.rotation.y = turn;
+        api.pos.set(x || 0, y || 0, z || 0);
+        if (turn != null) api.turn = turn;
+        him.position.copy(api.pos);
+        him.rotation.y = api.turn;
         return api;
       },
+
+      /* Follow one of the named 3D moves, at `t` seconds. Returns what it decided, so the caller can
+       * show the pose it picked. */
+      follow: function (name, t) {
+        var fn = MOVES3[name] || MOVES3.hover;
+        var m = fn(t == null ? api.t : t);
+        api.place(m.at[0], m.at[1], m.at[2], rad(m.turn));
+        return m;
+      },
+
+      moves: Object.keys(MOVES3),
       resize: function (w, h) {
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
@@ -317,5 +411,6 @@
     return api;
   }
 
-  root.GeekOc3D = { create: create, ARMS3: ARMS3, SKIN: SKIN, walk3: walk3, tube: tube, mantle: mantle };
+  root.GeekOc3D = { create: create, ARMS3: ARMS3, MOVES3: MOVES3, SKIN: SKIN,
+                    walk3: walk3, tube: tube, mantle: mantle };
 })(typeof window !== 'undefined' ? window : globalThis);
