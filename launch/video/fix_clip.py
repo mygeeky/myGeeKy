@@ -43,7 +43,14 @@ PALE, FLAT = 228, 16          # what counts as the wall: this bright, and this c
 # What that leaves is a jump FORWARD of about 150px, because he walked during the frames being dropped --
 # and that is the part the flat wall pays for: every later frame is lifted off it and set back down
 # further left, so the walk carries straight on.
-JOIN = (39, 57)
+# A second cut, further on: he makes the same small gesture twice while standing. The repeat measures
+# 0.22 different from the first pass where neighbouring frames differ by 0.8, so it is the same movement
+# played again, not a continuation of it. It is cut at 128 -> 142 rather than at the repeat's own edges
+# because the movement does not actually settle until two frames after it looks finished, and stopping
+# short of that leaves a twitch.
+#
+# Both cuts are given in the ORIGINAL clip's numbering.
+JOINS = [(39, 57), (128, 142)]
 
 SHRINKS_AT = 97               # from this frame on, he is suddenly smaller
 
@@ -120,17 +127,26 @@ def main(argv: list[str]) -> int:
     grow = tall / small
     print(f"  he is {tall:.0f}px tall, then {small:.0f}px from frame {SHRINKS_AT}: scaling those by {grow:.3f}")
 
-    cut_from, cut_to = JOIN
-    # how far he travels in one frame while walking, so the join advances by a step rather than freezing
-    pace = (spot[cut_from][0] - spot[20][0]) / (cut_from - 20)
-    shift = spot[cut_to][0] - (spot[cut_from][0] + pace)
-    print(f"  joining {cut_from} to {cut_to}: dropping {cut_to - cut_from - 1} frames"
-          f" and sliding everything after back {shift:.0f}px")
+    # Each cut leaves him further along than he should be, by however far he walked during the frames
+    # being dropped. The shifts add up, so later frames carry the total of every cut before them.
+    shift_after = {}
+    running = 0.0
+    kept, skip = [], set()
+    for cut_from, cut_to in JOINS:
+        pace = (spot[cut_from][0] - spot[max(1, cut_from - 6)][0]) / min(6, cut_from - 1)
+        running += spot[cut_to][0] - (spot[cut_from][0] + pace)
+        shift_after[cut_to] = running
+        skip |= set(range(cut_from + 1, cut_to))
+        print(f"  joining {cut_from} to {cut_to}: dropping {cut_to - cut_from - 1} frames,"
+              f" sliding what follows back {running:.0f}px in total")
+    kept = [n for n in range(1, len(frames) + 1) if n not in skip]
 
-    kept = list(range(1, cut_from + 1)) + list(range(cut_to, len(frames) + 1))
+    shift, first = 0.0, min(f for f, _ in JOINS)
     for out_n, n in enumerate(kept, 1):
+        if n in shift_after:
+            shift = shift_after[n]
         p = frames[n - 1]
-        if n <= cut_from:
+        if n <= first:
             img = Image.open(p).convert("RGB")
         elif n < SHRINKS_AT:
             fx, fy, _ = spot[n]
