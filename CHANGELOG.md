@@ -3,6 +3,43 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.25.0 (2026-10-15): start with nothing but your own words
+
+- **You can use myGeeKy without a GitHub account, an ORCID, or an account anywhere** (`src/mygeeky/fieldstart.py`).
+  Pick keywords from the dictionary and 🛒 Market, 🛠️ Repos to improve and the field half of 👥 People work at
+  once — they search public repositories against your interests and never read an account of yours. Only
+  follow-back scoring, 📣 Activity, 📊 Signals, 🤝 Collab and phone sync need one, and the program says so where
+  it needs it rather than at the door.
+  - **A decision tree, not a blank box**: five suggestions a round — three near what you have picked, two from
+    further off, so a wrong first guess does not wall you in. Dismissing one rules out its neighbourhood.
+    Ready at six picks across three areas, not a flat count of ten.
+  - **When a keyword is not in the dictionary** it offers the nearest ones that are, and asks OpenAlex for real
+    topics if none fit, rather than silently dropping what you typed.
+  - **It asks about an account on days 7, 21, 45 and 90, and then never again.** Nothing is ever withdrawn for
+    saying no.
+- **🗓️ Seasons: the scholarships that come back every year** (`src/mygeeky/seasons.py`). The periods are a drop
+  box that opens on the one you are in, so what is open now is what you see first.
+- **A listing in another language is translated, not dropped.** Arabic, French, German, Spanish and Chinese
+  listings are read, translated and still checked against their own page — and jobs, funding and conferences are
+  shown in English whatever language the board was in.
+- **📬 Read the job alerts in your mailbox**, beside the sites it already watches and pages you paste
+  (`src/mygeeky/mailbox.py`). The password lives in your system keyring, never in a file.
+- **Paste a page the robot cannot read**, and **filter listings by country** — the location filter sits above the
+  four kinds, because it applies to all of them.
+- **Ten bugs fixed** by auditing and by actually using the program, including `mygeeky --help` crashing on a
+  Windows console since 0.8.0 (cp1252 could not print the output's arrows), and wrapping labels that drew nothing
+  at all in the flow layout.
+- **🏆 Quiz admin folds away the quizzes that need nothing**, instead of one "add more questions" button per quiz
+  down the page.
+- **Sections are icons in one row**, and the open one says its name. The drop boxes follow the theme instead of
+  Qt's black default.
+- **Curated lists**: 23 jobs, 6 funding calls and 11 conferences added, everything past its deadline removed, and
+  the French bioinformatics society's board added as a source.
+- **📱 Phone app 1.8.0**: Seasons and the country filter, ported from the desktop and checked against it — the
+  phone's own TypeScript is run in Node against the Python on a fixed date, so the two cannot drift apart quietly.
+- **🐙 GeekOc**, the myGeeKy octopus, joins the website (`website/geekoc/`): a parametric rig with nine poses, ten
+  faces and five ways of swimming, his arms simulated rather than drawn. Not part of the pip package.
+
 ## 0.24.0 (2026-10-14): for computer science and for data analysis, and quizzes
 
 - **myGeeKy now covers three kinds of work at a computer**, not only bioinformatics: 💻 computer scientists and
