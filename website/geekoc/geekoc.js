@@ -208,6 +208,7 @@
        * pale band pooling in the end of it. Taking most of the width off linearly and the rest by the
        * square narrows the arm the whole way down. */
       var r = (w * Math.max(0.10, 1 - 0.56 * kk - 0.34 * kk * kk)) / 2;
+
       norms.push([nx, ny]);
       widths.push(r);
       left.push([p[0] + nx * r, p[1] + ny * r]);
@@ -281,9 +282,34 @@
     var body = how.body;
     var ease = function (u) { return u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u); };
 
+    /* AND IT CANNOT BE PUSHED FURTHER OUT THAN THE BEND ALLOWS.
+     *
+     * The band is an offset of the spine, and offsetting a curve towards the inside of its own bend
+     * only works while the offset stays shorter than the radius of that bend. Push further and the
+     * edge runs out of room and loops back through itself -- a small triangular spur, which is the
+     * last 70. No pose bends an arm tightly enough to show it; the simulation does, because a tip
+     * whips round further than any pose asks for. Where the arm is straight the radius is enormous and
+     * this does nothing. */
+    var room = [];
+    for (i = 0; i <= N; i++) {
+      var pm = arm.spine[Math.max(i - 1, 0)], pp = arm.spine[Math.min(i + 1, N)], pc = arm.spine[i];
+      var ax = pc[0] - pm[0], ay = pc[1] - pm[1], bx = pp[0] - pc[0], by = pp[1] - pc[1];
+      var la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+      /* atan2, not asin. asin cannot tell a hundred and twenty degree turn from a sixty degree one --
+       * it folds everything past a right angle back down again -- so on exactly the tight coils this
+       * clamp exists for, it reported a gentle bend and let the band through at full width. */
+      var turn = (la < 1e-6 || lb < 1e-6) ? 0
+        : Math.abs(Math.atan2(ax * by - ay * bx, ax * bx + ay * by));
+      var want = arm.widths[i] * to;
+      // clamped on both sides rather than only the concave one: on the outside it costs nothing, and
+      // it saves getting the sign of the turn wrong, which is easy and silent
+      room.push(turn < 1e-4 || want <= 0 ? 1
+                : Math.min(1, (0.85 * (((la + lb) / 2) / turn)) / want));
+    }
+
     var fade = [];
     for (i = 0; i <= N; i++) {
-      var f = (N - i) / 2.5;
+      var f = Math.min((N - i) / 2.5, room[i]);
       if (body) {
         var q = arm.spine[i];
         var t = Math.hypot((q[0] - body.cx) / body.rx, (q[1] - body.cy) / body.ry);
@@ -291,8 +317,30 @@
       } else {
         f = Math.min(f, (i - 6.5) / 3);
       }
+      /* THE PINCH HAS TO REACH ZERO, and it did not.
+       *
+       * Where the band swaps which face of the arm it is on, the quad between the two beads either
+       * side is a CROSSED quad: inner on the left becomes inner on the right, so the two edges
+       * intersect. Filled, that is a triangle sticking out of the arm.
+       *
+       * The old pinch measured |i - j + 0.5|, which for the two beads straddling the swap comes to
+       * exactly 0.5, over 2.5 is 0.2 -- so the band narrowed to a FIFTH of its width there and then
+       * drew the crossed quad anyway, just smaller. Counted over 1,800 frames of swimming, that is
+       * 1,492 little triangles. Subtracting the half-step first makes it genuinely zero on both of
+       * them, so the two halves of the ribbon meet at a point and there is nothing to cross. */
+      /* Pinch at every place the ribbon can turn over, which is TWO kinds of place, not one.
+       *
+       * The obvious one is the band swapping which face of the arm it rides on. The other is the
+       * normal itself reversing while the side stays put: each normal comes from the difference
+       * between the beads either side, and at a hairpin those two beads end up almost on top of each
+       * other, so that difference collapses and its direction becomes arbitrary. The band then turns
+       * over with nothing marking the spot, and draws a triangle. Catching it is one dot product --
+       * if this bead's normal disagrees with the last one, pinch. */
       for (var j = 1; j <= N; j++) {
-        if (sides[j] !== sides[j - 1]) f = Math.min(f, Math.abs(i - j + 0.5) / 2.5);
+        var na = arm.norms[j], nb = arm.norms[j - 1];
+        if (sides[j] !== sides[j - 1] || na[0] * nb[0] + na[1] * nb[1] < 0.25) {
+          f = Math.min(f, Math.max(0, Math.abs(i - j + 0.5) - 0.5) / 2.5);
+        }
       }
       fade.push(Math.max(0, Math.min(1, f)));
     }
@@ -641,7 +689,8 @@
   function Life(opts) {
     opts = opts || {};
     this.opts = opts;
-    this.stiff = opts.stiff != null ? opts.stiff : 0.22;    // how hard the pose pulls the arms back
+    this.stiff = opts.stiff != null ? opts.stiff : 0.22;
+    this.bend = opts.bend != null ? opts.bend : 0.45;     // how hard it refuses to kink    // how hard the pose pulls the arms back
     this.damp = opts.damp != null ? opts.damp : 0.86;       // velocityDecay, in d3's language
     this.droop = opts.droop != null ? opts.droop : 0.22;    // a little gravity, so arms hang
     this.reach = opts.reach != null ? opts.reach : 140;     // how near the pointer has to be to be felt
@@ -693,6 +742,26 @@
           }
         }
       }
+      /* A TENTACLE RESISTS KINKING, and a chain held only at its segment LENGTHS does not.
+       *
+       * Distance constraints say how far apart two beads must be and nothing whatever about the angle
+       * between three, so the chain is free to zigzag -- bead left, bead right, bead left -- while
+       * every length stays perfect. During a hard burst the solver does exactly that, and the arm
+       * comes out with a sawtooth edge that looks like the renderer failing mid-draw. It was not the
+       * renderer: the spine really was that shape.
+       *
+       * Pulling each bead a little towards the midpoint of its neighbours is the cheapest possible
+       * bending resistance. It barely touches a smooth curve, where a bead already sits near that
+       * midpoint, and bites hard on a zigzag, where it does not. The length pass runs afterwards and
+       * puts the segments back. */
+      var bend = self.bend != null ? self.bend : 0.45;
+      for (i = 1; i < n - 1; i++) {
+        var mx = (chain[i - 1].x + chain[i + 1].x) / 2;
+        var my = (chain[i - 1].y + chain[i + 1].y) / 2;
+        chain[i].x += (mx - chain[i].x) * bend;
+        chain[i].y += (my - chain[i].y) * bend;
+      }
+
       // hold the segments at their length, root outwards, twice: cheap and enough
       for (var pass = 0; pass < 2; pass++) {
         chain[0].x = target[0][0];
