@@ -75,68 +75,90 @@ def placed(markup: str, x: int, y: int, size: int) -> str:
     return f'<g transform="translate({x},{y}) scale({k:.4f})">{inner}</g>'
 
 
-def spark(x: float, y: float, r: float, start: float) -> str:
-    """A four-pointed glint that pops after the leaf it belongs to, then twinkles.
+CYCLE = "13s"            # slow enough to watch: it was over before the eye had followed it
 
-    The glints are what turn "a plant" into "it just did that". They arrive late on purpose: a
-    sparkle before the thing it is celebrating reads as decoration."""
+# The cycle, as fractions of it. The stem has to REACH its height before a leaf opens, or a leaf
+# hangs in the air above a stem that has not got there yet -- which is exactly what it was doing.
+RISE_END = 0.30          # the stem is at full height here, carrying its leaves still folded
+OPEN_END = 0.46          # and here the leaves have opened
+HOLD_END = 0.92          # it stays grown for most of the cycle, then folds away
+
+
+def scaled(inner: str, ox: float, oy: float, values: str, keytimes: str, splines: str) -> str:
+    """Scale something about its own root, on the one shared clock.
+
+    The scaling nests translate -> scale -> translate-back rather than using a CSS transform-origin,
+    so the path data stays in the picture's own coordinates and behaves the same in a browser, in a
+    Markdown preview and in Qt. Everything is keyed to the SAME `dur`, with no `begin` offsets, so
+    the parts cannot drift out of step with each other however long the page has been open."""
+    return (f'<g transform="translate({ox},{oy})">'
+            f'<g><animateTransform attributeName="transform" type="scale"'
+            f' values="{values}" keyTimes="{keytimes}" dur="{CYCLE}"'
+            f' calcMode="spline" keySplines="{splines}" repeatCount="indefinite"/>'
+            f'<g transform="translate({-ox},{-oy})">{inner}</g></g></g>')
+
+
+def leaf(d: str, fill: str, ox: float, oy: float, order: float) -> str:
+    """A leaf that rides up with the stem folded, and opens once the stem has arrived.
+
+    `order` staggers the opening from the bottom leaf to the top one. It starts at 0.3 rather than 0
+    because a leaf is a small leaf while it travels, not nothing -- "the stem should have leaves
+    small, and then the small leaves grow"."""
+    open_at = RISE_END + 0.02 + order * 0.05
+    done_at = min(open_at + 0.1, OPEN_END + order * 0.04)
+    return scaled(f'<path d="{d}" fill="{fill}"/>', ox, oy,
+                  values="0.3 0.3;0.3 0.3;1 1;1 1",
+                  keytimes=f"0;{open_at:.3f};{done_at:.3f};1",
+                  splines="0 0 1 1;.2 .8 .3 1;0 0 1 1")
+
+
+def spark(x: float, y: float, r: float, order: float) -> str:
+    """A four-pointed glint, arriving after the leaves have opened.
+
+    The glints are what turn "a plant" into "it just did that". They are late on purpose: a sparkle
+    before the thing it is celebrating reads as decoration."""
+    at = OPEN_END + 0.03 + order * 0.035
     path = (f'<path d="M{x} {y - r}C{x + r * .18} {y - r * .22} {x + r * .22} {y - r * .18} {x + r} {y}'
             f'C{x + r * .22} {y + r * .18} {x + r * .18} {y + r * .22} {x} {y + r}'
             f'C{x - r * .18} {y + r * .22} {x - r * .22} {y + r * .18} {x - r} {y}'
             f'C{x - r * .22} {y - r * .18} {x - r * .18} {y - r * .22} {x} {y - r}Z" fill="{SPARK}">'
-            f'<animate attributeName="opacity" values="1;0.45;1;0.6;1" keyTimes="0;0.2;0.45;0.7;1"'
-            f' dur="2.2s" begin="{start}s" repeatCount="indefinite"/></path>')
-    return grows(path, x, y, start=start, rise=0.08)
-
-
-CYCLE = "7s"             # grow, hold, and away again, then round once more
-
-
-def grows(inner: str, ox: float, oy: float, start: float, rise: float = 0.20) -> str:
-    """Make something sprout from the point (ox, oy) and, at the end of the cycle, fold back into it.
-
-    The scaling is done by nesting translate -> scale -> translate-back, rather than by a CSS
-    transform-origin: the path data stays in the picture's own coordinates, and it behaves the same
-    in a browser, in a Markdown preview and in Qt. A renderer that ignores animation altogether draws
-    the base state, which is why that state is the FULL-GROWN one -- a still of this picture is a
-    plant, not an empty pot."""
-    return (f'<g transform="translate({ox},{oy})">'
-            f'<g><animateTransform attributeName="transform" type="scale" additive="replace"'
-            f' values="0 0;1 1;1 1;0 0" keyTimes="0;{rise};0.88;1" dur="{CYCLE}"'
-            f' calcMode="spline"'
-            f' keySplines=".2 .9 .3 1;0 0 1 1;.7 0 .9 .4"'
-            f' begin="{start}s" repeatCount="indefinite"/>'
-            f'<g transform="translate({-ox},{-oy})">{inner}</g></g></g>')
+            f'<animate attributeName="opacity" values="1;0.4;1;0.55;1" dur="2.6s"'
+            f' repeatCount="indefinite"/></path>')
+    return scaled(path, x, y,
+                  values=f"0 0;0 0;1 1;1 1;0 0",
+                  keytimes=f"0;{at:.3f};{at + 0.04:.3f};{HOLD_END};1",
+                  splines=".2 .8 .3 1;.2 .9 .3 1;0 0 1 1;.7 0 .9 .4")
 
 
 def plant() -> str:
-    """The pot, the stem and three leaves -- each one bigger than the last, because the picture has to
-    say *growing* and not merely *a plant*. Drawn with his outline so the two belong together.
+    """The pot, then everything that grows out of it.
 
-    They come up in order, out of the soil line at the top of the pot, each one a little after the
-    one below it. That stagger is the whole illusion: three things scaling at once reads as a picture
-    being zoomed, and the same three a third of a second apart reads as something growing."""
+    The stem and its leaves are ONE group rising from the soil line, so the leaves travel up with the
+    stem instead of waiting in mid-air for it: that was the bug you could see. Only once the stem is
+    at its full height do the leaves open, bottom first."""
     SOIL = (588, 336)
     out = [f'<g stroke="{INK}" stroke-width="{OW}" stroke-linejoin="round" stroke-linecap="round">']
     # the pot does not grow: it is the thing everything else grows out of
     out.append(f'<path d="M506 332 L664 332 L646 420 Q585 434 524 420 Z" fill="{POT}"/>')
     out.append(f'<path d="M506 332 L664 332 L658 358 Q585 372 512 358 Z" fill="{POT_DEEP}"/>')
-    # the stem, leaning the way it is growing
-    out.append(grows(f'<path d="M588 334 C585 290 572 258 580 206" fill="none" stroke="{STEM}"'
-                     f' stroke-width="15"/>', *SOIL, start=0.0, rise=0.30))
-    # three leaves, smallest at the bottom: the eye reads that as time
-    out.append(grows(f'<path d="M584 318 C546 316 526 294 528 268 C564 266 586 292 584 318Z"'
-                     f' fill="{LEAF_DEEP}"/>', 584, 318, start=0.55))
-    out.append(grows(f'<path d="M583 274 C629 272 656 240 650 208 C606 210 580 240 583 274Z"'
-                     f' fill="{LEAF}"/>', 583, 276, start=1.15))
-    out.append(grows(f'<path d="M580 224 C538 214 514 174 522 136 C570 146 590 186 580 224Z"'
-                     f' fill="{LEAF}"/>', 580, 226, start=1.8))
+
+    stem = (f'<path d="M588 334 C585 290 572 258 580 206" fill="none" stroke="{STEM}"'
+            f' stroke-width="15"/>')
+    leaves = "".join([
+        leaf("M584 318 C546 316 526 294 528 268 C564 266 586 292 584 318Z", LEAF_DEEP, 584, 318, 0),
+        leaf("M583 274 C629 272 656 240 650 208 C606 210 580 240 583 274Z", LEAF, 583, 276, 1),
+        leaf("M580 224 C538 214 514 174 522 136 C570 146 590 186 580 224Z", LEAF, 580, 226, 2),
+    ])
+    # the stem and its leaves rise together, out of the soil
+    out.append(scaled(stem + leaves, *SOIL,
+                      values="0 0;1 1;1 1;0 0",
+                      keytimes=f"0;{RISE_END};{HOLD_END};1",
+                      splines=".25 .7 .35 1;0 0 1 1;.7 0 .9 .4"))
     out.append('</g>')
-    # and the glints, which are what make it *just happened* rather than *a plant in a pot*
-    out.append(spark(664, 132, 21, start=2.3))
-    out.append(spark(520, 92, 15, start=2.65))
-    out.append(spark(624, 60, 12, start=2.95))
-    return "\n  ".join(out)
+    out.append(spark(664, 132, 21, 0))
+    out.append(spark(520, 92, 15, 1))
+    out.append(spark(624, 60, 12, 2))
+    return (chr(10) + "  ").join(out)
 
 
 def scene() -> str:
