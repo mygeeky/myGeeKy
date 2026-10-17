@@ -44,6 +44,12 @@ PALE, FLAT = 228, 16          # what counts as the wall: this bright, and this c
 FILM = (1920, 1080)
 SHARPEN = (1.6, 55, 3)        # radius, strength, threshold -- flat cel art takes this well, photos do not
 
+# How he sits in the frame. ZOOM pulls back from him, leaving wall around him for the words to live in;
+# his feet stay on the same floor line, so pulling back adds the room ABOVE him rather than dropping him.
+# RIGHT walks him further across, so he finishes at the far end of the frame instead of the middle.
+ZOOM = 0.80
+RIGHT = 0.227                 # as a fraction of the frame's width
+
 # The broken stride is CUT OUT, not patched. Patching was tried first and it does not work: this walk's
 # steps land every 8 to 13 frames, never the same twice, so no borrowed stride lines up at both ends --
 # and squeezing a correct step into the seven frames available makes the legs move at double speed, which
@@ -108,12 +114,14 @@ def put(plate: Image.Image, fig: Image.Image, foot_x: float, foot_y: float, scal
     into a SINGLE resize -- enlarging twice over softens him for nothing. The coordinates arrive in the
     original clip's pixels and are taken up to the plate's here."""
     crop = fig.crop(where(fig))
-    k = scale * up
+    k = scale * up * ZOOM
     if k != 1.0:
         crop = crop.resize((max(1, round(crop.width * k)), max(1, round(crop.height * k))), Image.LANCZOS)
         crop = crisp(crop)
     out = plate.convert("RGBA").copy()
-    out.alpha_composite(crop, (round(foot_x * up - crop.width / 2), round(foot_y * up - crop.height)))
+    x = foot_x * up * ZOOM + FILM[0] * (1 - ZOOM) / 2 + FILM[0] * RIGHT
+    y = foot_y * up                                   # his feet stay on the floor they were always on
+    out.alpha_composite(crop, (round(x - crop.width / 2), round(y - crop.height)))
     return out.convert("RGB")
 
 
@@ -169,8 +177,11 @@ def main(argv: list[str]) -> int:
         if n in shift_after:
             shift = shift_after[n]
         p = frames[n - 1]
+        # Every frame goes through the same framing, including the ones with nothing wrong with them:
+        # the moment the picture is zoomed or moved at all, a frame left as it was jumps.
         if n <= first:
-            img = crisp(Image.open(p).convert("RGB").resize(FILM, Image.LANCZOS))
+            fx, fy, _ = spot[n]
+            img = put(plate, figure(p), fx, fy, 1.0, up)
         elif n < SHRINKS_AT:
             fx, fy, _ = spot[n]
             img = put(plate, figure(p), fx - shift, fy, 1.0, up)
