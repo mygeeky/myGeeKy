@@ -1,8 +1,8 @@
 # YouTube upload
 
-**Published:** https://youtu.be/DP7KeKYiuf0 (current; replaces https://youtu.be/fPQHOnYs8sA, https://youtu.be/NTYDY7IGufw, https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY)
+**Published:** https://youtu.be/u1qmX5PtMdE (current; replaces https://youtu.be/DP7KeKYiuf0, https://youtu.be/fPQHOnYs8sA, https://youtu.be/NTYDY7IGufw, https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY)
 
-**File:** `launch/video/mygeeky-intro.mp4` (re-render: `python launch/video/make_video.py`). It opens with `intro/intro-source.mp4` (made with Gemini) from its 4th second; the soundtrack is original, composed in `make_video.py`, so it's free to use anywhere.
+**File:** `launch/video/falling.mp4` (re-render: `python launch/video/make_falling.py`, then `python launch/video/make_soundtrack.py` for the sound). Everything in it, the soundtrack included, is made in the repo, so it is free to use anywhere.
 **Thumbnail:** `launch/video/youtube-thumbnail.png` (1280×720)
 
 ## Title (≤ 100)
