@@ -31,6 +31,7 @@ IMAGES = {
     "grow-protocols.png": ROOT / "docs/screenshots/grow-protocols.png",
     "grow-quiz.png": ROOT / "docs/screenshots/grow-quiz.png",
     "chances-jobs.png": ROOT / "docs/screenshots/chances-jobs.png",
+    "chances-seasons.png": ROOT / "docs/screenshots/chances-seasons.png",
     "quiz-question.png": ROOT / "docs/screenshots/quiz-question.png",
     "quiz-score.png": ROOT / "docs/screenshots/quiz-score.png",
     "video-thumbnail.png": ROOT / "docs/video-thumbnail.png",
@@ -58,6 +59,9 @@ def main() -> None:
     for name, src in IMAGES.items():
         shutil.copyfile(src, OUT / "img" / name)
     shutil.copytree(ROOT / "website/fonts", OUT / "fonts")      # self-hosted fonts (no request to Google)
+    (OUT / "geekoc").mkdir()                                    # GeekOc, alive in the hero: the rig and its canvas drawer
+    for js in ("geekoc.js", "geekoc-canvas.js"):
+        shutil.copyfile(ROOT / "website/geekoc" / js, OUT / "geekoc" / js)
     shutil.copyfile(ROOT / "website/install.sh", OUT / "install.sh")   # curl -fsSL https://mygeeky.org/install.sh | sh
     cname = ROOT / "website/CNAME"
     if cname.exists():
