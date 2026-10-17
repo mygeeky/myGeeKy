@@ -3,6 +3,20 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.26.2 (2026-10-17): your geeky friend who helps you grow, quietly
+
+- **A new README** (`README.md`, which is also this PyPI page), built around what myGeeKy does for you: helps you
+  **see** what is moving in your field, **learn** what comes next, **meet** the people working on the same
+  problems and **catch** opportunities while they are still open. One tagline, three buttons (Windows, pip, the
+  video), install moved up, each section's detail folded away, and the five promises as a table.
+- **A new website** (`website/index.html`) saying the same: GeekOc alive in the hero (the website's own rig, his
+  arms reaching for your pointer), the four promises as cards, and the sixteen tiles and nine feature sections
+  merged into See, Learn, Meet and Catch. Install now matches the README (`mygeeky setup`), and the code signing
+  policy is unchanged.
+- **A new video**, [youtu.be/u1qmX5PtMdE](https://youtu.be/u1qmX5PtMdE), made in the repo
+  (`launch/video/make_falling.py`, `make_soundtrack.py`, `make_thumbnail.py`): the kid, GeekOc, the brick
+  mountain, every screen, install, the promises, and an original soundtrack synthesised from scratch.
+
 ## 0.26.1 (2026-10-16): output going nowhere is not a crash
 
 - **`mygeeky ... | head` no longer reports a crash** (`src/mygeeky/cli.py`). Closing the pipe is what
