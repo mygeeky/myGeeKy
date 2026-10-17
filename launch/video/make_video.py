@@ -13,6 +13,7 @@ can be re-rendered whenever the app changes.
 from __future__ import annotations
 
 import math
+import os
 import random
 import subprocess
 import sys
@@ -296,36 +297,6 @@ BEACON = Terminal([
 
 
 # --------------------------------------------------------------------------- scenes
-def s_hook(t: float) -> Image.Image:
-    """A crowd of dots: 100 million developers; a few in your field glow, then fade into the noise."""
-    im = background(t).convert("RGBA")
-    rnd = random.Random(7)
-    layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
-    dense = ease(t / 3)
-    for i in range(int(2600 * dense) + 120):
-        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
-        x += math.sin(t * 0.7 + i) * 6
-        special = i % 211 == 0
-        if special and 4.5 < t < 11:
-            glow = ease((t - 4.5) / 0.8) * (1 - ease((t - 9.2) / 1.6))
-            r = 7 + 4 * glow
-            d.ellipse((x - r * 3, y - r * 3, x + r * 3, y + r * 3), fill=PINK + (int(50 * glow),))
-            d.ellipse((x - r, y - r, x + r, y + r), fill=PINK + (int(120 + 135 * glow),))
-        else:
-            r = rnd.uniform(1.8, 4.2)
-            d.ellipse((x - r, y - r, x + r, y + r), fill=(170, 172, 205, int(rnd.uniform(70, 170))))
-    im.alpha_composite(layer)
-    band = Image.new("RGBA", im.size, (0, 0, 0, 0))   # a dark band behind the words only
-    ImageDraw.Draw(band).rectangle((0, 400, W, 620), fill=BG + (205,))
-    im.alpha_composite(band.filter(ImageFilter.GaussianBlur(40)))
-    text_center(im, "GitHub has over 100 million developers.", 470, font(76, bold=True), TEXT, fade(t, 0.3, 4.4))
-    text_center(im, "The few who share your research...", 470, font(76, bold=True), PINK, fade(t, 4.6, 8.4))
-    text_center(im, "...are buried under accounts that will never notice you.", 470,
-                font(66, bold=True), TEXT, fade(t, 8.6, 12.6))
-    return im
-
-
 def s_reveal(t: float) -> Image.Image:
     im = background(t + 12).convert("RGBA")
     k = ease(t / 1.4)
@@ -336,8 +307,7 @@ def s_reveal(t: float) -> Image.Image:
     hearts(im, t, (W / 2, 380 - size / 2.4), 0.9, n=9, rise=300)
     paste(im, img(ASSETS / "icon_256.png"), (W / 2, 380), size, alpha=k, shadow=False)
     text_center(im, "myGeeKy", 560, font(130, bold=True), TEXT, ease((t - 1.0) / 0.7))
-    gradient_text(im, "the people, projects, papers and pulse of your field", 730, font(54, bold=True), ease((t - 1.8) / 0.7))
-    text_center(im, "for developers and researchers on GitHub", 820, font(38), MUTED, ease((t - 2.6) / 0.7))
+    gradient_text(im, "a quiet companion that helps you grow", 730, font(54, bold=True), ease((t - 1.8) / 0.7))
     return im
 
 
@@ -607,64 +577,257 @@ def s_close(t: float) -> Image.Image:
     return im
 
 
-# --------------------------------------------------------------------------- the opening clip
-INTRO_SRC = OUT / "intro" / "intro-source.mp4"     # the character opening the laptop (made with Gemini)
-INTRO_FROM = 4.0                                  # seconds into it where ours starts
-INTRO_DUR = 6.0
-INTRO_FRAMES = OUT / "intro" / "frames"
-_intro_cache: dict[int, Image.Image] = {}
+# --------------------------------------------------------------------------- the opening
+#
+# The kid walks in and stops at the far right. Three lines promise him the world; as each one lands, more
+# of the world falls out of the sky, until it is a hill burying him and the promise has become the
+# problem. Then GeekOc swims in, the hill drains away in his wake, and the noise stops.
+#
+# The clip is launch/video/intro/walk-in-fixed.mp4 -- already repaired and framed by fix_clip.py, at the
+# film's own size, with the left 87% of every frame deliberately empty for the words.
+WALK_SRC = OUT / "intro" / "walk-in-fixed.mp4"
+WALK_FRAMES = OUT / "intro" / "walk-frames"
+GEEK_FRAMES = OUT / "intro" / "geekoc"
+ENGINE = ROOT / "website" / "geekoc" / "geekoc.js"
+
+WALK_DUR = 24.0          # the kid, the lines, and the hill
+SWIM_DUR = 5.2           # GeekOc crosses and clears it
+
+# Each line arrives, and the sky gets heavier behind it.
+LINES = [
+    (1.4, 5.6, "Everything you need to grow is out there."),
+    (5.9, 10.1, "Everyone you need to know is out there."),
+    (10.4, 14.6, "Every chance that fits you is out there."),
+]
+TURN = (15.0, 18.8, "…and so is everything else.")
+ASKS = [(19.2, 21.8, "So how do you find your fit?"),
+        (21.9, 24.0, "And how do you stay focused while you look?")]
+
+FALL_FROM, FALL_TO = 1.6, 18.6        # when things start and stop falling
+ICONS = 190                            # how many end up in the pile
 
 
-def extract_intro() -> None:
-    """The clip from INTRO_FROM to its end, as 1080p frames at our frame rate, and its own sound."""
+def extract_walk() -> None:
+    """The repaired clip as frames at the film's rate."""
     import imageio_ffmpeg
-    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
-    INTRO_FRAMES.mkdir(parents=True, exist_ok=True)
-    for old in INTRO_FRAMES.glob("*.jpg"):
-        old.unlink()
-    subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-ss", str(INTRO_FROM), "-i", str(INTRO_SRC),
-                    "-vf", f"scale={W}:{H}:flags=lanczos,fps={FPS}", "-q:v", "2", str(INTRO_FRAMES / "%04d.jpg")],
-                   check=True)
-    subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-ss", str(INTRO_FROM), "-i", str(INTRO_SRC), "-vn",
-                    "-ac", "2", "-ar", "44100", str(OUT / "intro" / "intro-sound.wav")], check=True)
+    WALK_FRAMES.mkdir(parents=True, exist_ok=True)
+    if list(WALK_FRAMES.glob("*.jpg")):
+        return
+    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-i", str(WALK_SRC),
+                    "-vf", f"scale={W}:{H}:flags=lanczos,fps={FPS}", "-q:v", "2",
+                    str(WALK_FRAMES / "%04d.jpg")], check=True)
 
 
-def s_intro(t: float) -> Image.Image:
-    """The clip, darker at the edges, with a glitch and a white flash into the story."""
-    files = sorted(INTRO_FRAMES.glob("*.jpg"))
+def render_geekoc() -> None:
+    """GeekOc swimming, out of the rig that draws him everywhere else.
+
+    He is NOT generated. The rig in website/geekoc/geekoc.js already swims -- it is how the website moves
+    him -- so he comes out perfectly on-model, at whatever size we ask for, and can be re-rendered forever.
+    A generated octopus would be off-model, 720p, and would need its legs fixing like the kid's did."""
+    GEEK_FRAMES.mkdir(parents=True, exist_ok=True)
+    if list(GEEK_FRAMES.glob("*.png")):
+        return
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QByteArray, Qt
+    from PySide6.QtGui import QGuiApplication, QImage, QPainter
+    from PySide6.QtSvg import QSvgRenderer
+    QGuiApplication.instance() or QGuiApplication([])
+    n, size = 30, 900
+    for i in range(n):
+        t = 4.2 * i / n                       # one pass of his breathing and his trailing arms
+        js = ("require(process.env.GEEKOC); const G = globalThis.GeekOc;"
+              "process.stdout.write(G.svg({pose:'swim', face:'excited', t:Number(process.env.T),"
+              " size:Number(process.env.SIZE), id:'g'+process.env.I}));")
+        env = {**os.environ, "GEEKOC": str(ENGINE), "T": f"{t:.3f}", "SIZE": str(size), "I": str(i)}
+        out = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=120, env=env)
+        if out.returncode != 0:
+            raise SystemExit("node could not draw GeekOc:\n" + (out.stderr or "")[-400:])
+        r = QSvgRenderer(QByteArray(out.stdout.encode("utf-8")))
+        img = QImage(size, size, QImage.Format_ARGB32)
+        img.fill(Qt.transparent)
+        painter = QPainter(img)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        r.render(painter)
+        painter.end()
+        img.save(str(GEEK_FRAMES / f"{i:03d}.png"))
+
+
+_walk_cache: dict[int, Image.Image] = {}
+_geek_cache: dict[int, Image.Image] = {}
+
+
+def walk_frame(t: float) -> Image.Image:
+    files = sorted(WALK_FRAMES.glob("*.jpg"))
     i = min(int(t * FPS), len(files) - 1)
-    if i not in _intro_cache:
-        _intro_cache.clear()
-        _intro_cache[i] = Image.open(files[i]).convert("RGB")
-    im = _intro_cache[i].copy().convert("RGBA")
-    # cinematic bars that slide away as the screen lights up
-    bars = int(110 * (1 - ease((t - 4.2) / 1.2)))
-    if bars > 0:
-        d = ImageDraw.Draw(im)
-        d.rectangle((0, 0, W, bars), fill=(0, 0, 0, 255))
-        d.rectangle((0, H - bars, W, H), fill=(0, 0, 0, 255))
-    # the last half second glitches: slices of the picture jump sideways, colours split
-    g = ease((t - (INTRO_DUR - 0.55)) / 0.45)
-    if g > 0:
-        rnd = random.Random(int(t * FPS))
-        rgb = im.convert("RGB")
-        r, gg, b = rgb.split()
-        shift = int(18 * g)
-        rgb = Image.merge("RGB", (r.transform(r.size, Image.AFFINE, (1, 0, -shift, 0, 1, 0)), gg,
-                                  b.transform(b.size, Image.AFFINE, (1, 0, shift, 0, 1, 0))))
-        for _ in range(int(9 * g)):
-            y0 = rnd.randint(0, H - 40)
-            h = rnd.randint(8, 60)
-            dx = rnd.randint(-int(80 * g), int(80 * g))
-            strip = rgb.crop((0, y0, W, y0 + h))
-            rgb.paste(strip, (dx, y0))
-        im = rgb.convert("RGBA")
-    fade_in = 1 - ease(t / 0.5)
-    if fade_in > 0:
-        im.alpha_composite(Image.new("RGBA", im.size, (0, 0, 0, int(255 * fade_in))))
-    flash = ease((t - (INTRO_DUR - 0.25)) / 0.25)
-    if flash > 0:
-        im.alpha_composite(Image.new("RGBA", im.size, (255, 255, 255, int(235 * flash))))
+    if i not in _walk_cache:
+        _walk_cache.clear()
+        _walk_cache[i] = Image.open(files[i]).convert("RGB")
+    return _walk_cache[i].copy().convert("RGBA")
+
+
+def geek_frame(i: int) -> Image.Image:
+    files = sorted(GEEK_FRAMES.glob("*.png"))
+    i %= len(files)
+    if i not in _geek_cache:
+        _geek_cache[i] = Image.open(files[i]).convert("RGBA")
+    return _geek_cache[i]
+
+
+# --------------------------------------------------------------------------- what falls out of the sky
+#
+# INVENTED, every one of them. The point of this hill is "all the places that are not here", and real
+# marks would both imply a relationship myGeeKy does not have and put other people's branding in an advert
+# for it. A card with an avatar and two grey bars reads as "a profile" without being anybody's.
+CARD_COLOURS = [(92, 96, 128), (120, 100, 150), (88, 112, 140), (140, 104, 112), (104, 120, 108),
+                (132, 120, 96), (100, 100, 100), (118, 92, 132)]
+
+
+def _card(kind: int, w: int, col) -> Image.Image:
+    """One piece of the noise: a profile card, a post, a crest, a bell, a chat bubble, a play button."""
+    h = int(w * (0.68 if kind in (0, 1) else 1.0))
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    pale = tuple(min(255, c + 70) for c in col)
+    if kind == 0:                                     # a profile card
+        d.rounded_rectangle((0, 0, w - 1, h - 1), w // 9, fill=col + (255,))
+        d.ellipse((w * 0.08, h * 0.16, w * 0.38, h * 0.76), fill=pale + (255,))
+        d.rounded_rectangle((w * 0.46, h * 0.26, w * 0.9, h * 0.38), 4, fill=pale + (255,))
+        d.rounded_rectangle((w * 0.46, h * 0.46, w * 0.78, h * 0.56), 4, fill=pale + (190,))
+    elif kind == 1:                                   # a post
+        d.rounded_rectangle((0, 0, w - 1, h - 1), w // 9, fill=col + (255,))
+        for k, frac in enumerate((0.9, 0.78, 0.55)):
+            y = h * (0.26 + k * 0.22)
+            d.rounded_rectangle((w * 0.1, y, w * frac, y + h * 0.1), 4, fill=pale + (210,))
+    elif kind == 2:                                   # a crest
+        d.polygon([(w / 2, 0), (w - 1, h * 0.22), (w - 1, h * 0.62), (w / 2, h - 1), (0, h * 0.62), (0, h * 0.22)],
+                  fill=col + (255,))
+        d.ellipse((w * 0.3, h * 0.26, w * 0.7, h * 0.66), fill=pale + (255,))
+    elif kind == 3:                                   # a bell
+        d.pieslice((w * 0.12, h * 0.1, w * 0.88, h * 0.86), 180, 360, fill=col + (255,))
+        d.rectangle((w * 0.12, h * 0.48, w * 0.88, h * 0.7), fill=col + (255,))
+        d.rounded_rectangle((w * 0.06, h * 0.68, w * 0.94, h * 0.78), 5, fill=pale + (255,))
+        d.ellipse((w * 0.4, h * 0.78, w * 0.6, h * 0.96), fill=pale + (255,))
+    elif kind == 4:                                   # a chat bubble
+        d.rounded_rectangle((0, 0, w - 1, h * 0.76), w // 7, fill=col + (255,))
+        d.polygon([(w * 0.26, h * 0.7), (w * 0.46, h * 0.7), (w * 0.3, h - 1)], fill=col + (255,))
+        for k in range(3):
+            d.ellipse((w * (0.24 + k * 0.2), h * 0.3, w * (0.34 + k * 0.2), h * 0.44), fill=pale + (255,))
+    else:                                             # a play button
+        d.ellipse((0, 0, w - 1, h - 1), fill=col + (255,))
+        d.polygon([(w * 0.4, h * 0.3), (w * 0.72, h * 0.5), (w * 0.4, h * 0.7)], fill=pale + (255,))
+    return im
+
+
+def _pile() -> list[dict]:
+    """Where every piece falls, and when.
+
+    They land along a mound: thickest in the middle-left where the words are not, thinning towards the
+    kid so he is buried last and least -- a hill, not a wall."""
+    rnd = random.Random(11)
+    out = []
+    for i in range(ICONS):
+        u = rnd.random() ** 0.8                         # more of them on the left
+        x = 70 + u * (W - 260)
+        peak = math.exp(-(((x - W * 0.42) / (W * 0.33)) ** 2))
+        depth = rnd.random()
+        y = H - 20 - depth * (90 + 300 * peak)
+        w = int(74 + 54 * rnd.random() * (0.6 + 0.6 * depth))
+        out.append({"x": x, "y": y, "w": w, "kind": rnd.randrange(6),
+                    "col": CARD_COLOURS[rnd.randrange(len(CARD_COLOURS))],
+                    "spin": rnd.uniform(-26, 26), "at": FALL_FROM + (FALL_TO - FALL_FROM) * (i / ICONS) ** 0.78,
+                    "fall": rnd.uniform(0.75, 1.25)})
+    return sorted(out, key=lambda p: p["y"])            # the back of the hill drawn first
+
+
+PILE = _pile()
+_piece_cache: dict[tuple, Image.Image] = {}
+
+
+def _piece(p: dict) -> Image.Image:
+    key = (p["kind"], p["w"], p["col"], round(p["spin"]))
+    if key not in _piece_cache:
+        _piece_cache[key] = _card(p["kind"], p["w"], p["col"]).rotate(p["spin"], Image.BICUBIC, expand=True)
+    return _piece_cache[key]
+
+
+def rain(im: Image.Image, t: float, clear: float = 0.0) -> None:
+    """Everything that has fallen by now, and everything still falling.
+
+    `clear` washes the hill away from the left as GeekOc passes through it."""
+    layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    for p in PILE:
+        k = (t - p["at"]) / p["fall"]
+        if k <= 0:
+            continue
+        if clear > 0 and p["x"] < clear * (W + 400) - 200:
+            continue
+        pic = _piece(p)
+        if k < 1:                                        # still in the air: falling and turning
+            y = -pic.height + (p["y"] - (-pic.height)) * (k * k)
+            a = min(1.0, k * 3)
+        else:
+            y, a = p["y"], 1.0
+            if clear > 0:                                # the edge of the wash: fading as it goes
+                edge = (p["x"] - (clear * (W + 400) - 200)) / 260
+                a = min(1.0, max(0.0, edge))
+        if a <= 0:
+            continue
+        piece = pic
+        if a < 1:
+            piece = pic.copy()
+            piece.putalpha(pic.getchannel("A").point(lambda v: int(v * a)))
+        layer.alpha_composite(piece, (int(p["x"] - piece.width / 2), int(y - piece.height / 2)))
+    im.alpha_composite(layer)
+
+
+# The words live in the empty left, NOT in the middle of the frame. The clip was framed to leave 87% of
+# it clear for exactly this, and centring on the whole frame put the longest line straight through the
+# kid's head.
+SAYS_AT = int(W * 0.42)
+INK = (40, 36, 60)            # dark enough on the pale wall; the turn is said in the brand pink
+
+
+def says(im: Image.Image, txt: str, y: int, fnt, color, alpha: float = 1.0) -> None:
+    if alpha <= 0:
+        return
+    layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    d.text((SAYS_AT - d.textlength(txt, font=fnt) / 2, y), txt, font=fnt, fill=color + (int(255 * alpha),))
+    im.alpha_composite(layer)
+
+
+def s_walk(t: float) -> Image.Image:
+    """The kid, the three promises, and the sky filling up."""
+    im = walk_frame(t)
+    rain(im, t)
+    for start, end, line in LINES:
+        says(im, line, 150, font(68, bold=True), INK, fade(t, start, end, 0.45))
+    says(im, TURN[2], 150, font(68, bold=True), (190, 40, 110), fade(t, TURN[0], TURN[1], 0.45))
+    says(im, ASKS[0][2], 258, font(60, bold=True), INK, fade(t, *ASKS[0][:2], 0.4))
+    says(im, ASKS[1][2], 346, font(60, bold=True), INK, fade(t, *ASKS[1][:2], 0.4))
+    return im
+
+
+def s_swim(t: float) -> Image.Image:
+    """GeekOc crosses, and takes the noise with him.
+
+    He swims in from the left at the height of the hill, and everything he passes is simply gone. The kid
+    goes with the last of it: the picture ends empty, which is the only way the quiet reads as an answer
+    rather than as nothing happening."""
+    im = walk_frame(WALK_DUR)                                  # the clip holds on its last frame
+    go = ease(t / (SWIM_DUR * 0.72))
+    rain(im, WALK_DUR, clear=go)
+    kid = 1 - ease((t - SWIM_DUR * 0.45) / (SWIM_DUR * 0.4))   # the kid fades out with the hill
+    if kid < 1:
+        white = Image.new("RGBA", im.size, (246, 246, 246, int(255 * (1 - kid))))
+        im.alpha_composite(white)
+    him = geek_frame(int(t * FPS))
+    size = 620
+    k = size / him.height
+    him = him.resize((int(him.width * k), size), Image.LANCZOS)
+    x = -him.width + (W + him.width * 2) * ease(t / (SWIM_DUR * 0.8))
+    y = H * 0.52 + math.sin(t * 2.2) * 40 - him.height / 2
+    im.alpha_composite(him, (int(x - him.width / 2), int(y)))
     return im
 
 
@@ -677,7 +840,7 @@ def after_flash(im: Image.Image, t: float) -> Image.Image:
 
 
 
-SCENES = [(s_intro, INTRO_DUR), (s_hook, 13.0), (s_reveal, 6.0), (s_pillars, PILLARS_SECS), (s_install, 23.6),
+SCENES = [(s_walk, WALK_DUR), (s_swim, SWIM_DUR), (s_reveal, 6.0), (s_pillars, PILLARS_SECS), (s_install, 23.6),
           (s_configure, 21.0), (s_signals, 16.2), (s_tour, 3.6 + len(TOUR) * 5.0 + 0.4), (s_phone, 11.0),
           (s_close, 8.0)]
 
@@ -687,8 +850,6 @@ def frame_at(t: float) -> Image.Image:
     for scene, dur in SCENES:
         if t < start + dur:
             im = scene(t - start)
-            if scene is s_hook:
-                im = after_flash(im.convert("RGBA"), t - start)
             break
         start += dur
     else:
@@ -722,7 +883,10 @@ def soundtrack(path: Path, seconds: float, sr: int = 44100) -> None:
         starts.append((scene.__name__, s))
         s += dur
     at = dict(starts)
-    t_cut, t_drop = at["s_hook"], at["s_reveal"]
+    # The music holds back while the kid is walking and the sky fills, then everything stops dead the
+    # moment GeekOc arrives, and the drop lands on the logo. The silence is the point of the whole
+    # opening: the viewer should feel the noise go away before reading a word about it.
+    t_cut, t_drop = at["s_swim"], at["s_reveal"]
     t_break, t_back, t_close = at["s_signals"], at["s_tour"], at["s_close"]
 
     def note(m):
@@ -871,16 +1035,9 @@ def soundtrack(path: Path, seconds: float, sr: int = 44100) -> None:
     add(t_close, big * np.exp(-tt * 0.45) * 0.07)
     impact(t_close, 0.7)
 
-    # ---- the clip's own sound, softly, under the intro
-    try:
-        with wave.open(str(OUT / "intro" / "intro-sound.wav"), "rb") as wf:
-            clip = np.frombuffer(wf.readframes(wf.getnframes()), dtype=np.int16).reshape(-1, 2) / 32768.0
-        m = min(len(clip), int(t_cut * sr))
-        fadeout = np.clip((t_cut - t[:m]) / 0.4, 0, 1)
-        L[:m] += clip[:m, 0] * 2.2 * fadeout
-        R[:m] += clip[:m, 1] * 2.2 * fadeout
-    except (OSError, wave.Error):
-        pass
+    # The opening used to borrow the generated clip's own sound. It does not any more: the walk is silent
+    # wall and falling paper, and what that beat needs is the film's own noise building and then being cut
+    # off dead when GeekOc arrives. The riser and the impact above do that.
 
     # ---- a room, a gentle squash, and out
     for buf in (L, R):
@@ -905,9 +1062,10 @@ def soundtrack(path: Path, seconds: float, sr: int = 44100) -> None:
 def main() -> None:
     import imageio_ffmpeg
     total = sum(d for _, d in SCENES)
-    extract_intro()
+    extract_walk()
+    render_geekoc()
     if "--preview" in sys.argv:
-        for sec in (1, 3, 5.6, 5.9, 6.2, 8, 22, 40, 90, 140):
+        for sec in (2, 6, 11, 16, 20, 23.5, 25, 26.5, 28.5, 31, 40, 90):
             frame_at(sec).save(OUT / f"preview_{sec:05.1f}.png")
         print("preview frames written")
         return
