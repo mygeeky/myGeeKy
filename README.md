@@ -7,6 +7,10 @@
 <p align="center"><b>Your geeky friend who helps you grow, quietly.</b></p>
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/geekoc/geekoc-grows.svg" width="660" alt="GeekOc, the myGeeKy octopus, watching a plant grow skills, knowledge, collaboration and opportunity, safe under glass">
+</p>
+
+<p align="center">
   <a href="https://github.com/mygeeky/myGeeKy/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/%E2%AC%87%20Download%20for%20Windows-MyGeeKySetup.exe-ff6fd8?style=for-the-badge&logo=windows&logoColor=white" height="38"></a>
   <a href="https://pypi.org/project/mygeeky/"><img alt="pip install mygeeky" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-pip%20install%20mygeeky-7a5cff?style=for-the-badge&logo=python&logoColor=white" height="38"></a>
   <a href="https://youtu.be/u1qmX5PtMdE"><img alt="Watch the video" src="https://img.shields.io/badge/%E2%96%B6%20watch-the%20video-35e0c1?style=for-the-badge" height="38"></a>
