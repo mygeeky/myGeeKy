@@ -1,59 +1,7 @@
 {
- "version": "2026-10-17T07:48:46Z",
+ "version": "2026-10-18T08:02:42Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
-  {
-   "id": "the-francis-crick-institute-the-malanchi-lab-computational-b-2026",
-   "title": "Computational Biologist",
-   "url": "https://www.jobs.ac.uk/job/DTA518/computational-biologist",
-   "keywords": [
-    "bioinformatics",
-    "genomics",
-    "transcriptomics",
-    "single-cell",
-    "atac-seq",
-    "multi-omics",
-    "computational biology"
-   ],
-   "summary": "A Computational Biologist position in the Malanchi Lab at the Francis Crick Institute, part of a five-year ERC Synergy-funded research programme, to analyse and integrate complex genomic, transcriptomic and epigenetic datasets.",
-   "deadline": "2026-10-17",
-   "org": "The Francis Crick Institute - The Malanchi Lab",
-   "place": "London, United Kingdom",
-   "type": "job",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "عالم أحياء حاسوبي",
-     "summary": "وظيفة عالم أحياء حاسوبي في مختبر Malanchi في معهد Francis Crick، كجزء من برنامج بحثي ممول من ERC Synergy لمدة خمس سنوات، لتحليل ودمج مجموعات بيانات جينومية ونسخية ولاجينية معقدة."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Biologiste computationnel",
-     "summary": "Un poste de Biologiste computationnel dans le laboratoire Malanchi au Francis Crick Institute, dans le cadre d'un programme de recherche financé par ERC Synergy sur cinq ans, pour analyser et intégrer des ensembles de données génomiques, transcriptomiques et épigénétiques complexes."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Computational Biologist",
-     "summary": "Eine Stelle als Computational Biologist im Malanchi Lab am Francis Crick Institute, Teil eines fünfjährigen, von ERC Synergy finanzierten Forschungsprogramms, zur Analyse und Integration komplexer genomischer, transkriptomischer und epigenetischer Datensätze."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Biólogo computacional",
-     "summary": "Un puesto de Biólogo computacional en el laboratorio Malanchi en el Francis Crick Institute, como parte de un programa de investigación financiado por ERC Synergy durante cinco años, para analizar e integrar conjuntos de datos genómicos, transcriptómicos y epigenéticos complejos."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "计算生物学家",
-     "summary": "Francis Crick Institute 的 Malanchi 实验室的计算生物学家职位，属于一项由 ERC Synergy 资助的五年研究计划，负责分析和整合复杂的基因组、转录组和表观遗传数据集。"
-    }
-   }
-  },
   {
    "id": "human-technopole-postdoc-in-statistical-genetics-casale-grou-2026",
    "title": "Postdoc in Statistical Genetics - Casale Group",
@@ -104,58 +52,6 @@
      "rtl": false,
      "title": "统计遗传学博士后 - Casale 组",
      "summary": "Human Technopole 正在招聘一名统计遗传学博士后，开发计算方法，利用群体规模的人类遗传学和多模态分子数据，将人类遗传变异与生物学功能联系起来。"
-    }
-   }
-  },
-  {
-   "id": "leibniz-institut-f-r-analytische-wissenschaften-isas-e-v-phd-2026",
-   "title": "PhD Candidate (m/f/d)",
-   "url": "https://www.nature.com/naturecareers/job/12864688/phd-candidate-m-f-d-/?LinkSource=PremiumListing",
-   "keywords": [
-    "bioinformatics",
-    "machine learning",
-    "omics",
-    "image analysis",
-    "biomarkers",
-    "precision medicine",
-    "cardio-oncology"
-   ],
-   "summary": "PhD position in the Bioanalytics department, Multidimensional OMICS Data Analysis research group, part of the Leibniz Science Campus 'Cardio-Oncology Campus for Precision Medicine', focusing on analysis and development of biomarker profiles for personalized assessment of cardiovascular risks associated with cancer therapy.",
-   "deadline": "2026-10-17",
-   "org": "Leibniz-Institut für Analytische Wissenschaften – ISAS – e.V.",
-   "place": "Dortmund, Nordrhein-Westfalen (DE)",
-   "type": "phd",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "مرشح PhD (m/f/d)",
-     "summary": "وظيفة PhD في قسم Bioanalytics، مجموعة أبحاث Multidimensional OMICS Data Analysis، جزء من Leibniz Science Campus 'Cardio-Oncology Campus for Precision Medicine'، تركز على تحليل وتطوير ملفات biomarker لتقييم شخصي لمخاطر القلب والأوعية الدموية المرتبطة بعلاج السرطان."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Candidat PhD (m/f/d)",
-     "summary": "Poste de PhD dans le département Bioanalytics, groupe de recherche Multidimensional OMICS Data Analysis, faisant partie du Leibniz Science Campus 'Cardio-Oncology Campus for Precision Medicine', axé sur l'analyse et le développement de profils biomarker pour l'évaluation personnalisée des risques cardiovasculaires associés à la thérapie du cancer."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "PhD-Kandidat (m/w/d)",
-     "summary": "PhD-Stelle in der Abteilung Bioanalytics, Forschungsgruppe Multidimensional OMICS Data Analysis, Teil des Leibniz Science Campus 'Cardio-Oncology Campus for Precision Medicine', mit Fokus auf Analyse und Entwicklung von biomarker-Profilen zur personalisierten Bewertung von kardiovaskulären Risiken im Zusammenhang mit Krebstherapie."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Candidato a PhD (m/f/d)",
-     "summary": "Puesto de PhD en el departamento de Bioanalytics, grupo de investigación Multidimensional OMICS Data Analysis, parte del Leibniz Science Campus 'Cardio-Oncology Campus for Precision Medicine', centrado en el análisis y desarrollo de perfiles de biomarker para la evaluación personalizada de riesgos cardiovasculares asociados con la terapia del cáncer."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "PhD候选人 (m/f/d)",
-     "summary": "PhD职位在Bioanalytics部门，Multidimensional OMICS Data Analysis研究组，属于Leibniz Science Campus 'Cardio-Oncology Campus for Precision Medicine'，专注于分析和开发生物标志物谱，用于个性化评估与癌症治疗相关的心血管风险。"
     }
    }
   },
