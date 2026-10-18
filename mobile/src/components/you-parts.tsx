@@ -12,7 +12,7 @@ import { Card, Empty, open, s, Section, timeAgo } from './ui';
 import { useApp, withRepoProfile } from '../lib/app-state';
 import { Achievement, earned, Earned, githubAchievements, TIER_COLORS, TIERS } from '../lib/badges';
 import { Dict, lookup } from '../lib/interests';
-import { badgeCounts, type Brain, cachedBrain, connectModel, disconnectModel, MODEL_TOKEN_PAGE, modelLink, queuedUsage, syncModel } from '../lib/model-repo';
+import { badgeCounts, type Brain, cachedBrain, connectModel, disconnectModel, localEvents, MODEL_TOKEN_PAGE, modelLink, queuedUsage, syncModel } from '../lib/model-repo';
 import { loadDictionary } from '../lib/profile';
 import { signalsToken } from '../lib/signals';
 import { checkTokens, type TokenState } from '../lib/tokens';
@@ -117,6 +117,9 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dict]);
 
+  const [kept, setKept] = useState(0);                       // what this phone learned with no repo yet
+  useEffect(() => { if (linked === false) localEvents().then((e) => setKept(e.length)).catch(() => undefined); }, [linked]);
+
   const connect = async () => {
     setBusy(true);
     setNote('Checking the token…');
@@ -142,6 +145,10 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
     return (
       <View style={st.scan}>
         <Text style={st.scanTitle}>Your map lives in your private data repo</Text>
+        <Text style={[st.scanSub, { color: C.amber }]}>
+          📱 Learning on this phone only{kept ? `: ${kept} thing${kept === 1 ? '' : 's'} you opened so far` : ''}. Connect a
+          data repo to keep it and share it with your computer: what this phone learned goes there too.
+        </Text>
         <Text style={st.scanSub}>
           It&apos;s what myGeeKy learned on your computers (every click, follow, star and fork), kept in the private repo
           they sync to. Give this phone its own token for it:{'\n'}

@@ -3,7 +3,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { logOpenToday } from './badges';
 import { Profile } from './interests';
-import { type Brain, syncModel } from './model-repo';
+import { type Brain, syncModel, withLocalLearning } from './model-repo';
 import { buildProfile, loadDictionary } from './profile';
 import { getToken, isStale, loadSettings, readCache, saveSettings, setToken, Settings, writeCache } from './storage';
 
@@ -53,8 +53,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!s) return;
       logOpenToday();
       setProfile(quickProfile(s));             // lists start at once from your keywords...
+      setProfile(await withLocalLearning(quickProfile(s)));   // ...with what you opened here (no data repo)...
       try {
-        setProfile(await buildProfile(s, t));  // ...and sharpen when your full profile is ready
+        setProfile(await withLocalLearning(await buildProfile(s, t)));  // ...and sharpen when your full profile is ready
       } catch {
         /* offline: the quick profile stays */
       }
@@ -84,7 +85,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSettings(s);
     setProfile(quickProfile(s));
     try {
-      setProfile(await buildProfile(s, t === undefined ? token : t, true));
+      setProfile(await withLocalLearning(await buildProfile(s, t === undefined ? token : t, true)));
     } catch {
       /* keep the quick profile */
     }
@@ -93,7 +94,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshProfile = useCallback(async () => {
     if (!settings) return null;
     try {
-      const p = await buildProfile(settings, token, true);
+      const p = await withLocalLearning(await buildProfile(settings, token, true));
       setProfile(p);
       return p;
     } catch {

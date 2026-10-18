@@ -36,6 +36,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `github-login.ts` | `github_login.py` |
 | `headlines.ts` | `headlines.py` |
 | `interests.ts` | `interests.py` |
+| `learn.ts` (used by `model-repo.ts`, `app-state.tsx`) | `interests.py` (`extract_terms`, `learned_terms`, `blend_learned`) |
 | `live.ts` | `activity.py` |
 | `market.ts`, `board.ts` | `market.py` |
 | `model-repo.ts` | `sync.py`, `gui/app.py` (the data repo, the model) |
@@ -91,7 +92,7 @@ After editing a desktop data file, update the phone copy in the same change (`cm
 ```
 
 `test_phone_seasons_match_desktop.py`, `test_phone_signals_match_desktop.py` and
-`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
+`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py`, `test_learn_locally.py`, `test_tab_order.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
 imports given their `.ts` ending) on the same inputs as the Python and compare the answers. They need **Node 22.6+**
 (`node --experimental-strip-types`) and skip without it: if pytest reports them as *skipped*, the phone was not
 checked, so say so instead of calling the change verified. When you change a shared

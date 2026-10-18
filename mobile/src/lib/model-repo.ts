@@ -18,6 +18,9 @@ import { type Dict, expand } from './interests';
 import { fetchT } from './net';
 import { b64, utf8 } from './signal-crypto';
 import { readCache, writeCache } from './storage';
+import { blendLearned, type Event, extractTerms, KIND_WEIGHTS, learnedTerms, STOPWORDS } from './learn';
+
+export { blendLearned, extractTerms, learnedTerms } from './learn';
 
 const TOKEN_ITEM = 'mygeeky.model.token';
 const REPO_KEY = 'mygeeky.model.repo';
@@ -30,14 +33,9 @@ const MIGRATED_KEY = 'mygeeky.model.migrated';
 const ME = { name: 'myGeeKy', email: 'housekeeping@mygeeky.invalid' };   // as the desktop's sync commits
 export const MODEL_TOKEN_PAGE = 'https://github.com/settings/personal-access-tokens/new';
 
-// the same numbers as src/mygeeky/interests.py
-const KIND_WEIGHTS: Record<string, number> = { fork: 2.5, join: 2.5, follow: 2.0, star: 1.5, repo: 1.0, news: 0.8, person: 0.7 };
-const MIN_LEARNED_WEIGHT = 1.0;
-const TERMS_PER_EVENT = 12;
-const WORD = /[a-z][a-z0-9+#.-]{2,}/g;
+// (the learning numbers and rules, as interests.py: lib/learn.ts)
 // scikit-learn's English stop words, as CountVectorizer(stop_words='english') on the desktop
 const SKLEARN_STOP = new Set('a about above across after afterwards again against all almost alone along already also although always am among amongst amoungst amount an and another any anyhow anyone anything anyway anywhere are around as at back be became because become becomes becoming been before beforehand behind being below beside besides between beyond bill both bottom but by call can cannot cant co con could couldnt cry de describe detail do done down due during each eg eight either eleven else elsewhere empty enough etc even ever every everyone everything everywhere except few fifteen fifty fill find fire first five for former formerly forty found four from front full further get give go had has hasnt have he hence her here hereafter hereby herein hereupon hers herself him himself his how however hundred i ie if in inc indeed interest into is it its itself keep last latter latterly least less ltd made many may me meanwhile might mill mine more moreover most mostly move much must my myself name namely neither never nevertheless next nine no nobody none noone nor not nothing now nowhere of off often on once one only onto or other others otherwise our ours ourselves out over own part per perhaps please put rather re same see seem seemed seeming seems serious several she should show side since sincere six sixty so some somehow someone something sometime sometimes somewhere still such system take ten than that the their them themselves then thence there thereafter thereby therefore therein thereupon these they thick thin third this those though three through throughout thru thus to together too top toward towards twelve twenty two un under until up upon us very via was we well were what whatever when whence whenever where whereafter whereas whereby wherein whereupon wherever whether which while whither who whoever whole whom whose why will with within without would yet you your yours yourself yourselves'.split(' '));
-const STOPWORDS = new Set(('a about above across after again all also am among an analyses analysis and any app approach approaches apps are as associated association at awesome based be because been before being below between both build built but by can code could data did different do does doing down during each easy fast few first for found framework from further github had has have having he helper helpers her here hers high him his how however i if implementation in include includes including into is it its itself just large library like list lists low made make makes method methods model models module modules more most my new no nor not now of off official on once one only open or other our out over own package packages paper papers plugin plugins project projects provide provided provides python release released repo repository results same several she should show shown shows simple small so software some source studies study such support supported supports system systems than that the their them then there therefore these they this those three through to too tool toolbox toolkit toolkits tools two under until up use used using utilities utility various version very via was way we well were what when where which while who whom why will with within work works would wrapper wrappers you your yours').split(' '));
 const EXPLORE_POOL = [
   'single-cell', 'spatial transcriptomics', 'protein design', 'llm agents', 'causal inference',
   'graph neural networks', 'reproducibility', 'data visualization', 'rust', 'webassembly',
@@ -62,7 +60,6 @@ export type Brain = {
 };
 export type Usage = { at: string; what: string; kind?: string; cat?: string; explore?: boolean };
 
-type Event = { at: string; kind: string; terms: Record<string, number> };
 type SyncedConfig = {
   github_username: string; topics: string[]; keywords: string[]; languages: string[];
   interest_learning: boolean; interest_half_life_days: number; explore_share: number;
@@ -123,6 +120,7 @@ export async function connectModel(repo: string, token: string): Promise<void> {
   // anything else but 201 (e.g. 409: the repo is still empty) can't tell -- as on the desktop, don't refuse
   await secureSet(TOKEN_ITEM, token);
   await AsyncStorage.setItem(REPO_KEY, repo);
+  flushInterests(repo, token).catch(() => undefined);   // what this phone learned before: into the repo now
 }
 
 export async function disconnectModel(): Promise<void> {
@@ -377,21 +375,25 @@ function scholarTopics(text: string | null): string[] {   // scholar.scholar_top
 }
 
 // ---- interests.py, ported
-export function learnedTerms(events: Event[], cfg: SyncedConfig, n: number, now = Date.now()): [string, number][] {
-  if (!cfg.interest_learning) return [];
-  const weights: Record<string, number> = {};
-  for (const ev of events) {
-    const at = Date.parse(ev.at);
-    if (Number.isNaN(at)) continue;
-    const ageDays = (now - at) / 86400000;
-    const fade = 0.5 ** (Math.max(ageDays, 0) / Math.max(cfg.interest_half_life_days, 1));
-    for (const [term, share] of Object.entries(ev.terms)) {
-      weights[term] = (weights[term] ?? 0) + (KIND_WEIGHTS[ev.kind] ?? 0.5) * share * fade;
-    }
+
+
+/** What this phone has kept of what you opened (until a sync sends it to your data repo). */
+export async function localEvents(): Promise<Event[]> {
+  try {
+    const q = JSON.parse((await AsyncStorage.getItem(QUEUE_KEY)) ?? '[]');
+    return Array.isArray(q) ? q.filter((e) => e && typeof e.at === 'string' && e.terms && typeof e.terms === 'object') : [];
+  } catch {
+    return [];
   }
-  return Object.entries(weights).sort((a, b) => b[1] - a[1])
-    .map(([t, w]) => [t, Math.round(w * 100) / 100] as [string, number])
-    .filter(([, w]) => w >= MIN_LEARNED_WEIGHT).slice(0, n);
+}
+
+/** With no data repo, the phone learns on its own: what you opened here fades and weighs as on the desktop
+ *  (interests.profile_terms) and sharpens your weights. Once a repo is connected, your computers' model
+ *  (withRepoProfile) does that instead, with these events in it. */
+export async function withLocalLearning<P extends { weights: Record<string, number> }>(p: P): Promise<P> {
+  if (await modelLink()) return p;
+  const learned = learnedTerms(await localEvents(), { interest_learning: true, interest_half_life_days: 30 } as SyncedConfig, 15);
+  return learned.length ? { ...p, weights: blendLearned(p.weights, learned) } : p;
 }
 
 // Python's random.Random(seed).shuffle, so "new territory today" is the desktop's pick
@@ -528,43 +530,30 @@ export async function fetchBrain(repo: string, token: string, dict: Dict | null)
 }
 
 // ---- what you open on the phone, as interest events (interests.py: extract_terms, record)
-export function extractTerms(text = '', topics: string[] = []): Record<string, number> {
-  const counts = new Map<string, number>();
-  const add = (t: string, n: number) => counts.set(t, (counts.get(t) ?? 0) + n);
-  for (const raw of topics) {
-    const t = String(raw).trim().toLowerCase().replace(/-/g, ' ');
-    if (t.length > 2 && t.length <= 40) add(t, 3);
-  }
-  for (const m of text.toLowerCase().matchAll(WORD)) {
-    const w = m[0].replace(/^[.-]+|[.-]+$/g, '').replace(/-/g, ' ');
-    if (w.length > 2 && !STOPWORDS.has(w) && !/^\d+$/.test(w)) add(w, 1);
-  }
-  // Counter.most_common: by count, ties in the order first seen
-  const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, TERMS_PER_EVENT);
-  const total = top.reduce((sum, [, n]) => sum + n, 0) || 1;
-  return Object.fromEntries(top.map(([t, n]) => [t, Math.round((n / total) * 10000) / 10000]));
-}
 
 let flushing = false;
 
 export type Learn = { kind: string; text: string; topics?: string[]; source?: string };
 
-/** Remember that you opened something (terms only). Kept on the phone until the next sync. */
+const LEARN_CAP = 500;           // what you opened, kept on the phone: enough for months at a 30-day half-life
+
+/** Remember that you opened something (terms only). Kept on the phone, and used to rank what you see there
+ *  while no data repo is connected (withLocalLearning); sent to the repo at the next sync once one is. */
 export async function recordInterest(item: Learn): Promise<void> {
   try {
-    if (!KIND_WEIGHTS[item.kind] || !(await modelLink())) return;   // not connected: nothing is kept
-    const cached = await cachedBrain();
+    if (!KIND_WEIGHTS[item.kind]) return;
+    const link = await modelLink();
+    const cached = link ? await cachedBrain() : null;
     if (cached?.data && !cached.data.learning) return;                 // learning is off on your computer
     const terms = extractTerms(item.text, item.topics);
     if (!Object.keys(terms).length) return;
     const event = { at: `${new Date().toISOString().slice(0, 19)}+00:00`, kind: item.kind,
       source: (item.source ?? '').slice(0, 120), terms };
     const queue = JSON.parse((await AsyncStorage.getItem(QUEUE_KEY)) ?? '[]');
-    const next = [...(Array.isArray(queue) ? queue : []), event].slice(-300);
+    const next = [...(Array.isArray(queue) ? queue : []), event].slice(-LEARN_CAP);
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(next));
-    if (next.length >= 5) {                              // every few, quietly; the rest go when you open Your model
-      const link = await modelLink();
-      if (link) flushInterests(link.repo, link.token).catch(() => undefined);
+    if (link && next.length >= 5) {                      // every few, quietly; the rest go when you open Your model
+      flushInterests(link.repo, link.token).catch(() => undefined);
     }
   } catch { /* learning never gets in the way of opening something */ }
 }
@@ -622,8 +611,7 @@ const isoNow = () => `${new Date().toISOString().slice(0, 19)}+00:00`;
 
 /** One usage line, kept until the next sync -- only while your data repo is connected. */
 export async function queueUsage(entry: Omit<Usage, 'at'>): Promise<void> {
-  try {
-    if (!(await modelLink())) return;
+  try {                                                  // kept with or without a repo: it goes there once there is one
     const line: Usage = { at: isoNow(), what: entry.what };
     if (entry.kind) line.kind = entry.kind.slice(0, 20);
     if (entry.cat) line.cat = entry.cat.slice(0, 20);

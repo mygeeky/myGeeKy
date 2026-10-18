@@ -374,6 +374,8 @@ GITHUB_UNLOCKS = {
 
 
 TOAST_MS = 4000             # the floating message stays this long (the phone's toast.tsx uses the same)
+LOCAL_ONLY_TEXT = ("💻 Learning on this computer only. Turn on your private data repo (run myGeeKy setup again, or "
+                   "mygeeky sync init) to keep it and share it with your phone: what this computer learned goes there too.")
 
 
 def reviewed_heading(some: bool) -> str:
@@ -6660,6 +6662,12 @@ class MyGeekyPanel(QWidget):
         self.brain_intro = QLabel("")
         self.brain_intro.setWordWrap(True)
         layout.addWidget(self.brain_intro)
+        # as on the phone (You -> Model): with no data repo, what it learns stays on this computer
+        self.local_only = QLabel(LOCAL_ONLY_TEXT)
+        self.local_only.setWordWrap(True)
+        self.local_only.setTextFormat(Qt.PlainText)
+        self.local_only.setStyleSheet("color:#ffc457; font-size:11px; background:transparent;")
+        layout.addWidget(self.local_only)
 
         self.map_header = QLabel("\U0001f9ed YOUR INTEREST MAP")
         layout.addWidget(self.map_header)
@@ -8351,6 +8359,7 @@ class MyGeekyPanel(QWidget):
         self.interest_map.set_data(brain["user"], brain["field"], brain["learned"], brain["explore"])
         self.brain_intro.setText("Four models shape what you see: your research field, what you've been into "
                                  "lately, room to explore, and who's likely to follow you back.")
+        self.local_only.setVisible(not logic.sync_enabled(self.cfg))
         dot = lambda c: f"<span style='color:{c}; font-size:13px'>\u25cf</span>"  # noqa: E731
         ring = f"<span style='color:{MAP_EXPLORE}; font-size:13px'>\u25cc</span>"
         self.map_legend.setText(

@@ -301,6 +301,14 @@ def _init(repo: str) -> str:
         MODEL_FILE.unlink(missing_ok=True)
         import_config()
         messages.append("Pulled your synced data from GitHub.")
+        if local_files:
+            # What this machine learned before it joined (used as a guest, say) is merged in, not only set
+            # aside: the append-only logs keep both sides' lines, as the repo's union merge does.
+            merged = merge_logs(backup, DATA_DIR)
+            if merged:
+                _commit_local(f"myGeeKy: merged this machine's history ({merged} records) {_stamp()}")
+                _git("push", "-q", "-u", "origin", "main")
+                messages.append(f"Merged {merged} records this machine had learned into your synced data.")
     else:
         _commit_local(f"myGeeKy sync from {_stamp()}")
         if _remote_has_main():
@@ -309,6 +317,25 @@ def _init(repo: str) -> str:
         _git("push", "-q", "-u", "origin", "main")
         messages.append("Pushed this machine's data to GitHub.")
     return "\n".join(messages)
+
+
+def merge_logs(source: Path, target: Path) -> int:
+    """Add the lines of `source`'s append-only .jsonl logs that `target` doesn't have yet. How many were added."""
+    added = 0
+    for log in sorted(source.glob("*.jsonl")):
+        dest = target / log.name
+        text = dest.read_text(encoding="utf-8", errors="replace") if dest.exists() else ""
+        seen = set(text.splitlines())
+        new = []
+        for line in log.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.strip() and line not in seen:
+                seen.add(line)
+                new.append(line)
+        if new:
+            with dest.open("a", encoding="utf-8") as f:
+                f.write(("\n" if text and not text.endswith("\n") else "") + "\n".join(new) + "\n")
+            added += len(new)
+    return added
 
 
 def _apply_admin_log() -> int:

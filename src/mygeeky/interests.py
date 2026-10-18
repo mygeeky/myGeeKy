@@ -128,8 +128,8 @@ def learned_weights(cfg: MyGeekyConfig, now: datetime | None = None) -> dict[str
     return dict(weights)
 
 
-def learned_terms(cfg: MyGeekyConfig, n: int = 8) -> list[tuple[str, float]]:
-    ranked = sorted(learned_weights(cfg).items(), key=lambda kv: kv[1], reverse=True)
+def learned_terms(cfg: MyGeekyConfig, n: int = 8, now: datetime | None = None) -> list[tuple[str, float]]:
+    ranked = sorted(learned_weights(cfg, now).items(), key=lambda kv: kv[1], reverse=True)
     return [(t, round(w, 2)) for t, w in ranked if w >= MIN_LEARNED_WEIGHT][:n]
 
 
@@ -166,12 +166,18 @@ def profile_terms(cfg: MyGeekyConfig) -> dict[str, float]:
                     weights.setdefault(term.lower(), 0.8 * w)
         except Exception:
             pass
-    learned = learned_terms(cfg, 15)
+    return blend_learned(weights, learned_terms(cfg, 15))
+
+
+def blend_learned(weights: dict[str, float], learned: list[tuple[str, float]]) -> dict[str, float]:
+    """The strongest learned terms join your weights, the top one at 1.0. The phone blends what it learned on its
+    own the same way (model-repo.ts blendLearned), while no data repo is connected."""
+    out = dict(weights)
     if learned:
         top = learned[0][1]
         for term, w in learned:
-            weights[term] = max(weights.get(term, 0.0), 0.3 + 0.7 * w / top)
-    return weights
+            out[term] = max(out.get(term, 0.0), 0.3 + 0.7 * w / top)
+    return out
 
 
 def _pattern(term: str) -> re.Pattern:
