@@ -9,7 +9,9 @@ import type { Settings } from './storage';
 export const PREFIX = 'mygeeky:1:';
 const LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
 const ORCID = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
-const TOKEN = /^(github_pat_[A-Za-z0-9_]{20,255}|gh[opu]_[A-Za-z0-9]{20,255})$/;
+// GitHub's token formats can grow (newer user tokens are long and dotted), so only the prefix and the
+// characters are checked, as the desktop does (auth.py); the cap only stops nonsense, not real tokens.
+const TOKEN = /^(github_pat_[A-Za-z0-9_]{20,2000}|gh[opu]_[A-Za-z0-9._-]{20,2000})$/;
 
 export type Pairing = { settings: Settings; token: string | null };
 

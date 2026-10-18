@@ -73,3 +73,16 @@ def test_connect_your_phone_dialog(monkeypatch):
             w.wait(2000)
         panel.close()
         panel.deleteLater()
+
+
+def test_the_phone_takes_every_token_the_desktop_would_hand_it():
+    """The phone checks the token in the code itself (mobile/src/lib/pairing.ts). It must accept what
+    GitHub may issue -- long, dotted user tokens included -- and still refuse what isn't a token."""
+    import re
+    from pathlib import Path
+    ts = (Path(__file__).resolve().parents[1] / "mobile" / "src" / "lib" / "pairing.ts").read_text(encoding="utf-8")
+    token = re.compile(re.search(r"const TOKEN = /(.+)/;", ts).group(1))
+    for ok in ("github_pat_" + "A1_" * 30, "ghu_" + "a" * 600 + ".b-c_d", "gho_" + "x" * 40, "ghp_" + "Z9" * 20):
+        assert token.match(ok), ok[:20]
+    for bad in ("ghs_" + "a" * 40, "ghu_short", "github_pat_" + "a" * 30 + " ", "ghu_" + "a" * 30 + "\nx", "token"):
+        assert not token.match(bad), bad[:20]
