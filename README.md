@@ -32,6 +32,11 @@
 </p>
 
 <p align="center">
+  <a href="https://youtu.be/u1qmX5PtMdE"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/video-play.png" width="640" alt="Watch the myGeeKy video on YouTube: your geeky friend who helps you grow, quietly"></a><br>
+  <sub><b>▶ Watch the video</b> (2½ minutes, opens on YouTube)</sub>
+</p>
+
+<p align="center">
   <a href="#see">👀 See</a> ·
   <a href="#learn">🌱 Learn</a> ·
   <a href="#meet">👥 Meet</a> ·
