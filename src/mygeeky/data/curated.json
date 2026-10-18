@@ -1,5 +1,5 @@
 {
- "version": "2026-10-18T09:14:23Z",
+ "version": "2026-10-18T09:21:16Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -8774,6 +8774,49 @@
      "closes": "2026-10-15",
      "url": "https://training.vbc.ac.at/phd-program/",
      "quote": "Autumn Call 2026 now open Closing date 15 October 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "ciheam-maich-msc-scholarships",
+   "title": "CIHEAM Chania (MAICh) MSc Scholarships",
+   "url": "https://apply.maich.gr/",
+   "org": "CIHEAM – Mediterranean Agronomic Institute of Chania (MAICh)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "Greece",
+   "opens_about": "",
+   "closes_about": "06-30",
+   "prepare_weeks": 8,
+   "prepare": [
+    "a relevant degree of at least four academic years (240 ECTS)",
+    "an English certificate from the institute's accepted list (originals are checked)",
+    "your application file: selection is based on the files you submit"
+   ],
+   "summary": "Two-year English-taught MSc programmes in Crete (sustainable agriculture, food quality, horticultural genetics, geoinformation, business administration). Full scholarships covering tuition, board and accommodation go to 4-5 graduates per country, with priority for Mediterranean and European countries.",
+   "keywords": [
+    "greece",
+    "crete",
+    "ciheam",
+    "maich",
+    "agriculture",
+    "food",
+    "master",
+    "mediterranean"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-06-30",
+     "url": "https://apply.maich.gr/",
+     "quote": "Applications deadline: 30 June 2026",
      "checked": true
     }
    ]
