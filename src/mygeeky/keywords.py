@@ -282,8 +282,25 @@ def build(client, seeds: Iterable[str] = SEEDS, extra: Iterable[str] = (), max_t
             "terms": terms}
 
 
+# The phone's copy, for suggesting words while you type your field: every keyword and related term as you'd
+# write it, and each keyword's closest few. Written next to the dictionary when the phone's code is there.
+PHONE_COPY = Path(__file__).resolve().parents[2] / "mobile" / "src" / "data" / "field-words.json"
+PHONE_RELATED = 5
+
+
+def phone_words(dictionary: dict[str, Any]) -> dict[str, Any]:
+    terms = dictionary.get("terms") or {}
+    related = {label_of(t): [label_of(r) for r, _ in (e.get("related") or [])[:PHONE_RELATED]]
+               for t, e in terms.items()}
+    words = set(related) | {label_of(r) for e in terms.values() for r, _ in (e.get("related") or [])}
+    return {"version": dictionary.get("version"), "words": sorted(words), "related": related}
+
+
 def save(dictionary: dict[str, Any], path: Path = BUNDLED) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(dictionary, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    if path == BUNDLED and PHONE_COPY.parent.is_dir():
+        PHONE_COPY.write_text(json.dumps(phone_words(dictionary), separators=(",", ":"), sort_keys=True) + "\n",
+                              encoding="utf-8")
     load(force=True)
     return path

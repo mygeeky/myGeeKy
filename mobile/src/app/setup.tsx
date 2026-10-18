@@ -3,16 +3,20 @@ import { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../lib/app-state';
+import { DataStep, SignalsStep } from '../components/setup-steps';
 import { OrcidSignInButton, SignInButton } from '../components/signin';
 import { orcidChecksumOk } from '../lib/orcid-login';
+import { pick, suggest } from '../lib/word-suggest';
 import { DEFAULT_SETTINGS } from '../lib/storage';
 import { C } from '../lib/theme';
 
 const split = (v: string) => v.split(',').map((x) => x.trim()).filter(Boolean);
 
-// Who you are: any one of your GitHub username, your ORCID or a few keywords is enough.
-// Without GitHub, News, Research, AI models and Launches all work; the GitHub planets
-// say what adding it would unlock. The token is optional (and stays on this phone).
+// Who you are. First: sign in with GitHub, sign in with ORCID, or continue as a guest (no account). After a
+// GitHub sign-in, two optional steps: your data repo, then Signals (setup-steps.tsx). Last: a few
+// keywords for your field. Typing a username or ORCID iD by hand, and pasting a token, wait
+// under "More options". Without GitHub, News, Research, AI models and Launches all work; the GitHub
+// planets say what adding it would unlock. A token stays on this phone.
 export default function Setup() {
   const { settings, save } = useApp();
   const [username, setUsername] = useState(settings?.username ?? '');
@@ -23,6 +27,8 @@ export default function Setup() {
   const [busy, setBusy] = useState(false);
   const [signedIn, setSignedIn] = useState('');
   const [orcidName, setOrcidName] = useState('');
+  const [step, setStep] = useState<'choose' | 'data' | 'signals' | 'keywords'>('choose');
+  const [more, setMore] = useState(false);
 
   const submit = async () => {
     const u = username.trim().replace(/^@/, '');
@@ -31,7 +37,7 @@ export default function Setup() {
     if (o && !/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(o)) return setError('An ORCID looks like 0000-0002-1825-0097.');
     if (o && !orcidChecksumOk(o)) return setError(`${o} isn't a valid ORCID iD: a digit is probably mistyped.`);
     if (!u && !o && !split(keywords).length) {
-      return setError('Sign in with ORCID or GitHub, or give a few keywords: any one is enough to start.');
+      return setError('Give a few keywords for your field, for example GWAS, single cell, AI.');
     }
     setBusy(true);
     setError('');
@@ -48,47 +54,89 @@ export default function Setup() {
           <Text style={st.brand}>myGeeKy</Text>
           <Text style={st.lead}>{'Find friends, collaborate, away from noise. Research, news and models, picked for your own work.'}</Text>
 
-          <Pressable style={({ pressed }) => [st.scan, pressed && { opacity: 0.85 }]} onPress={() => router.push('/scan')}>
-            <Text style={st.scanTitle}>📷  Scan from your computer</Text>
-            <Text style={st.scanSub}>Already use myGeeKy on your computer? Open ⚙ → Connect your phone there, and
-              scan the code: everything is set up at once.</Text>
-          </Pressable>
+          {step === 'choose' ? <>
+            <Pressable style={({ pressed }) => [st.scan, pressed && { opacity: 0.85 }]} onPress={() => router.push('/scan')}>
+              <Text style={st.scanTitle}>📷  Scan from your computer</Text>
+              <Text style={st.scanSub}>Already use myGeeKy on your computer? Open ⚙ → Connect your phone there, and
+                scan the code: everything is set up at once.</Text>
+            </Pressable>
 
-          <SignInButton signedInAs={signedIn} onSignedIn={(login, t) => {
-            setToken(t);
-            setUsername(login);
-            setSignedIn(login);
-          }} />
-          <OrcidSignInButton signedInAs={orcidName} onSignedIn={(me) => {
-            setOrcid(me.orcid);
-            setOrcidName(me.name || me.orcid);
-          }} />
-          <Text style={st.hint}>No GitHub account? ORCID is enough: News, Papers, AI models and Launches all work without it.</Text>
-          <Text style={st.or}>or fill it in</Text>
+            <SignInButton signedInAs={signedIn} onSignedIn={(login, t) => {
+              setToken(t);
+              setUsername(login);
+              setSignedIn(login);
+              setStep('data');
+            }} />
+            <OrcidSignInButton signedInAs={orcidName} onSignedIn={(me) => {
+              setOrcid(me.orcid);
+              setOrcidName(me.name || me.orcid);
+              setStep('keywords');
+            }} />
+            <Pressable style={({ pressed }) => [st.just, pressed && { opacity: 0.85 }]} onPress={() => setStep('keywords')}
+                       accessibilityLabel="Continue as a guest, with no account">
+              <Text style={st.justText}>👤  Continue as guest</Text>
+            </Pressable>
+            <Text style={st.hint}>As a guest you need no account: give a few keywords and go. Everything is kept on this
+              phone; News, Papers, AI models and Launches all work without GitHub, and you can sign in any time later.</Text>
+          </> : step === 'data' ? (
+            <DataStep login={signedIn} onNext={() => setStep('signals')} />
+          ) : step === 'signals' ? (
+            <SignalsStep onNext={() => setStep('keywords')} />
+          ) : <>
+            {signedIn || orcidName ? (
+              <Text style={st.done}>{[signedIn && `✓ GitHub: ${signedIn}`, orcidName && `✓ ORCID: ${orcidName}`].filter(Boolean).join('   ')}</Text>
+            ) : null}
+            <Text style={st.ask}>{"What's your field?"}</Text>
+            <Text style={st.hint}>{signedIn || orcidName
+              ? 'Optional: myGeeKy already reads your field from your sign-in. A few keywords make it sharper.'
+              : 'A few words is enough. myGeeKy uses them to pick research, news and models for you.'}</Text>
+            <TextInput style={[st.input, { marginTop: 12 }]} value={keywords} onChangeText={setKeywords} autoFocus
+                       placeholder="GWAS, single cell, AI" placeholderTextColor={C.muted}
+                       returnKeyType="done" onSubmitEditing={submit} />
+            {suggest(keywords).length ? (
+              <View style={st.chips}>
+                {suggest(keywords).map((w) => (
+                  <Pressable key={w} onPress={() => setKeywords(pick(keywords, w))} hitSlop={4}
+                             style={({ pressed }) => [st.chip, pressed && { opacity: 0.7 }]} accessibilityLabel={`Add ${w}`}>
+                    <Text style={st.chipText}>+ {w}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            <Text style={st.hint}>Separate them with commas, or tap a suggestion.</Text>
 
-          <Text style={st.label}>GitHub username <Text style={st.opt}>(optional)</Text></Text>
-          <TextInput style={st.input} value={username} onChangeText={setUsername} autoCapitalize="none"
-                     autoCorrect={false} placeholder="e.g. octocat" placeholderTextColor={C.muted} />
-
-          <Text style={st.label}>ORCID <Text style={st.opt}>(it finds your research field)</Text></Text>
-          <TextInput style={st.input} value={orcid} onChangeText={setOrcid} autoCapitalize="none"
-                     placeholder="0000-0002-1825-0097" placeholderTextColor={C.muted} />
-
-          <Text style={st.label}>Keywords <Text style={st.opt}>(comma separated)</Text></Text>
-          <TextInput style={st.input} value={keywords} onChangeText={setKeywords}
-                     placeholder="GWAS, single cell, AI" placeholderTextColor={C.muted} />
-
-          {signedIn ? null : <>
-            <Text style={st.label}>GitHub token <Text style={st.opt}>(optional: read-only)</Text></Text>
-            <TextInput style={st.input} value={token} onChangeText={setToken} autoCapitalize="none" secureTextEntry
-                       placeholder="github_pat_…" placeholderTextColor={C.muted} />
-            <Text style={st.hint}>{"Only needed later, for People. It stays in this phone's secure storage."}</Text>
+            <Pressable onPress={() => setMore(!more)} hitSlop={8}>
+              <Text style={st.more}>{more ? '▾' : '▸'}  More options</Text>
+            </Pressable>
+            {more ? <>
+              {signedIn ? null : <>
+                <Text style={st.label}>GitHub username <Text style={st.opt}>(optional)</Text></Text>
+                <TextInput style={st.input} value={username} onChangeText={setUsername} autoCapitalize="none"
+                           autoCorrect={false} placeholder="e.g. octocat" placeholderTextColor={C.muted} />
+              </>}
+              {orcidName ? null : <>
+                <Text style={st.label}>ORCID iD <Text style={st.opt}>(it finds your research field)</Text></Text>
+                <TextInput style={st.input} value={orcid} onChangeText={setOrcid} autoCapitalize="none"
+                           placeholder="0000-0002-1825-0097" placeholderTextColor={C.muted} />
+              </>}
+              {signedIn ? null : <>
+                <Text style={st.label}>GitHub token <Text style={st.opt}>(optional: read-only)</Text></Text>
+                <TextInput style={st.input} value={token} onChangeText={setToken} autoCapitalize="none" secureTextEntry
+                           placeholder="github_pat_…" placeholderTextColor={C.muted} />
+                <Text style={st.hint}>{"Only needed later, for People. It stays in this phone's secure storage."}</Text>
+              </>}
+            </> : null}
           </>}
 
           {error ? <Text style={st.error}>{error}</Text> : null}
-          <Pressable style={({ pressed }) => [st.button, pressed && { opacity: 0.85 }]} onPress={submit} disabled={busy}>
-            <Text style={st.buttonText}>{busy ? 'Getting to know your field…' : 'Start'}</Text>
-          </Pressable>
+          {step === 'keywords' ? <>
+            <Pressable style={({ pressed }) => [st.button, pressed && { opacity: 0.85 }]} onPress={submit} disabled={busy}>
+              <Text style={st.buttonText}>{busy ? 'Getting to know your field…' : 'Start'}</Text>
+            </Pressable>
+            <Pressable onPress={() => { setStep('choose'); setError(''); }} hitSlop={8}>
+              <Text style={st.back}>← Other ways to start</Text>
+            </Pressable>
+          </> : null}
           <Text style={st.hint}>myGeeKy only suggests. It never follows, stars or posts for you.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -112,9 +160,16 @@ const st = StyleSheet.create({
           borderRadius: 16, padding: 16 },
   scanTitle: { color: C.text, fontSize: 17, fontWeight: '800' },
   scanSub: { color: C.muted, fontSize: 13, marginTop: 6, lineHeight: 18 },
-  or: { color: C.muted, textAlign: 'center', marginTop: 16, marginBottom: 2, fontSize: 13 },
+  just: { backgroundColor: '#ff6fd8', borderRadius: 14, paddingVertical: 14, marginTop: 10, alignItems: 'center' },
+  justText: { color: '#3a0a2e', fontSize: 16, fontWeight: '800' },
+  done: { color: C.green, fontSize: 14, fontWeight: '700', textAlign: 'center', marginBottom: 14 },
+  ask: { color: C.text, fontSize: 22, fontWeight: '800', marginTop: 4 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  chip: { backgroundColor: C.card, borderColor: C.line, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  chipText: { color: C.text, fontSize: 14 },
+  more: { color: C.violet, fontSize: 14, fontWeight: '700', marginTop: 18 },
+  back: { color: C.muted, fontSize: 14, textAlign: 'center', marginTop: 16 },
   button: { backgroundColor: C.violet, borderRadius: 14, paddingVertical: 15, marginTop: 22, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });
 
-void View;
