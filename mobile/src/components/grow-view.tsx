@@ -179,7 +179,7 @@ export function GrowView() {
       ) : null}
 
       {mode === 'paths' ? (
-        <ProtocolsView lists={lists} docs={docs ?? []} repos={wins?.myRepos ?? []} profile={mine} token={token}
+        <ProtocolsView lists={lists} docs={docs ?? []} repos={wins?.myRepos ?? []} profile={mine} token={token} weights={weights}
                        startWith={startWith} onStarted={onStarted}
                        onQuiz={(pid, stage) => { setOpenQuiz({ pid, stage }); setMode('quiz'); }} />
       ) : null}

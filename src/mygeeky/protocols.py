@@ -173,6 +173,24 @@ def reviewed(data: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     return list(data.get("protocols") or [])
 
 
+# The Protocols tab shows only the few reviewed protocols that fit your field best, then "See all".
+REVIEWED_SHOWN = 3
+
+
+def _fit_text(p: dict[str, Any]) -> str:
+    stages = p.get("stages") or []
+    return " ".join([p.get("skill", ""), p.get("goal", ""), p.get("title", ""), p.get("summary", "")]
+                    + [s.get("title", "") for s in stages] + [k for s in stages for k in (s.get("skills") or [])])
+
+
+def by_fit(protocols_: list[dict[str, Any]], weights: dict[str, float]) -> list[dict[str, Any]]:
+    """Reviewed protocols, the best fit to your field first; equal fits keep the maker's order.
+    The phone orders them the same way (mobile/src/lib/reviewed-fit.ts)."""
+    from . import interests
+    scored = [(interests.match(_fit_text(p), weights)[0], i, p) for i, p in enumerate(protocols_)]
+    return [p for _, _, p in sorted(scored, key=lambda t: (-t[0], t[1]))]
+
+
 def _same(a: str, b: str) -> bool:
     return (a or "").strip().lower() == (b or "").strip().lower()
 

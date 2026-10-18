@@ -31,9 +31,8 @@ DAY = date(2026, 10, 15)          # fixed, or the two sides would disagree whene
 def _ready() -> bool:
     if not shutil.which("node") or not (MOBILE / "src" / "lib" / "seasons.ts").exists():
         return False
-    said = subprocess.run(["node", "--version"], capture_output=True, text=True).stdout
-    major = said.strip().lstrip("v").split(".")[0]
-    return major.isdigit() and int(major) >= 23            # runs TypeScript directly
+    v = subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip().lstrip("v").split(".")
+    return len(v) > 1 and v[0].isdigit() and v[1].isdigit() and (int(v[0]), int(v[1])) >= (22, 6)   # runs TypeScript
 
 
 pytestmark = pytest.mark.skipif(not _ready(), reason="needs Node 23+")

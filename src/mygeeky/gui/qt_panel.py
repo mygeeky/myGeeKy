@@ -82,6 +82,7 @@ from . import app as logic
 from .app import THEME_NAMES, THEMES
 from .window_ui import SIDE_LABELS, LayerSwitch, ScreenPicker
 from ..config import AVATAR_CACHE_DIR, MyGeekyConfig, profile_ready
+from ..protocols import REVIEWED_SHOWN
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 SYNC_EVERY_MS = 15 * 60 * 1000   # how often the panel syncs your data between computers
@@ -372,6 +373,15 @@ GITHUB_UNLOCKS = {
     "activity": "What people in your field are building, as it happens.",
     "signals": "Thank the people whose code you use, and invite collaborators, without words.",
 }
+
+
+def reviewed_heading(some: bool) -> str:
+    """The reviewed protocols' heading: only the best fits, or all (the phone's reviewedHeading says the same)."""
+    return "✓ REVIEWED FOR YOUR FIELD" if some else "✓ REVIEWED PROTOCOLS"
+
+
+def see_all_text(n: int, showing_all: bool) -> str:
+    return "Show fewer" if showing_all else f"See all {n} reviewed protocols ›"
 
 
 def protocol_built_text(title: str, stages: int, reviewed: bool) -> str:
@@ -4024,6 +4034,7 @@ class MyGeekyPanel(QWidget):
         self._editing_protocol = ""
         self._building_protocol = False
         self._protocol_built: tuple[str, bool] | None = None   # (id, reviewed) of the one just built: says so once
+        self._all_reviewed = False        # reviewed protocols: the few that fit you best, or all of them
         self._open_protocol = ""          # the one protocol shown open; the others fold to one line
         self._open_step: dict[str, str] = {}
         # a quiz being taken, drawn inside the 🏆 Quiz tab (never a pop-up): the drawn questions, which one
@@ -4607,9 +4618,11 @@ class MyGeekyPanel(QWidget):
         started = {p.get("based_on") or p["id"] for p in mine} | {p["id"] for p in mine}
         offer = [r for r in data.get("reviewed") or [] if r["id"] not in started]
         if offer:
-            self._grow_header("✓ REVIEWED PROTOCOLS", theme)
+            # best fit first (app.get_growth): a few, then "See all", so your own protocols aren't pushed down
+            shown = offer if self._all_reviewed else offer[:REVIEWED_SHOWN]
+            self._grow_header(reviewed_heading(len(shown) < len(offer)), theme)
             row = FlowRow()
-            for r in offer:
+            for r in shown:
                 # A button can never be narrower than its own text, so a long title would make the whole
                 # page wider than the panel and squeeze everything in it. Shorten it here; the full title
                 # and summary stay in the tooltip.
@@ -4622,6 +4635,14 @@ class MyGeekyPanel(QWidget):
                 row.add(b)
             row.finish()
             self.grow_area.addWidget(row)
+            if len(offer) > REVIEWED_SHOWN:
+                more = QPushButton(see_all_text(len(offer), self._all_reviewed))
+                more.setCursor(Qt.PointingHandCursor)
+                more.setFlat(True)
+                more.setStyleSheet(f"QPushButton {{ color:{theme['link']}; background:transparent; border:none; "
+                                   "font-size:11px; font-weight:700; text-align:left; padding:2px 0; }")
+                more.clicked.connect(self._toggle_all_reviewed)
+                self.grow_area.addWidget(more)
         if not mine:
             self._grow_note("No protocols yet. Pick a reviewed one above, build one for any skill, or press 🧭 on "
                             "a skill in 📈 Skills.", theme)
@@ -4742,6 +4763,10 @@ class MyGeekyPanel(QWidget):
         self._grow_mode = "paths"
         self._render_grow()
         self._run_async(lambda: logic.build_protocol(self.cfg, skill, goal), self._on_protocol_built)
+
+    def _toggle_all_reviewed(self) -> None:
+        self._all_reviewed = not self._all_reviewed
+        self._render_grow()
 
     def _on_build_protocol(self) -> None:
         skill = self.protocol_skill.text().strip() if hasattr(self, "protocol_skill") else ""

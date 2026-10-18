@@ -21,8 +21,8 @@ WORK = MOBILE / ".crosscheck"
 def _ready() -> bool:
     if not shutil.which("node") or not (MOBILE / "node_modules" / "@noble" / "curves").exists():
         return False
-    major = subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip().lstrip("v").split(".")[0]
-    return major.isdigit() and int(major) >= 23           # runs TypeScript directly
+    v = subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip().lstrip("v").split(".")
+    return len(v) > 1 and v[0].isdigit() and v[1].isdigit() and (int(v[0]), int(v[1])) >= (22, 6)   # runs TypeScript
 
 
 pytestmark = pytest.mark.skipif(not _ready(), reason="needs Node 23+ and mobile/node_modules")
@@ -44,7 +44,7 @@ def harness():
 
 
 def _node(script, *args):
-    r = subprocess.run(["node", script, *args], capture_output=True, text=True, cwd=WORK)
+    r = subprocess.run(["node", "--experimental-strip-types", script, *args], capture_output=True, text=True, cwd=WORK)
     assert r.returncode == 0, r.stderr[-800:]
     return json.loads(r.stdout)
 

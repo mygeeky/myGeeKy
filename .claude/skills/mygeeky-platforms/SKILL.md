@@ -84,11 +84,14 @@ After editing a desktop data file, update the phone copy in the same change (`cm
 ## The parity tests (run them for any shared change)
 
 ```bash
-.venv/bin/python -m pytest -q tests/test_phone_*_match_desktop.py tests/test_quiz.py tests/test_protocols.py tests/test_growth.py
+.venv/bin/python -m pytest -q -rs tests/test_phone_*_match_desktop.py tests/test_quiz.py tests/test_protocols.py tests/test_growth.py   # -rs shows any skip
 ```
 
-`test_phone_seasons_match_desktop.py` and `test_phone_signals_match_desktop.py` run the phone's TypeScript in
-Node (`mobile/crosscheck/`) on the same inputs as the Python and compare the answers. When you change a shared
+`test_phone_seasons_match_desktop.py`, `test_phone_signals_match_desktop.py` and
+`test_phone_reviewed_match_desktop.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
+imports given their `.ts` ending) on the same inputs as the Python and compare the answers. They need **Node 22.6+**
+(`node --experimental-strip-types`) and skip without it: if pytest reports them as *skipped*, the phone was not
+checked, so say so instead of calling the change verified. When you change a shared
 rule that has no such test yet, add a case: same input through both, same answer expected.
 
 ## How to work a change

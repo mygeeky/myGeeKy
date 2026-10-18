@@ -1026,7 +1026,7 @@ def hf_models_due(cfg: MyGeekyConfig) -> bool:
 def get_growth(cfg: MyGeekyConfig, save: bool = True) -> dict[str, Any]:
     """Rising Skills, your protocols, learning resources and your wins -- all from
     saved files (no network). Slow-ish (reads everything about your field): call it off the UI thread."""
-    from .. import curated, skills, wins
+    from .. import curated, interests, skills, wins
     rising = skills.rising(cfg, save=save)
     wanted = {s["name"].lower(): 0.7 for s in rising["skills"][:6]}
     data = curated.load()
@@ -1034,7 +1034,8 @@ def get_growth(cfg: MyGeekyConfig, save: bool = True) -> dict[str, Any]:
     from .. import protocols
     return {"rising": rising, "paths": protocols.views(cfg, data), "resources": resources,
             "reviewed": [{"id": p["id"], "skill": p["skill"], "goal": p.get("goal", ""), "title": p["title"],
-                          "summary": p.get("summary", "")} for p in protocols.reviewed(data)],
+                          "summary": p.get("summary", "")}
+                         for p in protocols.by_fit(protocols.reviewed(data), interests.profile_terms(cfg))],
             "wins": wins.recent(), "wins_updated_at": wins.load().get("updated_at"),
             "has_orcid": bool(cfg.orcid_id), "has_github": bool(cfg.github_username)}
 

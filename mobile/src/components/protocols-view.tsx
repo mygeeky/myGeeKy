@@ -9,6 +9,8 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressa
 import type { Lists } from '../lib/curated';
 import { ITEM_KINDS, type Stage } from '../lib/protocol-shape';
 import * as P from '../lib/protocols';
+import { byFit, REVIEWED_SHOWN, reviewedHeading, seeAllText } from '../lib/reviewed-fit';
+import type { Weights } from '../lib/interests';
 import * as Q from '../lib/quiz';
 import type { Doc } from '../lib/skills';
 import * as taste from '../lib/taste';
@@ -384,8 +386,8 @@ function QuizRow({ counts, best, canTry, why, onTake, onShare }: { counts: Recor
   );
 }
 
-export function ProtocolsView({ lists, docs, repos, profile, token, startWith, onStarted, onQuiz }: {
-  lists: Lists | null; docs: Doc[]; repos: MyRepo[]; profile: string; token: string | null;
+export function ProtocolsView({ lists, docs, repos, profile, token, weights, startWith, onStarted, onQuiz }: {
+  lists: Lists | null; docs: Doc[]; repos: MyRepo[]; profile: string; token: string | null; weights: Weights;
   startWith: { skill: string; goal: string } | null; onStarted: () => void;
   onQuiz: (pid: string, stage: string) => void }) {
   const [state, setState] = useState<P.State>({});
@@ -397,6 +399,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
   const [ask, setAsk] = useState<Ask | null>(null);
   const [check, setCheck] = useState<{ pid: string; stage: Stage } | null>(null);
   const [note, setNote] = useState('');
+  const [allReviewed, setAllReviewed] = useState(false);   // the sheet with every reviewed protocol
   const [built, setBuilt] = useState('');                   // "✓ Your protocol is built…", until the next action
   const [openId, setOpenId] = useState('');                 // one protocol open; the others fold to one line
   const [chosen, setChosen] = useState<Record<string, string>>({});
@@ -448,7 +451,8 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
     .sort((a, b) => Number(a.finished) - Number(b.finished) || a.startedAt.localeCompare(b.startedAt)), [state, repos, profile]);
   if (!lists) return <Empty>Loading…</Empty>;
   const started = new Set(views.flatMap((v) => [v.id, v.based_on]));
-  const offer = lists.protocols.filter((p) => !started.has(p.id));
+  const offer = byFit(lists.protocols.filter((p) => !started.has(p.id)), weights);   // best fit to your field first
+  const best = offer.slice(0, REVIEWED_SHOWN);
   const act = async (fn: () => Promise<unknown>) => { setBuilt(''); await fn(); await reload(); };
   const shown = views.some((v) => v.id === openId) || openId === '-' ? openId
     : (views.find((v) => !v.finished) ?? views[0])?.id ?? '';
@@ -496,10 +500,37 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
       {note ? <Text style={s.warn}>{note}</Text> : null}
       {built ? <Text style={st.built}>{built}</Text> : null}
 
-      {offer.length ? <Text style={s.section}>✓ REVIEWED PROTOCOLS</Text> : null}
+      {offer.length ? <Text style={s.section}>{reviewedHeading(best.length < offer.length)}</Text> : null}
       <View style={[s.row, { marginTop: 0 }]}>
-        {offer.map((p) => <Button key={p.id} label={`🧭 ${p.title}`} onPress={() => buildOne(p.skill, p.goal)} disabled={building} />)}
+        {best.map((p) => <Button key={p.id} label={`🧭 ${p.title}`} onPress={() => buildOne(p.skill, p.goal)} disabled={building} />)}
       </View>
+      {offer.length > REVIEWED_SHOWN ? (
+        <Pressable onPress={() => setAllReviewed(true)} hitSlop={6} accessibilityRole="button">
+          <Text style={s.link}>{seeAllText(offer.length, false)}</Text>
+        </Pressable>
+      ) : null}
+      {allReviewed ? (
+        <Modal visible transparent animationType="slide" onRequestClose={() => setAllReviewed(false)}>
+          <View style={st.backdrop}>
+            <Pressable style={{ flex: 1 }} onPress={() => setAllReviewed(false)} accessibilityLabel="Close" />
+            <View style={st.sheet}>
+              <View style={st.head}>
+                <Text style={st.title}>{reviewedHeading(false)}</Text>
+                <Pressable onPress={() => setAllReviewed(false)} hitSlop={10}><Text style={st.cancel}>{seeAllText(offer.length, true)}</Text></Pressable>
+              </View>
+              <ScrollView>
+                {offer.map((p) => (
+                  <Pressable key={p.id} disabled={building} onPress={() => { setAllReviewed(false); buildOne(p.skill, p.goal); }}
+                             style={({ pressed }) => [st.reviewedRow, pressed && { opacity: 0.7 }]} accessibilityRole="button">
+                    <Text style={st.reviewedTitle}>🧭 {p.title}</Text>
+                    <Text style={st.reviewedSub}>{p.stages.length} stages{p.summary ? ` · ${p.summary}` : ''}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
 
       {!views.length ? <Empty>No protocols yet. Pick a reviewed one, build one for any skill, or press 🧭 on a skill in Skills.</Empty> : (
         <Text style={s.section}>🧭 YOUR PROTOCOLS</Text>
@@ -642,6 +673,9 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
 }
 
 const st = StyleSheet.create({
+  reviewedRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line },
+  reviewedTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
+  reviewedSub: { color: C.muted, fontSize: 12, marginTop: 3, lineHeight: 17 },
   built: { color: C.green, fontSize: 13, fontWeight: '700', marginTop: 8, lineHeight: 18 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
   sheet: { backgroundColor: C.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, maxHeight: '85%' },
