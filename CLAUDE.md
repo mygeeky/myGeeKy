@@ -10,6 +10,13 @@ is shared or platform-specific, do every side of a shared change, and run the pa
 **`mygeeky-platforms`** skill has the desktop↔phone file map, the shared data files and the checklist. Anything
 shared that is left for later goes in `PARITY.md`; read it before working on the side that is behind.
 
+## Never publish without the maintainer's go-ahead
+
+Do **not** push to GitHub (no `git push`, no tags, no releases, no `gh release upload`), upload to PyPI, submit to
+Google Play, or deploy the website until the maintainer says so in this conversation. Work and commit locally.
+After each major improvement (a finished idea, a fix that's tested, a feature that works), stop and ask whether
+to push or publish it, saying what would go out. A "yes" covers only what was asked about, not later work.
+
 ## Project skills (`.claude/skills/`)
 
 - `mygeeky-platforms`: every code, data or text change (always).

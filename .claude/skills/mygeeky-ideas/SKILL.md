@@ -25,4 +25,5 @@ to start one; don't invent its contents.
 2. Apply the `mygeeky-platforms` skill: an idea is only **(done)** when every platform it concerns has it, or
    the missing side is written as "still to do" on the idea (and in `PARITY.md` if it's a shared rule).
 3. Verify (tests, type check, a look at the screen), then mark it and tell the user what changed and what's left.
-4. Commit the code (not `ideas.md`) when the user wants it pushed.
+4. Commit the code locally (never `ideas.md`), then ask whether to push it to GitHub. Never push, tag or upload
+   without the maintainer's go-ahead for that work (see `CLAUDE.md`).

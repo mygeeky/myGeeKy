@@ -5,6 +5,11 @@ description: Use when releasing myGeeKy (a new version, "push and release", a ta
 
 # Releasing myGeeKy
 
+**Only when the maintainer says so.** Nothing goes to GitHub (push, tag, release, asset upload), PyPI, Google
+Play or the website until the maintainer asks for it in the current conversation. Commit locally meanwhile, and
+after each major improvement ask whether to push or publish, listing what would go out. An earlier "yes" doesn't
+cover new work.
+
 ## Desktop release (PyPI + Windows installer)
 
 1. **Check first:** `git fetch && git status` (main up to date, nothing unexpected), and the full test suite:
