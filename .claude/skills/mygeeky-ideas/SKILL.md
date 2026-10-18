@@ -20,8 +20,13 @@ to start one; don't invent its contents.
 
 ## Working through the list
 
-1. Take the next idea (smallest first unless the user picks), say in one line what it will change and on which
-   platforms.
+1. **Explain before coding, then wait.** When moving to a new idea (smallest first unless the user picks one),
+   tell the user briefly, in plain words:
+   - what the idea is (one or two sentences);
+   - what will change in the program: which screens or behaviour, on which platforms (desktop, phone, website);
+   - anything they should decide first (a wording, a choice between two approaches).
+   Look at the code enough to describe this accurately, but **do not edit any file until the user says
+   "start code"** (or clearly says to go ahead). If they change the plan, explain again and wait again.
 2. Apply the `mygeeky-platforms` skill: an idea is only **(done)** when every platform it concerns has it, or
    the missing side is written as "still to do" on the idea (and in `PARITY.md` if it's a shared rule).
 3. Verify (tests, type check, a look at the screen), then mark it and tell the user what changed and what's left.
