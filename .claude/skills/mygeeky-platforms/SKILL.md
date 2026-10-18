@@ -44,7 +44,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `orcid-login.ts` | `orcid_login.py` |
 | `pairing.ts` | `pairing.py` (the QR code: both sides read the same format) |
 | `profile-card.ts` | `profile_card.py` |
-| `protocols.ts`, `protocol-shape.ts` | `protocols.py` |
+| `protocols.ts`, `protocol-shape.ts`, `reviewed-fit.ts` | `protocols.py` |
 | `protomodel.ts` | `protomodel.py` |
 | `quiz.ts` | `quiz.py` |
 | `research.ts` | `papers.py`, `scholar.py` |
@@ -60,7 +60,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `wins.ts` | `wins.py` |
 | `word-suggest.ts` | `keywords.py` |
 | `components/field-map.tsx`, `interest-map.tsx`, `model-plots.tsx` | `gui/signals_ui.py`, `gui/qt_panel.py` |
-| `components/idea-sheet.tsx` | `ideas.py` |
+| `ideas.ts` (+ `components/idea-sheet.tsx`) | `ideas.py` (+ `IdeaDialog` in `gui/qt_panel.py`) |
 | `app/setup.tsx`, `components/setup-steps.tsx`, `signin.tsx` | `gui/setup_wizard.py`, `setup_api.py` |
 
 Desktop-only today (no phone side, so a fix there is platform-specific unless the phone gains the feature):
@@ -88,7 +88,7 @@ After editing a desktop data file, update the phone copy in the same change (`cm
 ```
 
 `test_phone_seasons_match_desktop.py`, `test_phone_signals_match_desktop.py` and
-`test_phone_reviewed_match_desktop.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
+`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
 imports given their `.ts` ending) on the same inputs as the Python and compare the answers. They need **Node 22.6+**
 (`node --experimental-strip-types`) and skip without it: if pytest reports them as *skipped*, the phone was not
 checked, so say so instead of calling the change verified. When you change a shared

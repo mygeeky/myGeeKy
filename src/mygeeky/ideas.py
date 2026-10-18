@@ -6,6 +6,9 @@ own GitHub account -- no token or password passes through myGeeKy, and
 nothing is sent until they press it. GitHub then notifies the maker, and the
 admin tab's inbox lists them.
 
+No GitHub account, or rather private? The same idea opens as a ready-made email to SUPPORT_EMAIL in the
+sender's own mail app (email_url); they send it themselves, so nothing leaves without them either.
+
 "Include version info" adds only the myGeeKy and Python versions and the OS --
 never tokens, usernames of others, file paths or anything from your data.
 """
@@ -15,11 +18,12 @@ from __future__ import annotations
 import platform
 import sys
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from . import __version__
 
 IDEAS_REPO = "mygeeky/myGeeKy-ideas"
+SUPPORT_EMAIL = "support@mygeeky.org"
 KINDS = {
     "idea": ("💡", "Idea", "idea"),
     "problem": ("🐞", "Problem", "problem"),
@@ -37,6 +41,7 @@ def keyword_url(word: str) -> str:
                      f"Please teach myGeeKy's keyword dictionary the word **{word}**.\n\n"
                      "What it means to me (optional):", include_version=True)
 MAX_URL = 7000          # browsers and GitHub cope with ~8k; stay well under
+MAX_MAILTO = 1800       # some mail apps cut a mailto: link near 2000 characters
 
 
 def version_info() -> str:
@@ -60,6 +65,28 @@ def issue_url(kind: str, title: str, details: str = "", include_version: bool = 
     while len(url) > MAX_URL and len(params["body"]) > 200:   # a very long text: trim, never drop the title
         params["body"] = params["body"][: int(len(params["body"]) * 0.8)] + "\n\n(trimmed: please add the rest after opening)"
         url = f"https://github.com/{IDEAS_REPO}/issues/new?" + urlencode(params)
+    return url
+
+
+def _enc(s: str) -> str:
+    """Percent-encoding exactly as JavaScript's encodeURIComponent, so the phone builds the same email."""
+    return quote(s, safe="!~*'()")
+
+
+def email_url(kind: str, title: str, details: str = "", include_version: bool = True) -> str:
+    """The same idea as a ready-made email to SUPPORT_EMAIL: for people without GitHub, or who'd rather
+    keep it private. Plain text (no GitHub markup); the phone's lib/ideas.ts builds the same."""
+    emoji, label, _ = KINDS.get(kind, KINDS["idea"])
+    title = " ".join((title or "").split())[:120] or label
+    body = (details or "").strip()
+    if kind == "problem" and not body:
+        body = "What happened, and what did you expect?\n"
+    body += f"\n\n---\nSent from the 💡 in myGeeKy · {version_info()}" if include_version else "\n\n---\nSent from the 💡 in myGeeKy"
+    make = lambda b: f"mailto:{SUPPORT_EMAIL}?subject={_enc(f'{emoji} {title}')}&body={_enc(b)}"  # noqa: E731
+    url = make(body)
+    while len(url) > MAX_MAILTO and len(body) > 200:   # a very long text: trim, never drop the title
+        body = body[: int(len(body) * 0.8)] + "\n\n(trimmed: please add the rest in the email)"
+        url = make(body)
     return url
 
 

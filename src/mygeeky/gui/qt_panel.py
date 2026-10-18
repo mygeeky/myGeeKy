@@ -2042,11 +2042,10 @@ class IdeaDialog(QDialog):
         lay.setSpacing(8)
         intro = QLabel("Ideas, problems and questions go to myGeeKy's maker as a GitHub issue. Your browser opens "
                        "it ready to send. Click <b>Submit</b> there, with your GitHub account. It's public, so "
-                       "don't include tokens or private data.<br>No GitHub account, or rather private? Email "
-                       "<a href='mailto:support@mygeeky.org'>support@mygeeky.org</a>.")
+                       "don't include tokens or private data.<br>No GitHub account, or rather private? Use "
+                       "<b>✉ Send by email</b>: the same message, ready in your own mail app.")
         intro.setWordWrap(True)
         intro.setTextFormat(Qt.RichText)
-        intro.setOpenExternalLinks(True)
         lay.addWidget(intro)
         kinds = QHBoxLayout()
         self.kind_buttons: dict[str, QRadioButton] = {}
@@ -2078,7 +2077,11 @@ class IdeaDialog(QDialog):
         cancel.clicked.connect(self.reject)
         self.send = QPushButton("Open on GitHub ↗")
         self.send.clicked.connect(self._send)
+        self.send_email = QPushButton("✉ Send by email")
+        self.send_email.setToolTip("Opens your mail app with this message to support@mygeeky.org, ready to send")
+        self.send_email.clicked.connect(self._send_by_email)
         row.addWidget(cancel)
+        row.addWidget(self.send_email)
         row.addWidget(self.send)
         lay.addLayout(row)
         self.setStyleSheet(f"QDialog {{ background:#17171f; }} QLabel, QRadioButton, QCheckBox {{ color:{theme['text']}; "
@@ -2107,6 +2110,18 @@ class IdeaDialog(QDialog):
         from ..achievements import log
         log("idea")
         self.status.setText("✓ Your browser opened it on GitHub: click <b>Submit new issue</b> there to send it. "
+                            "Thank you!")
+
+    def _send_by_email(self) -> None:
+        from ..ideas import email_url
+        if not self.title_edit.text().strip():
+            self.status.setText("Give it a short title first.")
+            return
+        url = email_url(self.kind(), self.title_edit.text(), self.details.toPlainText(), self.with_version.isChecked())
+        QDesktopServices.openUrl(QUrl(url))
+        from ..achievements import log
+        log("idea")
+        self.status.setText("✓ Your mail app opened it, addressed to support@mygeeky.org: press <b>Send</b> there. "
                             "Thank you!")
 
 
