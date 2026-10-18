@@ -14,6 +14,7 @@ import type { Weights } from '../lib/interests';
 import * as Q from '../lib/quiz';
 import type { Doc } from '../lib/skills';
 import * as taste from '../lib/taste';
+import { useToast } from './toast';
 import { C, tint } from '../lib/theme';
 import type { MyRepo } from '../lib/wins';
 import { Button, GCard, s, Thumbs } from './growth-parts';
@@ -400,7 +401,8 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
   const [check, setCheck] = useState<{ pid: string; stage: Stage } | null>(null);
   const [note, setNote] = useState('');
   const [allReviewed, setAllReviewed] = useState(false);   // the sheet with every reviewed protocol
-  const [built, setBuilt] = useState('');                   // "✓ Your protocol is built…", until the next action
+  const [built, setBuilt] = useState('');
+  const toast = useToast();                                 // the same words float over the screen for a few seconds                   // "✓ Your protocol is built…", until the next action
   const [openId, setOpenId] = useState('');                 // one protocol open; the others fold to one line
   const [chosen, setChosen] = useState<Record<string, string>>({});
   const [quizInfo, setQuizInfo] = useState<Record<string, { counts: Record<string, number>; best: Q.Best | null;
@@ -432,6 +434,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
       const p = await P.build(sk.trim(), gl.trim(), lists, token, docs);
       setOpenId(await P.start(lists, p));
       setBuilt(builtText(p.title, p.stages.length, p.reviewed));
+      toast(builtText(p.title, p.stages.length, p.reviewed));
       setSkill('');
       setGoal('');
       await reload();
@@ -440,7 +443,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
     } finally {
       setBuilding(false);
     }
-  }, [lists, token, docs, reload]);
+  }, [lists, token, docs, reload, toast]);
 
   // 🧭 on a skill in Skills lands here with that skill
   useEffect(() => {

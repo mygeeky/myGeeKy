@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LoadingIntro } from '../components/loading-intro';
+import { ToastProvider } from '../components/toast';
 import { AppProvider } from '../lib/app-state';
 import { C } from '../lib/theme';
 
@@ -26,8 +27,10 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         {ready ? (
           <AppProvider>
-            <StatusBar style={C.dark ? 'light' : 'dark'} />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
+            <ToastProvider>
+              <StatusBar style={C.dark ? 'light' : 'dark'} />
+              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
+            </ToastProvider>
           </AppProvider>
         ) : null}
         {intro ? <LoadingIntro onDone={() => setIntro(false)} /> : null}

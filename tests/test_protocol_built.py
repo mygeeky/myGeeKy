@@ -53,3 +53,36 @@ def test_the_panel_says_it_after_building_and_forgets_it_at_the_next_action(monk
         assert "Your protocol is built" not in shown()
     finally:
         _close(panel)
+
+
+def test_the_built_message_also_floats_for_the_same_time_on_both_apps(monkeypatch):
+    from mygeeky.gui.qt_panel import TOAST_MS
+    ts = (Path(__file__).resolve().parents[1] / "mobile" / "src" / "components" / "toast.tsx").read_text(encoding="utf-8")
+    assert f"export const TOAST_MS = {TOAST_MS};" in ts
+    assert "toast(builtText(" in PHONE.read_text(encoding="utf-8")
+    pytest.importorskip("PySide6")
+    from tests.test_freshness import _close, _quiet_panel
+    monkeypatch.setattr("mygeeky.gui.app.growth_due", lambda cfg: False)
+    cfg = MyGeekyConfig(github_username="me", keywords=["gwas"])
+    pid = protocols.start(cfg, protocols.fill(protocols.template("R", "data analysis"), [], {"resources": []}))
+    app, panel = _quiet_panel(monkeypatch, cfg)
+    try:
+        floated = []
+        real = panel._toast
+        monkeypatch.setattr(panel, "_toast", lambda text: (floated.append(text), real(text)))
+        panel._switch_tab("grow")
+        panel._set_grow_mode("paths")
+        panel._on_protocol_built({"id": pid, "reviewed": False})
+        for w in list(panel._workers):
+            w.wait(5000)
+        app.processEvents()
+        assert floated == ["✓ Your protocol is built: R for data analysis · 5 stages. It's open below."]
+        assert not panel._toast_label.isHidden() and panel._toast_label.text() == floated[0]
+        panel._render_grow()                                   # drawn again: not announced twice
+        assert len(floated) == 1
+        panel._toast_timer.timeout.emit()                      # its time is up: it fades away
+        panel._toast_anim.setCurrentTime(panel._toast_anim.duration())
+        app.processEvents()
+        assert panel._toast_label.isHidden()
+    finally:
+        _close(panel)

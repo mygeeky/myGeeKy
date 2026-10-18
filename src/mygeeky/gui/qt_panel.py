@@ -375,6 +375,9 @@ GITHUB_UNLOCKS = {
 }
 
 
+TOAST_MS = 4000             # the floating message stays this long (the phone's toast.tsx uses the same)
+
+
 def reviewed_heading(some: bool) -> str:
     """The reviewed protocols' heading: only the best fits, or all (the phone's reviewedHeading says the same)."""
     return "✓ REVIEWED FOR YOUR FIELD" if some else "✓ REVIEWED PROTOCOLS"
@@ -4035,6 +4038,7 @@ class MyGeekyPanel(QWidget):
         self._building_protocol = False
         self._protocol_built: tuple[str, bool] | None = None   # (id, reviewed) of the one just built: says so once
         self._all_reviewed = False        # reviewed protocols: the few that fit you best, or all of them
+        self._protocol_toasted = ""       # the built protocol already announced by the floating message
         self._open_protocol = ""          # the one protocol shown open; the others fold to one line
         self._open_step: dict[str, str] = {}
         # a quiz being taken, drawn inside the 🏆 Quiz tab (never a pop-up): the drawn questions, which one
@@ -4610,7 +4614,11 @@ class MyGeekyPanel(QWidget):
         mine = data.get("paths") or []
         built = next((p for p in mine if self._protocol_built and p["id"] == self._protocol_built[0]), None)
         if built:
-            done = QLabel(protocol_built_text(built["title"], built.get("total", 0), self._protocol_built[1]))
+            said = protocol_built_text(built["title"], built.get("total", 0), self._protocol_built[1])
+            if self._protocol_toasted != built["id"]:      # float it once, as it's built; the line below stays
+                self._protocol_toasted = built["id"]
+                self._toast(said)
+            done = QLabel(said)
             done.setWordWrap(True)
             done.setTextFormat(Qt.PlainText)
             done.setStyleSheet(f"color:{theme['good']}; font-size:12px; font-weight:700; background:transparent;")
@@ -4760,6 +4768,7 @@ class MyGeekyPanel(QWidget):
             return
         self._building_protocol = True
         self._protocol_built = None
+        self._protocol_toasted = ""
         self._grow_mode = "paths"
         self._render_grow()
         self._run_async(lambda: logic.build_protocol(self.cfg, skill, goal), self._on_protocol_built)
@@ -4807,6 +4816,45 @@ class MyGeekyPanel(QWidget):
         box.setText(text)
         box.setStyleSheet(self._dialog_css())
         return box
+
+    def _toast(self, text: str) -> None:
+        """A line that floats over the bottom of the panel for TOAST_MS, then fades: seen wherever the page is
+        scrolled, and it takes no clicks. The phone has the same (components/toast.tsx)."""
+        theme = THEMES[self._theme_name()]
+        lbl = getattr(self, "_toast_label", None)
+        if lbl is None:
+            lbl = self._toast_label = QLabel(self)
+            lbl.setWordWrap(True)
+            lbl.setTextFormat(Qt.PlainText)
+            lbl.setAlignment(Qt.AlignCenter)
+            lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
+            self._toast_fade = QGraphicsOpacityEffect(lbl)
+            lbl.setGraphicsEffect(self._toast_fade)
+            self._toast_anim = QPropertyAnimation(self._toast_fade, b"opacity", self)
+            # hidden only once it has really faded out: a new message arriving mid-fade stays up
+            self._toast_anim.finished.connect(lambda: lbl.hide() if self._toast_fade.opacity() < 0.01 else None)
+            self._toast_timer = QTimer(self)
+            self._toast_timer.setSingleShot(True)
+            self._toast_timer.timeout.connect(lambda: self._fade_toast(0.0))
+        lbl.setStyleSheet(f"QLabel {{ background:{theme['solid_bg']}; color:{theme['solid_text']}; "
+                          f"border:1px solid {theme['good']}; border-radius:10px; padding:9px 12px; "
+                          "font-size:12px; font-weight:700; }")
+        lbl.setText(text)
+        frame = self.panel_frame.geometry()            # the drawn panel, not the (taller, see-through) window
+        lbl.setFixedWidth(max(frame.width() - 24, 120))
+        lbl.adjustSize()
+        lbl.move(frame.x() + 12, max(frame.y() + frame.height() - lbl.height() - 22, frame.y()))
+        lbl.show()
+        lbl.raise_()
+        self._fade_toast(1.0)
+        self._toast_timer.start(TOAST_MS)
+
+    def _fade_toast(self, to: float) -> None:
+        self._toast_anim.stop()
+        self._toast_anim.setDuration(250)
+        self._toast_anim.setStartValue(self._toast_fade.opacity())
+        self._toast_anim.setEndValue(to)
+        self._toast_anim.start()
 
     def _info(self, title: str, text: str) -> None:
         box = self._box(title, text)
