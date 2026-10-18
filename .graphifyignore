@@ -1,0 +1,49 @@
+# What graphify leaves out of the knowledge graph (https://github.com/Graphify-Labs/graphify).
+# Same syntax as .gitignore. graphify already skips everything in .gitignore (node_modules, dist,
+# website/_site, video renders...); this file adds what's tracked in git but is data or pictures, not code.
+
+# graphify's own output
+graphify-out/
+
+# pictures, video, fonts, documents: no code relationships, and reading them costs vision tokens
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.webm
+*.wav
+*.mp3
+*.pdf
+*.woff
+*.woff2
+*.ttf
+*.otf
+*.ico
+*.icns
+docs/loader.svg
+docs/geekoc/*.svg
+
+# generated data: big JSON the app reads, not code (the code that reads it stays in the graph)
+src/mygeeky/data/*.json
+mobile/src/data/*.json
+tools/protocol_model/*.jsonl
+tools/protocols/*.json
+
+# lock files and build output
+mobile/package-lock.json
+package-lock.json
+mobile/android/
+mobile/ios/
+mobile/.expo/
+
+# the video's fonts and icon drawings (the scripts that make the poster, gallery and video stay)
+launch/video/fonts/
+launch/video/promise-icons/
+
+# font licences
+*-OFL.txt
+OFL.txt
+
+# private notes
+ideas.md

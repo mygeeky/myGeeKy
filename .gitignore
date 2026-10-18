@@ -21,3 +21,9 @@ launch/video/*.mp4
 launch/video/*.wav
 launch/video/preview_*.png
 launch/video/thumbnail.png
+
+# private idea notes
+ideas.md
+
+# graphify knowledge graph output (rebuild with: graphify update .)
+graphify-out/
