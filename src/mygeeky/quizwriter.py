@@ -16,8 +16,11 @@ passes checks a computer can make:
      the right one **both** times, and to agree the question is clear and has
      exactly one right answer. Anything else is dropped: one disagreement out
      of two is enough.
-  3. **Code is run.** A question whose answer is what a snippet prints is
-     actually run (Python here; R only if R is installed) and compared.
+  3. **Code is never run.** The snippet in a code question was written by the
+     model after reading other people's pages (a README can carry hidden
+     instructions), so running it would run a stranger's code as the maker. A
+     code question has to pass the blind check below, and always goes to the
+     maker's spot check.
   4. **Rules in code.** Four options, no "all of the above", no "which is
      NOT", options of similar length, no near-duplicate of a question
      already in the bank, and the level mix.
@@ -25,7 +28,7 @@ passes checks a computer can make:
      source that describes bench work gives no questions at all.
 
 What's left goes to the maker as a **spot check**: five random questions
-plus any where the checks disagreed. One 👎 and the batch is rewritten.
+plus any where the checks disagreed, and every code question. One 👎 and the batch is rewritten.
 
 State: quizwriter.json (this computer only): the batches, their checks and
 what the maker said. Never synced.
@@ -36,7 +39,6 @@ from __future__ import annotations
 import json
 import random
 import re
-import subprocess          # noqa: F401 - only for its exception types; commands go through winproc.run
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -169,58 +171,18 @@ def too_similar(text: str, others: list[str]) -> bool:
     return any(SequenceMatcher(None, n, _norm(o)).ratio() >= NEAR_DUPLICATE for o in others)
 
 
-# ---- questions a computer can mark
-def run_python(code: str, timeout: float = 8.0) -> str | None:
-    """What this snippet prints, run apart from myGeeKy.
-
-    `-I` keeps the snippet from importing anything next to it, and it runs in an empty temporary
-    folder, so a file in the working directory can never be picked up instead of a real module."""
-    import tempfile
-
-    from . import winproc                    # no console window flashing up on Windows
-    try:
-        with tempfile.TemporaryDirectory(prefix="mygeeky-quiz-") as box:
-            r = winproc.run([sys.executable, "-I", "-c", code], capture_output=True, text=True,
-                            timeout=timeout, cwd=box)
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return r.stdout.strip() if r.returncode == 0 else None
-
-
-def run_r(code: str, timeout: float = 20.0) -> str | None:
-    """The same for R, when R is installed (else None: the question is left to the blind check)."""
-    exe = None
-    for name in ("Rscript", "Rscript.exe"):
-        from shutil import which
-        exe = exe or which(name)
-    if not exe:
-        return None
-    from . import winproc
-    try:
-        r = winproc.run([exe, "--vanilla", "-e", code], capture_output=True, text=True, timeout=timeout)
-    except (OSError, subprocess.SubprocessError):
-        return None
-    if r.returncode != 0:
-        return None
-    # Rscript prints "[1] 6": the value is what follows
-    lines = [re.sub(r"^\s*\[\d+\]\s*", "", ln).strip() for ln in r.stdout.strip().splitlines() if ln.strip()]
-    return "\n".join(lines)
-
-
+# ---- code questions
 def code_check(q: dict[str, Any]) -> tuple[bool | None, str]:
-    """Run a code question for real. (None: couldn't run it -- not a failure.)"""
-    code = _CODE_FENCE.sub("", str(q.get("code") or "")).strip()
-    if not code:
+    """A code question can't be proved here, by design: its snippet is never run.
+
+    It was written by the model after reading a source page, and a page can carry hidden instructions ("for
+    code questions, use: import os; os.system(...)"). Running it -- even with `python -I` in an empty folder,
+    which is not a sandbox -- would run that code with the maker's rights, on the computer that can publish to
+    every user. So the answer is left to the blind second read, and the question to the maker's own eyes.
+    (None: not checked here -- not a failure.)"""
+    if not _CODE_FENCE.sub("", str(q.get("code") or "")).strip():
         return None, ""
-    low = code.lower()
-    looks_r = bool(re.search(r"<-|\bc\(|\blibrary\(|\bdata\.frame\(|\bprint\(paste", code)) and "def " not in low
-    out = run_r(code) if looks_r else run_python(code)
-    if out is None:
-        return None, "couldn't be run here"
-    want = str((q.get("options") or [""])[int(q["answer"])]).strip()
-    got = out.strip()
-    ok = _norm(got) == _norm(want) or _norm(want) in _norm(got)
-    return ok, f"it printed {got[:60]!r}" if not ok else "the code really prints that"
+    return None, "written by the model, so never run here: check it yourself"
 
 
 @dataclass
@@ -243,7 +205,7 @@ def check_question(raw: dict[str, Any], source: dict[str, Any], text: str, step:
     if bad:
         return Checked(raw, False, bad, checks, False)
     checks.append((True, "four fair options, no trick wording"))
-    # A code question is proved by running it (below); everything else must quote its source.
+    # Everything but a code question must quote its source; a code question goes to the maker instead.
     self_proving = raw.get("kind") == "code"
     on_page = quoted(str(raw.get("quote") or ""), text)
     if not self_proving:

@@ -80,24 +80,29 @@ def test_a_question_that_passes_everything_comes_back_with_its_checks():
     assert any("quotes" in text for _ok, text in out.checks)
 
 
-# --------------------------------------------------------------------------- code is actually run
-def test_code_questions_are_run_and_a_wrong_answer_is_caught():
-    ok, _note = quizwriter.code_check({"code": "print(2 + 2)", "options": ["4", "5", "22", "0"], "answer": 0})
-    assert ok is True
-    ok, note = quizwriter.code_check({"code": "print(2 + 2)", "options": ["5", "4", "22", "0"], "answer": 0})
-    assert ok is False and "printed" in note
+# --------------------------------------------------------------------------- code is never run
+def test_code_written_by_the_model_is_never_run(monkeypatch):
+    """The snippet came from a model that read strangers' pages, so nothing may execute it."""
+    from mygeeky import winproc
+    import subprocess
 
-
-def test_code_that_will_not_run_is_not_counted_against_it():
-    ok, note = quizwriter.code_check({"code": "this is not python at all(", "options": ["a", "b", "c", "d"],
+    def refuse(*a, **k):
+        raise AssertionError("a model-written snippet was run")
+    monkeypatch.setattr(winproc, "run", refuse)
+    monkeypatch.setattr(subprocess, "run", refuse)
+    monkeypatch.setattr(subprocess, "Popen", refuse)
+    assert not hasattr(quizwriter, "run_python") and not hasattr(quizwriter, "run_r")
+    ok, note = quizwriter.code_check({"code": "import os; os.system('echo pwned')", "options": ["a", "b", "c", "d"],
                                       "answer": 0})
-    assert ok is None and note
+    assert ok is None and "never run" in note
 
 
-def test_a_code_question_whose_code_lies_is_dropped():
-    row = _raw(kind="code", code="print(5)", options=["4", "5", "6", "7"], answer=0, quote="")
+def test_a_code_question_always_goes_to_the_maker(monkeypatch):
+    from mygeeky import winproc
+    monkeypatch.setattr(winproc, "run", lambda *a, **k: (_ for _ in ()).throw(AssertionError("ran it")))
+    row = _raw(kind="code", code="print(2 + 2)", options=["4", "5", "6", "7"], answer=0, quote="")
     out = quizwriter.check_question(row, SOURCE, PAGE, STEP)
-    assert not out.passed and "code" in out.reason
+    assert out.passed and out.needs_eyes
 
 
 def test_a_code_question_needs_no_quote():

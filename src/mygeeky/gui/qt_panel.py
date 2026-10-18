@@ -183,6 +183,22 @@ def _short(text: str, n: int) -> str:
     return cut.rstrip(" ,.;:") + "…"
 
 
+def _plain(label: QLabel) -> QLabel:
+    """Show remote text as text. A QLabel left at Qt's default (AutoText) renders anything that looks like HTML
+    as HTML, and an <img> in a GitHub bio or a repo description then makes Qt open whatever path it names:
+    /dev/zero exhausts memory and kills the panel, and on Windows a file:// share sends the user's login hash
+    to whoever runs it. Every label that shows a stranger's words goes through here."""
+    label.setTextFormat(Qt.PlainText)
+    return label
+
+
+def _tip(text: Any, limit: int = 1200) -> str:
+    """A tooltip that shows remote text as text. Qt guesses HTML for tooltips too, so the text is escaped and
+    wrapped in <qt>, which also lets a long abstract wrap instead of running off the screen."""
+    t = str(text or "")[:limit]
+    return "<qt>" + html.escape(t).replace("\n", "<br>") + "</qt>" if t.strip() else ""
+
+
 def _time_ago(iso: str) -> str:
     if not iso:
         return ""
@@ -356,6 +372,12 @@ GITHUB_UNLOCKS = {
     "activity": "What people in your field are building, as it happens.",
     "signals": "Thank the people whose code you use, and invite collaborators, without words.",
 }
+
+
+def protocol_built_text(title: str, stages: int, reviewed: bool) -> str:
+    """What the Protocols tab says once a protocol is built or started (the phone says the same: protocols-view.tsx)."""
+    what = f"Protocol started: {title} (reviewed)" if reviewed else f"Your protocol is built: {title}"
+    return f"✓ {what} · {stages} stage{'s' if stages != 1 else ''}. It's open below."
 
 
 def _activity_key(group: dict[str, Any]) -> str:
@@ -976,7 +998,7 @@ class NewsCard(QFrame):
         top = QHBoxLayout()
         top.setSpacing(6)
         name, color = NEWS_BADGES.get(item.get("source", ""), (item.get("source", ""), theme["accent"]))
-        badge = QLabel(name)
+        badge = _plain(QLabel(name))
         badge.setStyleSheet(f"color:white; background:{color}; border-radius:6px; padding:0 6px; "
                             f"font-size:9.5px; font-weight:700;")
         badge.setFixedHeight(15)
@@ -1005,7 +1027,7 @@ class NewsCard(QFrame):
             sub.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
             sub.setStyleSheet(f"color:{theme['muted']}; font-size:10px; background:transparent;")
             outer.addWidget(sub)
-        self.setToolTip(item.get("summary", ""))
+        self.setToolTip(_tip(item.get("summary", "")))
         self.setStyleSheet(f"QFrame#newsCard {{ background:{theme['card_bg']}; border-radius:10px; }}"
                            f"QFrame#newsCard:hover {{ background:{theme['btn_bg']}; }}")
         self.setCursor(Qt.PointingHandCursor)
@@ -1148,7 +1170,7 @@ class ResearchCard(QFrame):
         self.body.setVisible(False)
 
         self.setStyleSheet(f"QFrame#researchCard {{ background:{theme['card_bg']}; border-radius:10px; }}")
-        self.setToolTip(paper.get("abstract", ""))
+        self.setToolTip(_tip(paper.get("abstract", "")))
         self.header.mousePressEvent = lambda ev: self.toggle()  # noqa: ARG005
 
     def toggle(self) -> None:
@@ -1877,7 +1899,7 @@ class ProfileView(QFrame):
         return card
 
     def _muted(self, text: str, size: float = 11) -> QLabel:
-        lab = QLabel(text)
+        lab = _plain(QLabel(text))          # bios, places, errors: a stranger's words
         lab.setWordWrap(True)
         lab.setStyleSheet(f"color:{self.theme['muted']}; font-size:{size}px;")
         return lab
@@ -2190,7 +2212,7 @@ class SuggestionCard(QFrame):
         body = QVBoxLayout()
         body.setSpacing(2)
         title_row = QHBoxLayout()
-        name_label = QLabel(item.get("username", ""))
+        name_label = _plain(QLabel(item.get("username", "")))
         name_label.setStyleSheet("font-weight:600; font-size:12.5px; background:transparent;")
         score = item.get(score_key)
         score_label = QLabel(f"{score:.2f}" if isinstance(score, (int, float)) else "")
@@ -2202,7 +2224,7 @@ class SuggestionCard(QFrame):
         title_row.addWidget(score_label)
         body.addLayout(title_row)
 
-        bio_label = QLabel((item.get("bio") or "")[:80])
+        bio_label = _plain(QLabel((item.get("bio") or "")[:80]))
         bio_label.setWordWrap(True)  # a long bio must not widen the card past the panel
         bio_label.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
         body.addWidget(bio_label)
@@ -2226,7 +2248,8 @@ class _ActivityRow(QFrame):
         row.setSpacing(8)
         verb = event.get("verb", "")
         repo = event.get("repo", "")
-        text = QLabel(verb + (f" in <b>{repo}</b>" if repo else ""))
+        text = QLabel(html.escape(verb) + (f" in <b>{html.escape(repo)}</b>" if repo else ""))   # a branch name may hold < and >
+        text.setTextFormat(Qt.RichText)
         text.setWordWrap(True)
         text.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         text.setStyleSheet(f"color:{theme['text']}; font-size:11px; background:transparent;")
@@ -2270,7 +2293,7 @@ class ActivityGroup(QFrame):
         text_box.setSpacing(1)
         name_row = QHBoxLayout()
         name_row.setSpacing(6)
-        name = QLabel(self.actor)
+        name = _plain(QLabel(self.actor))
         name.setStyleSheet(f"color:{theme['text']}; font-size:12px; font-weight:600; background:transparent;")
         name_row.addWidget(name)
         is_match = group.get("source") == "match"
@@ -2285,7 +2308,7 @@ class ActivityGroup(QFrame):
         summary = latest.get("verb", "")
         if latest.get("repo"):
             summary += f" in {latest['repo'].split('/')[-1]}"
-        self.summary_label = QLabel(f"{summary} · {_time_ago(latest.get('created_at', ''))}")
+        self.summary_label = _plain(QLabel(f"{summary} · {_time_ago(latest.get('created_at', ''))}"))
         self.summary_label.setWordWrap(True)  # long branch names must not widen the card past the panel
         self.summary_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         self.summary_label.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
@@ -2456,7 +2479,7 @@ class SignalCard(QFrame):
 
     def show_result(self, text: str, detail: str = "") -> None:
         self.feedback.setText(text)
-        self.feedback.setToolTip(detail)
+        self.feedback.setToolTip(_tip(detail))
 
 
 UP_COLOR = "#34d399"
@@ -2558,12 +2581,13 @@ class MarketRow(QFrame):
 
         body = QVBoxLayout()
         body.setSpacing(1)
-        title = QLabel(f"<b>{name}</b> <span style='color:{theme['muted']}'>{owner}</span>")
+        title = QLabel(f"<b>{html.escape(name)}</b> <span style='color:{theme['muted']}'>{html.escape(owner)}</span>")
+        title.setTextFormat(Qt.RichText)
         title_line = QHBoxLayout()
         title_line.setSpacing(5)
         title.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         title.setStyleSheet(f"color:{theme['text']}; font-size:11.5px; background:transparent;")
-        title.setToolTip(row.get("description", ""))
+        title.setToolTip(_tip(row.get("description", "")))
         title_line.addWidget(title, 1)
         if row.get("paper"):
             title_line.addWidget(published_badge(row["paper"], on_open))
@@ -2710,6 +2734,7 @@ class _ClickableLabel(QLabel):
     def __init__(self, text: str, on_click: Callable[[], Any]) -> None:
         super().__init__(text)
         self._on_click = on_click
+        self.setTextFormat(Qt.PlainText)      # it shows issue titles: anyone on GitHub writes those
         self.setWordWrap(True)
         self.setCursor(Qt.PointingHandCursor)
 
@@ -2736,9 +2761,9 @@ class RepoCard(QFrame):
         body = QVBoxLayout()
         body.setSpacing(2)
         title_row = QHBoxLayout()
-        name_label = QLabel(item.get("full_name", ""))
+        name_label = _plain(QLabel(item.get("full_name", "")))
         name_label.setStyleSheet("font-weight:600; font-size:12.5px; background:transparent;")
-        name_label.setToolTip(item.get("full_name", ""))
+        name_label.setToolTip(_tip(item.get("full_name", "")))
         name_label.setMinimumWidth(1)  # a long owner/name is clipped instead of widening the card
         score = item.get("score")
         score_label = QLabel(f"{score:.2f}" if isinstance(score, (int, float)) else "")
@@ -2763,7 +2788,7 @@ class RepoCard(QFrame):
         outer.addLayout(row)
 
         if item.get("description"):
-            desc = QLabel(item["description"][:120])
+            desc = _plain(QLabel(item["description"][:120]))
             desc.setWordWrap(True)
             desc.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             outer.addWidget(desc)
@@ -2785,7 +2810,7 @@ class RepoCard(QFrame):
             issue_row = _ClickableLabel("→ " + (title[:97] + "…" if len(title) > 100 else title),
                                         lambda u=issue.get("url", ""): on_open(u))
             issue_row.setObjectName("issue")
-            issue_row.setToolTip(title)
+            issue_row.setToolTip(_tip(title))
             issue_row.setStyleSheet(
                 f"#issue {{ background:{theme['btn_bg']}; color:{theme['text']}; border-radius:7px; "
                 f"padding:5px 8px; font-size:11px; }}"
@@ -2835,24 +2860,24 @@ class SpotlightCard(QFrame):
         badge.setStyleSheet(
             f"color:{theme['accent']}; font-size:9px; font-weight:800; letter-spacing:0.6px; background:transparent;"
         )
-        name_label = QLabel(item.get("username", ""))
+        name_label = _plain(QLabel(item.get("username", "")))
         name_label.setStyleSheet("font-weight:700; font-size:12.5px; background:transparent;")
         top_row.addWidget(badge)
         top_row.addWidget(name_label)
         top_row.addStretch(1)
         if item.get("time_text"):
-            time_label = QLabel(item["time_text"])
+            time_label = _plain(QLabel(item["time_text"]))
             time_label.setStyleSheet(f"color:{theme['muted']}; font-size:10px; background:transparent;")
             top_row.addWidget(time_label)
         body.addLayout(top_row)
 
-        headline = QLabel(item.get("headline", ""))
+        headline = _plain(QLabel(item.get("headline", "")))
         headline.setWordWrap(True)
         headline.setStyleSheet(f"color:{theme['text']}; font-size:11.5px; background:transparent;")
         body.addWidget(headline)
 
         if item.get("detail"):
-            detail = QLabel(item["detail"])
+            detail = _plain(QLabel(item["detail"]))
             detail.setWordWrap(True)
             detail.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
             body.addWidget(detail)
@@ -3998,6 +4023,7 @@ class MyGeekyPanel(QWidget):
         self._growth_running = False
         self._editing_protocol = ""
         self._building_protocol = False
+        self._protocol_built: tuple[str, bool] | None = None   # (id, reviewed) of the one just built: says so once
         self._open_protocol = ""          # the one protocol shown open; the others fold to one line
         self._open_step: dict[str, str] = {}
         # a quiz being taken, drawn inside the 🏆 Quiz tab (never a pop-up): the drawn questions, which one
@@ -4571,6 +4597,13 @@ class MyGeekyPanel(QWidget):
         if self._building_protocol:
             self._grow_note("Searching GitHub and papers, and sorting what comes back into stages…", theme)
         mine = data.get("paths") or []
+        built = next((p for p in mine if self._protocol_built and p["id"] == self._protocol_built[0]), None)
+        if built:
+            done = QLabel(protocol_built_text(built["title"], built.get("total", 0), self._protocol_built[1]))
+            done.setWordWrap(True)
+            done.setTextFormat(Qt.PlainText)
+            done.setStyleSheet(f"color:{theme['good']}; font-size:12px; font-weight:700; background:transparent;")
+            self.grow_area.addWidget(done)
         started = {p.get("based_on") or p["id"] for p in mine} | {p["id"] for p in mine}
         offer = [r for r in data.get("reviewed") or [] if r["id"] not in started]
         if offer:
@@ -4581,7 +4614,7 @@ class MyGeekyPanel(QWidget):
                 # page wider than the panel and squeeze everything in it. Shorten it here; the full title
                 # and summary stay in the tooltip.
                 b = QPushButton(f"🧭 {_short(r['title'], 30)}")
-                b.setToolTip((r["title"] + "\n\n" + (r.get("summary") or "")).strip())
+                b.setToolTip(_tip((r["title"] + "\n\n" + (r.get("summary") or "")).strip()))
                 b.setCursor(Qt.PointingHandCursor)
                 b.setStyleSheet(f"QPushButton {{ background:{theme['card_bg']}; color:{theme['text']}; border:none; "
                                 "border-radius:8px; padding:4px 9px; font-size:11px; }")
@@ -4705,6 +4738,7 @@ class MyGeekyPanel(QWidget):
         if self._building_protocol:
             return
         self._building_protocol = True
+        self._protocol_built = None
         self._grow_mode = "paths"
         self._render_grow()
         self._run_async(lambda: logic.build_protocol(self.cfg, skill, goal), self._on_protocol_built)
@@ -4718,6 +4752,7 @@ class MyGeekyPanel(QWidget):
         self._building_protocol = False
         if isinstance(result, dict) and result.get("id"):
             self._open_protocol = result["id"]          # the new one opens; the others fold
+            self._protocol_built = (result["id"], bool(result.get("reviewed")))
         if isinstance(result, dict) and result.get("error"):
             self._info("Protocol", result["error"])
         self._load_growth()
@@ -4730,6 +4765,7 @@ class MyGeekyPanel(QWidget):
             box.exec()
             if box.clickedButton() is not yes:
                 return
+        self._protocol_built = None
         logic.protocol_action(self.cfg, action, pid, *args)
         self._load_growth()
 
@@ -5685,7 +5721,7 @@ class MyGeekyPanel(QWidget):
         title = _label(f"<b>{self.SCOUT_EMOJI.get(c['kind'], '')} {html.escape(it['title'])}</b>",
                        f"color:{theme['text']}; font-size:12px; background:transparent;", rich=True)
         title.setCursor(Qt.PointingHandCursor)
-        title.setToolTip(it["url"])
+        title.setToolTip(_tip(it["url"]))
         title.mousePressEvent = lambda ev, u=it["url"]: logic.open_link(u)  # noqa: ARG005
         head.addWidget(title, 1)
         head.addWidget(_label(f"{sure}% sure", f"color:{color}; background:{color}22; border-radius:7px; "
@@ -5860,7 +5896,7 @@ class MyGeekyPanel(QWidget):
         dlg.setWindowTitle(title)
         dlg.setStyleSheet(self._dialog_css())
         lay = QVBoxLayout(dlg)
-        label = QLabel(question)
+        label = _plain(QLabel(question))
         label.setWordWrap(True)
         lay.addWidget(label)
         picker = QComboBox()
@@ -7047,7 +7083,7 @@ class MyGeekyPanel(QWidget):
         lay = QVBoxLayout(card)
         lay.setContentsMargins(12, 10, 12, 10)
         lay.setSpacing(6)
-        said = QLabel(ask.get("why", ""))
+        said = _plain(QLabel(ask.get("why", "")))
         said.setWordWrap(True)
         said.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
         lay.addWidget(said)
@@ -7256,7 +7292,7 @@ class MyGeekyPanel(QWidget):
         if isinstance(data, dict) and data.get("error") and "followback" not in data:
             theme = THEMES[self._theme_name()]
             _clear_layout(self.followback_area)
-            err = QLabel(str(data["error"]))
+            err = _plain(QLabel(str(data["error"])))
             err.setWordWrap(True)
             err.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.followback_area.addWidget(err)
@@ -7624,7 +7660,7 @@ class MyGeekyPanel(QWidget):
         if isinstance(data, dict) and data.get("error"):
             theme = THEMES[self._theme_name()]
             _clear_layout(self.repos_area)
-            err = QLabel(str(data["error"]))
+            err = _plain(QLabel(str(data["error"])))
             err.setWordWrap(True)
             err.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.repos_area.addWidget(err)
@@ -7976,7 +8012,7 @@ class MyGeekyPanel(QWidget):
         _clear_layout(self.headlines_area)
         items = data.get("items") or []
         if data.get("error") or not items:
-            msg = QLabel(data.get("error") or "No headlines yet. They load in the background (or click Refresh).")
+            msg = _plain(QLabel(data.get("error") or "No headlines yet. They load in the background (or click Refresh)."))
             msg.setWordWrap(True)
             msg.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.headlines_area.addWidget(msg)
@@ -8021,7 +8057,7 @@ class MyGeekyPanel(QWidget):
         _clear_layout(self.news_area)
         items = data.get("items") or []
         if data.get("error") or not items:
-            msg = QLabel(data.get("error") or "No news yet. It loads in the background (or click Refresh).")
+            msg = _plain(QLabel(data.get("error") or "No news yet. It loads in the background (or click Refresh)."))
             msg.setWordWrap(True)
             msg.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.news_area.addWidget(msg)
@@ -8077,8 +8113,8 @@ class MyGeekyPanel(QWidget):
             self.research_area.addWidget(lbl)
 
         if data.get("error") or not (data.get("rising") or data.get("tools")):
-            msg = QLabel(data.get("error") or "No research trends yet. They load in the background "
-                                              "(or click Refresh).")
+            msg = _plain(QLabel(data.get("error") or "No research trends yet. They load in the background "
+                                              "(or click Refresh)."))
             msg.setWordWrap(True)
             msg.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.research_area.addWidget(msg)
@@ -8128,8 +8164,8 @@ class MyGeekyPanel(QWidget):
         rows = data.get("rows") or []
         _clear_layout(self.market_area)
         if data.get("error") or not rows:
-            msg = QLabel(data.get("error") or "No board yet — it builds itself in the background "
-                                              "(or click Refresh). The first run takes a few minutes.")
+            msg = _plain(QLabel(data.get("error") or "No board yet — it builds itself in the background "
+                                              "(or click Refresh). The first run takes a few minutes."))
             msg.setWordWrap(True)
             msg.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
             self.market_area.addWidget(msg)

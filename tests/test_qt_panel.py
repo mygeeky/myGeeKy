@@ -192,8 +192,8 @@ def test_dragging_transparency_redraws_a_few_times_and_saves_once(qapp, monkeypa
         assert applied[-1] == pytest.approx(logic.MIN_OPACITY) and saved == [pytest.approx(logic.MIN_OPACITY)]
 
         sl.setValue(50)                                 # a key or the wheel: saved too
-        end = time.time() + 0.2
-        while time.time() < end:
+        end = time.time() + 2.0                         # wait for the save itself: a fixed 0.2 s was flaky
+        while time.time() < end and saved[-1] != pytest.approx(0.8):
             qapp.processEvents()
         assert saved[-1] == pytest.approx(0.8)
     finally:
@@ -600,3 +600,49 @@ def test_signals_calls_ruler_and_invite_window(qapp, monkeypatch):
         for w in list(panel._workers):
             w.wait(2000)
         panel.deleteLater()
+
+
+# --------------------------------------------------------------------------- a stranger's words stay words
+HOSTILE = '<img src="/dev/zero"><a href="file:///etc/passwd">x</a>'
+
+
+def _rendered_safely(widget) -> list[str]:
+    """Every label that shows the hostile text must show it as text: plain, or rich with it escaped.
+    A label left at AutoText would make Qt open /dev/zero (and on Windows, a file:// share)."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QLabel
+    bad = []
+    for lab in widget.findChildren(QLabel):
+        text = lab.text()
+        if "<img" not in text:
+            continue
+        if lab.textFormat() != Qt.PlainText:
+            bad.append(text[:60])
+    return bad
+
+
+def test_remote_text_is_never_rendered_as_html(qapp):
+    from mygeeky.gui.app import THEMES
+    from mygeeky.gui.qt_panel import RepoCard, SpotlightCard, SuggestionCard, _ActivityRow, _tip
+
+    theme = THEMES["midnight"]
+    person = {"username": "mallory", "profile_url": "https://github.com/mallory", "score": 0.5, "bio": HOSTILE}
+    repo = {**_repo_item(), "description": HOSTILE,
+            "starter_issues": [{"title": HOSTILE, "url": "https://github.com/owner/tool/issues/1"}]}
+    event = {"actor": "mallory", "verb": f"pushed to '{HOSTILE}'", "repo": "mallory/x" + HOSTILE,
+             "created_at": "2026-01-01T00:00:00Z", "profile_url": "https://github.com/mallory"}
+    cards = [SuggestionCard(person, "score", theme, lambda i: None),
+             RepoCard(repo, theme, lambda u: True),
+             _ActivityRow(event, theme, lambda u: True)]
+    for item in _build_spotlight_items([event], [person]):
+        cards.append(SpotlightCard(item, theme, lambda u: True, None))
+    for card in cards:
+        assert _rendered_safely(card) == [], type(card).__name__
+    # an activity row keeps its bold repo name, with the stranger's part escaped
+    from PySide6.QtWidgets import QLabel
+    rich = [lab.text() for lab in cards[2].findChildren(QLabel) if "<b>" in lab.text()]
+    assert rich and all("<img" not in t and "&lt;img" in t for t in rich)
+    # tooltips: escaped and wrapped, so Qt shows the tags as text
+    tip = _tip(HOSTILE)
+    assert tip.startswith("<qt>") and "<img" not in tip and "&lt;img" in tip
+    assert _tip("") == ""

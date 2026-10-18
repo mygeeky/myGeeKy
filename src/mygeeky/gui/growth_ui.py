@@ -21,6 +21,12 @@ JOB_EMOJI = {"phd": "🎓", "postdoc": "🔬", "master": "📘", "job": "💼", 
 WIN_EMOJI = {"stars": "⭐", "forks": "🍴", "citations": "📚"}
 
 
+
+def _tip(text: Any, limit: int = 1200) -> str:
+    """A tooltip that shows shared or remote text as text, never as HTML (see qt_panel._plain)."""
+    t = str(text or "")[:limit]
+    return "<qt>" + html.escape(t).replace("\n", "<br>") + "</qt>" if t.strip() else ""
+
 def _label(text: str, style: str, rich: bool = False, wrap: bool = True) -> QLabel:
     lbl = QLabel(text)
     lbl.setTextFormat(Qt.RichText if rich else Qt.PlainText)
@@ -427,6 +433,7 @@ class ResourceCard(QFrame):
         outer.setContentsMargins(8, 8, 8, 8)
         outer.setSpacing(8)
         icon = QLabel(res.icon)
+        icon.setTextFormat(Qt.PlainText)
         icon.setFixedSize(34, 34)
         icon.setAlignment(Qt.AlignCenter)
         icon.setStyleSheet(f"background:{color}33; border-radius:9px; font-size:17px;")
@@ -450,7 +457,7 @@ class ResourceCard(QFrame):
             body.addWidget(_label(res.blurb, f"color:{theme['text']}; font-size:10.5px; background:transparent;"))
         go = QPushButton(f"{res.action}  ↗")
         go.setCursor(Qt.PointingHandCursor)
-        go.setToolTip(res.url)
+        go.setToolTip(_tip(res.url))
         go.setStyleSheet(f"QPushButton {{ background:{color}26; color:{theme['text']}; border:none; border-radius:8px; "
                          f"padding:4px 10px; font-size:10.5px; font-weight:600; }} QPushButton:hover {{ background:{color}55; }}")
         go.clicked.connect(lambda checked=False: on_open(res.url))
@@ -524,7 +531,7 @@ class QuestionCard(QFrame):
                              f"color:{color}; font-size:9px; font-weight:700; letter-spacing:0.6px; "
                              f"background:{color}22; border-radius:6px; padding:2px 6px;", wrap=False))
         step = _label(f"{q.kind_icon} {q.stage_title}", _muted(theme, 10))
-        step.setToolTip(q.stage_title)
+        step.setToolTip(_tip(q.stage_title))
         top.addWidget(step, 1)
         if on_flag is not None:
             top.addWidget(_small_button("🚩" if not q.flagged else "🚩 flagged",
@@ -1553,6 +1560,7 @@ class FieldPicker(QFrame):
 
         if self._note:
             said = QLabel(self._note)
+            said.setTextFormat(Qt.PlainText)
             said.setWordWrap(True)
             said.setStyleSheet(_muted(theme))
             self._lay.addWidget(said)
