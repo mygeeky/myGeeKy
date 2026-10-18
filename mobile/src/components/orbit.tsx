@@ -11,7 +11,7 @@ import { C, tint } from '../lib/theme';
 
 type Ring = 'inner' | 'outer';
 const TAU = Math.PI * 2;
-const IDS: Record<Ring, SectionId[]> = { inner: INNER, outer: OUTER };
+const IDS: Record<Ring, SectionId[]> = { inner: INNER, outer: OUTER };   // their sizes (the order can change: Orbit's `inner`)
 
 /** The rotation that brings planet i to the lens, the shortest way round from `cur`. */
 function targetRot(ring: Ring, i: number, cur: number) {
@@ -31,10 +31,11 @@ export function orbitHeight(width: number) {
   return Math.round(410 * (width / 390) * SCALE);
 }
 
-export function Orbit({ width, sel, counts, onSelect, hint, onTouched, youLetter }: {
-  width: number; sel: SectionId; counts: Partial<Record<SectionId, number>>;
+export function Orbit({ width, sel, counts, onSelect, hint, onTouched, youLetter, inner = INNER }: {
+  width: number; sel: SectionId; counts: Partial<Record<SectionId, number>>; inner?: SectionId[];
   onSelect: (id: SectionId) => void; hint: boolean; onTouched: () => void; youLetter: string;
 }) {
+  const ids: Record<Ring, SectionId[]> = { inner, outer: OUTER };   // the inner ring in the order it's shown
   const k = (width / 390) * SCALE;
   const geo = { cx: width / 2, cy: 210 * k, r: { inner: 88 * k, outer: 160 * k }, size: { inner: 46 * k, outer: 56 * k }, split: 125 * k, center: 40 * k };
   const [rot, setRot] = useState<Record<Ring, number>>({ inner: 0, outer: 0 });
@@ -70,7 +71,7 @@ export function Orbit({ width, sel, counts, onSelect, hint, onTouched, youLetter
 
   const lock = (ring: Ring, i: number) => {
     const { rot: r, onSelect: pick } = live.current;
-    pick(IDS[ring][i]);
+    pick(ids[ring][i]);
     turnRef.current(ring, targetRot(ring, i, r[ring]), 320, () => {
       if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => undefined);
     });
@@ -140,7 +141,7 @@ export function Orbit({ width, sel, counts, onSelect, hint, onTouched, youLetter
   };
 
   const selRing = INNER.includes(sel) ? 'inner' : OUTER.includes(sel) ? 'outer' : null;
-  const planets = (['outer', 'inner'] as Ring[]).flatMap((ring) => IDS[ring].map((id, i) => {
+  const planets = (['outer', 'inner'] as Ring[]).flatMap((ring) => ids[ring].map((id, i) => {
     const n = IDS[ring].length;
     const th = rot[ring] + (i * TAU) / n - Math.PI / 2;
     const s = SECTIONS[id];

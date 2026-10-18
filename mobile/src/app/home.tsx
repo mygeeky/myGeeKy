@@ -33,7 +33,7 @@ import { loadSeen, markSeen } from '../lib/seen';
 import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
 import { fetchPeople } from '../lib/people';
 import { fetchResearch } from '../lib/research';
-import { INNER, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
+import { INNER, ordered, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
 import { C, ink, tint } from '../lib/theme';
 
 
@@ -45,7 +45,6 @@ type RepoPart = 'help' | 'rising';
 const REPO_PARTS: [RepoPart, string][] = [['help', '🛠 Help out'], ['rising', '📈 Rising']];
 type YouPart = 'model' | 'badges' | 'more' | 'ideas' | 'admin';
 const YOU_PARTS: [YouPart, string][] = [['model', 'Model'], ['badges', 'Badges'], ['more', 'Settings'], ['ideas', 'Ideas']];
-const DOCK: SectionId[] = ['you', ...INNER, ...OUTER];
 
 const EMPTY: Partial<Record<SectionId, string>> = {
   live: 'Nothing new around you yet. Pull down to check again.',
@@ -175,6 +174,9 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const user = settings?.username ?? '';
+  // You first; without GitHub the planets that would only say "add GitHub" go last (sections.ts ordered)
+  const inner = useMemo(() => ordered(INNER, !!user), [user]);
+  const DOCK: SectionId[] = useMemo(() => ['you', ...inner, ...OUTER], [inner]);
   const keywords = [...(settings?.keywords ?? []), ...(settings?.topics ?? [])];
 
   const live = useFeed('live', 0.25, () => user ? fetchLive(user, token) : Promise.resolve({ events: [], following: 0 }));
@@ -417,7 +419,7 @@ export default function Home() {
         </View>
       ) : (
         <View style={{ height: ringsH }}>
-          <Orbit width={width} sel={sel} counts={counts} onSelect={pick} hint={hint} onTouched={touched}
+          <Orbit width={width} sel={sel} counts={counts} onSelect={pick} hint={hint} onTouched={touched} inner={inner}
                  youLetter={(user[0] ?? '?').toUpperCase()} />
           <Pressable onPress={() => fold()} style={[st.fold, { top: ringsH - 50 }]} accessibilityLabel="Fold the rings away">
             <Ionicons name="chevron-down" size={20} color={C.muted} />

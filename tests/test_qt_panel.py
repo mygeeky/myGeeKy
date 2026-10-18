@@ -288,8 +288,9 @@ def test_market_tab_renders_board(qapp, monkeypatch):
 
     panel = MyGeekyPanel(MyGeekyConfig())
     try:
-        assert panel._tab_order.index("market") == 3
+        assert "market" in panel._tab_order and panel._tab_order[0] == "model"   # You first (tab_order)
         panel._switch_tab("market")
+        assert panel.content_stack.currentIndex() == panel._tab_order.index("market")
         cards = panel.market_area.parentWidget().findChildren(MarketRow)
         assert [c.repo for c in cards] == ["rgcgithub/regenie", "scverse/scanpy"]
         for c in cards:

@@ -3297,6 +3297,21 @@ TABS = {
 }
 
 
+# Tabs that, without a GitHub account, show nothing but the "add GitHub" card (_github_card): Activity reads who
+# you follow, Signals lives in your own repo. People and Repos still find your field, so they stay where they are.
+NEEDS_GITHUB_TABS = ("activity", "signals")
+
+
+def tab_order(names: list[str], has_github: bool) -> list[str]:
+    """You (the Model tab) first; then the usual order, except that without GitHub the tabs that would only
+    say "add GitHub" go to the end -- so the first ones are the ones that work. The phone orders its planets
+    by the same rule (lib/sections.ts ordered)."""
+    rest = [n for n in names if n != "model"]
+    if not has_github:
+        rest = [n for n in rest if n not in NEEDS_GITHUB_TABS] + [n for n in rest if n in NEEDS_GITHUB_TABS]
+    return (["model"] if "model" in names else []) + rest
+
+
 class MyGeekyPanel(QWidget):
     def __init__(self, cfg: MyGeekyConfig) -> None:
         super().__init__()
@@ -3513,7 +3528,7 @@ class MyGeekyPanel(QWidget):
 
         self.tab_buttons: dict[str, QPushButton] = {}
         self._is_admin = logic.is_admin(self.cfg)
-        tabs = [name for name in TABS if name != "admin" or self._is_admin]
+        tabs = tab_order([name for name in TABS if name != "admin" or self._is_admin], bool(self.cfg.github_username))
         self._badges_new = False
         for name in tabs:
             btn = PlanetButton(*PLANETS[name])
@@ -3541,23 +3556,19 @@ class MyGeekyPanel(QWidget):
         self.height_grip = HeightGrip(self._resize_from_grip, lambda: self.cfg.gui_panel_height_fraction)
         panel_layout.addWidget(self.height_grip, 0, Qt.AlignHCenter)
 
-        self._tab_order = ["live", "suggestions", "repos", "market", "news", "activity", "signals",
-                           "grow", "chances", "model"]
-        self.content_stack.addWidget(self._build_live_tab())
-        self.content_stack.addWidget(self._build_suggestions_tab())
-        self.content_stack.addWidget(self._build_repos_tab())
-        self.content_stack.addWidget(self._build_market_tab())
-        self.content_stack.addWidget(self._build_news_tab())
-        self.content_stack.addWidget(self._build_activity_tab())
-        self.content_stack.addWidget(self._build_signals_tab())
-        self.content_stack.addWidget(self._build_grow_tab())
-        self.content_stack.addWidget(self._build_chances_tab())
-        self.content_stack.addWidget(self._build_model_tab())
-        self._tab_order.append("badges")
-        self.content_stack.addWidget(self._build_badges_tab())
+        # built in this fixed order (later builders may use what earlier ones made), shown in `tabs` order
+        pages = {"live": self._build_live_tab(), "suggestions": self._build_suggestions_tab(),
+                 "repos": self._build_repos_tab(), "market": self._build_market_tab(),
+                 "news": self._build_news_tab(), "activity": self._build_activity_tab(),
+                 "signals": self._build_signals_tab(), "grow": self._build_grow_tab(),
+                 "chances": self._build_chances_tab(), "model": self._build_model_tab(),
+                 "badges": self._build_badges_tab()}
         if self._is_admin:
-            self._tab_order.append("admin")
-            self.content_stack.addWidget(self._build_admin_tab())
+            pages["admin"] = self._build_admin_tab()
+        self._tab_order = [name for name in tabs if name in pages]
+        for name in self._tab_order:
+            self.content_stack.addWidget(pages[name])
+        self.content_stack.setCurrentIndex(self._tab_order.index(self.active_tab))   # still opens on Live
 
         outer.addWidget(self.panel_frame)
         self.folded_widget.hide()

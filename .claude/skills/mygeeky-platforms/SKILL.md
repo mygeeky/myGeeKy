@@ -56,6 +56,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `skills.ts` | `skills.py` |
 | `taste.ts` | `taste.py` |
 | `theme.ts` | `gui/app.py` (THEMES) |
+| `tab-order.ts` (used by `app/home.tsx`, `components/orbit.tsx`) | `gui/qt_panel.py` (`tab_order`, `NEEDS_GITHUB_TABS`) |
 | `tokens.ts` | `tokens.py`, `token_check.py` |
 | `wins.ts` | `wins.py` |
 | `word-suggest.ts` | `keywords.py` (`suggest`, `pick`) + `gui/word_suggest.py` |

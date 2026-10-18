@@ -5,6 +5,9 @@ platforms; remove it when the last one is done. See `.claude/skills/mygeeky-plat
 
 ## Pending
 
+- 2026-10-18 · **People without a GitHub account**: on the desktop, People still finds people from your field (the
+  "field half", by searching repos in your field); on the phone, People needs GitHub. So the tab order differs too:
+  the desktop moves Activity and Signals last, the phone also Live and People (`tab-order.ts`). Behind: the phone.
 - 2026-10-18 · **Keyword suggestions in the phone's Settings keyword box**: setup has them on both apps, and so does
   the desktop's Model tab box; the phone's Settings box doesn't yet (`lib/word-suggest.ts` is ready to use there).
 - 2026-10-18 · **Connecting the phone without a GitHub username**: the desktop refuses to make the pairing code
