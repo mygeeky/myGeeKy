@@ -314,7 +314,9 @@ def horizon(seasons: list[dict[str, Any]], today: date | None = None) -> date:
 
 
 # --------------------------------------------------------------------------- the periods people step through
-TOGETHER = 45          # programmes opening within this many days of each other belong to one period
+TOGETHER = 45          # programmes opening within this many days of a period's FIRST opening belong to it
+                       # (measured from the first, not the last: with many seasons a chain never broke and
+                       # everything ran into one year-long "period")
 _MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 
@@ -376,7 +378,7 @@ def windows(seasons_in: list[dict[str, Any]], today: date | None = None, nationa
     rows.sort(key=lambda r: r[0]["opens"])
     groups: list[list[tuple[dict[str, Any], dict[str, Any]]]] = []
     for row in rows:
-        if groups and days_between(groups[-1][-1][0]["opens"], row[0]["opens"]) <= TOGETHER:
+        if groups and days_between(groups[-1][0][0]["opens"], row[0]["opens"]) <= TOGETHER:
             groups[-1].append(row)
         else:
             groups.append([row])

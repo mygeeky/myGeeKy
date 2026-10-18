@@ -1,5 +1,5 @@
 {
- "version": "2026-10-18T08:02:42Z",
+ "version": "2026-10-18T09:14:23Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -5426,6 +5426,3357 @@
     "campuschina"
    ],
    "seen": []
+  },
+  {
+   "id": "hfsp-postdoctoral-fellowships",
+   "title": "Human Frontier Science Program (HFSP) Long-Term and Cross-Disciplinary Fellowships",
+   "url": "https://www.hfsp.org/funding/hfsp-funding/postdoctoral-fellowships",
+   "org": "Human Frontier Science Program Organization (HFSPO)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "Anywhere",
+   "opens_about": "03-12",
+   "closes_about": "05-05",
+   "prepare_weeks": 10,
+   "prepare": [
+    "Find a host lab in a new field, in a country other than your PhD/current one",
+    "At least one lead-author paper or preprint by the Letter of Intent deadline",
+    "Letter of Intent with a frontier research project idea",
+    "PhD completed (or due) within the eligibility window",
+    "Full proposal in September if your Letter of Intent is selected"
+   ],
+   "summary": "Three-year postdoctoral fellowships in life sciences (LTF) or for physicists, chemists, engineers and computer scientists moving into biology (CDF), held abroad. Open to all nationalities; two-step application.",
+   "keywords": [
+    "postdoc",
+    "life sciences",
+    "biology",
+    "interdisciplinary",
+    "fellowship",
+    "hfsp"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-03-12",
+     "closes": "2026-05-05",
+     "url": "https://www.hfsp.org/funding/hfsp-funding/postdoctoral-fellowships",
+     "quote": "You must start filling in your application between March 12 and May 5, 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "joint-japan-world-bank-graduate-scholarship",
+   "title": "Joint Japan/World Bank Graduate Scholarship Program (JJ/WBGSP)",
+   "url": "https://www.worldbank.org/en/programs/scholarships/jj-wbgsp",
+   "org": "World Bank / Government of Japan",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "Anywhere",
+   "opens_about": "03-29",
+   "closes_about": "05-21",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Admission (except funding) to a JJ/WBGSP participating master's programme",
+    "Bachelor's degree earned at least 3 years before the deadline",
+    "3+ years of paid development-related work in the last 6 years",
+    "Proof of current full-time development-related employment",
+    "Must study outside your country of citizenship and residence"
+   ],
+   "summary": "Covers tuition, travel, a monthly living allowance and health insurance for a development-related master's at a participating university. For mid-career professionals from World Bank eligible developing countries (Window 1 runs Jan-Feb for some programmes).",
+   "keywords": [
+    "world bank",
+    "japan",
+    "master",
+    "development",
+    "mid-career",
+    "fully funded"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2027-03-29",
+     "closes": "2027-05-21",
+     "url": "https://www.worldbank.org/en/programs/scholarships/jj-wbgsp",
+     "quote": "Application Window #2 from March 29 to May 21, 2027",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "knight-hennessy-scholars-stanford",
+   "title": "Knight-Hennessy Scholars",
+   "url": "https://knight-hennessy.stanford.edu/",
+   "org": "Stanford University",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "United States",
+   "opens_about": "",
+   "closes_about": "10-06",
+   "prepare_weeks": 12,
+   "prepare": [
+    "KHS application (same deadline for all applicants)",
+    "Separate application to a full-time Stanford graduate programme",
+    "Degree programme application by its KHS deadline or December 1, whichever is earlier",
+    "MBA applicants must apply in Round 1"
+   ],
+   "summary": "Fully funds any Stanford graduate degree (tuition, living stipend, travel) plus a leadership programme. Open to citizens and residents of all countries, in any field.",
+   "keywords": [
+    "stanford",
+    "usa",
+    "graduate",
+    "leadership",
+    "fully funded",
+    "master",
+    "phd"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-10-06",
+     "url": "https://knight-hennessy.stanford.edu/admission/preparing-your-applications/application-deadlines",
+     "quote": "The Knight-Hennessy Scholars application deadline is October 6, 2026, 1:00pm Pacific Time",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "yale-world-fellows",
+   "title": "Yale World Fellows Program",
+   "url": "https://worldfellows.yale.edu/",
+   "org": "Yale University (Jackson School of Global Affairs)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "short"
+   ],
+   "for": [],
+   "goes_to": "United States",
+   "opens_about": "",
+   "closes_about": "12-02",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Online application with essays",
+    "A nominator and letters of recommendation",
+    "CV showing mid-career leadership",
+    "Available for residence at Yale from mid-August to mid-December"
+   ],
+   "summary": "Four-month residential fellowship at Yale for emerging mid-career leaders from around the world. No tuition; fellows receive a living stipend, housing, travel reimbursement and health insurance.",
+   "keywords": [
+    "yale",
+    "leadership",
+    "mid-career",
+    "fellowship",
+    "usa",
+    "stipend"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-12-02",
+     "url": "https://jackson.yale.edu/international-leadership-center/yale-world-fellows",
+     "quote": "Applications close on Wednesday, 2 December at 14:00 PM Eastern Time.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "schmidt-science-fellows",
+   "title": "Schmidt Science Fellows",
+   "url": "https://schmidtsciencefellows.org/",
+   "org": "Schmidt Sciences (with Rhodes Trust)",
+   "through": "Your PhD-awarding university (must be a nominating partner)",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "Anywhere",
+   "opens_about": "05-19",
+   "closes_about": "07-13",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Nomination by your PhD institution (internal deadline in March-April)",
+    "PhD in natural sciences, engineering, maths or computing",
+    "PhD completed within the eligibility window",
+    "Plan to pivot to a new field for the postdoc",
+    "Preliminary information by early June, then the full application"
+   ],
+   "summary": "Funds a postdoctoral placement in a field different from your PhD at a top lab anywhere, with a stipend and leadership programme. Candidates must be nominated by a partner university.",
+   "keywords": [
+    "postdoc",
+    "science",
+    "interdisciplinary",
+    "nomination",
+    "fellowship",
+    "stipend"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-05-19",
+     "closes": "2026-07-13",
+     "url": "https://schmidtsciencefellows.org/selection/how-to-apply/",
+     "quote": "Applications open to nominated candidates on May 19, 2026. Nominees must submit their preliminary information by June 1, 2026 and the remaining full application form by July 13, 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "trudeau-foundation-doctoral-scholarship",
+   "title": "Pierre Elliott Trudeau Foundation Doctoral Scholarship",
+   "url": "https://www.trudeaufoundation.ca/scholarship/",
+   "org": "Pierre Elliott Trudeau Foundation",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Canada",
+   "opens_about": "",
+   "closes_about": "11-06",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Be in year 1 or 2 of a PhD (international students must be at a Canadian university)",
+    "Eligibility confirmation form first (early October)",
+    "Three references received before the deadline",
+    "Attend a mandatory information session",
+    "Research project in the humanities or social sciences"
+   ],
+   "summary": "Up to $50,000 a year for three years plus up to $20,000 a year for research and travel, with leadership training. For doctoral students in the social sciences and humanities, including international students enrolled at a Canadian university.",
+   "keywords": [
+    "canada",
+    "phd",
+    "social sciences",
+    "humanities",
+    "leadership",
+    "trudeau"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-11-06",
+     "url": "https://www.trudeaufoundation.ca/2027-scholarship-applications-open-soon/",
+     "quote": "November 6, 2026, at 4 p.m. ET: Deadline to submit the complete application",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "quebec-merit-scholarship-foreign-students-pbeee",
+   "title": "Merit Scholarship Program for Foreign Students (PBEEE)",
+   "url": "https://frq.gouv.qc.ca/en/program/merit-scholarship-program-for-foreign-students-pbeee-2026-2027/",
+   "org": "Fonds de recherche du Québec (FRQ)",
+   "through": "A Québec university (preselection)",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd",
+    "postdoc",
+    "short"
+   ],
+   "for": [],
+   "goes_to": "Canada",
+   "opens_about": "",
+   "closes_about": "12-02",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Get preselected by a Québec university (internal deadline months earlier)",
+    "Letter of acceptance from a supervisor in Québec",
+    "Create an FRQnet account once preselected",
+    "Transcripts and research project description"
+   ],
+   "summary": "Québec government scholarships for foreign students for research master's, doctoral, postdoctoral and short-term research stays at Québec universities. Candidates must first be preselected by their Québec university.",
+   "keywords": [
+    "quebec",
+    "canada",
+    "research",
+    "master",
+    "phd",
+    "postdoc"
+   ],
+   "seen": [
+    {
+     "cycle": 2025,
+     "opens": "",
+     "closes": "2025-12-02",
+     "url": "https://frq.gouv.qc.ca/en/program/merit-scholarship-program-for-foreign-students-pbeee-2026-2027/",
+     "quote": "Submission of application to FRQ by preselected candidates: December 2, 2025, 4 p.m.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "wenner-gren-dissertation-fieldwork-grant",
+   "title": "Wenner-Gren Dissertation Fieldwork Grants",
+   "url": "https://wennergren.org/programs/dissertation-fieldwork-grants/",
+   "org": "Wenner-Gren Foundation for Anthropological Research",
+   "through": "",
+   "kind": "grant",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Anywhere",
+   "opens_about": "",
+   "closes_about": "11-01",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Dissertation research proposal in anthropology, in English",
+    "Project start date matching the deadline (May 1 or November 1 round)",
+    "Budget up to the maximum grant",
+    "Supervisor support as required by the online form"
+   ],
+   "summary": "Grants of up to $25,000 for doctoral students of any nationality to carry out dissertation fieldwork in anthropology. Two rounds a year (May 1 and November 1); the portal opens 2 months before each deadline.",
+   "keywords": [
+    "anthropology",
+    "phd",
+    "fieldwork",
+    "research grant",
+    "dissertation"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-11-01",
+     "url": "https://wennergren.org/program/dissertation-fieldwork-grant/",
+     "quote": "Application deadlines are May 1 (for project start dates between January 1 and June 30 of the following year) and November 1 (for project start dates between July 1 and December 31 of the following year).",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "lester-b-pearson-international-scholarship",
+   "title": "Lester B. Pearson International Scholarship",
+   "url": "https://future.utoronto.ca/scholarships/lester-b-pearson-international-scholarship-program/",
+   "org": "University of Toronto",
+   "through": "Your high school (nomination)",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "undergraduate"
+   ],
+   "for": [],
+   "goes_to": "Canada",
+   "opens_about": "",
+   "closes_about": "11-06",
+   "prepare_weeks": 10,
+   "prepare": [
+    "Be nominated by your high school (school deadline in early October)",
+    "Apply to a U of T undergraduate programme by mid-October",
+    "Complete the Pearson application and documents",
+    "Be in your final year of secondary school"
+   ],
+   "summary": "Covers tuition, books, incidental fees and full residence for four years of undergraduate study at the University of Toronto, for outstanding international secondary-school students nominated by their school.",
+   "keywords": [
+    "canada",
+    "toronto",
+    "undergraduate",
+    "fully funded",
+    "international students"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-11-06",
+     "url": "https://future.utoronto.ca/pearson-scholarships",
+     "quote": "The deadline to complete the Pearson International Scholarship application and submit all required documentation is November 6, 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "mccall-macbain-scholarships-mcgill",
+   "title": "McCall MacBain Scholarships at McGill",
+   "url": "https://mccallmacbainscholars.org/",
+   "org": "McCall MacBain Foundation / McGill University",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "Canada",
+   "opens_about": "",
+   "closes_about": "08-19",
+   "prepare_weeks": 10,
+   "prepare": [
+    "First bachelor's degree recent (or age limit)",
+    "Online application with essays",
+    "Two reference forms",
+    "Separate application to a McGill master's or professional programme"
+   ],
+   "summary": "Full graduate scholarship for a master's or professional degree at McGill with mentorship and leadership training. Applicants from universities outside Canada and the US have an earlier August deadline.",
+   "keywords": [
+    "canada",
+    "mcgill",
+    "master",
+    "leadership",
+    "fully funded"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-08-19",
+     "url": "https://mccallmacbainscholars.org/apply/",
+     "quote": "August 19, 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "hong-kong-phd-fellowship-scheme",
+   "title": "Hong Kong PhD Fellowship Scheme (HKPFS)",
+   "url": "https://cerg1.ugc.edu.hk/hkpfs/index.html",
+   "org": "Research Grants Council (RGC), University Grants Committee of Hong Kong",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Hong Kong",
+   "opens_about": "09-01",
+   "closes_about": "12-01",
+   "prepare_weeks": 10,
+   "prepare": [
+    "make the HKPFS Initial Application online first to get an HKPFS Reference Number",
+    "choose up to two PhD programmes at one or two Hong Kong universities",
+    "then apply to each university by its own deadline, which can follow right after",
+    "a research proposal and a personal statement for your chosen programme",
+    "referee reports, transcripts and English test results as each university asks"
+   ],
+   "summary": "About 400 PhD fellowships a year at Hong Kong universities, with an annual stipend of HK$344,400 and a conference and travel allowance for up to three years. Open to strong candidates of any nationality.",
+   "keywords": [
+    "hong kong",
+    "hkpfs",
+    "phd",
+    "fellowship",
+    "rgc",
+    "stipend"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2026-09-01",
+     "closes": "2026-12-01",
+     "url": "https://cerg1.ugc.edu.hk/hkpfs/news.html",
+     "quote": "The Hong Kong PhD Fellowship Scheme 2027/28 is open for application from 1 September 2026 at 12:00 noon Hong Kong Time. The deadline for initial applications is 1 December 2026 at 12:00 noon Hong Kong Time.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "jsps-postdoctoral-fellowship-standard",
+   "title": "JSPS Postdoctoral Fellowships for Research in Japan (Standard)",
+   "url": "https://www.jsps.go.jp/english/e-fellow/e-ippan/index.html",
+   "org": "Japan Society for the Promotion of Science (JSPS)",
+   "through": "your host researcher's university or institute in Japan",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "Japan",
+   "opens_about": "",
+   "closes_about": "08-28",
+   "prepare_weeks": 12,
+   "prepare": [
+    "find a host researcher in Japan: the host institution submits the application to JSPS",
+    "agree a joint research plan with your host",
+    "ask your host about the institution's internal deadline, earlier than JSPS's",
+    "check the PhD date rule in the FY application guideline",
+    "note the second round: April 23, 2027 for arrival from September 2027"
+   ],
+   "summary": "Funds young overseas postdoctoral researchers to do collaborative research in Japan for 12 to 24 months under a Japanese host, with a monthly allowance, airfare and a settling-in allowance. The host applies for you; there are two rounds a year.",
+   "keywords": [
+    "japan",
+    "jsps",
+    "postdoc",
+    "fellowship",
+    "research",
+    "host"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2026-08-28",
+     "url": "https://www.jsps.go.jp/english/e-fellow/e-ippan/appliguidelines.html",
+     "quote": "August 28, 2026 (by 5 p.m. (JST))",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "global-korea-scholarship-graduate",
+   "title": "Global Korea Scholarship for Graduate Degrees (GKS-G, Embassy Track)",
+   "url": "https://www.studyinkorea.go.kr/",
+   "org": "National Institute for International Education (NIIED), Korea",
+   "through": "Embassy of the Republic of Korea in your country",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "South Korea",
+   "opens_about": "02-12",
+   "closes_about": "02-25",
+   "prepare_weeks": 8,
+   "prepare": [
+    "apply online only, on www.studyinkorea.go.kr, in the embassy track window",
+    "bachelor's (for Master's) or master's (for PhD), or expected graduation by July 31",
+    "check your embassy's notice: interviews and document deadlines differ by country",
+    "apostilled degree certificates and transcripts if you pass the first round",
+    "a recommendation letter, posted to the embassy with originals after round 1"
+   ],
+   "summary": "Fully funded Master's and PhD study in Korea from the Korean government, including Korean language training, tuition, a monthly allowance and airfare. Applications go online through Study in Korea, with the first round run by the Korean embassy in your country.",
+   "keywords": [
+    "korea",
+    "gks",
+    "kgsp",
+    "niied",
+    "scholarship",
+    "master",
+    "phd"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-02-12",
+     "closes": "2026-02-25",
+     "url": "https://fi.mofa.go.kr/fi-en/brd/m_9572/view.do?seq=761757",
+     "quote": "Applicants should submit all required documents/forms to the online application system through the Study in Korea website (www.studyinkorea.go.kr) between 11:00 a.m. on February 12 and 6:00 p.m. on February 25, 2026 (KST).",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "global-korea-scholarship-undergraduate",
+   "title": "Global Korea Scholarship for Undergraduate Degrees (GKS-U, Embassy Track)",
+   "url": "https://www.studyinkorea.go.kr/",
+   "org": "National Institute for International Education (NIIED), Korea",
+   "through": "Embassy of the Republic of Korea in your country",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "undergraduate"
+   ],
+   "for": [],
+   "goes_to": "South Korea",
+   "opens_about": "09-15",
+   "closes_about": "09-30",
+   "prepare_weeks": 6,
+   "prepare": [
+    "apply online only on studyinkorea.go.kr in the embassy track window",
+    "check your embassy's notice for its quota, interview dates and local deadline",
+    "originals and apostilled documents if you pass the first screening",
+    "be ready for an interview at the embassy in early October"
+   ],
+   "summary": "Fully funded bachelor's study in Korea from the Korean government, with a year of Korean language training, tuition, a monthly allowance and airfare. The embassy in your country runs the first selection.",
+   "keywords": [
+    "korea",
+    "gks",
+    "undergraduate",
+    "bachelor",
+    "niied",
+    "scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2026-09-15",
+     "closes": "2026-09-30",
+     "url": "https://www.mofa.go.kr/bd-en/brd/m_2124/view.do?seq=760106",
+     "quote": "O Application Submission Period: 15 Sep.(Tue) – 30 Sep.(Wed) 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "mofa-taiwan-fellowship",
+   "title": "MOFA Taiwan Fellowship",
+   "url": "https://taiwanfellowship.ncl.edu.tw/eng/index.aspx",
+   "org": "Ministry of Foreign Affairs, Republic of China (Taiwan)",
+   "through": "Center for Chinese Studies, National Central Library (and your local Taipei office)",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "phd",
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "Taiwan",
+   "opens_about": "05-01",
+   "closes_about": "06-30",
+   "prepare_weeks": 8,
+   "prepare": [
+    "the online application on the Taiwan Fellowship website",
+    "a research topic on Taiwan, cross-strait relations, Asia-Pacific or Sinology",
+    "post the documents to your local Taipei office if it asks (check its notice)",
+    "a host university or research institution in Taiwan"
+   ],
+   "summary": "Funds foreign scholars, postdocs and doctoral students for 3 to 12 months of research in Taiwan: NT$50,000-60,000 a month, a round-trip economy ticket and accident insurance.",
+   "keywords": [
+    "taiwan",
+    "fellowship",
+    "research",
+    "postdoc",
+    "phd",
+    "sinology"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2026-05-01",
+     "closes": "2026-06-30",
+     "url": "https://taiwanfellowship.ncl.edu.tw/eng/news_detail.aspx?sn=2723",
+     "quote": "Applications for the 2027 MOFA Taiwan Fellowship will be open from May 1 to June 30, 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "searca-graduate-scholarship",
+   "title": "SEARCA Full Master's and PhD Scholarships",
+   "url": "https://www.searca.org/scholarships",
+   "org": "Southeast Asian Regional Center for Graduate Study and Research in Agriculture (SEAMEO SEARCA)",
+   "through": "your country's Ministry of (Higher) Education",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Brunei",
+    "Cambodia",
+    "Indonesia",
+    "Laos",
+    "Malaysia",
+    "Myanmar",
+    "Philippines",
+    "Singapore",
+    "Thailand",
+    "Timor-Leste",
+    "Vietnam"
+   ],
+   "goes_to": "Southeast Asia",
+   "opens_about": "09-01",
+   "closes_about": "10-31",
+   "prepare_weeks": 8,
+   "prepare": [
+    "submit first through your Ministry of (Higher) Education, not to SEARCA directly",
+    "apply for university admission at the same time: awards need an acceptance letter",
+    "a study in agriculture, forestry or a related science",
+    "if endorsed, finish the SEARCA iSCHO portal application in December"
+   ],
+   "summary": "Full Master's and PhD scholarships in agriculture, forestry and related sciences for nationals of SEAMEO member countries, at eligible universities in Southeast Asia.",
+   "keywords": [
+    "searca",
+    "agriculture",
+    "southeast asia",
+    "scholarship",
+    "master",
+    "phd",
+    "seameo"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2026-09-01",
+     "closes": "2026-10-31",
+     "url": "https://www.searca.org/scholarships",
+     "quote": "Submission to the Ministry of (Higher) Education: 1 September–31 October 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "jds-scholarship-bangladesh",
+   "title": "JDS - Project for Human Resource Development Scholarship (Master's)",
+   "url": "https://jds-scholarship.org/country/bangladesh/index.html",
+   "org": "Government of Japan (JICA), run by JICE",
+   "through": "JDS Project Office in Bangladesh",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [
+    "Bangladesh"
+   ],
+   "goes_to": "Japan",
+   "opens_about": "",
+   "closes_about": "11-30",
+   "prepare_weeks": 8,
+   "prepare": [
+    "be a confirmed BCS cadre, Bangladesh Bank Class-1, BJS or 1st Class LPAD official",
+    "at least two years of work experience at the time of application",
+    "an IELTS score (6.0 or higher preferred) taken after 1 June 2024",
+    "a research plan for your chosen sub-program and Japanese university",
+    "check the age limit: below 40 on April 1, 2027"
+   ],
+   "summary": "Fully funded 2-year Master's degree at a Japanese university for young Bangladeshi government officials, 30 places a year. Other JDS countries have their own pages and dates.",
+   "keywords": [
+    "japan",
+    "jds",
+    "jica",
+    "master",
+    "government officials",
+    "bangladesh"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2026-11-30",
+     "url": "https://jds-scholarship.org/country/bangladesh/index.html",
+     "quote": "Closing Date: 4:00 p.m. on 30th November (Monday) 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "cas-anso-scholarship-degree",
+   "title": "CAS-ANSO Scholarship (Degree Program)",
+   "url": "https://www.anso.org.cn/programmes/talent/scholarship/",
+   "org": "Chinese Academy of Sciences (CAS) and the Alliance of National and International Science Organizations (ANSO)",
+   "through": "USTC or UCAS admission system",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "China",
+   "opens_about": "",
+   "closes_about": "01-31",
+   "prepare_weeks": 10,
+   "prepare": [
+    "apply through the USTC or UCAS international admission system",
+    "referees must also submit by the deadline",
+    "proficiency in English or Chinese",
+    "check the age limit (Master's: born after 1 January 1996 for 2026)",
+    "not already studying for the same degree level in China"
+   ],
+   "summary": "Fully funded Master's and PhD study in science at USTC, UCAS or CAS institutes in China for non-Chinese citizens, including the ANSO-CAS-TWAS/UNESCO PhD track for developing countries.",
+   "keywords": [
+    "china",
+    "cas",
+    "anso",
+    "scholarship",
+    "master",
+    "phd",
+    "science"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-01-31",
+     "url": "https://www.anso.org.cn/programmes/talent/scholarship/202510/t20251015_786021.html",
+     "quote": "Deadline for Applicants and Referees: 31st January 2026 (Beijing Time)",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "aims-masters-mathematical-sciences",
+   "title": "AIMS Master's in Mathematical Sciences",
+   "url": "https://aims.edu.gh/apply-for-the-aims-masters-in-mathematical-sciences-and-co-op-masters-programmes/",
+   "org": "African Institute for Mathematical Sciences (AIMS)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [
+    "African countries"
+   ],
+   "goes_to": "South Africa, Senegal, Ghana, Cameroon or Rwanda",
+   "opens_about": "",
+   "closes_about": "03-15",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Bachelor's in maths, science or engineering with strong maths",
+    "Academic transcripts and degree certificate",
+    "Reference letters",
+    "Personal statement showing leadership and community service"
+   ],
+   "summary": "One-year intensive master's in mathematical sciences (or a two-year CO-OP master's with industry placements) at AIMS centres in Africa. Full scholarships go to all accepted students; open to African nationals.",
+   "keywords": [
+    "aims",
+    "mathematics",
+    "africa",
+    "master",
+    "data science",
+    "full scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-03-15",
+     "url": "https://aims.edu.gh/apply-for-the-aims-masters-in-mathematical-sciences-and-co-op-masters-programmes/",
+     "quote": "Application Deadlines: March 15, 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "kaust-graduate-fellowship",
+   "title": "KAUST MS and PhD Fellowship (graduate admission)",
+   "url": "https://admissions.kaust.edu.sa/",
+   "org": "King Abdullah University of Science and Technology (KAUST)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Saudi Arabia",
+   "opens_about": "",
+   "closes_about": "01-03",
+   "prepare_weeks": 10,
+   "prepare": [
+    "Online application (no application fee)",
+    "Transcripts and degree certificates",
+    "Statement of purpose",
+    "Recommendation letters",
+    "English test score (TOEFL/IELTS) if required"
+   ],
+   "summary": "All students admitted to KAUST MS, MS/PhD and PhD programmes receive a full fellowship (tuition, stipend, housing, health cover). The Fall intake's main round closes in early January.",
+   "keywords": [
+    "kaust",
+    "saudi arabia",
+    "phd",
+    "master",
+    "stem",
+    "fully funded"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2027-01-03",
+     "url": "https://admissions.kaust.edu.sa/how-to-apply/admission-timelines",
+     "quote": "3 January 2027",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "iccr-scholarship-scheme",
+   "title": "ICCR Scholarship Schemes for International Students",
+   "url": "https://a2ascholarships.iccr.gov.in/",
+   "org": "Indian Council for Cultural Relations (ICCR), Government of India",
+   "through": "Indian Embassy / High Commission in your country (A2A portal)",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "undergraduate",
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "India",
+   "opens_about": "",
+   "closes_about": "04-15",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Register on the ICCR A2A scholarship portal",
+    "Choose up to five Indian universities/courses",
+    "Academic transcripts and certificates",
+    "English proficiency evidence",
+    "Medical fitness certificate",
+    "Passport copy"
+   ],
+   "summary": "Government of India scholarships for foreign students for UG, PG and PhD study at Indian universities, covering tuition, a monthly stipend and housing allowance. Apply online via the A2A portal; your Indian mission handles selection.",
+   "keywords": [
+    "india",
+    "iccr",
+    "government scholarship",
+    "undergraduate",
+    "master",
+    "phd"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-04-15",
+     "url": "https://indembthimphu.gov.in/listview/NDUy",
+     "quote": "The last date for the application is 15 April 2026. Interested students may apply directly through ICCR A2A scholarship portal.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "pan-african-university-scholarship",
+   "title": "Pan African University (PAU) Scholarships",
+   "url": "https://au.int/en/announcements/20251115/pan-african-university-call-scholarships-applications-academic-year-2026-2027",
+   "org": "African Union Commission",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "African Union member states"
+   ],
+   "goes_to": "Algeria, Cameroon, Kenya or Nigeria",
+   "opens_about": "11-15",
+   "closes_about": "12-15",
+   "prepare_weeks": 6,
+   "prepare": [
+    "Apply on the PAU online application portal",
+    "Degree certificates and transcripts",
+    "Choose a PAU institute and programme",
+    "Respect the age limits for master's and PhD applicants"
+   ],
+   "summary": "African Union scholarships for master's and PhD study at Pan African University institutes, covering tuition, accommodation and a living stipend. Open to young African nationals.",
+   "keywords": [
+    "african union",
+    "pau",
+    "africa",
+    "master",
+    "phd",
+    "full scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2025,
+     "opens": "2025-11-15",
+     "closes": "2025-12-15",
+     "url": "https://au.int/en/announcements/20251115/pan-african-university-call-scholarships-applications-academic-year-2026-2027",
+     "quote": "The Call will be launched on 15 November and will close on 15 December 2025.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "twas-fapesp-postdoctoral-fellowship",
+   "title": "TWAS-FAPESP Postdoctoral Fellowship Programme for Developing Countries",
+   "url": "https://twas.org/opportunity/twas-fapesp-postdoctoral-fellowship-programme-developing-countries",
+   "org": "UNESCO-TWAS and São Paulo Research Foundation (FAPESP)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [
+    "Developing countries"
+   ],
+   "goes_to": "Brazil",
+   "opens_about": "",
+   "closes_about": "11-01",
+   "prepare_weeks": 8,
+   "prepare": [
+    "PhD obtained in the last 7 years",
+    "Conditional acceptance letter from a São Paulo State supervisor",
+    "Preliminary proposal, then full proposal by 1 April"
+   ],
+   "summary": "Postdoctoral fellowships of up to 12 months at host institutions in São Paulo State, Brazil, for researchers from developing countries in natural, applied and social sciences.",
+   "keywords": [
+    "twas",
+    "fapesp",
+    "brazil",
+    "postdoc",
+    "developing countries",
+    "research"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-11-01",
+     "url": "https://twas.org/opportunity/twas-fapesp-postdoctoral-fellowship-programme-developing-countries",
+     "quote": "Deadline for submission of preliminary proposals: 1 November 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "twas-sissa-lincei-cooperation-visits",
+   "title": "TWAS-SISSA-Lincei Research Cooperation Visits Programme",
+   "url": "https://twas.org/opportunity/twas-sissa-lincei-research-cooperation-visits-programme",
+   "org": "UNESCO-TWAS, Accademia Nazionale dei Lincei and SISSA",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "short"
+   ],
+   "for": [
+    "Least developed countries"
+   ],
+   "goes_to": "Italy",
+   "opens_about": "",
+   "closes_about": "10-31",
+   "prepare_weeks": 6,
+   "prepare": [
+    "MSc or higher degree, age 40 or under",
+    "Research position in a least developed country",
+    "Sustainability/SDG-related research proposal",
+    "Contact a host lab in Trieste or Udine"
+   ],
+   "summary": "Three-month research visits to centres of excellence in Trieste or Udine, Italy, for young scientists from least developed countries; travel and subsistence are covered.",
+   "keywords": [
+    "twas",
+    "italy",
+    "research visit",
+    "least developed countries",
+    "sustainability",
+    "short"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-10-31",
+     "url": "https://twas.org/opportunity/twas-sissa-lincei-research-cooperation-visits-programme",
+     "quote": "The deadline for receipt of applications is: 31 October 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "twas-dfg-cooperation-visits-ssa",
+   "title": "TWAS-DFG Cooperation Visits Programme (Sub-Saharan Africa)",
+   "url": "https://twas.org/opportunity/twas-dfg-cooperation-visits-programme-ssa",
+   "org": "UNESCO-TWAS and German Research Foundation (DFG)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc",
+    "short"
+   ],
+   "for": [
+    "Sub-Saharan African countries"
+   ],
+   "goes_to": "Germany",
+   "opens_about": "",
+   "closes_about": "04-15",
+   "prepare_weeks": 8,
+   "prepare": [
+    "PhD obtained 2021 or later (extensions for mothers)",
+    "Invitation letter from a German host",
+    "Two reference letters",
+    "Copy of PhD certificate",
+    "Proof of English or German"
+   ],
+   "summary": "Three-month cooperation visits to a German research institute for postdoctoral researchers working in sub-Saharan Africa; DFG covers travel and subsistence.",
+   "keywords": [
+    "twas",
+    "dfg",
+    "germany",
+    "postdoc",
+    "africa",
+    "research visit"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-04-15",
+     "url": "https://twas.org/opportunity/twas-dfg-cooperation-visits-programme-ssa",
+     "quote": "Deadline: 15 April 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "twas-dfg-cooperation-visits-mena",
+   "title": "TWAS-DFG Cooperation Visits Programme (MENA)",
+   "url": "https://twas.org/opportunity/twas-dfg-cooperation-visits-programme-mena",
+   "org": "UNESCO-TWAS and German Research Foundation (DFG)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc",
+    "short"
+   ],
+   "for": [
+    "Middle East and North Africa countries"
+   ],
+   "goes_to": "Germany",
+   "opens_about": "",
+   "closes_about": "04-15",
+   "prepare_weeks": 8,
+   "prepare": [
+    "PhD obtained 2021 or later (extensions for mothers)",
+    "Invitation letter from a German host",
+    "Two reference letters",
+    "Copy of PhD certificate",
+    "Proof of English or German"
+   ],
+   "summary": "Three-month cooperation visits to a German research institute for postdoctoral researchers working in the MENA region; DFG covers travel and subsistence.",
+   "keywords": [
+    "twas",
+    "dfg",
+    "germany",
+    "postdoc",
+    "mena",
+    "research visit"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-04-15",
+     "url": "https://twas.org/opportunity/twas-dfg-cooperation-visits-programme-mena",
+     "quote": "Deadline: 15 April 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "anso-cas-twas-unesco-phd-scholarship",
+   "title": "ANSO-CAS-TWAS/UNESCO PhD Scholarship",
+   "url": "https://twas.org/opportunity/anso-cas-twasunesco-phd-scholarship",
+   "org": "ANSO, Chinese Academy of Sciences and UNESCO-TWAS",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [
+    "Developing countries"
+   ],
+   "goes_to": "China",
+   "opens_about": "",
+   "closes_about": "01-31",
+   "prepare_weeks": 10,
+   "prepare": [
+    "MSc degree, age 35 or under",
+    "Apply in the USTC/UCAS admission system",
+    "Referee letters submitted by the deadline"
+   ],
+   "summary": "Up to 40 PhD scholarships a year at USTC or UCAS in China for students from developing countries, with tuition waiver and a monthly stipend for up to four years.",
+   "keywords": [
+    "twas",
+    "anso",
+    "china",
+    "phd",
+    "developing countries",
+    "cas"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-01-31",
+     "url": "https://twas.org/opportunity/anso-cas-twasunesco-phd-scholarship",
+     "quote": "Deadline for Applicants and Referees: 31 January 2026 (Beijing Time)",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "mandela-rhodes-scholarship",
+   "title": "Mandela Rhodes Scholarship",
+   "url": "https://www.mandelarhodes.org/scholarship/apply/",
+   "org": "The Mandela Rhodes Foundation",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [
+    "African countries"
+   ],
+   "goes_to": "South Africa",
+   "opens_about": "03-09",
+   "closes_about": "04-14",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Three recommendation letters (in English) via the platform",
+    "Personal essays",
+    "Academic transcripts",
+    "SAQA verification if from outside South Africa"
+   ],
+   "summary": "Fully funded postgraduate (honours or master's) study at a South African university for young Africans, combined with a leadership development programme.",
+   "keywords": [
+    "mandela rhodes",
+    "south africa",
+    "leadership",
+    "master",
+    "honours",
+    "africa"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2027-03-09",
+     "closes": "2027-04-14",
+     "url": "https://www.mandelarhodes.org/scholarship/apply/",
+     "quote": "March: Applications open on Tuesday, 9 March 2027. Candidates can add recommenders on the platform and begin uploading their documentation and working on their personal essays. See ‘requirements’. April: Applications close by the end of Wednesday, 14 April 2027 23:59 GMT+2.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "uct-mastercard-foundation-scholars",
+   "title": "Mastercard Foundation Scholars Program at the University of Cape Town",
+   "url": "https://www.uct.ac.za/node/648803",
+   "org": "Mastercard Foundation and University of Cape Town",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "undergraduate",
+    "master"
+   ],
+   "for": [
+    "African countries"
+   ],
+   "goes_to": "South Africa",
+   "opens_about": "",
+   "closes_about": "10-31",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Apply to an eligible UCT programme",
+    "Mastercard Foundation Scholars application",
+    "Evidence of financial need",
+    "Academic transcripts"
+   ],
+   "summary": "Full scholarships at UCT for academically talented young Africans facing economic barriers: tuition, accommodation, living costs, travel and leadership support. Undergraduate deadline is earlier (30 September).",
+   "keywords": [
+    "mastercard foundation",
+    "uct",
+    "south africa",
+    "africa",
+    "master",
+    "undergraduate"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-10-31",
+     "url": "https://www.uct.ac.za/mastercardfdn/apply-mastercard-foundation-scholars-program",
+     "quote": "For applicants to an eligible postgraduate diploma in the Faculty of Health Sciences or an honours degree or master’s programme at UCT, the Mastercard Foundation Scholars Program application deadline is 31 October 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "daad-in-country-in-region-africa",
+   "title": "DAAD In-Country/In-Region Scholarship Programme (Sub-Saharan Africa)",
+   "url": "https://www.daad-ghana.org/en/2025/10/02/in-country-in-region-scholarship-programme-2026-27/",
+   "org": "DAAD (German Academic Exchange Service)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Sub-Saharan African countries"
+   ],
+   "goes_to": "Sub-Saharan Africa",
+   "opens_about": "",
+   "closes_about": "11-27",
+   "prepare_weeks": 8,
+   "prepare": [
+    "First degree (for master's) or master's (for PhD)",
+    "Choose a DAAD-funded host programme",
+    "Check the host institution's own deadline"
+   ],
+   "summary": "DAAD master's and PhD scholarships for Sub-Saharan Africans to study development-related subjects in their home country or another Sub-Saharan country; stipend, study allowance and tuition. Host programmes may set their own deadlines.",
+   "keywords": [
+    "daad",
+    "africa",
+    "in-region",
+    "master",
+    "phd",
+    "development"
+   ],
+   "seen": [
+    {
+     "cycle": 2025,
+     "opens": "",
+     "closes": "2025-11-27",
+     "url": "https://www.daad-ghana.org/en/2025/10/02/in-country-in-region-scholarship-programme-2026-27/",
+     "quote": "Application deadline: 27. November 2025",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "swedish-institute-scholarships-global-professionals",
+   "title": "Swedish Institute Scholarships for Global Professionals (SISGP)",
+   "url": "https://si.se/en/apply/scholarships/swedish-institute-scholarships-for-global-professionals/",
+   "org": "Swedish Institute (SI)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "Sweden",
+   "opens_about": "02-09",
+   "closes_about": "02-25",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Apply to eligible Swedish master's programmes via University Admissions by mid-January",
+    "Proof of at least 3,000 hours of work experience",
+    "Evidence of leadership experience from work or civil society",
+    "Proof of citizenship of one of the 34 eligible countries",
+    "SI scholarship application documents published in mid-November"
+   ],
+   "summary": "Full tuition, a monthly allowance of SEK 12,000, a travel grant and insurance for master's studies in Sweden, for working professionals with leadership experience from 34 eligible countries.",
+   "keywords": [
+    "sweden",
+    "master",
+    "leadership",
+    "professionals",
+    "fully funded",
+    "tuition"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-02-09",
+     "closes": "2026-02-25",
+     "url": "https://si.se/en/apply/scholarships/swedish-institute-scholarships-for-global-professionals/",
+     "quote": "9-25 February 2026: Application portal for the SI Scholarships is open for two weeks.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "stipendium-hungaricum",
+   "title": "Stipendium Hungaricum Scholarship Programme",
+   "url": "https://stipendiumhungaricum.hu/",
+   "org": "Government of Hungary / Tempus Public Foundation",
+   "through": "Your country's Sending Partner (ministry or Hungarian embassy)",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "undergraduate",
+    "master",
+    "phd",
+    "short"
+   ],
+   "for": [],
+   "goes_to": "Hungary",
+   "opens_about": "",
+   "closes_about": "01-15",
+   "prepare_weeks": 10,
+   "prepare": [
+    "Online application on the Stipendium Hungaricum portal",
+    "Nomination steps required by your Sending Partner",
+    "Motivation letter (Annex 2)",
+    "Language and school certificates",
+    "Medical certificate on the official template",
+    "Passport or national ID copy"
+   ],
+   "summary": "Tuition-free bachelor's, master's, doctoral and non-degree study in Hungary with a monthly stipend, accommodation support and medical insurance, for citizens of Sending Partner countries.",
+   "keywords": [
+    "hungary",
+    "bachelor",
+    "master",
+    "phd",
+    "government",
+    "tuition free"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-01-15",
+     "url": "https://stipendiumhungaricum.hu/apply/",
+     "quote": "15th January 2026, 2 pm (CET)",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "czech-government-scholarships-developing-countries",
+   "title": "Government Scholarships – Developing Countries (Czech Republic)",
+   "url": "https://msmt.gov.cz/en/scholarships/government-scholarships-developing-countries",
+   "org": "Ministry of Education, Youth and Sports of the Czech Republic (with the Ministry of Foreign Affairs)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Bosnia and Herzegovina",
+    "Georgia",
+    "Ukraine",
+    "Belarus",
+    "Ethiopia",
+    "Gabon",
+    "Mauritania",
+    "Zambia",
+    "Bangladesh",
+    "Cambodia",
+    "Palestine",
+    "Guatemala",
+    "Honduras"
+   ],
+   "goes_to": "Czech Republic",
+   "opens_about": "08-21",
+   "closes_about": "09-30",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Register on the ministry portal and fill in the electronic application form",
+    "Motivation letter",
+    "Online general study prerequisites test",
+    "Online English test for English-taught programmes",
+    "Completed bachelor's (for master's) or master's (for PhD) degree"
+   ],
+   "summary": "Czech government scholarships for follow-up master's and doctoral study at Czech public universities, in Czech or English, for citizens of selected developing countries.",
+   "keywords": [
+    "czech republic",
+    "master",
+    "phd",
+    "developing countries",
+    "government",
+    "development cooperation"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-08-21",
+     "closes": "2026-09-30",
+     "url": "https://msmt.gov.cz/en/scholarships/government-scholarships-developing-countries",
+     "quote": "The applications period for the academic year 2027/2028 is from 21 August until 30 September 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "nawa-ulam-programme",
+   "title": "Ulam NAWA Programme",
+   "url": "https://nawa.gov.pl/en/trwajace-2/ulam-nawa-2026-1",
+   "org": "Polish National Agency for Academic Exchange (NAWA)",
+   "through": "Polish host institution (submits the application)",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "Poland",
+   "opens_about": "02-13",
+   "closes_about": "05-15",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Find a Polish host institution willing to apply on your behalf",
+    "Doctoral degree",
+    "Proof of current or recent employment at a foreign institution",
+    "Research and teaching plan for a 6-24 month stay",
+    "Application completed in English in the NAWA system"
+   ],
+   "summary": "Funds 6-24 month research and teaching stays in Poland for researchers with a doctorate working abroad; the Polish host employs the researcher with NAWA funding.",
+   "keywords": [
+    "poland",
+    "postdoc",
+    "research",
+    "mobility",
+    "fellowship",
+    "nawa"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-02-13",
+     "closes": "2026-05-15",
+     "url": "https://nawa.gov.pl/en/trwajace-2/ulam-nawa-2026-1",
+     "quote": "from 13 February to 15 May 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "nawa-banach-programme",
+   "title": "Banach NAWA Programme",
+   "url": "https://nawa.gov.pl/en/students/foreign-students/the-banach-scholarship-programme/landing",
+   "org": "Polish National Agency for Academic Exchange (NAWA)",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "Poland",
+   "opens_about": "",
+   "closes_about": "05-08",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Citizenship of one of 36 Polish Aid countries (full list in the call)",
+    "First-cycle diploma obtained no earlier than 2024 or by mid-July",
+    "Plan to start second-cycle studies in Poland",
+    "Application in the NAWA system"
+   ],
+   "summary": "Monthly scholarship of PLN 2,500, tuition fee exemption at public universities and a travel allowance for second-cycle (master's) study in Poland, for young people from developing countries.",
+   "keywords": [
+    "poland",
+    "master",
+    "developing countries",
+    "polish aid",
+    "tuition free",
+    "nawa"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-05-08",
+     "url": "https://nawa.gov.pl/en/students/foreign-students/the-banach-scholarship-programme/landing",
+     "quote": "May 8, 2026, 3:00 p.m. CEST",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "slovak-national-scholarship-programme",
+   "title": "National Scholarship Programme of the Slovak Republic",
+   "url": "https://www.scholarships.sk/en/",
+   "org": "Ministry of Education of the Slovak Republic, administered by SAIA",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd",
+    "postdoc",
+    "short"
+   ],
+   "for": [],
+   "goes_to": "Slovakia",
+   "opens_about": "",
+   "closes_about": "10-31",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Admission or invitation letter from a Slovak university or research organisation",
+    "Online application at scholarships.sk",
+    "Original admission/invitation letter delivered to SAIA after the deadline",
+    "Study or research plan for the stay"
+   ],
+   "summary": "Monthly stipend for study, research or teaching stays at Slovak universities and research organisations for international students, PhD students, teachers, researchers and artists. Calls close on 30 April and 31 October.",
+   "keywords": [
+    "slovakia",
+    "research stay",
+    "exchange",
+    "phd",
+    "saia",
+    "mobility"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-10-31",
+     "url": "https://www.scholarships.sk/en/news/call-sum-sem-acad-yr-26/27-apply-now",
+     "quote": "31 October 2026 by 16:00 CET (4 pm)",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "visegrad-scholarship-program",
+   "title": "Visegrad Scholarship Program",
+   "url": "https://www.visegradfund.org/visegrad-scholarship-program-apply",
+   "org": "International Visegrad Fund",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd",
+    "postdoc"
+   ],
+   "for": [
+    "Czech Republic",
+    "Hungary",
+    "Poland",
+    "Slovakia",
+    "Albania",
+    "Armenia",
+    "Azerbaijan",
+    "Belarus",
+    "Bosnia and Herzegovina",
+    "Georgia",
+    "Kosovo",
+    "Moldova",
+    "Montenegro",
+    "North Macedonia",
+    "Serbia",
+    "Ukraine"
+   ],
+   "goes_to": "Czech Republic, Hungary, Poland, Slovakia and Eastern Partne",
+   "opens_about": "",
+   "closes_about": "04-15",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Scanned valid ID document",
+    "Transcript of the last two completed semesters or diploma supplement",
+    "Letter of acceptance from the host university",
+    "Detailed working plan (post-master's applicants)",
+    "Application via My Visegrad"
+   ],
+   "summary": "EUR 3,500 per semester for the scholar plus EUR 2,000 for the host, for 1-2 semesters of master's or post-master's study or research in another Visegrad, Eastern Partnership or Western Balkans country.",
+   "keywords": [
+    "visegrad",
+    "central europe",
+    "master",
+    "research",
+    "mobility",
+    "balkans"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2027-04-15",
+     "url": "https://www.visegradfund.org/visegrad-scholarship-program-apply",
+     "quote": "Apr 15, 2027 at 12:00 PM",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "croatian-government-scholarships",
+   "title": "Scholarships of the Republic of Croatia (Bilateral Scholarships)",
+   "url": "https://en.ampeu.hr/open-calls/scholarships-of-the-republic-of-croatia-call-for-applications-for-the-academic-year-2026-2027",
+   "org": "Ministry of Science, Education and Youth of Croatia / Agency for Mobility and EU Programmes",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "undergraduate",
+    "master",
+    "phd",
+    "postdoc",
+    "short"
+   ],
+   "for": [
+    "Belgium",
+    "Bulgaria",
+    "China",
+    "Czech Republic",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "Israel",
+    "Italy",
+    "Kosovo",
+    "Montenegro",
+    "North Macedonia",
+    "Poland",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Turkey",
+    "Ukraine"
+   ],
+   "goes_to": "Croatia",
+   "opens_about": "",
+   "closes_about": "04-10",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Application documents in the Agency's online application system",
+    "Nomination letter from your country's partner institution (Pool 1)",
+    "Recommendation letter (Pool 2, Croatian language students)",
+    "Host Croatian institution agreed in advance"
+   ],
+   "summary": "Croatian government scholarships for study or research stays at Croatian public institutions, for citizens of partner countries and for students of Croatian language worldwide.",
+   "keywords": [
+    "croatia",
+    "bilateral",
+    "exchange",
+    "research",
+    "croatian language",
+    "mobility"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-04-10",
+     "url": "https://en.ampeu.hr/open-calls/scholarships-of-the-republic-of-croatia-call-for-applications-for-the-academic-year-2026-2027",
+     "quote": "The deadline for application: the 10th of April 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "icelandic-government-scholarships",
+   "title": "Icelandic Government Scholarships (Icelandic as a Second Language)",
+   "url": "https://www.arnastofnun.is/en/about-scholarship",
+   "org": "Government of Iceland / Árni Magnússon Institute for Icelandic Studies",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "undergraduate"
+   ],
+   "for": [],
+   "goes_to": "Iceland",
+   "opens_about": "",
+   "closes_about": "12-01",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Application postmarked to the Árni Magnússon Institute by December 1",
+    "Separate application to the University of Iceland",
+    "US applicants apply through Fulbright/IIE instead"
+   ],
+   "summary": "Covers University of Iceland registration fees and a monthly stipend for room and board to study Icelandic as a second language, for students from foreign universities.",
+   "keywords": [
+    "iceland",
+    "icelandic language",
+    "bachelor",
+    "stipend",
+    "humanities",
+    "language"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-12-01",
+     "url": "https://www.arnastofnun.is/en/about-scholarship",
+     "quote": "postmarked no later than December 1",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "commonwealth-masters-scholarships",
+   "title": "Commonwealth Master's Scholarships",
+   "url": "https://cscuk.fcdo.gov.uk/scholarships/commonwealth-masters-scholarships/",
+   "org": "Commonwealth Scholarship Commission in the UK (FCDO)",
+   "through": "Your national nominating agency",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "10-20",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Apply to a national nominating agency (or approved NGO) as well as to the CSC",
+    "Full transcripts of all higher education qualifications",
+    "Two references in PDF on institutional letterhead",
+    "Copy of passport or national ID proving Commonwealth citizenship",
+    "Choose up to three UK universities and courses",
+    "Apply for admission to your preferred universities early"
+   ],
+   "summary": "Fully funded taught master's study at a UK university for candidates from eligible low and middle income Commonwealth countries, aimed at sustainable development. Applicants apply via CSC Central and must also be nominated by a national agency.",
+   "keywords": [
+    "commonwealth",
+    "csc",
+    "uk",
+    "master",
+    "development",
+    "fully funded"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-10-20",
+     "url": "https://cscuk.fcdo.gov.uk/scholarships/commonwealth-masters-scholarships/",
+     "quote": "The closing date for applications is 16:00 BST on Tuesday 20 October.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "commonwealth-phd-scholarships",
+   "title": "Commonwealth PhD Scholarships",
+   "url": "https://cscuk.fcdo.gov.uk/scholarships/commonwealth-phd-scholarships-for-least-developed-countries-and-vulnerable-states/",
+   "org": "Commonwealth Scholarship Commission in the UK (FCDO)",
+   "through": "Your national nominating agency or university nominator",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "10-20",
+   "prepare_weeks": 10,
+   "prepare": [
+    "Apply to a nominator as well as to the CSC",
+    "Research proposal and choice of UK universities",
+    "Full transcripts of all higher education qualifications",
+    "References and supporting statements in PDF",
+    "Copy of passport or national ID proving Commonwealth citizenship",
+    "Apply for admission to your preferred universities early"
+   ],
+   "summary": "Fully funded doctoral study at a UK university for candidates from least developed and vulnerable Commonwealth countries, focused on development impact. Applicants apply via CSC Central and must be nominated.",
+   "keywords": [
+    "commonwealth",
+    "csc",
+    "uk",
+    "phd",
+    "doctoral",
+    "development"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-10-20",
+     "url": "https://cscuk.fcdo.gov.uk/scholarships/commonwealth-phd-scholarships-for-least-developed-countries-and-vulnerable-states/",
+     "quote": "The closing date for applications is 16:00 BST on Tuesday 20 October.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "gates-cambridge-scholarship",
+   "title": "Gates Cambridge Scholarship",
+   "url": "https://www.gatescambridge.org/",
+   "org": "Gates Cambridge Trust",
+   "through": "University of Cambridge Graduate Application Portal",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "12-08",
+   "prepare_weeks": 10,
+   "prepare": [
+    "Apply for admission to a Cambridge course and College place",
+    "Answer the four Gates Cambridge selection questions in the funding section",
+    "Research proposal (PhD applicants only)",
+    "Two academic references for admission",
+    "A Gates Cambridge reference on how you meet the criteria",
+    "Check your course funding deadline in the Course Directory"
+   ],
+   "summary": "Full-cost scholarship for postgraduate study at the University of Cambridge for applicants from outside the UK, covering fees and maintenance. Selection looks at academic excellence, leadership and commitment to improving the lives of others.",
+   "keywords": [
+    "gates",
+    "cambridge",
+    "uk",
+    "phd",
+    "master",
+    "leadership"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-12-08",
+     "url": "https://www.gatescambridge.org/apply/timeline/",
+     "quote": "Dependent on your course – either Tuesday 8th December 2026 or Wednesday 6th January 2027 (see Course Directory). (Full application must be submitted by 11:59pm UK time)",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "marshall-scholarships",
+   "title": "Marshall Scholarships",
+   "url": "https://www.marshallscholarship.org/",
+   "org": "Marshall Aid Commemoration Commission (UK Government)",
+   "through": "Your endorsing US college or university",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "United States"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "09-29",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Get endorsement from your US institution",
+    "Three letters of recommendation",
+    "Letter of endorsement from your institution",
+    "Check your institution's earlier internal deadline",
+    "Choose UK universities and courses"
+   ],
+   "summary": "Funds up to two years of graduate study at any UK university for high-achieving young US citizens, covering fees, living costs and travel.",
+   "keywords": [
+    "marshall",
+    "uk",
+    "united states",
+    "graduate",
+    "master",
+    "phd"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-09-29",
+     "url": "https://www.marshallscholarship.org/apply/",
+     "quote": "All applicants must complete and submit their applications, including letters of recommendation, no later than 5:00pm in the time zone where your endorsing institution is located on 29th September 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "government-of-ireland-international-education-scholarships",
+   "title": "Government of Ireland International Education Scholarships (GOI-IES)",
+   "url": "https://hea.ie/policy/internationalisation/goi-ies/",
+   "org": "Higher Education Authority (HEA), Ireland",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Ireland",
+   "opens_about": "",
+   "closes_about": "03-12",
+   "prepare_weeks": 8,
+   "prepare": [
+    "Apply for admission to an eligible master's, postgraduate diploma or PhD in Ireland",
+    "Check your course is eligible with the Irish institution",
+    "Read the call document and FAQs",
+    "A strong rationale for studying in Ireland",
+    "Submit one application via the GOI-IES online portal"
+   ],
+   "summary": "One year of full-time study in Ireland for students from outside the EU/EEA, Switzerland and the UK: a 10,000 euro stipend plus a full fee waiver from the host institution.",
+   "keywords": [
+    "ireland",
+    "goi-ies",
+    "hea",
+    "master",
+    "phd",
+    "stipend"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-03-12",
+     "url": "https://hea.ie/policy/internationalisation/goi-ies/",
+     "quote": "5pm (Irish time) 12 March 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "royal-society-newton-international-fellowship",
+   "title": "Newton International Fellowships",
+   "url": "https://royalsociety.org/grants/newton-international/",
+   "org": "The Royal Society (with the British Academy)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "03-11",
+   "prepare_weeks": 10,
+   "prepare": [
+    "A UK host researcher and organisation",
+    "PhD awarded or about to be awarded",
+    "Research proposal",
+    "Read the scheme notes on eligibility"
+   ],
+   "summary": "Two-year fellowship for non-UK early career researchers to do research at a UK organisation, as a first step towards an independent research career.",
+   "keywords": [
+    "newton",
+    "royal society",
+    "postdoc",
+    "fellowship",
+    "uk",
+    "research"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-03-11",
+     "url": "https://royalsociety.org/grants/newton-international/",
+     "quote": "11 March 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "royal-society-university-research-fellowship",
+   "title": "Royal Society University Research Fellowship",
+   "url": "https://royalsociety.org/grants/university-research/",
+   "org": "The Royal Society (Research Ireland for ROI applicants)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "09-09",
+   "prepare_weeks": 12,
+   "prepare": [
+    "A UK or Republic of Ireland host organisation",
+    "Read the scheme notes for eligibility",
+    "Research proposal",
+    "Global Talent Visa endorsement if you need a visa"
+   ],
+   "summary": "Long-term fellowship for outstanding early career scientists of any nationality to build an independent research career in the UK or Republic of Ireland.",
+   "keywords": [
+    "royal society",
+    "urf",
+    "fellowship",
+    "postdoc",
+    "uk",
+    "research"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-09-09",
+     "url": "https://royalsociety.org/grants/university-research/",
+     "quote": "09 September 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "churchill-scholarship",
+   "title": "Churchill Scholarship",
+   "url": "https://www.churchillscholarship.org/",
+   "org": "Winston Churchill Foundation of the United States",
+   "through": "Your participating US institution (nomination)",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [
+    "United States"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "11-02",
+   "prepare_weeks": 10,
+   "prepare": [
+    "Nomination from a participating US institution",
+    "Apply to the University of Cambridge as well",
+    "Check your campus internal deadline"
+   ],
+   "summary": "One year of master's study or research in STEM at Churchill College, University of Cambridge, for US citizens nominated by participating institutions; covers fees and living costs.",
+   "keywords": [
+    "churchill",
+    "cambridge",
+    "stem",
+    "united states",
+    "master",
+    "research"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-11-02",
+     "url": "https://www.churchillscholarship.org/",
+     "quote": "The nomination deadline is November 2, 2026 at 5pm Eastern.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rhodes-scholarship-india",
+   "title": "Rhodes Scholarship for India",
+   "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/india/",
+   "org": "Rhodes Trust",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "India"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "07-23",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Read the Information for Candidates for your constituency",
+    "Check your Oxford course is covered (Conditions of Tenure)",
+    "CV using the constituency template",
+    "Share the Guidance for Referees with your referees",
+    "Register for an information session"
+   ],
+   "summary": "Fully funded postgraduate study at the University of Oxford (fees and stipend) for outstanding young people from India, selected on character, leadership and academic excellence.",
+   "keywords": [
+    "rhodes",
+    "oxford",
+    "uk",
+    "postgraduate",
+    "leadership",
+    "india"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-07-23",
+     "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/india/",
+     "quote": "Closing date: 23:59, Indian Standard Time, 23 July 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rhodes-scholarship-pakistan",
+   "title": "Rhodes Scholarship for Pakistan",
+   "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/pakistan/",
+   "org": "Rhodes Trust",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Pakistan"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "08-05",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Read the Information for Candidates for your constituency",
+    "Check your Oxford course is covered (Conditions of Tenure)",
+    "CV using the constituency template",
+    "Share the Guidance for Referees with your referees",
+    "Register for an information session"
+   ],
+   "summary": "Fully funded postgraduate study at the University of Oxford (fees and stipend) for outstanding young people from Pakistan, selected on character, leadership and academic excellence.",
+   "keywords": [
+    "rhodes",
+    "oxford",
+    "uk",
+    "postgraduate",
+    "leadership",
+    "pakistan"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-08-05",
+     "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/pakistan/",
+     "quote": "Closing date: 23:59 PKT, 5 August 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rhodes-scholarship-kenya",
+   "title": "Rhodes Scholarship for Kenya",
+   "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/kenya/",
+   "org": "Rhodes Trust",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Kenya"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "08-27",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Read the Information for Candidates for your constituency",
+    "Check your Oxford course is covered (Conditions of Tenure)",
+    "CV using the constituency template",
+    "Share the Guidance for Referees with your referees",
+    "Register for an information session"
+   ],
+   "summary": "Fully funded postgraduate study at the University of Oxford (fees and stipend) for outstanding young people from Kenya, selected on character, leadership and academic excellence.",
+   "keywords": [
+    "rhodes",
+    "oxford",
+    "uk",
+    "postgraduate",
+    "leadership",
+    "kenya"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-08-27",
+     "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/kenya/",
+     "quote": "Closing date: 23:59 Eastern Africa Time, 27 August 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rhodes-scholarship-east-africa",
+   "title": "Rhodes Scholarship for East Africa",
+   "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/east-africa/",
+   "org": "Rhodes Trust",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Uganda",
+    "Tanzania",
+    "Rwanda",
+    "South Sudan",
+    "Burundi"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "08-27",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Read the Information for Candidates for your constituency",
+    "Check your Oxford course is covered (Conditions of Tenure)",
+    "CV using the constituency template",
+    "Share the Guidance for Referees with your referees",
+    "Register for an information session"
+   ],
+   "summary": "Fully funded postgraduate study at the University of Oxford (fees and stipend) for outstanding young people from East Africa, selected on character, leadership and academic excellence.",
+   "keywords": [
+    "rhodes",
+    "oxford",
+    "uk",
+    "postgraduate",
+    "leadership",
+    "east"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-08-27",
+     "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/east-africa/",
+     "quote": "Closing date: 23:59 Eastern Africa Time, 27 August 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rhodes-scholarship-west-africa",
+   "title": "Rhodes Scholarship for West Africa",
+   "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/west-africa/",
+   "org": "Rhodes Trust",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Benin",
+    "Burkina Faso",
+    "Cabo Verde",
+    "Gambia",
+    "Ghana",
+    "Guinea",
+    "Guinea-Bissau",
+    "Côte d'Ivoire",
+    "Liberia",
+    "Mali",
+    "Mauritania",
+    "Niger",
+    "Nigeria",
+    "Saint Helena, Ascension and Tristan da Cunha",
+    "Senegal",
+    "Sierra Leone",
+    "São Tomé and Príncipe",
+    "Togo"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "08-27",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Read the Information for Candidates for your constituency",
+    "Check your Oxford course is covered (Conditions of Tenure)",
+    "CV using the constituency template",
+    "Share the Guidance for Referees with your referees",
+    "Register for an information session"
+   ],
+   "summary": "Fully funded postgraduate study at the University of Oxford (fees and stipend) for outstanding young people from West Africa, selected on character, leadership and academic excellence.",
+   "keywords": [
+    "rhodes",
+    "oxford",
+    "uk",
+    "postgraduate",
+    "leadership",
+    "west"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-08-27",
+     "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/west-africa/",
+     "quote": "Closing date: 23:59 GMT 27 August 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rhodes-scholarship-southern-africa",
+   "title": "Rhodes Scholarship for Southern Africa",
+   "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/southern-africa/",
+   "org": "Rhodes Trust",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "South Africa",
+    "Botswana",
+    "Lesotho",
+    "Malawi",
+    "Namibia",
+    "Eswatini"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "08-03",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Read the Information for Candidates for your constituency",
+    "Check your Oxford course is covered (Conditions of Tenure)",
+    "CV using the constituency template",
+    "Share the Guidance for Referees with your referees",
+    "Register for an information session"
+   ],
+   "summary": "Fully funded postgraduate study at the University of Oxford (fees and stipend) for outstanding young people from Southern Africa, selected on character, leadership and academic excellence.",
+   "keywords": [
+    "rhodes",
+    "oxford",
+    "uk",
+    "postgraduate",
+    "leadership",
+    "southern"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-08-03",
+     "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/southern-africa/",
+     "quote": "Closing date: 23:59, SAST, 3 August 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rhodes-scholarship-syria-jordan-lebanon-and-palestine",
+   "title": "Rhodes Scholarship for Syria, Jordan, Lebanon and Palestine",
+   "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/syria-jordan-lebanon-and-palestine/",
+   "org": "Rhodes Trust",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "Syria",
+    "Jordan",
+    "Lebanon",
+    "Palestine"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "08-27",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Read the Information for Candidates for your constituency",
+    "Check your Oxford course is covered (Conditions of Tenure)",
+    "CV using the constituency template",
+    "Share the Guidance for Referees with your referees",
+    "Register for an information session"
+   ],
+   "summary": "Fully funded postgraduate study at the University of Oxford (fees and stipend) for outstanding young people from Syria, Jordan, Lebanon and Palestine, selected on character, leadership and academic excellence.",
+   "keywords": [
+    "rhodes",
+    "oxford",
+    "uk",
+    "postgraduate",
+    "leadership",
+    "syria"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-08-27",
+     "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/syria-jordan-lebanon-and-palestine/",
+     "quote": "Closing date: 23:59 GMT 27 August 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rhodes-scholarship-china",
+   "title": "Rhodes Scholarship for China",
+   "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/china/",
+   "org": "Rhodes Trust",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [
+    "China"
+   ],
+   "goes_to": "United Kingdom",
+   "opens_about": "",
+   "closes_about": "08-31",
+   "prepare_weeks": 12,
+   "prepare": [
+    "Read the Information for Candidates for your constituency",
+    "Check your Oxford course is covered (Conditions of Tenure)",
+    "CV using the constituency template",
+    "Share the Guidance for Referees with your referees",
+    "Register for an information session"
+   ],
+   "summary": "Fully funded postgraduate study at the University of Oxford (fees and stipend) for outstanding young people from China, selected on character, leadership and academic excellence.",
+   "keywords": [
+    "rhodes",
+    "oxford",
+    "uk",
+    "postgraduate",
+    "leadership",
+    "china"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-08-31",
+     "url": "https://www.rhodeshouse.ox.ac.uk/scholarships/applications/china/",
+     "quote": "Closing date: 23:59 China Standard Time, 31 August 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "eiffel-excellence-scholarship",
+   "title": "France Excellence Eiffel Scholarship Program",
+   "url": "https://www.campusfrance.org/en/eiffel-scholarship-program-of-excellence",
+   "org": "French Ministry for Europe and Foreign Affairs (run by Campus France)",
+   "through": "the French university that nominates you",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "France",
+   "opens_about": "10-01",
+   "closes_about": "01-08",
+   "prepare_weeks": 12,
+   "prepare": [
+    "get admitted to a French master's or PhD first: the university submits your file, not you",
+    "age limit: up to 29 for master's, up to 35 for PhD",
+    "ask your French university early about its internal Eiffel deadline",
+    "transcripts, CV and a motivation letter for the university's file"
+   ],
+   "summary": "French government scholarship for top international students in a French master's or PhD (monthly allowance plus travel and insurance). Your French host university applies on your behalf, so its internal deadline comes earlier.",
+   "keywords": [
+    "eiffel",
+    "france",
+    "campus france",
+    "master",
+    "phd",
+    "scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2025-10-01",
+     "closes": "2026-01-08",
+     "url": "https://www.campusfrance.org/en/france-excellence-eiffel-scholarship-program",
+     "quote": "Opening of the call for applications: October 1, 2025 Deadline for the reception of applications by Campus France: January 8, 2026 included.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "embo-postdoctoral-fellowships",
+   "title": "EMBO Postdoctoral Fellowships",
+   "url": "https://www.embo.org/funding/fellowships-grants-and-career-support/postdoctoral-fellowships/",
+   "org": "EMBO (European Molecular Biology Organization)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "Europe (EMBC member states)",
+   "opens_about": "",
+   "closes_about": "01-22",
+   "prepare_weeks": 10,
+   "prepare": [
+    "PhD obtained no more than two years before you apply",
+    "a host lab in an EMBC member state that agrees to take you",
+    "a research proposal written with your host",
+    "at least one first-author paper accepted or published",
+    "there are two cut-offs a year (winter and summer): pick one"
+   ],
+   "summary": "Up to two years of funded postdoctoral research in the life sciences, moving to or within Europe. Open to all nationalities; selection rounds twice a year.",
+   "keywords": [
+    "embo",
+    "postdoc",
+    "fellowship",
+    "life sciences",
+    "europe",
+    "biology"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2027-01-22",
+     "url": "https://www.embo.org/funding/fellowships-grants-and-career-support/postdoctoral-fellowships/",
+     "quote": "Applications accepted throughout the year (next cutoff date – hard deadline: Friday 22 January 2027, 14:00 CET)",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "vlir-uos-icp-connect",
+   "title": "VLIR-UOS ICP Connect Scholarships",
+   "url": "https://www.vliruos.be/get-funded/study-scholarships",
+   "org": "VLIR-UOS (Flemish universities, Belgian development cooperation)",
+   "through": "the Flemish university running your master's",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [
+    "Benin",
+    "Bolivia",
+    "Burkina Faso",
+    "Burundi",
+    "Cameroon",
+    "Cuba",
+    "DR Congo",
+    "Ecuador",
+    "Ethiopia",
+    "Guinea",
+    "Indonesia",
+    "Kenya",
+    "Madagascar",
+    "Mali",
+    "Morocco",
+    "Mozambique",
+    "Niger",
+    "Palestine",
+    "Peru",
+    "Philippines",
+    "Senegal",
+    "South Africa",
+    "Tanzania",
+    "Uganda",
+    "Vietnam",
+    "Zimbabwe"
+   ],
+   "goes_to": "Belgium",
+   "opens_about": "",
+   "closes_about": "02-28",
+   "prepare_weeks": 10,
+   "prepare": [
+    "choose one of the eligible international master's programmes in Flanders",
+    "apply for admission to that programme and tick the scholarship request",
+    "check the programme's own deadline: each programme sets one",
+    "degree certificates, transcripts and English test"
+   ],
+   "summary": "Full scholarships (tuition, living allowance, travel, insurance) for international master's programmes in Flanders, for students from VLIR-UOS partner countries in Africa, Asia and Latin America.",
+   "keywords": [
+    "vlir-uos",
+    "belgium",
+    "flanders",
+    "master",
+    "scholarship",
+    "development"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2027-02-28",
+     "url": "https://www.vliruos.be/get-funded/calls/icp-connect-scholarships-2027-2028",
+     "quote": "28 February 2027",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "ernst-mach-grant-worldwide",
+   "title": "Ernst Mach Scholarship – Worldwide",
+   "url": "https://studyinaustria.at/en/plan-your-studies/scholarships-funding",
+   "org": "Austrian Federal Ministry (BMFWF), run by OeAD",
+   "through": "",
+   "kind": "grant",
+   "every": "year",
+   "levels": [
+    "phd",
+    "postdoc",
+    "short"
+   ],
+   "for": [],
+   "goes_to": "Austria",
+   "opens_about": "",
+   "closes_about": "12-01",
+   "prepare_weeks": 8,
+   "prepare": [
+    "an Austrian university or research institution willing to host you",
+    "a research plan for a 1 to 9 month stay",
+    "a confirmation of supervision from your Austrian host",
+    "CV, transcripts and letters of recommendation"
+   ],
+   "summary": "Monthly grant from the Austrian government for international students and researchers to do a research stay of 1 to 9 months at an Austrian university or research institution.",
+   "keywords": [
+    "austria",
+    "oead",
+    "ernst mach",
+    "research stay",
+    "grant",
+    "phd"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2026-12-01",
+     "url": "https://studyinaustria.at/en/news/article/2026/08/ernst-mach-stipendium-weltweit-bewerbung-bis-1-dezember-2026",
+     "quote": "The new application deadline for the Ernst Mach Scholarship – Worldwide for the 2027/28 academic year is 1 December 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "heinrich-boell-scholarships-international",
+   "title": "Heinrich Böll Foundation Scholarships for International Students",
+   "url": "https://www.boell.de/en/applying-scholarship",
+   "org": "Heinrich-Böll-Stiftung",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Germany",
+   "opens_about": "01-15",
+   "closes_about": "03-01",
+   "prepare_weeks": 10,
+   "prepare": [
+    "German at B2 level or better",
+    "show social and political engagement in line with the foundation's values",
+    "two expert reports (letters of reference)",
+    "register on the online portal: it opens about 6 weeks before the deadline",
+    "there is a second round closing 1 September each year"
+   ],
+   "summary": "Monthly scholarships for international master's and PhD students in Germany, from EU and DAC countries, with priority to applicants from DAC countries not yet living in Germany.",
+   "keywords": [
+    "boell",
+    "germany",
+    "foundation",
+    "master",
+    "phd",
+    "scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2027-01-15",
+     "closes": "2027-03-01",
+     "url": "https://www.boell.de/en/applying-scholarship",
+     "quote": "Spring 2027: 15 January 2027 until 1 March 2027",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "friedrich-naumann-scholarships",
+   "title": "Friedrich Naumann Foundation for Freedom Scholarships",
+   "url": "https://www.freiheit.org/student-scholarships",
+   "org": "Friedrich-Naumann-Stiftung für die Freiheit",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Germany",
+   "opens_about": "04-01",
+   "closes_about": "04-30",
+   "prepare_weeks": 8,
+   "prepare": [
+    "full-time study at a state or state-recognised university in Germany",
+    "good to very good grades",
+    "show political or social engagement and a liberal outlook",
+    "apply on the online portal: April and October rounds"
+   ],
+   "summary": "Monthly scholarships for German and foreign master's and doctoral students in Germany who are politically engaged and share liberal values. Two rounds a year (April and October).",
+   "keywords": [
+    "naumann",
+    "germany",
+    "foundation",
+    "master",
+    "phd",
+    "scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2027-04-01",
+     "closes": "2027-04-30",
+     "url": "https://www.freiheit.org/node/23510",
+     "quote": "Die Bewerbung kann nur über unser Onlinebewerbungsportal jeweils vom 1. - 30. April und vom 1. - 31. Oktober erfolgen.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "rosa-luxemburg-scholarships",
+   "title": "Rosa Luxemburg Foundation Scholarships",
+   "url": "https://www.rosalux.de/en/foundation/studienwerk",
+   "org": "Rosa-Luxemburg-Stiftung",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master",
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Germany",
+   "opens_about": "",
+   "closes_about": "10-01",
+   "prepare_weeks": 8,
+   "prepare": [
+    "German at B2 level or better",
+    "proof of above-average academic results",
+    "evidence of political and social engagement",
+    "foreign applicants: master's and PhD only, while staying in Germany"
+   ],
+   "summary": "Monthly scholarships for highly qualified, socially and politically engaged students and doctoral candidates in Germany, including foreign master's and PhD students.",
+   "keywords": [
+    "rosa luxemburg",
+    "germany",
+    "foundation",
+    "master",
+    "phd",
+    "scholarship"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-10-01",
+     "url": "https://www.rosalux.de/en/foundation/studienwerk",
+     "quote": "Deadline for Applications 1 October for grants beginning in the summer semester (1 April) of the next year",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "eth-excellence-scholarship-esop",
+   "title": "ETH Zurich Excellence Scholarship & Opportunity Programme (ESOP)",
+   "url": "https://ethz.ch/students/en/studies/financial/scholarships/excellencescholarship.html",
+   "org": "ETH Zurich and ETH Foundation",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "Switzerland",
+   "opens_about": "11-01",
+   "closes_about": "11-30",
+   "prepare_weeks": 8,
+   "prepare": [
+    "top 10% of your Bachelor's programme",
+    "apply in the first Master application window via eApply",
+    "a pre-proposal for your master thesis, written by yourself",
+    "two professors as referees if your programme asks none"
+   ],
+   "summary": "Covers full study and living costs (CHF 12,000-13,500 per semester plus tuition waiver) for excellent students in a Master's at ETH Zurich. About 60 awards a year.",
+   "keywords": [
+    "eth zurich",
+    "switzerland",
+    "master",
+    "excellence",
+    "scholarship",
+    "esop"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2026-11-01",
+     "closes": "2026-11-30",
+     "url": "https://ethz.ch/students/en/studies/financial/scholarships/excellencescholarship.html",
+     "quote": "The next application window is open Nov, 1 - Nov, 30 2026, 11.59h, MEZ for a start in the Master programme in HS27.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "unige-excellence-master-fellowships",
+   "title": "University of Geneva Excellence Master Fellowships (Faculty of Science)",
+   "url": "https://www.unige.ch/sciences/en/enseignements/formations/masters/excellencemasterfellowships/",
+   "org": "University of Geneva, Faculty of Science",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "Switzerland",
+   "opens_about": "",
+   "closes_about": "02-28",
+   "prepare_weeks": 8,
+   "prepare": [
+    "register for the UNIGE science master's first",
+    "transcript with all bachelor grades",
+    "motivation letter on your scientific interests",
+    "two reference letters from professors",
+    "everything as one single PDF"
+   ],
+   "summary": "CHF 10,000-15,000 a year for outstanding students in a Master of Science at the University of Geneva, renewed for the length of the programme.",
+   "keywords": [
+    "geneva",
+    "switzerland",
+    "master",
+    "science",
+    "excellence",
+    "fellowship"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-02-28",
+     "url": "https://www.unige.ch/sciences/en/enseignements/formations/masters/excellencemasterfellowships/",
+     "quote": "Next application deadline is 28 February, 2026 (for Masters starting September 14, 2026).",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "epfl-master-excellence-fellowships",
+   "title": "EPFL Master Excellence Fellowships",
+   "url": "https://www.epfl.ch/education/master/master-excellence-fellowships/",
+   "org": "EPFL",
+   "through": "",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "Switzerland",
+   "opens_about": "",
+   "closes_about": "12-15",
+   "prepare_weeks": 8,
+   "prepare": [
+    "apply in the first Master application window and tick the fellowship box",
+    "outstanding academic results",
+    "evidence of research, entrepreneurship or societal engagement",
+    "the requested application file with your Master application"
+   ],
+   "summary": "CHF 10,000 per semester plus guaranteed housing for outstanding students starting a Master's at EPFL in Lausanne.",
+   "keywords": [
+    "epfl",
+    "switzerland",
+    "master",
+    "excellence",
+    "fellowship",
+    "lausanne"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2026-12-15",
+     "url": "https://www.epfl.ch/education/master/master-excellence-fellowships/",
+     "quote": "– December 15 for applications submitted via IS-Academia.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "paris-saclay-international-master-scholarships",
+   "title": "Université Paris-Saclay International Master's Scholarships",
+   "url": "https://www.universite-paris-saclay.fr/en/admission/bourses-et-aides-financieres/international-masters-scholarships-program",
+   "org": "Université Paris-Saclay",
+   "through": "the master's programme coordinator who selects you",
+   "kind": "scholarship",
+   "every": "year",
+   "levels": [
+    "master"
+   ],
+   "for": [],
+   "goes_to": "France",
+   "opens_about": "",
+   "closes_about": "03-31",
+   "prepare_weeks": 10,
+   "prepare": [
+    "apply to a Paris-Saclay master's well before the scholarship deadline",
+    "get selected by the programme coordinator",
+    "then fill in the scholarship form from the email link",
+    "two references who complete an online recommendation"
+   ],
+   "summary": "EUR 10,000 a year (plus up to EUR 1,000 travel) for international students admitted to a master's at Université Paris-Saclay.",
+   "keywords": [
+    "paris-saclay",
+    "france",
+    "master",
+    "scholarship",
+    "international"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-03-31",
+     "url": "https://www.universite-paris-saclay.fr/en/admission/bourses-et-aides-financieres/international-masters-scholarships-program",
+     "quote": "After being selected, deadline to apply for the scholarship and for the reception of the recommendation form from the references (if applicable): Tuesday 31 March 2026, 11:59pm",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "embl-international-phd-programme",
+   "title": "EMBL International PhD Programme",
+   "url": "https://www.embl.org/about/info/embl-international-phd-programme/",
+   "org": "European Molecular Biology Laboratory (EMBL)",
+   "through": "",
+   "kind": "programme",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Germany, UK, France, Italy or Spain (EMBL sites)",
+   "opens_about": "09-01",
+   "closes_about": "10-12",
+   "prepare_weeks": 8,
+   "prepare": [
+    "a master's (or equivalent) in life, physical or computational sciences",
+    "online application with motivation statement",
+    "referees who submit online references two days after your deadline",
+    "a second (summer) round opens towards the end of January"
+   ],
+   "summary": "Fully funded PhD positions at EMBL sites in Heidelberg, Hinxton, Barcelona, Hamburg, Grenoble and Rome. Open to all nationalities; two recruitment rounds a year.",
+   "keywords": [
+    "embl",
+    "phd",
+    "life sciences",
+    "molecular biology",
+    "europe",
+    "funded"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "2026-09-01",
+     "closes": "2026-10-12",
+     "url": "https://www.embl.org/about/info/embl-international-phd-programme/application/",
+     "quote": "Application opens 01 September 2026 Application submission deadline 12 October 2026, 23:59 CET",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "ista-phd-program",
+   "title": "ISTA PhD Program",
+   "url": "https://phd.ista.ac.at/",
+   "org": "Institute of Science and Technology Austria (ISTA)",
+   "through": "",
+   "kind": "programme",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Austria",
+   "opens_about": "",
+   "closes_about": "01-08",
+   "prepare_weeks": 8,
+   "prepare": [
+    "at least the second year of a bachelor's done by the start date",
+    "statement of purpose (1-2 pages)",
+    "transcripts",
+    "contact details of 3 referees: letters due a few days after the deadline"
+   ],
+   "summary": "Fully funded PhD positions in natural sciences, mathematics and computer science at ISTA near Vienna. One intake a year; open to all nationalities.",
+   "keywords": [
+    "ista",
+    "austria",
+    "phd",
+    "science",
+    "funded",
+    "vienna"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2027-01-08",
+     "url": "https://phd.ista.ac.at/phd-application-admission/",
+     "quote": "The deadline to submit applications will be January 8, 2027, 3:00 PM CET.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "eui-doctoral-programme",
+   "title": "European University Institute Doctoral Programme",
+   "url": "https://www.eui.eu/apply?id=doctoral-programme-in-economics",
+   "org": "European University Institute (EUI), with national grant authorities",
+   "through": "",
+   "kind": "programme",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Italy",
+   "opens_about": "",
+   "closes_about": "01-15",
+   "prepare_weeks": 10,
+   "prepare": [
+    "a research proposal for economics, history, law or political and social sciences",
+    "master's degree (or finishing one)",
+    "two academic references",
+    "check which national grant you are eligible for"
+   ],
+   "summary": "Four-year fully funded PhD programmes at the EUI in Florence in economics, history, law and political and social sciences.",
+   "keywords": [
+    "eui",
+    "florence",
+    "italy",
+    "phd",
+    "social sciences",
+    "economics"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2027-01-15",
+     "url": "https://www.eui.eu/apply?id=doctoral-programme-in-economics",
+     "quote": "The deadline to apply for the 2027-28 academic year is 15 January 2027 at 14:00 CET (Time in Italy).",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "erc-starting-grant",
+   "title": "ERC Starting Grant",
+   "url": "https://erc.europa.eu/apply-grant/starting-grant",
+   "org": "European Research Council (Horizon Europe)",
+   "through": "",
+   "kind": "grant",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "Europe (EU or associated country)",
+   "opens_about": "07-22",
+   "closes_about": "10-14",
+   "prepare_weeks": 20,
+   "prepare": [
+    "a host institution in an EU member state or associated country",
+    "a five-year research proposal (part B1 and B2)",
+    "a CV and track record showing independence",
+    "check the years-since-PhD window in the work programme"
+   ],
+   "summary": "Up to EUR 1.5 million over five years for early-career researchers to set up their own research team at a host institution in Europe. Any nationality.",
+   "keywords": [
+    "erc",
+    "starting grant",
+    "horizon europe",
+    "research",
+    "grant",
+    "europe"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2026-07-22",
+     "closes": "2026-10-14",
+     "url": "https://erc.europa.eu/apply-grant/starting-grant",
+     "quote": "Starting Grant 2027 (ERC-2027-STG) Open: 22 July 2026 Deadline:14 October 2026",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "ictp-postgraduate-diploma-programme",
+   "title": "ICTP Postgraduate Diploma Programme",
+   "url": "https://www.ictp.it/",
+   "org": "Abdus Salam International Centre for Theoretical Physics (ICTP)",
+   "through": "",
+   "kind": "programme",
+   "every": "year",
+   "levels": [
+    "master",
+    "short"
+   ],
+   "for": [],
+   "goes_to": "Italy",
+   "opens_about": "",
+   "closes_about": "03-15",
+   "prepare_weeks": 6,
+   "prepare": [
+    "a university degree in physics or mathematics",
+    "apply online",
+    "academic transcripts",
+    "letters of recommendation"
+   ],
+   "summary": "A one-year, fully funded postgraduate diploma in physics or mathematics at ICTP in Trieste, mainly for students from developing countries.",
+   "keywords": [
+    "ictp",
+    "trieste",
+    "italy",
+    "physics",
+    "mathematics",
+    "diploma"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-03-15",
+     "url": "https://www.ictp.it/news/2026/2/call-applications-postgraduate-diploma-programme",
+     "quote": "Applications for the 2026-2027 Diploma Programme are now being accepted; the deadline has been extended to 15 March 2026.",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "embl-eipod-linc-postdoctoral",
+   "title": "EMBL EIPOD-LinC Postdoctoral Fellowships",
+   "url": "https://www.embl.org/about/info/postdoctoral-programme/",
+   "org": "European Molecular Biology Laboratory (EMBL)",
+   "through": "",
+   "kind": "fellowship",
+   "every": "year",
+   "levels": [
+    "postdoc"
+   ],
+   "for": [],
+   "goes_to": "EMBL sites in Europe",
+   "opens_about": "",
+   "closes_about": "02-01",
+   "prepare_weeks": 10,
+   "prepare": [
+    "PhD (or defended thesis) by the call deadline",
+    "at most eight years of research experience after your PhD",
+    "an EMBL host and a partner lab in an EMBL member state",
+    "two references due at the deadline from institutional emails"
+   ],
+   "summary": "Three-year fully funded postdoctoral contracts at EMBL with a secondment to a partner lab in an EMBL member state. Open to all nationalities.",
+   "keywords": [
+    "embl",
+    "eipod",
+    "postdoc",
+    "fellowship",
+    "life sciences",
+    "interdisciplinary"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "",
+     "closes": "2027-02-01",
+     "url": "https://www.embl.org/about/info/postdoctoral-programme/eipod-linc-exploring-life-in-context/eipod-linc-application/",
+     "quote": "Applicants must have a Ph.D. by the call deadline (February 1st, 2027).",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "european-commission-blue-book-traineeship",
+   "title": "European Commission Blue Book Traineeship",
+   "url": "https://traineeships.ec.europa.eu/",
+   "org": "European Commission",
+   "through": "",
+   "kind": "programme",
+   "every": "year",
+   "levels": [
+    "short"
+   ],
+   "for": [],
+   "goes_to": "Belgium / Luxembourg",
+   "opens_about": "02-15",
+   "closes_about": "03-12",
+   "prepare_weeks": 6,
+   "prepare": [
+    "a university degree (at least a bachelor's) by the deadline",
+    "very good English, French or German and a second EU language",
+    "an EU Login account and the online application",
+    "choose ADMIN or translation: one application per session",
+    "there is a second round (for the March session) in summer"
+   ],
+   "summary": "Five-month paid traineeships at the European Commission and EU bodies, mainly in Brussels and Luxembourg, for recent graduates. Two sessions a year.",
+   "keywords": [
+    "blue book",
+    "european commission",
+    "traineeship",
+    "brussels",
+    "graduates",
+    "eu"
+   ],
+   "seen": [
+    {
+     "cycle": 2027,
+     "opens": "2027-02-15",
+     "closes": "2027-03-12",
+     "url": "https://traineeships.ec.europa.eu/available-traineeship-strands_en",
+     "quote": "Registration for the October 2027 session will open on 15 February 2027 at 10:00 a.m. (Brussels time) and close on 12 March 2027 at 10:00 a.m. (Brussels time).",
+     "checked": true
+    }
+   ]
+  },
+  {
+   "id": "vienna-biocenter-phd-program",
+   "title": "Vienna BioCenter PhD Program",
+   "url": "https://training.vbc.ac.at/phd-program/",
+   "org": "Vienna BioCenter (IMP, IMBA, GMI, Max Perutz Labs)",
+   "through": "",
+   "kind": "programme",
+   "every": "year",
+   "levels": [
+    "phd"
+   ],
+   "for": [],
+   "goes_to": "Austria",
+   "opens_about": "",
+   "closes_about": "10-15",
+   "prepare_weeks": 8,
+   "prepare": [
+    "a master's (or equivalent) in a life sciences subject",
+    "more than 6 months of research experience",
+    "online application with motivation",
+    "referees for letters of recommendation",
+    "there is also a spring call each year"
+   ],
+   "summary": "Fully funded PhD positions in life sciences at the Vienna BioCenter institutes. Two calls a year (spring and autumn); open to all nationalities.",
+   "keywords": [
+    "vienna",
+    "biocenter",
+    "austria",
+    "phd",
+    "life sciences",
+    "funded"
+   ],
+   "seen": [
+    {
+     "cycle": 2026,
+     "opens": "",
+     "closes": "2026-10-15",
+     "url": "https://training.vbc.ac.at/phd-program/",
+     "quote": "Autumn Call 2026 now open Closing date 15 October 2026",
+     "checked": true
+    }
+   ]
   }
  ]
 }

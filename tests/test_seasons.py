@@ -383,3 +383,21 @@ def test_both_drop_boxes_are_actually_styled_when_the_panel_draws(qapp_offscreen
             assert css.count("color:") >= 2
     finally:
         panel.close()
+
+
+def test_many_seasons_never_run_into_one_year_long_period():
+    """With seasons opening every 3 weeks all year, each period still covers a few weeks of openings --
+    measured from its first opening, so the chain breaks instead of swallowing the year."""
+    from datetime import timedelta
+    start = date(2026, 1, 5)
+    many = []
+    for i in range(17):
+        o = start + timedelta(days=21 * i)
+        c = o + timedelta(days=40)
+        many.append(_season(id=f"season-number-{i}", **{"for": []},
+                            seen=[_seen(opens=o.isoformat(), closes=c.isoformat(),
+                                        quote=f"from {o.isoformat()} until {c.isoformat()}")]))
+    wins = seasons.windows([seasons.clean_season(s) for s in many], date(2026, 6, 1))
+    assert len(wins) >= 6
+    for w in wins:
+        assert (date.fromisoformat(w["opens_to"]) - date.fromisoformat(w["from"])).days <= seasons.TOGETHER

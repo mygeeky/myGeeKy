@@ -24,7 +24,7 @@ export const KINDS = ['scholarship', 'grant', 'fellowship', 'programme'] as cons
 export const EVERY: Record<string, number> = { year: 365, '2-years': 730, 'half-year': 182 };
 export const LEAST_NOTICE = 15;   // the user's floor: never less than a fortnight's warning
 export const MOST_NOTICE = 300;   // beyond this it is not news, it is a calendar
-export const TOGETHER = 45;       // programmes opening within this many days belong to one period
+export const TOGETHER = 45;       // programmes opening within this many days of a period's FIRST opening belong to it
 const ID_RE = /^[a-z0-9]+(-[a-z0-9]+){1,9}$/;
 const MD_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -321,7 +321,7 @@ export function windows(seasons: Season[], today = todayIso(), nationality = '',
   const groups: [Occurrence, Season][][] = [];
   for (const row of rows) {
     const last = groups[groups.length - 1];
-    const gap = last ? daysBetween(last[last.length - 1][0].opens, row[0].opens) : null;
+    const gap = last ? daysBetween(last[0][0].opens, row[0].opens) : null;     // from the first, as seasons.py
     if (last && gap !== null && gap <= TOGETHER) last.push(row);
     else groups.push([row]);
   }
