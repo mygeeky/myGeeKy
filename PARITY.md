@@ -5,19 +5,17 @@ platforms; remove it when the last one is done. See `.claude/skills/mygeeky-plat
 
 ## Pending
 
-- 2026-10-18 · **"Continue as guest"** (no account, then keywords) is on the phone's first screen.
-  Behind: desktop setup wizard (`gui/setup_wizard.py`, ProfilePage) and the website.
-- 2026-10-18 · **Keyword suggestions while typing** (`mobile/src/lib/word-suggest.ts`, from the keyword
-  dictionary) are on the phone's setup. Behind: desktop setup wizard and the panel's keyword boxes, and the
-  phone's Settings keyword box.
-- 2026-10-18 · **Walk-through after GitHub sign-in: data repo, then Signals** is on the phone
-  (`components/setup-steps.tsx`). The desktop wizard already has both pages (Sync, Signals), but it doesn't
-  yet warn that skipping the data repo keeps everything on this computer only, with no sharing with the phone.
+- 2026-10-18 · **Keyword suggestions in the phone's Settings keyword box**: setup has them on both apps, and so does
+  the desktop's Model tab box; the phone's Settings box doesn't yet (`lib/word-suggest.ts` is ready to use there).
 - 2026-10-18 · **Connecting the phone without a GitHub username**: the desktop refuses to make the pairing code
   (`gui/app.py` `phone_pairing`) and the phone refuses a code without one (`lib/pairing.ts`). Both sides must
   change together.
 
 ## Checked, nothing to do
+
+- 2026-10-18 · Done on both now: "Continue as guest" (desktop setup + website), keyword suggestions (desktop setup and the panel's
+  Model tab box; phone setup; same words, `test_phone_words_match_desktop.py`), and the data-repo warning on the desktop's
+  Sync page.
 
 - 2026-10-18 · HTML injection fix in the Qt panel (`qt_panel.py`, `growth_ui.py`): the phone renders text with
   React Native `<Text>`, which never interprets HTML, so it has no equivalent bug.

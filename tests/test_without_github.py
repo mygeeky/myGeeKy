@@ -44,7 +44,15 @@ def test_setup_without_github_skips_the_github_pages(qapp, monkeypatch):
     profile, token = w.page(w.pageIds()[2]), w.page(w.pageIds()[3])
     w.state = {"github_username": "", "orcid_signin": True, "token_source": "none"}
     profile.initializePage()
-    assert not profile.orcid_btn.isHidden() and profile.isComplete()          # the username isn't required
+    assert not profile.orcid_btn.isHidden() and not profile.isComplete()      # first choose a way in
+    profile.guest_btn.click()                                                 # no account at all
+    assert profile.isComplete() and profile.nextId() == w.finish_id          # straight to Finish
+    assert "Give a few keywords" in profile.job()(None)["error"]              # a guest needs their field
+    profile.topics.setText("gwas, single cell")
+    monkeypatch.setattr(sw, "api", lambda python, action, payload=None, timeout=600: {"ok": True, "got": payload})
+    assert profile.job()(None)["got"]["topics"] == "gwas, single cell"
+    profile.github_btn.click()                                                # GitHub: its sign-in page next
+    assert profile.nextId() == token.nextId() or profile.nextId() == w.pageIds()[3]
     token.initializePage()
     assert token.job() is None and "skip" in token.status.text()
     assert token.nextId() == w.finish_id                                      # past Sync and Signals
@@ -56,6 +64,7 @@ def test_setup_without_github_skips_the_github_pages(qapp, monkeypatch):
                         {"ok": True, "orcid": "0000-0002-1825-0097", "name": "Josiah Carberry"})
     profile._orcid_done(sw.api(None, "orcid_login"))
     assert profile.orcid.text() == "0000-0002-1825-0097" and "Josiah Carberry" in profile.orcid_note.text()
+    assert profile.mode == "orcid" and profile.nextId() == w.finish_id      # ORCID: field, then Finish
 
 
 def test_the_field_half_of_people_draws_without_an_account(qapp, monkeypatch, no_save):

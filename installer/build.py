@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WORK = ROOT / "build" / "installer"
 ASSETS = ROOT / "src" / "mygeeky" / "gui" / "assets"
+DATA = ROOT / "src" / "mygeeky" / "data"
 
 
 def main() -> int:
@@ -40,6 +41,9 @@ def main() -> int:
         "--paths", str(ROOT / "src"),
         "--add-data", f"{payload}{sep}payload",
         "--add-data", f"{ASSETS / 'icon_128.png'}{sep}assets",
+        # the word suggestions on "What's your field?" (keywords.suggest) read these two lists
+        "--add-data", f"{DATA / 'keywords.json'}{sep}mygeeky/data",
+        "--add-data", f"{DATA / 'skills.json'}{sep}mygeeky/data",
         "--add-data", f"{ASSETS / 'icon_64.png'}{sep}assets",
         # the wizard needs only these three Qt modules; leave the rest of PySide6 out
         "--exclude-module", "PySide6.QtNetwork", "--exclude-module", "PySide6.QtQml",

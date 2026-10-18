@@ -43,7 +43,8 @@ export function suggest(text: string, max = 6): string[] {
     if (l.startsWith(q) || l.split(/[\s-]/).some((part) => part.startsWith(q))) starts.push(w);
     else if (q.length >= 3 && l.includes(q)) within.push(w);
   }
-  const byLength = (a: string, b: string) => a.length - b.length || a.localeCompare(b);
+  // shorter first, then plain character order (not localeCompare), exactly as keywords.suggest on the desktop
+  const byLength = (a: string, b: string) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
   return [...starts.sort(byLength), ...within.sort(byLength)].slice(0, max);
 }
 

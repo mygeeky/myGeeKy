@@ -58,7 +58,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `theme.ts` | `gui/app.py` (THEMES) |
 | `tokens.ts` | `tokens.py`, `token_check.py` |
 | `wins.ts` | `wins.py` |
-| `word-suggest.ts` | `keywords.py` |
+| `word-suggest.ts` | `keywords.py` (`suggest`, `pick`) + `gui/word_suggest.py` |
 | `components/field-map.tsx`, `interest-map.tsx`, `model-plots.tsx` | `gui/signals_ui.py`, `gui/qt_panel.py` |
 | `ideas.ts` (+ `components/idea-sheet.tsx`) | `ideas.py` (+ `IdeaDialog` in `gui/qt_panel.py`) |
 | `app/setup.tsx`, `components/setup-steps.tsx`, `signin.tsx` | `gui/setup_wizard.py`, `setup_api.py` |

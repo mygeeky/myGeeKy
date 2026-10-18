@@ -18,7 +18,6 @@ from typing import Any, Callable
 from PySide6.QtCore import (
     QByteArray,
     QRect,
-    QStringListModel,
     QUrl,
     QEasingCurve,
     QEvent,
@@ -56,7 +55,6 @@ from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
-    QCompleter,
     QProgressBar,
     QDialog,
     QMessageBox,
@@ -6676,10 +6674,8 @@ class MyGeekyPanel(QWidget):
         self.kw_input = QLineEdit()
         self.kw_input.setPlaceholderText("Add a keyword: AI, single cell, GWAS…")
         self.kw_input.returnPressed.connect(self._on_add_keyword)
-        self.kw_completer = QCompleter([])
-        self.kw_completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.kw_completer.setFilterMode(Qt.MatchContains)
-        self.kw_input.setCompleter(self.kw_completer)
+        from .word_suggest import attach
+        self.kw_suggest = attach(self.kw_input, many=False)   # the same suggestions as setup and the phone
         self.kw_add = QPushButton("Add")
         self.kw_add.setCursor(Qt.PointingHandCursor)
         self.kw_add.clicked.connect(self._on_add_keyword)
@@ -8384,7 +8380,6 @@ class MyGeekyPanel(QWidget):
         theme = THEMES[self._theme_name()]
         data = logic.get_keywords(self.cfg)
         self._kw_rows = data["rows"]
-        self.kw_completer.setModel(QStringListModel(data["vocabulary"], self.kw_completer))
         if not self._kw_rows:
             chips = f"<span style='color:{theme['muted']}'>No keywords yet. Add a few: they shape every list.</span>"
         else:

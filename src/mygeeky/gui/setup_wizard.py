@@ -619,7 +619,7 @@ class WelcomePage(Page):
         row.addWidget(_label("This wizard will:\n"
                              + ("  •  install or update myGeeKy (and Python, if you don't have it)\n" if WINDOWS
                                 else "  •  check your myGeeKy install\n")
-                             + "  •  connect your GitHub account\n"
+                             + "  •  sign in with GitHub or ORCID, or just start as a guest\n"
                              + ("  •  optionally keep your data in a private GitHub repo (and install Git for it)\n"
                                 if WINDOWS else "  •  optionally keep your data in a private GitHub repo\n")
                              + "  •  optionally turn on Signals (👋 📚 🤝 👀)\n"
@@ -747,46 +747,60 @@ class InstallPage(Page):
 
 
 class ProfilePage(Page):
+    """Who you are, then your field -- as the phone's first screen (mobile/src/app/setup.tsx).
+
+    Three ways in: sign in with GitHub (the next page), sign in with ORCID, or continue as a guest with no
+    account at all. Then "What's your field?", with word suggestions. Typing a GitHub username or an ORCID iD
+    by hand, a CV, Google Scholar and languages wait under "More options". A guest or an ORCID sign-in goes
+    straight to Finish: the GitHub, data-repo and Signals pages are for GitHub accounts."""
+
+    GUEST_NOTE = ("No account needed as a guest: give a few keywords and go. Everything stays on this computer; "
+                  "Chances, Grow, News, Research, Market and Repos all work, and you can sign in any time later.")
+
     def __init__(self) -> None:
-        super().__init__("About you", "myGeeKy learns your field from any of these. One is enough: your GitHub "
-                                      "username, your ORCID, or a few topics. No GitHub account? Sign in with "
-                                      "ORCID: Chances, Grow, News, Research, Market and Repos all work "
-                                      "without GitHub.")
-        form = QFormLayout()
-        form.setSpacing(8)
-        self.username = QLineEdit()
-        self.username.setPlaceholderText("your GitHub username")
-        self.cv = QLineEdit()
-        self.cv.setPlaceholderText("optional: .pdf, .txt or .md")
-        browse = QPushButton("Browse…")
-        browse.clicked.connect(self._browse)
-        cv_row = QHBoxLayout()
-        cv_row.addWidget(self.cv, 1)
-        cv_row.addWidget(browse)
-        cv_wrap = QWidget()
-        cv_wrap.setLayout(cv_row)
-        self.orcid = QLineEdit()
-        self.orcid.setPlaceholderText("e.g. 0000-0002-1825-0097")
+        super().__init__("About you", "Choose how to start. You can add the others any time later.")
+        self.mode = ""                     # "github" | "orcid" | "guest", once chosen
+        self._orcid_name = ""
+        self.github_btn = QPushButton("\U0001f511  Sign in with GitHub")
+        self.github_btn.setObjectName("github")
+        self.github_btn.setToolTip("You sign in on GitHub's own page on the next step. myGeeKy can then only read "
+                                   "public data.")
+        self.github_btn.clicked.connect(lambda: self._choose("github"))
         self.orcid_btn = QPushButton("iD  Sign in with ORCID")
         self.orcid_btn.setObjectName("orcid")
-        self.orcid_btn.setStyleSheet("QPushButton#orcid { background:#a6ce39; color:#1d2b0a; font-weight:700; "
-                                     "border:none; border-radius:8px; padding:6px 12px; }"
-                                     "QPushButton#orcid:disabled { background:#d9e8b0; color:#6b7a4a; }")
         self.orcid_btn.setToolTip("Opens orcid.org in your browser. myGeeKy only receives your ORCID iD and name.")
         self.orcid_btn.clicked.connect(self._orcid_sign_in)
-        orcid_row = QHBoxLayout()
-        orcid_row.setContentsMargins(0, 0, 0, 0)
-        orcid_row.addWidget(self.orcid, 1)
-        orcid_row.addWidget(self.orcid_btn)
-        orcid_wrap = QWidget()
-        orcid_wrap.setLayout(orcid_row)
-        self.orcid_note = _label("", "muted")
-        self.scholar = QLineEdit()
-        self.scholar.setPlaceholderText("optional: your Google Scholar profile URL")
-        self.languages = QLineEdit()
-        self.languages.setPlaceholderText("e.g. Python, R")
+        self.guest_btn = QPushButton("\U0001f464  Continue as guest")
+        self.guest_btn.setObjectName("guest")
+        self.guest_btn.setToolTip("No account, no token: just a few keywords for your field.")
+        self.guest_btn.clicked.connect(lambda: self._choose("guest"))
+        for b in (self.github_btn, self.orcid_btn, self.guest_btn):
+            b.setMinimumHeight(38)
+            b.setCursor(Qt.PointingHandCursor)
+            self.add(b)
+        self.setStyleSheet(
+            "QPushButton#github { background:#24292f; color:#ffffff; font-weight:700; border:1px solid #3a3f47; }"
+            "QPushButton#orcid { background:#a6ce39; color:#1d2b0a; font-weight:700; }"
+            "QPushButton#orcid:disabled { background:#d9e8b0; color:#6b7a4a; }"
+            "QPushButton#guest { background:#ff6fd8; color:#3a0a2e; font-weight:700; }"
+            "QPushButton#more { background:transparent; color:#9c8aff; font-weight:700; text-align:left; padding:2px 0; }")
+        self.orcid_note = self.add(_label("", "muted"))
+        self.add(_label(self.GUEST_NOTE, "muted"))
+        self.chosen = self.add(_label("", "ok"))
+
+        # your field: shown once a way in is chosen
+        self.field_box = QWidget()
+        field = QVBoxLayout(self.field_box)
+        field.setContentsMargins(0, 6, 0, 0)
+        field.addWidget(_label("What's your field?", "stepTitle"))
+        self.field_hint = _label("", "muted")
+        field.addWidget(self.field_hint)
         self.topics = QLineEdit()
-        self.topics.setPlaceholderText("e.g. gwas, single-cell, llm")
+        self.topics.setPlaceholderText("e.g. GWAS, single cell, AI")
+        from .word_suggest import attach
+        self.topics_suggest = attach(self.topics)             # the same suggestions as the phone and the panel
+        field.addWidget(self.topics)
+        field.addWidget(_label("Separate them with commas, or pick a suggestion.", "muted"))
         # What kind of work you mostly do. It only tilts what's suggested first; your model still learns
         # from what you open, and you can change this whenever you like.
         self.work_style = QComboBox()
@@ -795,19 +809,74 @@ class ProfilePage(Page):
             self.work_style.addItem(label, value)
         self.work_style.setToolTip("Only the starting balance of what myGeeKy suggests. It learns from what you "
                                    "actually open, and you can change this any time.")
-        form.addRow("ORCID iD", orcid_wrap)
-        form.addRow("", self.orcid_note)
-        form.addRow("GitHub username", self.username)
-        form.addRow("CV", cv_wrap)
-        form.addRow("Google Scholar", self.scholar)
-        form.addRow("Languages", self.languages)
-        form.addRow("Topics", self.topics)
-        form.addRow("Your work", self.work_style)
-        box = QWidget()
-        box.setLayout(form)
-        self.add(box)
+        work = QFormLayout()
+        work.addRow("Your work", self.work_style)
+        field.addLayout(work)
+        self.more_btn = QPushButton("\u25b8  More options")
+        self.more_btn.setObjectName("more")
+        self.more_btn.setCursor(Qt.PointingHandCursor)
+        self.more_btn.clicked.connect(self._toggle_more)
+        field.addWidget(self.more_btn)
+        self.more_box = QWidget()
+        more = QFormLayout(self.more_box)
+        more.setSpacing(8)
+        self.orcid = QLineEdit()
+        self.orcid.setPlaceholderText("e.g. 0000-0002-1825-0097")
+        self.username = QLineEdit()
+        self.username.setPlaceholderText("your GitHub username")
+        self.cv = QLineEdit()
+        self.cv.setPlaceholderText("optional: .pdf, .txt or .md")
+        browse = QPushButton("Browse…")
+        browse.clicked.connect(self._browse)
+        cv_row = QHBoxLayout()
+        cv_row.setContentsMargins(0, 0, 0, 0)
+        cv_row.addWidget(self.cv, 1)
+        cv_row.addWidget(browse)
+        cv_wrap = QWidget()
+        cv_wrap.setLayout(cv_row)
+        self.scholar = QLineEdit()
+        self.scholar.setPlaceholderText("optional: your Google Scholar profile URL")
+        self.languages = QLineEdit()
+        self.languages.setPlaceholderText("e.g. Python, R")
+        more.addRow("ORCID iD", self.orcid)
+        more.addRow("GitHub username", self.username)
+        more.addRow("CV", cv_wrap)
+        more.addRow("Google Scholar", self.scholar)
+        more.addRow("Languages", self.languages)
+        self.more_box.setVisible(False)
+        field.addWidget(self.more_box)
+        self.field_box.setVisible(False)
+        self.add(self.field_box)
         self.finish_layout()
         self.registerField("username", self.username)
+
+    def _toggle_more(self) -> None:
+        shown = not self.more_box.isVisible()
+        self.more_box.setVisible(shown)
+        self.more_btn.setText(("\u25be" if shown else "\u25b8") + "  More options")
+
+    def _choose(self, mode: str) -> None:
+        self.mode = mode
+        self.field_box.setVisible(True)
+        self.chosen.setText({
+            "github": "\u2713 GitHub: you sign in on the next page.",
+            "orcid": f"\u2713 ORCID{': ' + self._orcid_name if self._orcid_name else ''}. Next, your field, then Finish.",
+            "guest": "\u2713 As a guest: no account and nothing to connect. Next, your field, then Finish.",
+        }[mode])
+        self.field_hint.setText("A few words is enough: myGeeKy uses them to pick research, news and models for you."
+                                if mode == "guest" else
+                                "Optional: myGeeKy reads your field from your sign-in. A few keywords make it sharper.")
+        self.say("")
+        self.completeChanged.emit()
+        self.topics.setFocus()
+
+    def isComplete(self) -> bool:  # noqa: N802 -- Qt's naming
+        return bool(self.mode)
+
+    def nextId(self) -> int:  # noqa: N802
+        if self.mode in ("guest", "orcid"):
+            return self.w.finish_id             # GitHub's token, the data repo and Signals are for GitHub accounts
+        return super().nextId()
 
     # ---- Sign in with ORCID
     def _orcid_sign_in(self) -> None:
@@ -826,8 +895,10 @@ class ProfilePage(Page):
             return
         self.orcid.setText(result["orcid"])
         name = result.get("name") or ""
-        self.orcid_note.setText(f"\u2713 Signed in with ORCID{' as ' + name if name else ''}. Click Next.")
-        self.orcid_btn.setText("\u2713 Signed in")
+        self.orcid_note.setText(f"\u2713 Signed in with ORCID{' as ' + name if name else ''}.")
+        self.orcid_btn.setText("\u2713 Signed in with ORCID")
+        self._orcid_name = name or result["orcid"]
+        self._choose("orcid")
 
     def _browse(self) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "Your CV", str(Path.home()), "CV (*.pdf *.txt *.md)")
@@ -847,8 +918,18 @@ class ProfilePage(Page):
             self.topics.setText(", ".join(s.get("topics") or []))
             at = self.work_style.findData(s.get("work_style", ""))
             self.work_style.setCurrentIndex(max(0, at))
+        if not self.mode:                          # coming back to setup: start where you already are
+            if s.get("github_username"):
+                self._choose("github")
+            elif s.get("orcid_id"):
+                self._choose("orcid")
+            elif s.get("topics") or s.get("keywords"):
+                self._choose("guest")
 
     def job(self):
+        if self.mode == "guest" and not keywords_split(self.topics.text()):
+            return lambda wk: {"ok": False, "error": "Give a few keywords for your field, for example GWAS, single "
+                                                     "cell, AI."}
         payload = {"github_username": self.username.text().strip(), "cv_path": self.cv.text().strip(),
                    "orcid_id": self.orcid.text().strip(), "scholar_id": self.scholar.text().strip(),
                    "languages": self.languages.text(), "topics": self.topics.text(),
@@ -860,6 +941,10 @@ class ProfilePage(Page):
         if result.get("ok"):
             self.w.refresh_state()
         return bool(result.get("ok"))
+
+
+def keywords_split(text: str) -> list[str]:
+    return [w.strip() for w in str(text or "").split(",") if w.strip()]
 
 
 class TokenPage(Page):
@@ -1002,6 +1087,11 @@ class SyncPage(Page):
         self.repo = QLineEdit()
         self.add(self.repo)
         self.note = self.add(_label("", "muted"))
+        # as on the phone (components/setup-steps.tsx): skipping it is fine, but say plainly what that means
+        self.alone = self.add(_label("Without it, everything stays on this computer only: your phone and your other "
+                                     "computers won't share anything with it, and if this computer is lost, what "
+                                     "myGeeKy learned is gone.", "muted"))
+        self.alone.setStyleSheet("color:#ffc457;")
         self.steps = self.add(_label("", "muted"))
         self.steps.setTextFormat(Qt.RichText)
         self.steps.setOpenExternalLinks(True)
@@ -1012,6 +1102,7 @@ class SyncPage(Page):
         s = self.w.state
         self.repo.setText(s.get("sync_repo") or f"{s.get('github_username', 'you')}/mygeeky-data")
         already = bool(s.get("sync_repo") and s.get("sync_initialized"))
+        self.alone.setVisible(not already)
         self.note.setTextFormat(Qt.RichText)
         self._show_steps(already)
         self.repo.textChanged.connect(lambda: self._show_steps(already))

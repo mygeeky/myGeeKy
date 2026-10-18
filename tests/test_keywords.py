@@ -156,7 +156,8 @@ def test_model_tab_shows_green_and_red_keywords(monkeypatch):
         assert "llm" in panel.kw_detail.text()
         panel._on_keyword_link("kw:1")                         # red: suggest it
         assert opened and "Keyword" in opened[0]
-        assert panel.kw_completer.model().rowCount() == len(DICT["terms"])
+        panel.kw_input.setText("si")                          # the shared suggestions (keywords.suggest)
+        assert panel.kw_suggest.words() == kw.suggest("si")
     finally:
         panel.ticker.stop()
         for t in (panel._activity_timer, panel._signals_timer, panel._update_timer, panel._news_timer,

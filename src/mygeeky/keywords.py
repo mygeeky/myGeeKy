@@ -304,3 +304,65 @@ def save(dictionary: dict[str, Any], path: Path = BUNDLED) -> Path:
                               encoding="utf-8")
     load(force=True)
     return path
+
+
+# --------------------------------------------------------------------------- suggestions while typing
+# The same as the phone's lib/word-suggest.ts (tests/test_phone_words_match_desktop.py runs both): the keyword
+# dictionary's words and every skill name; words starting with what you type first, then words containing it,
+# shorter first; with nothing typed, the closest words to the ones already picked.
+_suggest_words: list[str] | None = None
+
+
+def _norm_word(w: str) -> str:
+    return " ".join(re.split(r"[\s_-]+", str(w).lower())).strip()   # "single cell rna seq" = "Single-cell RNA-seq"
+
+
+def _words_and_related() -> tuple[list[str], dict[str, list[str]]]:
+    global _suggest_words
+    phone = phone_words(load())
+    if _suggest_words is None:
+        from . import skills
+        from .files import read_json
+        names = [s.get("name") for s in (read_json(skills.BUNDLED, {}) or {}).get("skills") or [] if isinstance(s, dict)]
+        seen: dict[str, str] = {}
+        for w in [*phone["words"], *names]:
+            if isinstance(w, str) and w.strip() and _norm_word(w) not in seen:
+                seen[_norm_word(w)] = w
+        _suggest_words = list(seen.values())
+    return _suggest_words, phone["related"]
+
+
+def split_typing(text: str) -> tuple[list[str], str]:
+    """The keywords typed so far, and the one being typed (after the last comma)."""
+    parts = str(text or "").split(",")
+    typing = parts.pop().strip()
+    return [p.strip() for p in parts if p.strip()], typing
+
+
+def suggest(text: str, limit: int = 6) -> list[str]:
+    done, typing = split_typing(text)
+    taken = {_norm_word(d) for d in done}
+    words, related = _words_and_related()
+    q = typing.lower()
+    if not q:
+        near = [w for d in done for w in related.get(_norm_word(d), [])]
+        return [w for w in dict.fromkeys(near) if _norm_word(w) not in taken][:limit]
+    if len(q) < 2:
+        return []
+    starts, within = [], []
+    for w in words:
+        low = w.lower()
+        if _norm_word(w) in taken or _norm_word(w) == _norm_word(q):
+            continue
+        if low.startswith(q) or any(part.startswith(q) for part in re.split(r"[\s-]", low)):
+            starts.append(w)
+        elif len(q) >= 3 and q in low:
+            within.append(w)
+    order = lambda w: (len(w), w)  # noqa: E731 -- shorter first, then plain character order (as the phone)
+    return (sorted(starts, key=order) + sorted(within, key=order))[:limit]
+
+
+def pick(text: str, word: str) -> str:
+    """The text with the word being typed replaced by `word`, ready for the next one."""
+    done, _ = split_typing(text)
+    return ", ".join([*done, word]) + ", "
