@@ -130,6 +130,8 @@ def install_menu_entry(autostart: bool | None = None) -> list[str]:
 def remove_menu_entry() -> list[str]:
     if is_mac():
         return remove_mac_app()
+    if not sys.platform.startswith("linux"):
+        return []
     removed = []
     for p in [entry_path(), autostart_path()] + [_icon_dir(s) / f"{APP_ID}.png" for s in ICON_SIZES]:
         if p.exists():

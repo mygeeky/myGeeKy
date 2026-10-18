@@ -29,9 +29,11 @@ def test_menu_entry_with_icon_and_optional_autostart(linux_home):
     assert len(desktop.remove_menu_entry()) == 4 and not desktop.entry_path().exists()
 
 
-def test_nothing_to_do_on_windows(monkeypatch):
+def test_nothing_to_do_on_windows(linux_home, monkeypatch):
+    desktop.install_menu_entry(autostart=True)                # a real entry, so a stray remove would show
     monkeypatch.setattr(sys, "platform", "win32")             # the installer makes the Start-menu entry
     assert desktop.install_menu_entry() == [] and desktop.remove_menu_entry() == []
+    assert desktop.entry_path().exists() and desktop.autostart_path().exists()
 
 
 def test_launch_detached_frees_the_terminal(monkeypatch, tmp_path):
