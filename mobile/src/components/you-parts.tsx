@@ -6,6 +6,8 @@ import { Alert, Image, Linking, Platform, Pressable, StyleSheet, Text, TextInput
 import { InterestMap, MAP_EXPLORE, MAP_FIELD, MAP_LEARNED } from './interest-map';
 import { AucGauge, aucVerdict, ExploreDonut, StatTiles, TrendChart, WeightBars } from './model-plots';
 import { SignInButton } from './signin';
+import { TokenGuide } from './token-guide';
+
 import { Card, Empty, open, s, Section, timeAgo } from './ui';
 import { useApp, withRepoProfile } from '../lib/app-state';
 import { Achievement, earned, Earned, githubAchievements, TIER_COLORS, TIERS } from '../lib/badges';
@@ -150,6 +152,7 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
         <Pressable onPress={() => Linking.openURL(MODEL_TOKEN_PAGE)} style={[st.add, st.tokenButton]}>
           <Text style={st.addText}>Make the token on GitHub ↗</Text>
         </Pressable>
+        <TokenGuide which="data" />
         <TextInput style={[st.input, st.field]} value={repo} onChangeText={setRepo} autoCapitalize="none" autoCorrect={false}
                    placeholder="you/mygeeky-data" placeholderTextColor={C.muted} />
         <TextInput style={[st.input, st.field]} value={token} onChangeText={setToken} autoCapitalize="none" autoCorrect={false}

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../lib/app-state';
 import { DataStep, SignalsStep } from '../components/setup-steps';
 import { OrcidSignInButton, SignInButton } from '../components/signin';
+import { TokenGuide } from '../components/token-guide';
 import { orcidChecksumOk } from '../lib/orcid-login';
 import { pick, suggest } from '../lib/word-suggest';
 import { DEFAULT_SETTINGS } from '../lib/storage';
@@ -124,6 +125,7 @@ export default function Setup() {
                 <TextInput style={st.input} value={token} onChangeText={setToken} autoCapitalize="none" secureTextEntry
                            placeholder="github_pat_…" placeholderTextColor={C.muted} />
                 <Text style={st.hint}>{"Only needed later, for People. It stays in this phone's secure storage."}</Text>
+                <TokenGuide which="read" />
               </>}
             </> : null}
           </>}

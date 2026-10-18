@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { connectModel, MODEL_TOKEN_PAGE } from '../lib/model-repo';
+import { TokenGuide } from './token-guide';
+
 import { C } from '../lib/theme';
 
 export function DataStep({ login, onNext }: { login: string; onNext: () => void }) {
@@ -63,6 +65,7 @@ export function DataStep({ login, onNext }: { login: string; onNext: () => void 
         <Pressable onPress={() => Linking.openURL(MODEL_TOKEN_PAGE)} style={st.secondary}>
           <Text style={st.secondaryText}>Make the token on GitHub ↗</Text>
         </Pressable>
+        <TokenGuide which="data" />
         <TextInput style={st.input} value={repo} onChangeText={setRepo} autoCapitalize="none" autoCorrect={false}
                    placeholder="you/mygeeky-data" placeholderTextColor={C.muted} />
         <TextInput style={st.input} value={token} onChangeText={setToken} autoCapitalize="none" autoCorrect={false}

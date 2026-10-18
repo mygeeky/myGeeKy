@@ -42,6 +42,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QRadioButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
     QWizard,
@@ -532,7 +533,18 @@ class Page(QWizardPage):
 
     def __init__(self, title: str, subtitle: str = "") -> None:
         super().__init__()
-        self.layout_ = QVBoxLayout(self)
+        # the page scrolls when its content is taller than the window (Signals' two steps, a picture guide):
+        # without it Qt squeezes the rows together and cuts sentences off mid-line
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        inner = QWidget()
+        scroll.setWidget(inner)
+        outer.addWidget(scroll)
+        self.layout_ = QVBoxLayout(inner)
         self.layout_.setSpacing(10)
         self.layout_.addWidget(_label(title, "title"))
         if subtitle:
@@ -988,6 +1000,8 @@ class TokenPage(Page):
         steps = _label(READ_TOKEN_STEPS, "muted")
         steps.setTextFormat(Qt.RichText)
         self.add(steps)
+        from .token_guide import TokenGuide
+        self.guide = self.add(TokenGuide("read", folded=True))   # the same steps in pictures (as on the phone)
         self.token = QLineEdit()
         self.token.setEchoMode(QLineEdit.Password)
         self.token.setPlaceholderText("github_pat_…   (stored only in your " +
@@ -1253,6 +1267,9 @@ class SignalsPage(Page):
         row2.addWidget(self.open_token)
         row2.addStretch(1)
         lay2.addLayout(row2)
+        from .token_guide import TokenGuide
+        self.guide = TokenGuide("signals", folded=True)    # the same steps in pictures (as on the phone)
+        lay2.addWidget(self.guide)
         self.token = QLineEdit()
         self.token.setEchoMode(QLineEdit.Password)
         self.token.setPlaceholderText("Token 2 (github_pat_…), then click Next")

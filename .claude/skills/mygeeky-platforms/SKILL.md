@@ -56,6 +56,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `skills.ts` | `skills.py` |
 | `taste.ts` | `taste.py` |
 | `theme.ts` | `gui/app.py` (THEMES) |
+| `components/token-guide.tsx` | `gui/token_guide.py` |
 | `tab-order.ts` (used by `app/home.tsx`, `components/orbit.tsx`) | `gui/qt_panel.py` (`tab_order`, `NEEDS_GITHUB_TABS`) |
 | `tokens.ts` | `tokens.py`, `token_check.py` |
 | `wins.ts` | `wins.py` |
@@ -79,6 +80,7 @@ The desktop file is the source; the phone copy must be identical or generated fr
 | `src/mygeeky/data/protocol_model.json` | `mobile/src/data/protocol_model.json` | tests (`test_protocols.py`) |
 | `src/mygeeky/data/skills.json` | `mobile/src/data/skills.json` | tests (`test_growth.py`) |
 | `src/mygeeky/data/keywords.json` | `mobile/src/data/field-words.json` (generated) | `keywords.save()` writes it; `test_phone_words_match_desktop.py` |
+| `src/mygeeky/data/token_guides.json` | `mobile/src/data/token-guides.json` (identical) | `tools/token_guides.py` writes both; `test_token_guides.py` |
 
 After editing a desktop data file, update the phone copy in the same change (`cmp` them).
 

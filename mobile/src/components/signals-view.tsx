@@ -15,6 +15,8 @@ import { C } from '../lib/theme';
 import { type Dot, FieldMap } from './field-map';
 import { type CallInput, InviteSheet, SendSheet } from './signals-sheets';
 import { Card, Empty, open, Section } from './ui';
+import { TokenGuide } from './token-guide';
+
 
 const TOKEN_PAGE = 'https://github.com/settings/personal-access-tokens/new';
 const RADAR_KEY = 'mygeeky.signals.radar';
@@ -374,6 +376,7 @@ function SetupCard({ me, onDone }: { me: string; onDone: () => void }) {
       <Pressable onPress={() => Linking.openURL(TOKEN_PAGE)} style={st.button}>
         <Text style={st.buttonText}>Make a Signals token on GitHub ↗</Text>
       </Pressable>
+      <TokenGuide which="signals" />
       <TextInput style={st.input} value={value} onChangeText={setValue} autoCapitalize="none" autoCorrect={false}
                  secureTextEntry placeholder="github_pat_…" placeholderTextColor={C.muted} />
       <Pressable onPress={go} disabled={busy || !value.trim()} style={[st.button, (busy || !value.trim()) && { opacity: 0.5 }]}>

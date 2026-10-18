@@ -44,6 +44,7 @@ def main() -> int:
         # the word suggestions on "What's your field?" (keywords.suggest) read these two lists
         "--add-data", f"{DATA / 'keywords.json'}{sep}mygeeky/data",
         "--add-data", f"{DATA / 'skills.json'}{sep}mygeeky/data",
+        "--add-data", f"{DATA / 'token_guides.json'}{sep}mygeeky/data",       # the token picture guides
         "--add-data", f"{ASSETS / 'icon_64.png'}{sep}assets",
         # the wizard needs only these three Qt modules; leave the rest of PySide6 out
         "--exclude-module", "PySide6.QtNetwork", "--exclude-module", "PySide6.QtQml",
