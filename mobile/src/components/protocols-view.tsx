@@ -20,6 +20,12 @@ import { Empty, open } from './ui';
 const STATUS = { done: ['✅', 'Done'], known: ['🎓', 'You know this'], current: ['▶', 'Start here'], todo: ['○', ''] } as const;
 const SOURCE = { reviewed: '✓ Reviewed', auto: 'Auto-built, not reviewed', mine: 'Yours' } as const;
 
+// what the tab says once a protocol is built or started -- the desktop says the same (qt_panel.protocol_built_text)
+export function builtText(title: string, stages: number, reviewed: boolean): string {
+  const what = reviewed ? `Protocol started: ${title} (reviewed)` : `Your protocol is built: ${title}`;
+  return `✓ ${what} · ${stages} stage${stages !== 1 ? 's' : ''}. It's open below.`;
+}
+
 type Ask = { title: string; label: string; value?: string; second?: string; onDone: (a: string, b: string) => void };
 
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
@@ -391,6 +397,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
   const [ask, setAsk] = useState<Ask | null>(null);
   const [check, setCheck] = useState<{ pid: string; stage: Stage } | null>(null);
   const [note, setNote] = useState('');
+  const [built, setBuilt] = useState('');                   // "✓ Your protocol is built…", until the next action
   const [openId, setOpenId] = useState('');                 // one protocol open; the others fold to one line
   const [chosen, setChosen] = useState<Record<string, string>>({});
   const [quizInfo, setQuizInfo] = useState<Record<string, { counts: Record<string, number>; best: Q.Best | null;
@@ -417,9 +424,11 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
     if (!lists || !sk.trim()) return;
     setBuilding(true);
     setNote('');
+    setBuilt('');
     try {
       const p = await P.build(sk.trim(), gl.trim(), lists, token, docs);
       setOpenId(await P.start(lists, p));
+      setBuilt(builtText(p.title, p.stages.length, p.reviewed));
       setSkill('');
       setGoal('');
       await reload();
@@ -440,7 +449,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
   if (!lists) return <Empty>Loading…</Empty>;
   const started = new Set(views.flatMap((v) => [v.id, v.based_on]));
   const offer = lists.protocols.filter((p) => !started.has(p.id));
-  const act = async (fn: () => Promise<unknown>) => { await fn(); await reload(); };
+  const act = async (fn: () => Promise<unknown>) => { setBuilt(''); await fn(); await reload(); };
   const shown = views.some((v) => v.id === openId) || openId === '-' ? openId
     : (views.find((v) => !v.finished) ?? views[0])?.id ?? '';
 
@@ -485,6 +494,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
       </View>
       {building ? <Text style={s.muted}>Searching GitHub and papers, and sorting what comes back into stages…</Text> : null}
       {note ? <Text style={s.warn}>{note}</Text> : null}
+      {built ? <Text style={st.built}>{built}</Text> : null}
 
       {offer.length ? <Text style={s.section}>✓ REVIEWED PROTOCOLS</Text> : null}
       <View style={[s.row, { marginTop: 0 }]}>
@@ -632,6 +642,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, startWith, o
 }
 
 const st = StyleSheet.create({
+  built: { color: C.green, fontSize: 13, fontWeight: '700', marginTop: 8, lineHeight: 18 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
   sheet: { backgroundColor: C.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, maxHeight: '85%' },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },

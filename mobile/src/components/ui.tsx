@@ -6,6 +6,7 @@ import { logClick } from '../lib/badges';
 import { C, BADGES, tint } from '../lib/theme';
 
 /** A small switch between the parts of a tab (e.g. Headlines | Papers). */
+// A long name ("Protocols", "Conferences") shrinks to fit its segment instead of being cut to "Protoc…".
 export function Segments<T extends string>({ value, options, onChange }: {
   value: T; options: [T, string][]; onChange: (v: T) => void;
 }) {
@@ -13,7 +14,8 @@ export function Segments<T extends string>({ value, options, onChange }: {
     <View style={s.segments}>
       {options.map(([v, label]) => (
         <Pressable key={v} onPress={() => onChange(v)} style={[s.segment, v === value && s.segmentOn]}>
-          <Text style={[s.segmentText, v === value && s.segmentTextOn]} numberOfLines={1}>{label}</Text>
+          <Text style={[s.segmentText, v === value && s.segmentTextOn]} numberOfLines={1}
+                adjustsFontSizeToFit minimumFontScale={0.7}>{label}</Text>
         </Pressable>
       ))}
     </View>
