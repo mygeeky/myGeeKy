@@ -598,6 +598,14 @@ Points count over all your time in myGeeKy, so a rank never goes down. Stars and
 your card but earn no points: the rank is for your own effort, and works the same with or without a GitHub
 account. When you move up, GeekOc tells you once.
 
+**Your month in pictures**: eight drawings, each with GeekOc and a line from him. Your GitHub work as a glowing
+calendar of contributions; the languages you used as GeekOc's arms; your wins (stars, forks, citations) along a
+ribbon; your protocols as constellations, a lit star for each step you know; the topics you explored on a compass
+(new territory in pink); when in the day you come by, on a sky clock, with your badges as medals beneath it; what
+you gave and got (thank-yous, invites, follows); and how your interests moved since last month. The GitHub ones
+read your own GitHub events (at most once an hour, kept on your device for 400 days); everything else is what
+myGeeKy already keeps. Each says so when there's nothing yet.
+
 **Your card** is a 4:5 picture (the shape LinkedIn and X show largest): the month as a calendar with a dot for
 each kind of thing you did that day, your three highlights (a first gets a **FIRST!** ribbon), every count, your
 rank's shield and GeekOc. Untick anything you'd rather leave off, then **Save image** or **Copy image** on the

@@ -11,6 +11,11 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
   (reading, learning, building, sharing ideas, meeting people), counted over all your time so it never goes down.
   Save or copy the card on the computer; share it from the phone's share sheet. `month.py` and `lib/month.ts`
   count and draw the same (`tests/test_phone_month_match_desktop.py`); the rules are in `data/ranks.json`.
+- **Your month in pictures** (`monthviz.py`, `lib/month-viz.ts`): eight drawings with GeekOc -- your GitHub
+  contributions as a glowing calendar, your languages as his arms, your wins on a ribbon, your protocols as
+  constellations, a compass of the topics you explored, a sky clock of your hours with your badges as medals,
+  what you gave and got, and how your interests moved. Your own GitHub events are read at most once an hour and
+  kept for 400 days (`refresh_my_github`, `lib/my-github.ts`); the same parity test compares every drawing.
 - **The usage log notes more kinds of things you do** (by kind only, never what): a protocol step done, a
   protocol built or published, a quiz, a skill, a chance you 👍. The phone now counts ideas you send too, and
   keeps up to 5000 lines while no data repo is connected.

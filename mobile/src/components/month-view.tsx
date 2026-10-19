@@ -1,5 +1,6 @@
-// My month: your rank on its ladder, and this month's card to share -- the desktop's gui/month_ui.py. The counting
-// and both drawings come from lib/month.ts (the same as the desktop's month.py). The card is shared as a
+// My month: your rank on its ladder, your month in eight drawings with GeekOc, and this month's card to share -- the
+// desktop's gui/month_ui.py. The counting and every drawing come from lib/month.ts and lib/month-viz.ts (the same as
+// the desktop's month.py and monthviz.py). The card is shared as a
 // 1080 x 1350 picture through the phone's own share sheet: you choose where it goes; nothing is posted for you.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sharing from 'expo-sharing';
@@ -8,8 +9,15 @@ import { type LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react
 import { SvgXml } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import geekocData from '../data/geekoc.json';
-import { cachedBrain, modelLink, queuedUsage } from '../lib/model-repo';
+import { useApp } from '../lib/app-state';
+import { earned, TIERS } from '../lib/badges';
+import { loadLists } from '../lib/curated';
+import { cachedBrain, localEvents, modelLink, queuedUsage } from '../lib/model-repo';
 import * as M from '../lib/month';
+import * as MV from '../lib/month-viz';
+import { myGitHub, refreshMyGitHub } from '../lib/my-github';
+import * as P from '../lib/protocols';
+import { loadReceived, loadSent } from '../lib/signals';
 import { C } from '../lib/theme';
 import { loadWins } from '../lib/wins';
 import { useToast } from './toast';
@@ -18,14 +26,36 @@ const POSES = geekocData.poses as Record<string, string>;
 const CARD_MAX = 380;
 const RANK_SEEN_KEY = 'mygeeky.rank.seen';
 
-type Records = { usage: unknown[]; events: unknown[]; wins: unknown[] };
+type Records = { usage: unknown[]; events: unknown[]; wins: unknown[]; terms: unknown[]; myRepos: Record<string, string> };
 
-/** What this phone knows you did: your computers' usage and follows once your data repo is connected,
- *  plus this phone's own lines not yet sent; and your wins. */
+/** What this phone knows you did: your computers' usage, follows and interest terms once your data repo is
+ *  connected, plus this phone's own lines not yet sent; and your wins. */
 async function records(): Promise<Records> {
   const brain = (await modelLink()) ? (await cachedBrain())?.data : null;
-  const [queued, wins] = await Promise.all([queuedUsage(), loadWins().catch(() => null)]);
-  return { usage: [...(brain?.usage ?? []), ...queued], events: brain?.eventKinds ?? [], wins: wins?.wins ?? [] };
+  const [queued, wins, local] = await Promise.all([queuedUsage(), loadWins().catch(() => null), localEvents().catch(() => [])]);
+  return {
+    usage: [...(brain?.usage ?? []), ...queued], events: brain?.eventKinds ?? [], wins: wins?.wins ?? [],
+    terms: [...(brain?.recent ?? []), ...local],
+    myRepos: Object.fromEntries((wins?.myRepos ?? []).map((r) => [r.name, r.language])),
+  };
+}
+
+/** Everything the eight drawings need besides the records (protocols, badges, signals, GitHub events). */
+async function extras(keywords: number) {
+  const [lists, sent, received, gh] = await Promise.all([
+    loadLists().catch(() => null), loadSent().catch(() => []), loadReceived(), myGitHub()]);
+  const state: P.State = lists ? await P.load(lists).catch(() => ({})) : {};
+  const views = Object.values(state).map((e) => P.view(e, {}));
+  const protocols = [...views.filter((v) => v.doneCount < v.total), ...views.filter((v) => v.doneCount >= v.total)].map((v) => ({
+    title: v.title, steps: v.stages.map((st) => [st.title, st.status === 'done' || st.status === 'known'] as [string, boolean]) }));
+  const level = (t: string) => TIERS.indexOf(t as typeof TIERS[number]) + 1;
+  const badges = (await earned(keywords).catch(() => [])).filter((b) => b.tier)
+    .sort((a, b) => level(b.tier) - level(a.tier) || (a.name < b.name ? -1 : 1)).map((b) => [b.emoji, b.name, b.tier]);
+  return { protocols, badges, sent, received, github: gh.events ?? [], langs: gh.langs ?? {} };
+}
+
+function heightOf(svg: string): number {
+  return Number(/viewBox="0 0 \d+ (\d+)"/.exec(svg)?.[1] ?? 200);
 }
 
 /** Your rank's name if it went up since you were last told ("" if not); the first time only remembers. */
@@ -41,6 +71,9 @@ export async function rankNews(): Promise<string> {
 
 export function MonthView() {
   const toast = useToast();
+  const { settings, token } = useApp();
+  const username = settings?.username ?? '', keywords = settings?.keywords.length ?? 0;
+  const [more, setMore] = useState<Awaited<ReturnType<typeof extras>> | null>(null);
   const today = new Date();
   const thisMonth: [number, number] = [today.getFullYear(), today.getMonth() + 1];
   const [shown, setShown] = useState<[number, number]>(thisMonth);
@@ -50,7 +83,17 @@ export function MonthView() {
   const [sharing, setSharing] = useState(false);
   const shot = useRef<View>(null);
 
-  useEffect(() => { records().then(setData).catch(() => setData({ usage: [], events: [], wins: [] })); }, []);
+  useEffect(() => { records().then(setData).catch(() => setData({ usage: [], events: [], wins: [], terms: [], myRepos: {} })); }, []);
+  useEffect(() => {
+    extras(keywords).then(setMore).catch(() => undefined);
+    refreshMyGitHub(username, token).then((read) => (read ? extras(keywords).then(setMore) : undefined)).catch(() => undefined);
+  }, [username, keywords, token]);
+  const stats = useMemo(() => (data && more ? MV.stats({
+    has_github: !!username, github: more.github, repo_langs: { ...more.langs, ...data.myRepos }, wins: data.wins,
+    events: [...data.terms, ...data.events.filter((e) => (e as { kind?: string }).kind === 'follow' && !(data.terms as { at?: string; kind?: string }[])
+      .some((t) => t.kind === 'follow' && t.at === (e as { at?: string }).at))],
+    usage: data.usage, protocols: more.protocols, badges: more.badges, sent: more.sent, received: more.received,
+  }, shown[0], shown[1], -new Date().getTimezoneOffset()) : null), [data, more, shown, username]);
   const s = useMemo(() => (data ? M.summary(data.usage, data.events, data.wins, shown[0], shown[1]) : null), [data, shown]);
   const first = useMemo(() => (data ? M.firstMonth(data.usage, data.events) ?? thisMonth : thisMonth),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,6 +167,26 @@ export function MonthView() {
       <Pressable onPress={share} disabled={sharing} style={({ pressed }) => [st.share, (pressed || sharing) && { opacity: 0.8 }]}>
         <Text style={st.shareText}>{sharing ? 'Making the picture…' : '📤  Share my month'}</Text>
       </Pressable>
+      <Text style={st.head}>YOUR MONTH IN PICTURES</Text>
+      {stats && width > 0 ? MV.DIVES.map(([key, title, pose, draw]) => {
+        const svg = draw(stats, POSES);
+        const w = Math.min(width, 440);
+        return (
+          <View key={key} style={{ marginBottom: 16 }}>
+            <View style={st.dive}>
+              <SvgXml xml={`<svg viewBox="0 0 620 620">${POSES[pose] ?? ''}</svg>`} width={48} height={48} />
+              <View style={{ flex: 1 }}>
+                <Text style={st.diveTitle}>{title}</Text>
+                <Text style={st.diveSay}>{MV.say(stats, key)}</Text>
+              </View>
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <SvgXml xml={svg} width={w} height={(w * heightOf(svg)) / 320} />
+            </View>
+          </View>
+        );
+      }) : <Text style={st.muted}>Drawing your month…</Text>}
+
       <Text style={st.note}>
         Points come from what you do yourself: reading, learning, building, sharing ideas and meeting people. They count
         over all your time in myGeeKy, so a rank never goes down. Worked out on this phone; nothing is sent anywhere,
@@ -152,4 +215,7 @@ const st = StyleSheet.create({
   share: { backgroundColor: C.violet, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
   shareText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   note: { color: C.muted, fontSize: 12, lineHeight: 17, marginTop: 10 },
+  dive: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  diveTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
+  diveSay: { color: C.muted, fontSize: 12.5, marginTop: 2 },
 });

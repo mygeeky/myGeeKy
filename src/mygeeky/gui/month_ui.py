@@ -1,4 +1,5 @@
-"""The My month tab: your rank on its ladder, and this month's card to save or copy (month.py does the counting).
+"""The My month tab: your rank on its ladder, your month in eight drawings with GeekOc (monthviz.py), and this
+month's card to save or copy (month.py does the counting).
 
 The card and the ladder are SVGs drawn by month.py, the same drawings the phone makes (lib/month.ts), shown
 here with QSvgRenderer and saved as a 1080 x 1350 PNG -- the 4:5 shape LinkedIn and X show largest. Nothing is
@@ -20,10 +21,12 @@ from PySide6.QtWidgets import (
 )
 
 from .. import month as months
+from .. import monthviz
 from . import app as logic
 
 CARD_PX = (1080, 1350)
 CARD_MAX = 380                   # the card's width on the panel
+DRAWING_MAX = 420                # each drawing's
 
 
 class SvgPicture(QWidget):
@@ -94,9 +97,10 @@ def points_help() -> str:
 class MonthPage(QWidget):
     """Your rank and this month's card. `theme()` gives the panel's colours, `toast(text)` says something briefly."""
 
-    def __init__(self, cfg, theme: Callable[[], dict[str, Any]], toast: Callable[[str], None]) -> None:
+    def __init__(self, cfg, theme: Callable[[], dict[str, Any]], toast: Callable[[str], None],
+                 run_async: Callable[[Callable[[], Any], Callable[[Any], None]], None] | None = None) -> None:
         super().__init__()
-        self.cfg, self.theme, self.toast = cfg, theme, toast
+        self.cfg, self.theme, self.toast, self.run_async = cfg, theme, toast, run_async
         today = date.today()
         self.shown = (today.year, today.month)
         self.hidden: set[str] = set()
@@ -142,6 +146,25 @@ class MonthPage(QWidget):
         self.save_btn.clicked.connect(self.save)
         self.copy_btn.clicked.connect(self.copy)
         lay.addLayout(row)
+        self.dives_head = QLabel("YOUR MONTH IN PICTURES")
+        lay.addWidget(self.dives_head)
+        self.dives: list[tuple[QLabel, SvgPicture, QLabel, SvgPicture]] = []
+        for _key, title, _pose, _draw in monthviz.DIVES:
+            head = QHBoxLayout()
+            geek = SvgPicture(54)
+            geek.setFixedSize(54, 54)
+            words = QVBoxLayout()
+            name, said = QLabel(title), QLabel("")
+            said.setTextFormat(Qt.PlainText)
+            said.setWordWrap(True)
+            words.addWidget(name)
+            words.addWidget(said)
+            head.addWidget(geek)
+            head.addLayout(words, 1)
+            lay.addLayout(head)
+            drawing = SvgPicture(DRAWING_MAX)
+            lay.addWidget(drawing)
+            self.dives.append((name, said, geek, drawing))
         self.note = QLabel("Points come from what you do yourself: reading, learning, building, sharing ideas and "
                            "meeting people. They count over all your time in myGeeKy, so a rank never goes down. "
                            "Worked out on this computer; nothing is sent anywhere, and nothing is posted for you.")
@@ -177,6 +200,7 @@ class MonthPage(QWidget):
         self.rank.setText("🎖  " + rank_line(s))
         self.gained.setText(month_line(s))
         self.card.set_svg(self.svg())
+        self._render_dives(t)
         while self.toggles.count():
             w = self.toggles.takeAt(0).widget()
             if w:
@@ -199,6 +223,23 @@ class MonthPage(QWidget):
                             f"border-radius:8px; padding:6px 10px; font-weight:700; }} "
                             f"QPushButton:hover {{ background:{t['btn_hover']}; }} "
                             "QPushButton:disabled { color:rgba(128,128,128,120); }")
+
+    def _render_dives(self, t: dict[str, Any]) -> None:
+        stats = logic.get_month_stats(self.cfg, *self.shown)
+        poses = {p: months.geekoc(p) for p in ("wave", "head", "swim", "point", "idle", "sleep", "think", "cheer", "proud")}
+        for (key, _title, pose, draw), (name, said, geek, drawing) in zip(monthviz.DIVES, self.dives):
+            drawing.set_svg(draw(stats, poses))
+            geek.set_svg(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 620" width="620" height="620">'
+                         f'{poses.get(pose, "")}</svg>')
+            said.setText(monthviz.say(stats, key))
+            name.setStyleSheet(f"color:{t['text']}; font-size:13px; font-weight:700; background:transparent;")
+            said.setStyleSheet(f"color:{t['muted']}; font-size:11px; background:transparent;")
+        self.dives_head.setStyleSheet(f"color:{t['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
+                                      "margin-top:6px; background:transparent;")
+        if self.run_async and self.cfg.github_username and not getattr(self, "_github_asked", False):
+            self._github_asked = True             # once per panel: the newest GitHub events, then draw again
+            self.run_async(lambda: logic.refresh_my_github(self.cfg),
+                           lambda changed: self._render_dives(self.theme()) if changed is True else None)
 
     def _toggle(self, kind: str, on: bool) -> None:
         (self.hidden.discard if on else self.hidden.add)(kind)

@@ -42,6 +42,8 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `model-repo.ts` | `sync.py`, `gui/app.py` (the data repo, the model) |
 | `models.ts` | `hfmodels.py` |
 | `month.ts` (+ `components/month-view.tsx`) | `month.py` (+ `gui/month_ui.py`) |
+| `month-viz.ts` | `monthviz.py` (My month's eight drawings) |
+| `my-github.ts` | `gui/app.py` (`refresh_my_github`, `slim_github_event`) |
 | `news.ts` | `news.py` |
 | `orcid-login.ts` | `orcid_login.py` |
 | `pairing.ts` | `pairing.py` (the QR code: both sides read the same format) |

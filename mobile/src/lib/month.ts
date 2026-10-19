@@ -26,9 +26,9 @@ const DONE = ['idea', 'step', 'build', 'share', 'quiz', 'skill', 'chance'];
 const WIN_KINDS: Record<string, string> = { stars: 'star', citations: 'cite' };
 const WIN_WEIGHT: Record<string, number> = { star: 2, cite: 15 };
 const HIGHLIGHTS = 3;
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
   'November', 'December'];
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
+export const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const pad = (n: number, w: number) => String(n).padStart(w, '0');
 const dayOf = (e: unknown) => (e && typeof e === 'object' ? String((e as { at?: unknown }).at ?? '').slice(0, 10) : '');
 
@@ -118,12 +118,12 @@ export function firstMonth(usage: unknown[], events: unknown[] = []): [number, n
 }
 
 // ---- the card (an SVG, the same as the desktop's)
-const STAR = 'M0,-30 L9,-9 L32,-9 L13,5 L20,28 L0,14 L-20,28 L-13,5 L-32,-9 L-9,-9Z';
+export const STAR = 'M0,-30 L9,-9 L32,-9 L13,5 L20,28 L0,14 L-20,28 L-13,5 L-32,-9 L-9,-9Z';
 export const CARD_W = 400, CARD_H = 500;
 const FONT = 'Helvetica, Arial, sans-serif';
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 
-function text(x: number, y: number, txt: string | number, size: number, fill: string, weight = 400, anchor = 'start', extra = ''): string {
+export function text(x: number, y: number, txt: string | number, size: number, fill: string, weight = 400, anchor = 'start', extra = ''): string {
   return `<text x="${x}" y="${y}" font-family="${FONT}" font-size="${size}" font-weight="${weight}" `
     + `fill="${fill}" text-anchor="${anchor}"${extra}>${esc(String(txt))}</text>`;
 }

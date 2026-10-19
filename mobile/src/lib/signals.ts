@@ -27,6 +27,7 @@ const KEY_ITEM = 'mygeeky_signals_key';        // this phone's private key (secu
 const TOKEN_ITEM = 'mygeeky_signals_token';    // this phone's Signals token (secure store)
 const SENT_KEY = 'mygeeky.signals.sent';       // what this phone sent (for the courtesy limits)
 const HIDDEN_KEY = 'mygeeky.signals.hiddenCalls';  // "owner/id" of calls you said aren't for you
+const RECEIVED_KEY = 'mygeeky.signals.received';  // when and what kind of signals reached you (My month), never who
 const BLOCKED_KEY = 'mygeeky.signals.blocked';     // people you blocked: nothing of theirs shows on this phone
 const ME = { name: 'myGeeKy', email: 'housekeeping@mygeeky.invalid' };   // never counts as your activity
 
@@ -93,7 +94,7 @@ export async function collabAsked(): Promise<Set<string>> {
 }
 
 // ---- what this phone sent (courtesy limits)
-async function loadSent(): Promise<Sent[]> {
+export async function loadSent(): Promise<Sent[]> {
   try {
     const raw = await AsyncStorage.getItem(SENT_KEY);
     const list = raw ? (JSON.parse(raw) as Sent[]) : [];
@@ -148,6 +149,16 @@ export async function loadMyCalls(me: string, token: string | null): Promise<Cal
 }
 
 /** Everything the 📡 planet shows. The matching happens here, on the phone: nothing about you is sent. */
+/** When and what kind of signals reached you, as last seen in Signals (for My month). */
+export async function loadReceived(): Promise<{ at: string; type: string }[]> {
+  try {
+    const list = JSON.parse((await AsyncStorage.getItem(RECEIVED_KEY)) ?? '[]');
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function signalsData(me: string, weights: Weights, users: Parsed[], mine: Call[], share = 0.2): Promise<SignalsData> {
   const key = await phoneKey();
   const sent = await loadSent();
@@ -203,6 +214,7 @@ export async function signalsData(me: string, weights: Weights, users: Parsed[],
   const picks = rest.map((c, i) => ({ c, r: ((seed * 9301 + i * 49297) % 233280) / 233280 }))
     .sort((a, b) => a.r - b.r).slice(0, k).map(({ c }) => ({ ...c, explore: true }));
   inbox.sort((a, b) => b.at.localeCompare(a.at));
+  AsyncStorage.setItem(RECEIVED_KEY, JSON.stringify(inbox.map((i) => ({ at: i.at, type: i.type })))).catch(() => undefined);
   people.sort((a, b) => Number(b.signalledYou) - Number(a.signalledYou) || b.fit - a.fit);
   const myCalls: MyCall[] = mine.map((c) => ({ ...c, fullName: `${me}/${c.repo}`, levelLabel: CALL_LEVELS[c.level],
     timeLabel: CALL_TIMES[c.time], daysLeft: daysLeft(c.until),

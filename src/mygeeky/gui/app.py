@@ -508,6 +508,121 @@ def get_month(cfg: MyGeekyConfig, year: int | None = None, month: int | None = N
     return out
 
 
+GITHUB_EVENTS_HOURS = 1        # how often My month re-reads your GitHub events
+GITHUB_EVENTS_DAYS = 400       # kept this long, so earlier months still show after GitHub's own 90 days
+LANG_LOOKUPS = 10              # repos whose language is looked up per refresh
+
+
+def slim_github_event(e: dict[str, Any]) -> dict[str, Any] | None:
+    """What My month needs from one of your GitHub events (the phone slims them the same way)."""
+    if not isinstance(e, dict) or not e.get("id") or not e.get("created_at"):
+        return None
+    payload = e.get("payload") if isinstance(e.get("payload"), dict) else {}
+    n = payload.get("distinct_size") or payload.get("size") or len(payload.get("commits") or []) or 1
+    return {"id": str(e["id"]), "at": str(e["created_at"]), "type": str(e.get("type", "")),
+            "repo": str((e.get("repo") or {}).get("name", "")), "n": int(n), "action": str(payload.get("action", ""))}
+
+
+def my_github_events() -> dict[str, Any]:
+    from ..config import MY_GITHUB_EVENTS_FILE
+    from ..files import read_json
+    data = read_json(MY_GITHUB_EVENTS_FILE, {})
+    return data if isinstance(data, dict) else {}
+
+
+def refresh_my_github(cfg: MyGeekyConfig, force: bool = False) -> bool:
+    """Read your newest GitHub events (three pages at most) and keep them with the ones already kept.
+    Network: call it off the UI thread. True if anything was read."""
+    from datetime import datetime, timedelta, timezone
+    import requests
+    from ..config import MY_GITHUB_EVENTS_FILE
+    from ..files import write_json
+    if not cfg.github_username:
+        return False
+    kept = my_github_events()
+    now = datetime.now(timezone.utc)
+    try:
+        fresh = now - datetime.fromisoformat(kept["fetched_at"]) < timedelta(hours=GITHUB_EVENTS_HOURS)
+    except (KeyError, TypeError, ValueError):
+        fresh = False
+    if fresh and not force:
+        return False
+    token = auth.get_token(cfg.github_username)
+    headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    found: dict[str, dict[str, Any]] = {e["id"]: e for e in kept.get("events") or [] if isinstance(e, dict) and e.get("id")}
+    try:
+        for page in (1, 2, 3):
+            r = requests.get(f"https://api.github.com/users/{cfg.github_username}/events", headers=headers,
+                             params={"per_page": 100, "page": page}, timeout=20)
+            if r.status_code != 200:
+                break
+            batch = r.json() if isinstance(r.json(), list) else []
+            for e in (slim_github_event(x) for x in batch):
+                if e:
+                    found[e["id"]] = e
+            if len(batch) < 100:
+                break
+    except (requests.RequestException, ValueError):
+        return False
+    oldest = (now - timedelta(days=GITHUB_EVENTS_DAYS)).isoformat()
+    events = sorted((e for e in found.values() if e["at"] >= oldest[:19]), key=lambda e: e["at"])[-5000:]
+    langs = {k: v for k, v in (kept.get("langs") or {}).items() if isinstance(v, str)}
+    for repo in [r for r in dict.fromkeys(e["repo"] for e in reversed(events)) if r and r not in langs][:LANG_LOOKUPS]:
+        try:      # the language of a repo you worked in that isn't your own (your own come from wins' my_repos)
+            r = requests.get(f"https://api.github.com/repos/{repo}", headers=headers, timeout=15)
+            langs[repo] = str(r.json().get("language") or "") if r.status_code == 200 else ""
+        except (requests.RequestException, ValueError):
+            break
+    try:
+        write_json(MY_GITHUB_EVENTS_FILE, {"fetched_at": now.isoformat(), "events": events, "langs": langs})
+    except OSError:
+        return False
+    return True
+
+
+def get_month_stats(cfg: MyGeekyConfig, year: int, month: int) -> dict[str, Any]:
+    """What My month's eight drawings show (monthviz.stats), from this computer's files; your GitHub events
+    come from the last refresh_my_github."""
+    from datetime import datetime
+    from .. import achievements, interests, monthviz, protocols, wins
+    from .. import beacon as bc
+
+    def safe(fn, default):
+        try:
+            return fn()
+        except Exception:
+            return default
+
+    def received() -> list[dict[str, Any]]:
+        if not (cfg.github_username and cfg.beacon_enabled):
+            return []
+        mine = bc.load_my_beacon()
+        return [{"at": g.get("at", ""), "type": g.get("type", "")}
+                for g in bc.inbox(bc.load_cache(), cfg, mine, bc.private_key_or_none(cfg))]
+
+    offset = datetime.now().astimezone().utcoffset()
+    inputs = {
+        "has_github": bool(cfg.github_username),
+        "github": my_github_events().get("events") or [],
+        "repo_langs": {**(my_github_events().get("langs") or {}),
+                       **{r["name"]: r.get("language", "") for r in safe(wins.load_my_repos, []) if isinstance(r, dict)}},
+        "wins": safe(lambda: wins.load().get("wins") or [], []),
+        "events": safe(interests.load_events, []),
+        "usage": achievements._usage(),
+        "protocols": [{"title": v.get("title", ""), "steps": [[st.get("title", ""), st.get("status") in ("done", "known")]
+                                                           for st in v.get("stages", [])]}
+                      for v in safe(lambda: protocols.views(cfg), []) if not v.get("finished")]
+        + [{"title": v.get("title", ""), "steps": [[st.get("title", ""), True] for st in v.get("stages", [])]}
+           for v in safe(lambda: protocols.views(cfg), []) if v.get("finished")],
+        "badges": [[b["emoji"], b["name"], b["tier"]] for b in safe(lambda: achievements.earned_only(cfg), [])],
+        "sent": safe(lambda: bc.load_my_beacon().get("sent") or [], []),
+        "received": safe(received, []),
+    }
+    return monthviz.stats(inputs, year, month, int(offset.total_seconds() // 60) if offset else 0)
+
+
 def rank_news(cfg: MyGeekyConfig) -> str:
     """Your rank's name if it went up since you were last told ("" if not), remembering it's been told.
     The first time only remembers, so nobody is "promoted" just for updating myGeeKy."""

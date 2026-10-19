@@ -45,6 +45,7 @@ TRENDS_FILE = DATA_DIR / "trends.json"                 # research trends from Op
 PAPERS_CACHE_FILE = DATA_DIR / "papers_cache.json"     # repo -> its published paper (the [P] badge)
 USAGE_FILE = DATA_DIR / "usage.jsonl"                 # what kinds of things you open (badges); synced
 RANK_SEEN_FILE = DATA_DIR / "rank_seen.json"           # the last rank you were told about (My month); never synced
+MY_GITHUB_EVENTS_FILE = DATA_DIR / "my_github_events.json"   # your own GitHub events, slimmed (My month); never synced
 GH_ACHIEVEMENTS_FILE = DATA_DIR / "github_achievements.json"   # your GitHub achievements, cached
 HF_MODELS_FILE = DATA_DIR / "hf_models.json"         # Hugging Face models trending in your field
 HEADLINES_FILE = DATA_DIR / "headlines.json"          # AI, science and tech headlines, ranked for you

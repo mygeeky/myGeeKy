@@ -7573,7 +7573,7 @@ class MyGeekyPanel(QWidget):
 
     def _build_month_tab(self) -> QScrollArea:
         from .month_ui import MonthPage
-        self.month_page = MonthPage(self.cfg, lambda: THEMES[self._theme_name()], self._toast)
+        self.month_page = MonthPage(self.cfg, lambda: THEMES[self._theme_name()], self._toast, self._run_async)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)

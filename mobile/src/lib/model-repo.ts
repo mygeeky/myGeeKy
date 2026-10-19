@@ -54,7 +54,9 @@ export type Brain = {
   history: { timestamp: string; n_train: number; n_pos: number; auc: number | null }[];
   weights: { feature: string; label: string; weight: number }[];
   // what badges count (achievements.counts' inputs): usage.jsonl, your interest events' kinds, signals sent
-  usage: Usage[]; eventKinds: { at: string; kind: string }[]; sent: number; keywords: number; syncing: boolean;
+  usage: Usage[]; eventKinds: { at: string; kind: string }[];
+  recent?: { at: string; kind: string; terms: Record<string, number> }[];   // the last 400 days' events, top terms (My month)
+  sent: number; keywords: number; syncing: boolean;
   // you, as "Connect your phone" would bring you (pairing.payload): what every list on the phone is ranked by
   profile: { orcid: string; keywords: string[]; topics: string[]; interests: Record<string, number> };
 };
@@ -522,6 +524,8 @@ export async function fetchBrain(repo: string, token: string, dict: Dict | null)
     taught, learning: cfg.interest_learning, halfLife: cfg.interest_half_life_days, exploreShare: cfg.explore_share,
     history, weights: retrainWeights(trainingText, history.at(-1)?.timestamp ?? null, cfg.training_mass_follow_outlier),
     usage: parseUsage(usageText), eventKinds: events.map((e) => ({ at: e.at, kind: e.kind })),
+    recent: events.filter((e) => Date.parse(e.at) >= Date.now() - 400 * 86400000).map((e) => ({ at: e.at, kind: e.kind,
+      terms: Object.fromEntries(Object.entries(e.terms ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 6)) })),
     sent: sentSignals(beaconText), keywords: cfg.keywords.length, syncing: !!cfg.sync_repo,
     profile: { orcid: cfg.orcid_id, keywords: cfg.keywords, topics: cfg.topics, interests },
   };

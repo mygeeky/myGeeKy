@@ -16,21 +16,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = [ROOT / "src" / "mygeeky" / "data" / "geekoc.json", ROOT / "mobile" / "src" / "data" / "geekoc.json"]
 KIT = ROOT / "website" / "geekoc" / "geekoc.js"
-# name -> (body pose, face)
+# name -> (body pose, face, how long his arms are: 1 is his own; "head" is nearly all head, for the language
+# drawing, whose arms are the languages)
 POSES = {
-    "cheer": ("cheer", "excited"),
-    "wave": ("wave", "happy"),
-    "think": ("think", "happy"),
-    "proud": ("present", "proud"),
-    "sleep": ("sleep", "sleepy"),
-    "idle": ("idle", "happy"),
+    "cheer": ("cheer", "excited", 1),
+    "wave": ("wave", "happy", 1),
+    "think": ("think", "happy", 1),
+    "proud": ("present", "proud", 1),
+    "sleep": ("sleep", "sleepy", 1),
+    "idle": ("idle", "happy", 1),
+    "swim": ("swim", "happy", 1),
+    "point": ("point", "curious", 1),
+    "head": ("idle", "happy", 0.12),
 }
 
 DRAW = """
 const fs = require('fs'); global.window = global; eval(fs.readFileSync(process.argv[1], 'utf8'));
 const G = global.GeekOc, poses = JSON.parse(process.argv[2]), out = {};
-for (const [name, [pose, face]] of Object.entries(poses)) {
-  out[name] = G.markup(G.build({ pose, face, still: true }), { id: 'gk' + name });
+for (const [name, [pose, face, arm]] of Object.entries(poses)) {
+  out[name] = G.markup(G.build({ pose, face, arm, still: true }), { id: 'gk' + name });
 }
 process.stdout.write(JSON.stringify(out));
 """
