@@ -488,6 +488,42 @@ def phone_pairing(cfg: MyGeekyConfig, include_token: bool = True) -> dict[str, A
             "seconds": pairing.SHOW_SECONDS}
 
 
+def get_month(cfg: MyGeekyConfig, year: int | None = None, month: int | None = None) -> dict[str, Any]:  # noqa: ARG001
+    """My month (month.py) from this computer's records: this month unless asked; "first" is your first month."""
+    from datetime import date
+    from .. import achievements, interests, month as months, wins
+    today = date.today()
+    year, month = year or today.year, month or today.month
+    usage = achievements._usage()
+    try:
+        events = interests.load_events()
+    except Exception:
+        events = []
+    try:
+        won = wins.load().get("wins") or []
+    except Exception:
+        won = []
+    out = months.summary(usage, events, won, year, month)
+    out["first"] = list(months.first_month(usage, events) or (today.year, today.month))
+    return out
+
+
+def rank_news(cfg: MyGeekyConfig) -> str:
+    """Your rank's name if it went up since you were last told ("" if not), remembering it's been told.
+    The first time only remembers, so nobody is "promoted" just for updating myGeeKy."""
+    from ..config import RANK_SEEN_FILE
+    from ..files import read_json, write_json
+    now = get_month(cfg)
+    seen = read_json(RANK_SEEN_FILE, {})
+    before = seen.get("rank") if isinstance(seen, dict) else None
+    if before != now["rank"]:
+        try:
+            write_json(RANK_SEEN_FILE, {"rank": now["rank"]})
+        except OSError:
+            return ""
+    return now["rank_name"] if isinstance(before, int) and now["rank"] > before else ""
+
+
 def get_badges(cfg: MyGeekyConfig) -> dict[str, Any]:
     """Your badges (local files only) and your cached GitHub achievements."""
     from .. import achievements
@@ -1173,10 +1209,22 @@ def refresh_opportunities(cfg: MyGeekyConfig, force: bool = False) -> dict[str, 
     return {**get_opportunities(cfg), "error": error}
 
 
+CHANCE_KINDS = ("job", "funding", "conference")      # a 👍 on one of these counts as a chance saved (My month)
+
+
+def did(what: str) -> None:
+    """Count something you did for My month and your rank (month.py): a usage line, never what it was."""
+    from .. import achievements
+    achievements.log(what)
+
+
 def vote(kind: str, item_id: str, up: bool, text: str = "", tags: list[str] | None = None) -> int:
     """👍 / 👎 on a skill, resource, job, call, conference or person. Same thumb again: taken back."""
     from .. import taste
-    return taste.vote(kind, item_id, up, text, tags or [])
+    v = taste.vote(kind, item_id, up, text, tags or [])
+    if v > 0 and kind in CHANCE_KINDS:
+        did("chance")
+    return v
 
 
 def vote_of(kind: str, item_id: str) -> int:
@@ -1217,6 +1265,8 @@ def build_protocol(cfg: MyGeekyConfig, skill: str, goal: str = "") -> dict[str, 
         from ..errors import describe
         return {"error": f"Couldn't build it: {describe(exc)}"}
     pid = protocols.start(cfg, proto)
+    if pid:
+        did("build")
     return {"id": pid, "reviewed": proto.get("reviewed", False)} if pid else {"error": "Couldn't build it."}
 
 
@@ -1229,7 +1279,14 @@ def protocol_action(cfg: MyGeekyConfig, action: str, pid: str, *args: Any) -> An
           "add_stage": protocols.add_stage, "remove_stage": protocols.remove_stage,
           "move_item": protocols.move_item, "remove_item": protocols.remove_item,
           "add_item": protocols.add_item}.get(action)
-    return fn(cfg, pid, *args) if fn else None
+    out = fn(cfg, pid, *args) if fn else None
+    if action == "tick" and (args[1] if len(args) > 1 else True):
+        did("step")
+    elif action == "known" and len(args) > 1 and args[1] == "self":
+        did("skill")
+    elif action == "quiz":
+        did("quiz")
+    return out
 
 
 def publish_protocol(cfg: MyGeekyConfig, pid: str) -> dict[str, str]:
@@ -1237,7 +1294,10 @@ def publish_protocol(cfg: MyGeekyConfig, pid: str) -> dict[str, str]:
     {"url", "clipboard"} -- clipboard holds the protocol to paste when it's too long for a link."""
     from .. import protocols
     entry = protocols.mine(cfg).get(pid)
-    return protocols.publish(entry) if entry else {"url": "", "clipboard": ""}
+    if not entry:
+        return {"url": "", "clipboard": ""}
+    did("share")
+    return protocols.publish(entry)
 
 
 # ---- quizzes: a protocol's questions, marked here (quiz.py)
@@ -1317,10 +1377,12 @@ def quiz_mark(cfg: MyGeekyConfig, quiz_obj: Any, answers: list[int], stage: str 
     from .. import protocols, quiz
     before = float((quiz.best(quiz_obj.protocol) or {}).get("score") or 0.0)
     attempt = quiz.mark(quiz_obj, answers, before)
+    did("quiz")
     if not stage:
         quiz.record(attempt)
     elif attempt.passed:
         protocols.answer_quiz_score(cfg, quiz_obj.protocol, stage, attempt.score)
+        did("skill")
     return attempt
 
 

@@ -41,6 +41,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `market.ts`, `board.ts` | `market.py` |
 | `model-repo.ts` | `sync.py`, `gui/app.py` (the data repo, the model) |
 | `models.ts` | `hfmodels.py` |
+| `month.ts` (+ `components/month-view.tsx`) | `month.py` (+ `gui/month_ui.py`) |
 | `news.ts` | `news.py` |
 | `orcid-login.ts` | `orcid_login.py` |
 | `pairing.ts` | `pairing.py` (the QR code: both sides read the same format) |
@@ -82,6 +83,8 @@ The desktop file is the source; the phone copy must be identical or generated fr
 | `src/mygeeky/data/skills.json` | `mobile/src/data/skills.json` | tests (`test_growth.py`) |
 | `src/mygeeky/data/keywords.json` | `mobile/src/data/field-words.json` (generated) | `keywords.save()` writes it; `test_phone_words_match_desktop.py` |
 | `src/mygeeky/data/token_guides.json` | `mobile/src/data/token-guides.json` (identical) | `tools/token_guides.py` writes both; `test_token_guides.py` |
+| `src/mygeeky/data/ranks.json` | `mobile/src/data/ranks.json` (identical) | `test_phone_month_match_desktop.py` |
+| `src/mygeeky/data/geekoc.json` | `mobile/src/data/geekoc.json` (identical) | `tools/geekoc_poses.py` writes both; `test_phone_month_match_desktop.py` |
 
 After editing a desktop data file, update the phone copy in the same change (`cmp` them).
 
@@ -92,7 +95,7 @@ After editing a desktop data file, update the phone copy in the same change (`cm
 ```
 
 `test_phone_seasons_match_desktop.py`, `test_phone_signals_match_desktop.py` and
-`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py`, `test_learn_locally.py`, `test_tab_order.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
+`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py`, `test_phone_month_match_desktop.py`, `test_learn_locally.py`, `test_tab_order.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
 imports given their `.ts` ending) on the same inputs as the Python and compare the answers. They need **Node 22.6+**
 (`node --experimental-strip-types`) and skip without it: if pytest reports them as *skipped*, the phone was not
 checked, so say so instead of calling the change verified. When you change a shared

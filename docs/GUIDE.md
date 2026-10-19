@@ -572,6 +572,42 @@ paper) and its area, never titles or links; it syncs with the rest of your data.
 GitHub achievements have no API, so they're read from your public profile at most
 once a week; if GitHub changes that page, they just don't show.
 
+## 🎖 My month and your rank
+
+The 🎖 **My month** tab (on the phone, the **My month** planet) shows what you did this month and your rank,
+with a card you can share.
+
+**Your rank** climbs from Soldier to General as you earn points for what you do yourself:
+
+| Points | For |
+|---|---|
+| +1 | a news story or a repo you opened |
+| +2 | a paper you opened, a chance you 👍 (saved) |
+| +3 | a topic outside your usual interests, a person you followed |
+| +4 | a quiz |
+| +5 | a protocol step done |
+| +6 | an idea you sent |
+| +8 | a protocol you published |
+| +10 | a protocol you built, a step you can already do (a skill) |
+
+| Rank | Soldier | Corporal | Sergeant | Lieutenant | Captain | Major | Colonel | General |
+|---|---|---|---|---|---|---|---|---|
+| From | 0 | 50 | 150 | 350 | 700 | 1200 | 2000 | 3500 |
+
+Points count over all your time in myGeeKy, so a rank never goes down. Stars and citations from others show on
+your card but earn no points: the rank is for your own effort, and works the same with or without a GitHub
+account. When you move up, GeekOc tells you once.
+
+**Your card** is a 4:5 picture (the shape LinkedIn and X show largest): the month as a calendar with a dot for
+each kind of thing you did that day, your three highlights (a first gets a **FIRST!** ribbon), every count, your
+rank's shield and GeekOc. Untick anything you'd rather leave off, then **Save image** or **Copy image** on the
+computer, or **Share my month** on the phone (its own share sheet: LinkedIn, Instagram, Facebook...). ‹ › go back
+through earlier months. Nothing is posted for you.
+
+It's worked out on your device from the same usage log as badges (now also noting, by kind only, a protocol
+step, a protocol built or published, a quiz, a skill and a chance saved) plus your follows and wins. Nothing is
+sent anywhere. With your data repo connected, your computers and phone count the same records.
+
 ## It learns what you're into, and keeps room to explore
 
 Everything you do teaches myGeeKy a little about your interests:

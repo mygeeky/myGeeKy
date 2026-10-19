@@ -14,6 +14,7 @@ import { C, ink, tint } from '../lib/theme';
 import * as taste from '../lib/taste';
 import { GCard, Hidden, s, Thumbs } from './growth-parts';
 import { Empty, open, Segments } from './ui';
+import { logDid } from '../lib/badges';
 
 type Mode = 'seasons' | 'jobs' | 'funding' | 'conferences';
 type ListMode = Exclude<Mode, 'seasons'>;
@@ -342,6 +343,7 @@ export function ChancesView() {
         {shown.map((it) => (
           <Chance key={it.id} kind={mode as ListMode} it={it} onVote={async (up) => {
             const v = await taste.vote(kind!, it.id, up, `${it.title} ${it.summary}`, it.keywords);
+            if (v > 0) logDid('chance');           // a 👍 on a chance counts as saving it (My month)
             if (v < 0) rank();
             return v;
           }} />

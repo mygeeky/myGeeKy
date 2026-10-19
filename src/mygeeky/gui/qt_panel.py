@@ -1517,6 +1517,7 @@ PLANETS = {
     "chances": ("#f472b6", "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"),
     "model": ("#ffd24a", "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"),
     "badges": ("#f0a35e", "M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM8.2 13.9 7 23l5-3 5 3-1.2-9.1"),
+    "month": ("#c4a5ff", "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"),
     "admin": ("#94a3b8", "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"),
 }
 
@@ -3295,6 +3296,7 @@ TABS = {
     "chances": ("\U0001f3af", "Chances: verified jobs, funding and conferences"),
     "model": ("\U0001f9e0", "Model"),
     "badges": ("\U0001f3c5", "Badges"),
+    "month": ("\U0001f396", "My month: what you did, and your rank"),
     "admin": ("\U0001f6e1", "Admin"),
 }
 
@@ -3564,7 +3566,7 @@ class MyGeekyPanel(QWidget):
                  "news": self._build_news_tab(), "activity": self._build_activity_tab(),
                  "signals": self._build_signals_tab(), "grow": self._build_grow_tab(),
                  "chances": self._build_chances_tab(), "model": self._build_model_tab(),
-                 "badges": self._build_badges_tab()}
+                 "badges": self._build_badges_tab(), "month": self._build_month_tab()}
         if self._is_admin:
             pages["admin"] = self._build_admin_tab()
         self._tab_order = [name for name in tabs if name in pages]
@@ -7569,6 +7571,29 @@ class MyGeekyPanel(QWidget):
             self._update_tab_styles()
             btn.setToolTip(f"New badge: {new[0]['emoji']} {new[0]['name']}!" if new else "Your badges")
 
+    def _build_month_tab(self) -> QScrollArea:
+        from .month_ui import MonthPage
+        self.month_page = MonthPage(self.cfg, lambda: THEMES[self._theme_name()], self._toast)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidget(self.month_page)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background:transparent; border:none;")
+        scroll.viewport().setAutoFillBackground(False)
+        self.month_page.setAutoFillBackground(False)
+        QTimer.singleShot(9000, self._rank_news)
+        return scroll
+
+    def _rank_news(self) -> None:
+        """A promotion since you were last told: GeekOc says so (once)."""
+        try:
+            name = logic.rank_news(self.cfg)
+        except Exception:
+            return
+        if name:
+            self._toast(f"🎖  Promoted to {name}! See it in My month.")
+
     def _build_badges_tab(self) -> QScrollArea:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -8504,6 +8529,9 @@ class MyGeekyPanel(QWidget):
             self._render_badges()
             logic.mark_badges_seen(self.cfg, [f"{b['id']}:{b['tier']}" for b in self._badges.get("earned", [])])
             self._update_badge_tab_label()
+        if name == "month":
+            self.month_page.render()
+            self._rank_news()
         if name == "model":  # re-read (it's a local file) and replay the entrance
             self._load_model_history()
             self._play_model_animations()

@@ -16,7 +16,7 @@ import { C, BADGES, tint } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
 export type SectionId = 'live' | 'people' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
-  | 'chances' | 'you' | 'market' | 'discuss';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
+  | 'chances' | 'you' | 'market' | 'discuss' | 'month';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
 
 export type Section = { id: SectionId; label: string; color: string; icon: IconName; about: string };
 
@@ -34,10 +34,11 @@ export const SECTIONS: Record<SectionId, Section> = {
   chances: { id: 'chances', label: 'Chances', color: '#f472b6', icon: 'briefcase-outline', about: 'Verified jobs, funding and conferences, checked by hand.' },
   market: { id: 'market', label: 'Repos', color: '#7fd8ff', icon: 'trending-up-outline', about: 'The popular, active projects your field runs on, ranked by momentum like a market board.' },
   discuss: { id: 'discuss', label: 'News', color: '#eab308', icon: 'chatbubbles-outline', about: 'New preprints and discussions matching your interests: arXiv, bioRxiv and Hacker News.' },
+  month: { id: 'month', label: 'My month', color: '#c4a5ff', icon: 'calendar-outline', about: 'What you did this month, your rank, and a card to share.' },
   you: { id: 'you', label: 'You', color: '#ffd24a', icon: 'person-outline', about: 'Your model, your badges and your settings.' },
 };
 
-export const INNER: SectionId[] = ['live', 'people', 'activity', 'signals', 'grow'];
+export const INNER: SectionId[] = ['live', 'people', 'activity', 'signals', 'grow', 'month'];
 export const OUTER: SectionId[] = ['news', 'papers', 'repos', 'models', 'launches', 'chances'];
 export const RING_NAME = { inner: 'YOUR CIRCLE', outer: 'THE WORLD', you: 'THE CENTRE' };
 

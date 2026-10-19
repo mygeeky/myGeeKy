@@ -13,6 +13,8 @@ import { Orbit, orbitHeight } from '../components/orbit';
 import { PersonCard } from '../components/person-card';
 import { ChancesView } from '../components/chances-view';
 import { GrowView } from '../components/grow-view';
+import { MonthView, rankNews } from '../components/month-view';
+import { useToast } from '../components/toast';
 import { SignalsView } from '../components/signals-view';
 import { Empty, open, Segments } from '../components/ui';
 import { AdminPart } from '../components/admin-part';
@@ -170,6 +172,7 @@ function Spark({ values, trend }: { values: number[]; trend: 'up' | 'down' | nul
 }
 
 export default function Home() {
+  const toast = useToast();
   const { settings, token } = useApp();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -194,7 +197,7 @@ export default function Home() {
   const launches = useFeed('launches', 6, (p) => fetchLaunches(p.weights));
   const feedsOf: Record<SectionId, { loading: boolean; error: string | null; at: string | null; refresh: () => Promise<void> }[]> = {
     live: [live, people], activity: [live], people: [people], signals: [], news: [headlines, discuss], papers: [research],
-    repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market], discuss: [discuss],
+    repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], month: [], chances: [], market: [market], discuss: [discuss],
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
@@ -235,6 +238,10 @@ export default function Home() {
   const [newHere, setNewHere] = useState<Set<string>>(new Set());   // new when you opened this list: their dots stay
   const shownFor = useRef<SectionId | null>(null);
   useEffect(() => { loadSeen().then(setSeen); }, []);
+  useEffect(() => {                  // a promotion since you were last told: said once, a little after opening
+    const t = setTimeout(() => rankNews().then((name) => name && toast(`🎖  Promoted to ${name}! See it in My month.`)).catch(() => undefined), 6000);
+    return () => clearTimeout(t);
+  }, [toast]);
   const counts = useMemo(() => {
     const c: Partial<Record<SectionId, number>> = {};
     for (const id of [...INNER, ...OUTER]) c[id] = rowsFor(id, data).filter((r) => !seen?.has(r.id)).length;
@@ -368,6 +375,8 @@ export default function Home() {
             <SignalsView />
           ) : sel === 'grow' ? (
             <GrowView />
+          ) : sel === 'month' ? (
+            <MonthView />
           ) : sel === 'chances' ? (
             <ChancesView />
           ) : rows.length ? rows.map((r, i) => (<View key={r.id}>

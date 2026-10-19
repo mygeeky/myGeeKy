@@ -14,6 +14,7 @@ import { C } from '../lib/theme';
 import { Button, GCard, s } from './growth-parts';
 import { QuizRunView } from './protocols-view';
 import { Empty } from './ui';
+import { logDid } from '../lib/badges';
 
 export type QuizRow = {
   id: string; title: string; skill: string; mine: boolean; counts: Record<string, number>;
@@ -128,8 +129,12 @@ export function QuizView({ lists, onStart, open, onOpened }: {
       <QuizRunView quiz={quiz} stage={stage}
                    onClose={() => { setQuiz(null); setStage(''); Promise.resolve().then(reload); }}
                    onDone={async (attempt) => {
+                     logDid('quiz');
                      if (stage) {
-                       if (attempt.passed) await P.answerQuizScore(lists, quiz.protocol, stage, attempt.score);
+                       if (attempt.passed) {
+                         await P.answerQuizScore(lists, quiz.protocol, stage, attempt.score);
+                         logDid('skill');
+                       }
                      } else {
                        await Q.record(attempt);
                      }

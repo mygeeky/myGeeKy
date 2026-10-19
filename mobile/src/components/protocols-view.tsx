@@ -19,6 +19,7 @@ import { C, tint } from '../lib/theme';
 import type { MyRepo } from '../lib/wins';
 import { Button, GCard, s, Thumbs } from './growth-parts';
 import { Empty, open } from './ui';
+import { logDid } from '../lib/badges';
 
 const STATUS = { done: ['✅', 'Done'], known: ['🎓', 'You know this'], current: ['▶', 'Start here'], todo: ['○', ''] } as const;
 const SOURCE = { reviewed: '✓ Reviewed', auto: 'Auto-built, not reviewed', mine: 'Yours' } as const;
@@ -433,6 +434,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
     try {
       const p = await P.build(sk.trim(), gl.trim(), lists, token, docs);
       setOpenId(await P.start(lists, p));
+      logDid('build');
       setBuilt(builtText(p.title, p.stages.length, p.reviewed));
       toast(builtText(p.title, p.stages.length, p.reviewed));
       setSkill('');
@@ -479,6 +481,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
       { text: 'Cancel', style: 'cancel' },
       { text: 'Open on GitHub', onPress: async () => {
         const out = P.publish(e);
+        logDid('share');
         if (out.clipboard) {
           await Clipboard.setStringAsync(out.clipboard);
           setNote("It's too long for a link, so myGeeKy copied it: paste it on the GitHub page, then press Submit.");
@@ -592,8 +595,11 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
                              if (drawn.questions.length) onQuiz(v.id, step.id);   // opens in the 🏆 Quiz tab
                              else setCheck({ pid: v.id, stage: step.stage });
                            }}
-                           onAct={(what) => act(() => (what === 'tick' || what === 'untick' ? P.tick(lists, v.id, step.id, what === 'tick')
-                             : P.markKnown(lists, v.id, step.id, what === 'notReally' ? 'no' : null)))} />
+                           onAct={(what) => act(() => {
+                             if (what === 'tick') logDid('step');
+                             return what === 'tick' || what === 'untick' ? P.tick(lists, v.id, step.id, what === 'tick')
+                               : P.markKnown(lists, v.id, step.id, what === 'notReally' ? 'no' : null);
+                           })} />
               </View>
             ) : null}
             {ed ? v.stages.map((st2, i) => {
@@ -619,7 +625,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
                     <View style={s.row}>
                       {!known && (st2.quiz.length || st2.can.length) ? <Button label="🎓 Check" onPress={() => setCheck({ pid: v.id, stage: st2 })} /> : null}
                       <Button label={st2.status === 'done' ? '↩ Not done' : '☑ Done'}
-                              onPress={() => act(() => P.tick(lists, v.id, st2.id, st2.status !== 'done'))} />
+                              onPress={() => act(() => { if (st2.status !== 'done') logDid('step'); return P.tick(lists, v.id, st2.id, st2.status !== 'done'); })} />
                     </View>
                   ) : null}
                   {st2.role === 'use' ? <Text style={s.muted}>{known ? `Done: ${st2.why}` : st2.why || 'Ticks itself when one of your repos shows the skill'}</Text>
@@ -666,11 +672,12 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
       {check ? <CheckSheet stage={check.stage} onClose={() => setCheck(null)}
                            onQuiz={async (a) => {
                              const sc = await P.answerQuiz(lists, check.pid, check.stage.id, a);
+                             logDid('quiz');
                              setNote(`${Math.round(sc * a.length)} of ${a.length} right. ${sc >= P.PASS ? "You know this one: it's marked as known."
                                : 'Not yet: this stage stays on your list.'}`);
                              await reload();
                            }}
-                           onKnown={() => act(() => P.markKnown(lists, check.pid, check.stage.id, 'self'))} /> : null}
+                           onKnown={() => act(() => { logDid('skill'); return P.markKnown(lists, check.pid, check.stage.id, 'self'); })} /> : null}
     </View>
   );
 }

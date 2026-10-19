@@ -3,6 +3,21 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **🎖 My month and your rank**, on the computer (a new tab, `gui/month_ui.py`) and the phone (a new planet,
+  `components/month-view.tsx`). What you did this month as a calendar card with GeekOc, your three highlights
+  (firsts get a ribbon) and every count; and a rank from Soldier to General, from points for what you do yourself
+  (reading, learning, building, sharing ideas, meeting people), counted over all your time so it never goes down.
+  Save or copy the card on the computer; share it from the phone's share sheet. `month.py` and `lib/month.ts`
+  count and draw the same (`tests/test_phone_month_match_desktop.py`); the rules are in `data/ranks.json`.
+- **The usage log notes more kinds of things you do** (by kind only, never what): a protocol step done, a
+  protocol built or published, a quiz, a skill, a chance you 👍. The phone now counts ideas you send too, and
+  keeps up to 5000 lines while no data repo is connected.
+- **GeekOc in the apps**: `tools/geekoc_poses.py` draws him in a few poses from the website's rig into
+  `data/geekoc.json` (identical on the phone).
+- The phone gains `react-native-view-shot` and `expo-sharing` (a new APK is needed).
+
 ## 0.26.2 (2026-10-17): your geeky friend who helps you grow, quietly
 
 - **A new README** (`README.md`, which is also this PyPI page), built around what myGeeKy does for you: helps you

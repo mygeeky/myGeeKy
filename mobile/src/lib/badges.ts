@@ -68,6 +68,11 @@ export function logClick(kind: string, cat?: string, explore?: boolean) {
   queueUsage({ what: 'click', kind, cat, explore });
 }
 
+/** Something you did, for My month and your rank (month.ts): a usage line, never what it was. */
+export function logDid(what: 'idea' | 'step' | 'build' | 'share' | 'quiz' | 'skill' | 'chance') {
+  queueUsage({ what });
+}
+
 export type Earned = { id: string; emoji: string; name: string; what: string; count: number; tier: string; next: number | null };
 
 /** Every badge, at the best tier earned here or on your computer. With your data repo connected,

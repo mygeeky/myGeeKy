@@ -56,7 +56,8 @@
         {
           "faceIDPermission": "myGeeKy asks for Face ID only to open the maker's admin part."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "mygeeky",
     "backgroundColor": "#12121c",

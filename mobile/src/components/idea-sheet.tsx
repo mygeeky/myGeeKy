@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { emailUrl, issueUrl, KINDS, SUPPORT_EMAIL } from '../lib/ideas';
 import { C, tint } from '../lib/theme';
+import { logDid } from '../lib/badges';
 
 const versionInfo = () => `myGeeKy phone ${Constants.expoConfig?.version ?? ''} · ${Platform.OS} ${Platform.Version}`;
 
@@ -22,6 +23,7 @@ export function IdeaForm() {
     if (!title.trim()) return setNote('Give it a short title first.');
     const version = withVersion ? versionInfo() : null;
     Linking.openURL(how === 'github' ? issueUrl(kind, title, details, version) : emailUrl(kind, title, details, version));
+    logDid('idea');
     setTitle('');
     setDetails('');
     setNote('');

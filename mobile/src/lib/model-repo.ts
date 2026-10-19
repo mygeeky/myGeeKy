@@ -610,6 +610,9 @@ export async function flushQueue(repo: string, token: string, file: string, key:
 const isoNow = () => `${new Date().toISOString().slice(0, 19)}+00:00`;
 
 /** One usage line, kept until the next sync -- only while your data repo is connected. */
+// Without a data repo this is the phone's whole record of what you did (My month, your rank), so it keeps plenty.
+const USAGE_CAP = 5000;
+
 export async function queueUsage(entry: Omit<Usage, 'at'>): Promise<void> {
   try {                                                  // kept with or without a repo: it goes there once there is one
     const line: Usage = { at: isoNow(), what: entry.what };
@@ -617,7 +620,7 @@ export async function queueUsage(entry: Omit<Usage, 'at'>): Promise<void> {
     if (entry.cat) line.cat = entry.cat.slice(0, 20);
     if (entry.explore) line.explore = true;
     const queue = JSON.parse((await AsyncStorage.getItem(USAGE_QUEUE_KEY)) ?? '[]');
-    await AsyncStorage.setItem(USAGE_QUEUE_KEY, JSON.stringify([...(Array.isArray(queue) ? queue : []), line].slice(-1000)));
+    await AsyncStorage.setItem(USAGE_QUEUE_KEY, JSON.stringify([...(Array.isArray(queue) ? queue : []), line].slice(-USAGE_CAP)));
   } catch { /* never in the way */ }
 }
 
