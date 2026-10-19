@@ -307,6 +307,17 @@ def schedule(req: dict[str, Any]) -> dict[str, Any]:
     return {"ok": not message.startswith("Failed"), "message": message}
 
 
+def save_notify(req: dict[str, Any]) -> dict[str, Any]:
+    """The notifications ticked in setup (all off unless ticked): which kinds, and how often."""
+    from . import notify
+    from .config import load_config, save_config
+    s = notify.clean_settings({"kinds": req.get("kinds"), "every": req.get("every"), "quiet": [22, 8]})
+    cfg = load_config()
+    cfg.notify_kinds, cfg.notify_every = s["kinds"], s["every"]
+    save_config(cfg)
+    return {"ok": True, "message": notify.describe(s)}
+
+
 ACTIONS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "status": status,
     "save_profile": save_profile,
@@ -321,6 +332,7 @@ ACTIONS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "beacon_check": beacon_check,
     "beacon_create_repo": beacon_create_repo,
     "schedule": schedule,
+    "save_notify": save_notify,
 }
 
 

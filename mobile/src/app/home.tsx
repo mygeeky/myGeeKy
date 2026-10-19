@@ -38,6 +38,7 @@ import { fetchResearch } from '../lib/research';
 import { INNER, ordered, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
 import { C, ink, tint } from '../lib/theme';
 import { GeekLoader, useHold } from '../components/geek-loader';
+import { checkNow } from '../lib/notify-store';
 
 
 
@@ -205,6 +206,15 @@ export default function Home() {
   const params = useLocalSearchParams<{ sel?: string; fold?: string; open?: string; part?: string }>();
   const [sel, setSel] = useState<SectionId>(params.sel && params.sel in SECTIONS ? params.sel as SectionId
     : user ? 'live' : 'papers');                          // without GitHub, start where your field is
+  // a notification tapped while home is already open: follow its link to the right planet
+  useEffect(() => {
+    if (params.sel && params.sel in SECTIONS) {
+      const t = setTimeout(() => setSel(params.sel as SectionId), 0);
+      return () => clearTimeout(t);
+    }
+  }, [params.sel]);
+  // each time myGeeKy opens: a look for something worth notifying (only if you switched a kind on)
+  useEffect(() => { checkNow().catch(() => undefined); }, []);
   const [collapsed, setCollapsed] = useState(params.fold === '1');
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
   const [tokenWarn, setTokenWarn] = useState<TokenState | null>(null);   // a token about to stop working

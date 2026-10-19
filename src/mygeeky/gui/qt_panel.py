@@ -1504,6 +1504,8 @@ class ExploreDonut(QWidget):
         painter.end()
 
 
+NOTIFY_MINUTES = 20        # how often the panel looks for something worth notifying (only if a kind is on)
+
 # The dock's planets: each tab's colour and line icon (24x24 SVG path data).
 PLANETS = {
     "live": ("#ff6fd8", "M13 2 3 14h9l-1 8 10-12h-9l1-8z"),
@@ -6384,6 +6386,12 @@ class MyGeekyPanel(QWidget):
         layout.addLayout(place_row)
         self._show_place(logic.dock_side(self.cfg))
 
+        # 🔔 notifications: exactly what you agreed to (all off until you switch a kind on)
+        from .notify_ui import NotifySettings
+        self.notify_settings = NotifySettings(lambda: logic.notify_settings(self.cfg),
+                                              lambda s: logic.set_notify(self.cfg, s), lambda: THEMES[self._theme_name()])
+        layout.addWidget(self.notify_settings)
+
         # Your setup: what decides how myGeeKy works for you, at a glance
         self.setup_label = QLabel("")
         self.setup_label.setTextFormat(Qt.RichText)
@@ -7665,7 +7673,36 @@ class MyGeekyPanel(QWidget):
         scroll.viewport().setAutoFillBackground(False)
         self.month_page.setAutoFillBackground(False)
         QTimer.singleShot(9000, self._rank_news)
+        # careful notifications: a look a minute after opening, then every NOTIFY_MINUTES (notify.py decides)
+        QTimer.singleShot(60_000, self._notify_tick)
+        self._notify_timer = QTimer(self)
+        self._notify_timer.setInterval(NOTIFY_MINUTES * 60_000)
+        self._notify_timer.timeout.connect(self._notify_tick)
+        self._notify_timer.start()
         return scroll
+
+    def _notify_tick(self) -> None:
+        if self.cfg.notify_kinds:                      # nothing switched on: nothing to look at, ever
+            self._run_async(lambda: logic.notify_check(self.cfg), self._notified)
+
+    def _notified(self, out: Any) -> None:
+        if not isinstance(out, dict):
+            return
+        from .notify_ui import Notifier
+        if getattr(self, "_notifier", None) is None:
+            self._notifier = Notifier(QIcon(str(ICON_WINDOW)), self._open_from_notification)
+        self._notifier.show(out["title"], out["body"], out["tab"])
+        btn = self.tab_buttons.get(out["tab"])
+        if btn is not None:
+            btn.set_dot(True)
+            self._notify_dots = getattr(self, "_notify_dots", set()) | {out["tab"]}
+
+    def _open_from_notification(self, tab: str) -> None:
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+        if tab in self.tab_buttons:
+            self._switch_tab(tab)
 
     def _rank_news(self) -> None:
         """A promotion since you were last told: GeekOc says so (once)."""
@@ -8613,3 +8650,6 @@ class MyGeekyPanel(QWidget):
             self._update_badge_tab_label()
         if name == "model":
             self._show_you_part(self.you_part)
+        if name in getattr(self, "_notify_dots", set()):     # the notification's dot: seen now
+            self._notify_dots.discard(name)
+            self.tab_buttons[name].set_dot(False)

@@ -1414,6 +1414,22 @@ class FinishPage(Page):
         self.launch = self.add(QCheckBox("Open the myGeeKy panel now"))
         for box in (self.start_menu, self.startup, self.launch):
             box.setChecked(True)
+        # notifications: optional, and all off unless ticked (the same choices as ⚙ Settings → Notifications)
+        from .. import notify
+        self.add(_label("🔔 Notifications (optional): myGeeKy tells you, at most once a day, when something "
+                        "important fits you. Tick only what you want; you can change it any time in ⚙ Settings.",
+                        "muted"))
+        self.notify_boxes: dict[str, QCheckBox] = {}
+        for kind, emoji, label, about, _short in notify.KINDS:
+            box = self.add(QCheckBox(f"{emoji}  {label}"))
+            box.setToolTip(about)
+            box.toggled.connect(self._notify_changed)
+            self.notify_boxes[kind] = box
+        self.notify_every = QComboBox()
+        self.notify_every.addItem("At most once a day", "daily")
+        self.notify_every.addItem("At most once a week", "weekly")
+        self.add(self.notify_every)
+        self.notify_every.setVisible(False)
         self.summary = self.add(_label("", "muted"))
         self.finish_layout()
 
@@ -1428,10 +1444,15 @@ class FinishPage(Page):
             self.startup.setChecked(desktop.autostart_enabled() or not self.w.state.get("configured"))
         self.summary.setText("\n".join(n for n in self.w.notes if n))
 
+    def _notify_changed(self, *_: Any) -> None:
+        self.notify_every.setVisible(any(b.isChecked() for b in self.notify_boxes.values()))
+
     def job(self):
         choices = {k: getattr(self, k).isChecked() for k in ("start_menu", "desktop", "startup", "weekly", "launch")}
+        notify_choice = {"kinds": [k for k, b in self.notify_boxes.items() if b.isChecked()],
+                         "every": self.notify_every.currentData()}
         w = self.w
-        return lambda wk: w.apply_finish(choices)
+        return lambda wk: (w.save_notify(notify_choice), w.apply_finish(choices))[1]
 
 
 class SetupWizard(QWizard):
@@ -1490,6 +1511,13 @@ class SetupWizard(QWizard):
             self.button(QWizard.NextButton).setEnabled(page.isComplete() if page else True)
 
     # ---- the Finish page's work (runs in a Worker)
+    def save_notify(self, choice: dict[str, Any]) -> None:
+        """The notifications ticked on the last page (nothing ticked: nothing saved, all stays off)."""
+        if choice.get("kinds"):
+            result = api(self.python or sys.executable, "save_notify", choice)
+            if not result.get("ok"):
+                log(f"ERROR couldn't save the notification choices: {result.get('error')}")
+
     def apply_finish(self, choices: dict[str, bool]) -> dict[str, Any]:
         if not WINDOWS:
             return self._apply_finish_elsewhere(choices)

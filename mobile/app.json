@@ -57,7 +57,15 @@
           "faceIDPermission": "myGeeKy asks for Face ID only to open the maker's admin part."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-background-task",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#7a5cff"
+        }
+      ]
     ],
     "scheme": "mygeeky",
     "backgroundColor": "#12121c",

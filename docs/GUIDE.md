@@ -583,6 +583,23 @@ paper) and its area, never titles or links; it syncs with the rest of your data.
 GitHub achievements have no API, so they're read from your public profile at most
 once a week; if GitHub changes that page, they just don't show.
 
+## 🔔 Notifications (off unless you switch them on)
+
+myGeeKy never notifies you unless you ask it to. In setup (the last step) or in Settings (⚙ on the computer,
+You → Settings on the phone), switch on only the kinds you want: 🗓 a Season opening, 💼 a job, 💶 funding or
+🎤 a conference that fits you very well, 📄 an important new paper in your field, ✨ a new Highlight. Choose
+"at most once a day" or "at most once a week", and quiet hours (22:00-08:00 to start with).
+
+What's told is only what's really worth it: a Season confirmed open or expected within three weeks; a job,
+funding call or conference with a very high fit; one of the three papers rising fastest in your field, just
+out; a Highlight from the last two weeks. Each thing is told once, all in one line ("🗓 2 Seasons open soon ·
+💼 1 job fits you"); tapping it opens the right place. Settings shows exactly what you agreed to, and **Turn all
+off** switches everything off at once.
+
+It's worked out on your device from what myGeeKy already has; nothing is sent anywhere and no server pushes
+anything. The computer looks every 20 minutes while myGeeKy is open; the phone looks when it opens and when
+Android lets it run in the background (a few times a day), so a phone notification can come a little late.
+
 ## 🎖 My month and your rank
 
 **You → 🎖 My month** (the first part of You, on the computer and the phone) shows what you did this month and your

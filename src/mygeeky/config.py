@@ -44,6 +44,7 @@ NEWS_FILE = DATA_DIR / "news.json"
 TRENDS_FILE = DATA_DIR / "trends.json"                 # research trends from OpenAlex
 PAPERS_CACHE_FILE = DATA_DIR / "papers_cache.json"     # repo -> its published paper (the [P] badge)
 USAGE_FILE = DATA_DIR / "usage.jsonl"                 # what kinds of things you open (badges); synced
+NOTIFY_STATE_FILE = DATA_DIR / "notify_state.json"     # when you were last notified, and what was told; never synced
 RANK_SEEN_FILE = DATA_DIR / "rank_seen.json"           # the last rank you were told about (My month); never synced
 MY_GITHUB_EVENTS_FILE = DATA_DIR / "my_github_events.json"   # your own GitHub events, slimmed (My month); never synced
 GH_ACHIEVEMENTS_FILE = DATA_DIR / "github_achievements.json"   # your GitHub achievements, cached
@@ -275,6 +276,10 @@ class MyGeekyConfig:
     gui_opacity: float = 1.0                  # whole-window opacity (0.6-1.0); the settings panel exposes this
                                                # as "Transparency" (0% = opaque, 100% = fully transparent), i.e.
                                                # the inverse of this value
+    # careful notifications (notify.py): ALL OFF until you switch a kind on, in setup or in ⚙ Settings
+    notify_kinds: list[str] = field(default_factory=list)   # seasons, jobs, funding, conferences, papers, highlights
+    notify_every: str = "daily"                               # "daily" | "weekly": at most one summary that often
+    notify_quiet: list[int] = field(default_factory=lambda: [22, 8])   # no notifications from 22:00 to 08:00
 
     # Bumped when a default changes in a way existing configs should pick up
     # (see _migrate). Every saved config carries every key, so a new default

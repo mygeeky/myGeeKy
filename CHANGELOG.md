@@ -3,6 +3,16 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **🔔 Careful notifications, off unless you switch them on**, on the computer and the phone. Choose kinds in
+  setup or Settings (a Season opening; a job, funding or conference that fits you very well; an important new
+  paper in your field; a new Highlight), daily or weekly, and quiet hours. Only what's really worth it, each
+  thing once, all in one line, and tapping it opens the right place. Settings shows exactly what's on and has
+  "Turn all off". `notify.py` and `lib/notify.ts` decide the same (`tests/test_notify.py`); the computer shows a
+  system notification and a dot on the tab (`gui/notify_ui.py`), the phone a notification from a background
+  check (`lib/notify-store.ts`, `components/notify-settings.tsx`; new add-ons, so a new APK).
+
 ## 0.27.0 (2026-10-19): your month, your rank, and research told as stories
 
 - **Continue as a guest**, on the computer and the phone: setup offers GitHub, ORCID or a guest start with your

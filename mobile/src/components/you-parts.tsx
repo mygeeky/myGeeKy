@@ -19,6 +19,7 @@ import { checkTokens, type TokenState } from '../lib/tokens';
 import { clearAll } from '../lib/storage';
 import { C, setTheme, THEME, THEME_LABELS, type ThemeName } from '../lib/theme';
 import { DOCK_IDLE_CHOICES, DOCK_IDLE_DEFAULT, dockIdleMs, setDockIdleMs } from '../lib/prefs';
+import { NotifySettings } from './notify-settings';
 
 
 export function ModelPart() {
@@ -353,6 +354,8 @@ export function MorePart() {
           interests and your badges (do it again any time to refresh them).</Text>
       </Pressable>
 
+      <Section>🔔 NOTIFICATIONS</Section>
+      <View style={{ marginBottom: 6 }}><NotifySettings full /></View>
       <Section>🎨 LOOK</Section>
       <Card>
         <Text style={st.setupKey}>Theme</Text>

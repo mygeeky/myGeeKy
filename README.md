@@ -276,11 +276,11 @@ the desktop panel.
 
 |  |  |
 |---|---|
-| 🔕 **No noise** | No feed, no likes, no streaks, no notifications competing for you. |
+| 🔕 **No noise** | No feed, no likes, no streaks. No notifications unless you switch them on, and then one short summary a day at most. |
 | 👋 **Friends, not followers** | People near your work, and how likely each is to answer. |
 | 🤝 **Thanks, privately** | A 🙏 only the person you send it to can read. |
 | 🚪 **Nobody sees you looking** | No account, no sign-up, no telemetry. There is no server to see you from. |
-| 🌙 **It waits** | Close it and nothing keeps running. It never pings you to come back. |
+| 🌙 **It waits** | Close it and nothing keeps running (unless you switched notifications on). It never pings you to come back. |
 | 🧰 **Yours to keep** | MIT, and open to read: every promise here is a file you can check. |
 
 </td>

@@ -640,6 +640,65 @@ def get_month_stats(cfg: MyGeekyConfig, year: int, month: int) -> dict[str, Any]
     return monthviz.stats(inputs, year, month, int(offset.total_seconds() // 60) if offset else 0)
 
 
+def notify_settings(cfg: MyGeekyConfig) -> dict[str, Any]:
+    """What you agreed to be told about (notify.py): all off until you switch a kind on."""
+    from .. import notify
+    return notify.clean_settings({"kinds": cfg.notify_kinds, "every": cfg.notify_every, "quiet": cfg.notify_quiet})
+
+
+def set_notify(cfg: MyGeekyConfig, settings: dict[str, Any]) -> dict[str, Any]:
+    from .. import notify
+    s = notify.clean_settings(settings)
+    cfg.notify_kinds, cfg.notify_every, cfg.notify_quiet = s["kinds"], s["every"], list(s["quiet"])
+    save_config(cfg)
+    return s
+
+
+def notify_candidates(cfg: MyGeekyConfig, today: str) -> list[dict[str, Any]]:
+    """Everything worth telling today, from what this computer already has (no network)."""
+    from .. import curated, interests, notify, papers, seasons
+    data = curated.load()
+    try:
+        weights = interests.profile_terms(cfg)
+    except Exception:
+        weights = {}
+    ranked = {}
+    for kind in ("jobs", "funding", "conferences"):
+        try:
+            ranked[kind] = curated.ranked(cfg, kind, weights, data=data)["items"]
+        except Exception:
+            ranked[kind] = []
+    try:
+        ss = seasons.ranked(data.get("seasons") or [])
+    except Exception:
+        ss = []
+    rising = (papers.load_trends() or {}).get("rising") or []
+    return notify.candidates(today, ss, ranked, rising, data.get("highlights") or [])
+
+
+def notify_check(cfg: MyGeekyConfig, now: Any = None) -> dict[str, Any] | None:
+    """If a summary is due and there is something worth it: the line to show (and it's remembered as told)."""
+    from datetime import datetime
+    from .. import notify
+    from ..config import NOTIFY_STATE_FILE
+    from ..files import read_json, write_json
+    s = notify_settings(cfg)
+    now = now or datetime.now()
+    state = read_json(NOTIFY_STATE_FILE, {})
+    state = state if isinstance(state, dict) else {}
+    if not notify.due(s, str(state.get("last_sent", "")), now.isoformat(timespec="minutes"), now.hour):
+        return None
+    chosen = notify.pick(notify_candidates(cfg, now.date().isoformat()), state.get("told") or [], s)
+    out = notify.summary(chosen)
+    if out:
+        state.update(last_sent=now.isoformat(timespec="minutes"), told=notify.remember(state.get("told") or [], chosen))
+        try:
+            write_json(NOTIFY_STATE_FILE, state)
+        except OSError:
+            return None
+    return out
+
+
 def rank_news(cfg: MyGeekyConfig) -> str:
     """Your rank's name if it went up since you were last told ("" if not), remembering it's been told.
     The first time only remembers, so nobody is "promoted" just for updating myGeeKy."""

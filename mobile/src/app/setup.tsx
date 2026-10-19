@@ -10,6 +10,7 @@ import { orcidChecksumOk } from '../lib/orcid-login';
 import { pick, suggest } from '../lib/word-suggest';
 import { DEFAULT_SETTINGS } from '../lib/storage';
 import { C } from '../lib/theme';
+import { NotifySettings } from '../components/notify-settings';
 
 const split = (v: string) => v.split(',').map((x) => x.trim()).filter(Boolean);
 
@@ -132,6 +133,8 @@ export default function Setup() {
 
           {error ? <Text style={st.error}>{error}</Text> : null}
           {step === 'keywords' ? <>
+            <Text style={st.label}>🔔 Notifications <Text style={st.opt}>(optional)</Text></Text>
+            <NotifySettings />
             <Pressable style={({ pressed }) => [st.button, pressed && { opacity: 0.85 }]} onPress={submit} disabled={busy}>
               <Text style={st.buttonText}>{busy ? 'Getting to know your field…' : 'Start'}</Text>
             </Pressable>
