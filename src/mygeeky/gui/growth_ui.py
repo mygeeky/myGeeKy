@@ -1266,7 +1266,7 @@ class SaidPanel(QFrame):
                 f"border-radius:9px; padding:3px 9px; font-size:10.5px; }}"
                 f"QPushButton:hover {{ background:{theme['btn_hover']}; color:{theme['text']}; }}"
                 f"QPushButton:checked {{ background:{theme['section_btn']}; color:{theme['text']}; "
-                "font-weight:700; }}")
+                "font-weight:700; }")
             chip.clicked.connect(lambda _=False, c=code: self.show_language(c))
             chips.add(chip)
             self._chips[code] = chip
