@@ -5,6 +5,14 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **A dictionary for every field**: myGeeKy's keyword dictionary grew from 300 words to 1,200, built from 197
+  starting topics across physics, chemistry, materials, mathematics, earth and ocean science, energy, medicine,
+  imaging, engineering, economics, social science, psychology, language, the humanities, history and archaeology,
+  education, agriculture, ecology, biology and AI. Typing a few letters of your field now suggests it, with its
+  neighbours, on the computer and the phone. The build saves its progress as it goes, so a crash resumes it.
+- **A much lighter GitHub cache on the computer**: it had grown to ~400 MB (a search answer weighs ~0.7 MB and the
+  cap counted entries, not size) and was rewritten every few seconds while a refresh ran, keeping slow disks busy.
+  It now stays under 25 MB, and half-written copies left by a crash are cleaned up.
 - **The phone shows only English listings, like the computer**: a job written only in French was kept on the
   phone (`lib/curated.ts` now has `englishEnough`, the desktop's `english_enough`). Found by the new check below.
 - **Keeping the two apps in step** (for development): `tests/phone.py` runs any phone file in Node next to the

@@ -24,14 +24,17 @@ Also kept: a small tally per day (how many requests, how many came back 304,
 how many were served from the cache), which is what the admin tab shows and the
 only way to tell whether any of this is working.
 
-The file is `github_cache.json` in the data folder, capped at MAX_ENTRIES by
-dropping what was used longest ago. It holds only public data that GitHub
+The file is `github_cache.json` in the data folder, capped at MAX_ENTRIES and
+MAX_BYTES by dropping what was used longest ago. The size cap is the one that
+matters: one search answer is ~0.7 MB, and the whole file is rewritten while a
+refresh runs, so 4000 of them (400 MB) once kept the disk busy all day. It holds only public data that GitHub
 served, so it is never synced to anyone's private repository.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -40,7 +43,8 @@ from .config import DATA_DIR, ensure_dirs
 from .files import read_json, write_json
 
 CACHE_FILE = DATA_DIR / "github_cache.json"
-MAX_ENTRIES = 4000            # a few MB at most; the oldest-used go first
+MAX_ENTRIES = 4000            # the oldest-used go first
+MAX_BYTES = 25_000_000        # and the file stays this small, whatever the answers weigh
 SAME_RUN_SECONDS = 20.0       # the same URL twice in one refresh is asked once
 MISSING_SECONDS = 6 * 3600    # a 404 (deleted account, no beacon) isn't re-asked for a while
 KEEP_DAYS = 14                # how many days of the call tally to keep
@@ -84,9 +88,11 @@ class Store:
     It is deliberately a plain file. Nothing here is precious -- deleting it only
     means the next refresh asks GitHub for everything again."""
 
-    def __init__(self, path=None, max_entries: int = MAX_ENTRIES, save_every: float = 10.0) -> None:
+    def __init__(self, path=None, max_entries: int = MAX_ENTRIES, save_every: float = 10.0,
+                 max_bytes: int = MAX_BYTES) -> None:
         self.path = path or CACHE_FILE
         self.max_entries = max_entries
+        self.max_bytes = max_bytes
         self.save_every = save_every       # written at most this often, so a long refresh isn't all I/O
         self._rows: dict[str, Cached] | None = None
         self._tally: dict[str, dict[str, int]] = {}
@@ -118,10 +124,16 @@ class Store:
             return
         self._saved_at = time.time()
         rows = self._rows
-        if len(rows) > self.max_entries:            # drop what was read longest ago
-            keep = sorted(rows.items(), key=lambda kv: kv[1].used, reverse=True)[:self.max_entries]
-            rows = dict(keep)
-            self._rows = rows
+        # drop what was read longest ago, until both the count and the size fit
+        newest = sorted(rows.items(), key=lambda kv: kv[1].used, reverse=True)[:self.max_entries]
+        keep, size = {}, 0
+        for k, c in newest:
+            size += len(k) + len(json.dumps(c.body))
+            if size > self.max_bytes and keep:
+                break
+            keep[k] = c
+        if len(keep) < len(rows):
+            rows = self._rows = keep
         today = time.strftime("%Y-%m-%d")
         cutoff = time.strftime("%Y-%m-%d", time.localtime(time.time() - KEEP_DAYS * 86400))
         self._tally = {d: v for d, v in self._tally.items() if d >= cutoff or d == today}
@@ -131,6 +143,16 @@ class Store:
                                            for k, c in rows.items()},
                                "calls": self._tally})
         self._dirty = False
+        self._sweep()
+
+    def _sweep(self) -> None:
+        """Half-written copies left by a crash or a power cut (each as big as the cache) are deleted."""
+        for leftover in self.path.parent.glob(f".{self.path.name}.*.tmp"):
+            try:
+                if time.time() - leftover.stat().st_mtime > 600:
+                    os.remove(leftover)
+            except OSError:
+                pass
 
     # ---- what a request needs
     def get(self, key: str) -> Cached | None:

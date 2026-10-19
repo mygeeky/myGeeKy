@@ -1,5 +1,6 @@
 """The GitHub cache: conditional requests, one ask per run, and an app that survives an outage."""
 
+import os
 import time
 
 import pytest
@@ -167,6 +168,28 @@ def test_the_file_does_not_grow_without_end(tmp_path):
         store.put(f"https://api.github.com/users/u{i}", {"login": f"u{i}"})
     store.save()
     assert store.entries() == 10, "the least recently used go first"
+
+
+def test_big_answers_cannot_swell_the_file(tmp_path):
+    path = tmp_path / "cache.json"
+    store = ghcache.Store(path, max_bytes=50_000)
+    for i in range(20):                               # search answers are big: ~10 KB each here
+        store.put(f"https://api.github.com/search/q{i}", {"items": ["x" * 100] * 100})
+        store._rows[f"https://api.github.com/search/q{i}"].used = i
+    store.save()
+    assert store.entries() < 6 and path.stat().st_size <= 50_000
+    assert ghcache.key_of("https://api.github.com/search/q19") in store._rows, "the most recently used stay"
+
+
+def test_copies_left_half_written_by_a_crash_are_cleaned_up(tmp_path):
+    path = tmp_path / "cache.json"
+    old = tmp_path / ".cache.json.123.456.tmp"
+    old.write_text("half")
+    os.utime(old, (time.time() - 3600, time.time() - 3600))
+    store = ghcache.Store(path)
+    store.put("https://api.github.com/users/ada", {"login": "ada"})
+    store.save()
+    assert not old.exists() and path.exists()
 
 
 def test_the_tally_says_what_was_saved(tmp_path):

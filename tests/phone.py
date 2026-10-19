@@ -131,8 +131,8 @@ def run(script: str, data: Any = None, name: str = "side") -> Any:
     """Run a TypeScript snippet next to the phone's lib (import from './lib/x.ts'); `data` arrives as INPUT;
     whatever it prints with `out(value)` comes back as Python."""
     global _fresh
-    if not _fresh:                                  # the phone's code as it is now, once per test run
-        prepare()
+    if not _fresh or not (WORK / "lib").is_dir():   # the phone's code as it is now, once per test run (and
+        prepare()                                   # again if another test cleared .crosscheck away)
         _fresh = True
     work = WORK
     body = ("import { readFileSync } from 'node:fs';\n"

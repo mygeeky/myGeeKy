@@ -1582,12 +1582,19 @@ def admin_keywords_build(max_terms: int, no_requests: bool, out: Path | None) ->
     cfg = load_config()
     _require_admin(cfg)
     client = _client_for(cfg)
+    client.cache = None        # ~1200 big search answers: the build keeps its own (below), not the app's cache
     extra = [] if no_requests else [r["word"] for r in keywords.keyword_requests(client, cfg)]
     if extra:
         click.echo(f"Including {len(extra)} requested keyword(s): {', '.join(extra[:12])}")
     click.echo(f"Learning up to {max_terms} keywords (about {max_terms * 5.5 / 60:.0f} minutes)...")
-    d = keywords.build(client, extra=extra, max_terms=max_terms, log=lambda m: click.echo(f"[mygeeky] {m}", err=True))
+    # GitHub's answers are kept as they come, so a build cut short (a crash, a restart) picks up where it stopped
+    from .config import DATA_DIR, ensure_dirs
+    ensure_dirs()
+    cache = DATA_DIR / "keywords-build.json"
+    d = keywords.build(client, extra=extra, max_terms=max_terms, log=lambda m: click.echo(f"[mygeeky] {m}", err=True),
+                       cache=cache)
     path = keywords.save(d, out or keywords.BUNDLED)
+    cache.unlink(missing_ok=True)
     taught = [w for w in extra if keywords.known(w)]
     click.echo(f"Wrote {path}: {len(d['terms'])} keywords, version {d['version']}.")
     if extra:

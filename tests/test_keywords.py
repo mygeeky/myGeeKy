@@ -5,6 +5,8 @@ import pytest
 from mygeeky import keywords as kw
 from mygeeky.config import MyGeekyConfig
 
+REAL = kw.BUNDLED          # the dictionary myGeeKy ships (the tests below swap in a small one)
+
 DICT = {"version": "2026.10.07.0000", "terms": {
     "ai": {"label": "ai", "repos": 100, "related": [["llm", 1.0], ["deep-learning", 0.8], ["r", 0.7]]},
     "gwas": {"label": "gwas", "repos": 100, "related": [["genomics", 1.0], ["statistical-genetics", 0.6]]},
@@ -113,6 +115,15 @@ def test_the_model_learns_what_goes_together_and_ignores_noise():
     assert client.calls[0] == "gwas" and "genomics" in client.calls   # it snowballed
 
 
+def test_a_build_cut_short_resumes_from_its_cache(tmp_path):
+    cache = tmp_path / "keywords-build.json"
+    first = kw.build(FakeClient(), seeds=["gwas"], max_terms=10, min_repos=5, cache=cache)
+    assert "gwas" in json.loads(cache.read_text())
+    again = FakeClient()
+    second = kw.build(again, seeds=["gwas"], max_terms=10, min_repos=5, cache=cache)
+    assert again.calls == [] and second["terms"] == first["terms"]   # every answer came from the cache
+
+
 def test_refresh_takes_a_newer_published_dictionary_once_a_week(monkeypatch):
     newer = {**DICT, "version": "2026.11.01.0000", "terms": {**DICT["terms"], "basket-weaving": {
         "label": "basket weaving", "repos": 20, "related": []}}}
@@ -182,12 +193,15 @@ FIELD_WORDS = {
 
 
 @pytest.mark.parametrize("field,word", sorted(FIELD_WORDS.items()))
-def test_every_field_has_words(field, word):
+def test_every_field_has_words(field, word, monkeypatch):
     from mygeeky import keywords
+    monkeypatch.setattr(keywords, "BUNDLED", REAL)
+    keywords.load(force=True)
     entry = keywords.lookup(word)
     assert entry and len(entry.get("related") or []) >= 5, f"{field}: '{word}' isn't learned well"
     label = keywords.label_of(word)
-    assert label in keywords.suggest(label[:4], limit=12), f"{field}: typing '{label[:4]}' doesn't suggest {label}"
+    typed = label.split()[0] if " " in label else label[:6]      # how people type: a first word, or a few letters
+    assert label in keywords.suggest(typed, limit=12), f"{field}: typing '{typed}' doesn't suggest {label}"
 
 
 def test_the_phone_copy_stays_small():

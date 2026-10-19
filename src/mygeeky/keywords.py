@@ -288,9 +288,18 @@ def _repos_for(client, topic: str, per_page: int = 100) -> list[list[str]]:
 
 
 def build(client, seeds: Iterable[str] = SEEDS, extra: Iterable[str] = (), max_terms: int = 1200,
-          min_repos: int = 15, seed_min_repos: int = 6, log: Callable[[str], None] = lambda m: None) -> dict[str, Any]:
+          min_repos: int = 15, seed_min_repos: int = 6, log: Callable[[str], None] = lambda m: None,
+          cache: Path | None = None) -> dict[str, Any]:
     """Learn the dictionary from GitHub (one search call per keyword). Every seed and requested word is learned
-    first; a seed needs only `seed_min_repos` repos (a smaller field still has few), a neighbour `min_repos`."""
+    first; a seed needs only `seed_min_repos` repos (a smaller field still has few), a neighbour `min_repos`.
+    With `cache`, every answer is kept there as it comes, so a build cut short resumes instead of starting over."""
+    fetched: dict[str, list[list[str]]] = {}
+    if cache and cache.exists():
+        try:
+            fetched = json.loads(cache.read_text(encoding="utf-8"))
+            log(f"resuming: {len(fetched)} searches already done")
+        except (OSError, ValueError):
+            fetched = {}
     chosen = {slug(s) for s in list(extra) + list(seeds)}
     queue = list(dict.fromkeys([slug(s) for s in list(extra) + list(seeds) if _SLUG_RE.match(slug(s))]))
     seen: set[str] = set()
@@ -301,7 +310,12 @@ def build(client, seeds: Iterable[str] = SEEDS, extra: Iterable[str] = (), max_t
         if topic in seen:
             continue
         seen.add(topic)
-        repos = _repos_for(client, topic)
+        if topic in fetched:
+            repos = fetched[topic]
+        else:
+            repos = fetched[topic] = _repos_for(client, topic)
+            if cache and len(fetched) % 10 == 0:
+                cache.write_text(json.dumps(fetched), encoding="utf-8")
         if len(repos) < (seed_min_repos if topic in chosen else min_repos):
             continue
         per_topic[topic] = repos
@@ -311,6 +325,8 @@ def build(client, seeds: Iterable[str] = SEEDS, extra: Iterable[str] = (), max_t
         queue += [u for u, _ in co.most_common(6) if u not in seen]
         if len(per_topic) % 25 == 0:
             log(f"learned {len(per_topic)} keywords")
+    if cache:
+        cache.write_text(json.dumps(fetched), encoding="utf-8")
     docs = sum(len(r) for r in per_topic.values()) or 1
     terms: dict[str, Any] = {}
     for topic, repos in per_topic.items():
@@ -359,7 +375,7 @@ def save(dictionary: dict[str, Any], path: Path = BUNDLED) -> Path:
 # The same as the phone's lib/word-suggest.ts (tests/test_phone_words_match_desktop.py runs both): the keyword
 # dictionary's words and every skill name; words starting with what you type first, then words containing it,
 # shorter first; with nothing typed, the closest words to the ones already picked.
-_suggest_words: list[str] | None = None
+_suggest_words: tuple[dict[str, Any], list[str], dict[str, list[str]]] | None = None
 
 
 def _norm_word(w: str) -> str:
@@ -367,18 +383,20 @@ def _norm_word(w: str) -> str:
 
 
 def _words_and_related() -> tuple[list[str], dict[str, list[str]]]:
+    """Every word to suggest and each one's closest few, worked out once per dictionary (a newer one redoes it)."""
     global _suggest_words
-    phone = phone_words(load())
-    if _suggest_words is None:
+    d = load()
+    if _suggest_words is None or _suggest_words[0] is not d:
         from . import skills
         from .files import read_json
+        phone = phone_words(d)
         names = [s.get("name") for s in (read_json(skills.BUNDLED, {}) or {}).get("skills") or [] if isinstance(s, dict)]
         seen: dict[str, str] = {}
         for w in [*phone["words"], *names]:
             if isinstance(w, str) and w.strip() and _norm_word(w) not in seen:
                 seen[_norm_word(w)] = w
-        _suggest_words = list(seen.values())
-    return _suggest_words, phone["related"]
+        _suggest_words = (d, list(seen.values()), phone["related"])
+    return _suggest_words[1], _suggest_words[2]
 
 
 def split_typing(text: str) -> tuple[list[str], str]:
