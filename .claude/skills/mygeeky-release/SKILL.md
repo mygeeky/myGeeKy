@@ -22,8 +22,11 @@ cover new work.
 5. **Tag and push:** `git tag -a v0.X.Y -m "0.X.Y" && git push origin main --follow-tags`.
    The tag starts `.github/workflows/release.yml`, which builds `MyGeeKySetup-0.X.Y.exe` and attaches it to the
    GitHub release. Watch it with `gh run watch`.
-6. **PyPI is manual:** build with `.venv/bin/python -m build`, then the maintainer runs
-   `.venv/bin/python -m twine upload dist/mygeeky-0.X.Y*` (credentials are theirs; ask them to type it with `!`).
+6. **PyPI:** build with `.venv/bin/python -m build`, then (only when the maintainer has said to publish)
+   `.venv/bin/python -m twine upload -u __token__ dist/mygeeky-0.X.Y*`. The token lives in the system keyring
+   (`keyring set https://upload.pypi.org/legacy/ __token__`, a project-scoped PyPI token), so twine reads it
+   itself: never ask for it, never print it, never write it to a file or `~/.pypirc`. Check it is there with
+   `.venv/bin/python -m keyring get https://upload.pypi.org/legacy/ __token__ | cut -c1-5` (prints `pypi-`).
 7. Pushes touching `website/**` redeploy mygeeky.org (`pages.yml`).
 
 ## Phone
