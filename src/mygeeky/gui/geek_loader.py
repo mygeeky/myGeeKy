@@ -18,6 +18,27 @@ from PySide6.QtWidgets import QWidget
 from .. import month
 
 FRAME_MS = 33
+HOLD_SECONDS = 0.8          # once GeekOc shows up, he stays at least this long: long enough to see him
+
+
+class Hold:
+    """Keeps a loader up for HOLD_SECONDS once shown: `wait()` says how many ms are left (0: draw the result)."""
+
+    def __init__(self) -> None:
+        self.since: float | None = None
+
+    def shown(self) -> None:
+        if self.since is None:
+            self.since = time.monotonic()
+
+    def wait(self) -> int:
+        if self.since is None:
+            return 0
+        left = HOLD_SECONDS - (time.monotonic() - self.since)
+        if left <= 0:
+            self.since = None
+            return 0
+        return int(left * 1000) + 1
 
 
 class GeekLoader(QWidget):

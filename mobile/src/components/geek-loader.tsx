@@ -1,7 +1,7 @@
 // While something loads: GeekOc swimming (a gentle bob and drift, bubbles rising) instead of a spinner, with a
 // line saying what is happening. The desktop has the same (gui/geek_loader.py). Native-driver animations only,
 // so it costs the JavaScript thread nothing while the real work runs.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import geekoc from '../data/geekoc.json';
@@ -60,3 +60,21 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(127,216,255,0.15)' },
   text: { color: C.muted, fontSize: 13.5, marginTop: 6 },
 });
+
+export const HOLD_MS = 800;           // once GeekOc shows up, he stays at least this long: long enough to see him
+
+/** True while `loading`, and for at least HOLD_MS from when it began -- so the loader is seen, not flashed. */
+export function useHold(loading: boolean, ms = HOLD_MS): boolean {
+  const started = useRef(0);
+  const [holding, setHolding] = useState(loading);
+  useEffect(() => {
+    if (loading) {
+      started.current = Date.now();
+      const t = setTimeout(() => setHolding(true), 0);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setHolding(false), Math.max(0, ms - (Date.now() - started.current)));
+    return () => clearTimeout(t);
+  }, [loading, ms]);
+  return loading || holding;
+}

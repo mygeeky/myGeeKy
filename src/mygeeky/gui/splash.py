@@ -14,7 +14,6 @@ ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
 INTRO_SECONDS = 3.2          # then it only breathes, until the panel is ready
 LAYERS = ("ring", "G", "ee", "K", "m", "y")
-BADGE = (21, 21, 33)         # the badge's own dark background (#151521)
 
 
 @dataclass
@@ -125,10 +124,7 @@ def make_splash(size: int = 260):
             s = float(self.width())
             painter = QPainter(self)
             painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
-            painter.setOpacity(pose("badge", t).opacity * self.fade)
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(*BADGE))
-            painter.drawEllipse(QRectF(0.5, 0.5, s - 1, s - 1))
+            # no disc behind it: the ring and letters stand on their own, as the logo does
             for name in LAYERS:
                 pix = self.layers[name]
                 if pix.isNull():

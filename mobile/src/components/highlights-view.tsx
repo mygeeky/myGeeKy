@@ -8,7 +8,7 @@ import { type Highlight, languages, readIn } from '../lib/highlight-shape';
 import { recordInterest } from '../lib/model-repo';
 import { C } from '../lib/theme';
 import { Empty, open } from './ui';
-import { GeekLoader } from './geek-loader';
+import { GeekLoader, useHold } from './geek-loader';
 
 export function metaLine(h: Highlight): string {
   const m = h.meta;
@@ -66,12 +66,13 @@ function Story({ h, onClose, onLearn }: { h: Highlight; onClose: () => void; onL
 
 export function HighlightsView({ items, onLearn }: { items: Highlight[] | null; onLearn: (skill: string) => void }) {
   const [shown, setShown] = useState<Highlight | null>(null);
+  const hold = useHold(!items);
   const read = (h: Highlight) => {
     logClick('paper');
     recordInterest({ kind: 'news', text: `${h.title} ${h.hook}`, topics: h.keywords, source: h.doi || h.id }).catch(() => undefined);
     setShown(h);
   };
-  if (!items) return <GeekLoader />;
+  if (hold || !items) return <GeekLoader />;
   if (!items.length) return <Empty>No Highlights yet. They arrive with the lists, a few a week.</Empty>;
   return (
     <View>

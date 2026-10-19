@@ -21,7 +21,7 @@ import { loadReceived, loadSent } from '../lib/signals';
 import { C } from '../lib/theme';
 import { loadWins } from '../lib/wins';
 import { useToast } from './toast';
-import { GeekLoader } from './geek-loader';
+import { GeekLoader, useHold } from './geek-loader';
 
 const POSES = geekocData.poses as Record<string, string>;
 const CARD_MAX = 380;
@@ -87,6 +87,7 @@ export function MonthView() {
   const [data, setDataState] = useState<Records | null>(last.data);
   const setData = useCallback((d: Records) => { last.data = d; setDataState(d); }, []);
   const [reveal, setReveal] = useState(0);
+  const holdMonth = useHold(!data);
   const [hidden, setHidden] = useState<string[]>([]);
   const [width, setWidth] = useState(0);
   const [sharing, setSharing] = useState(false);
@@ -146,7 +147,7 @@ export function MonthView() {
     }
   }, [toast]);
 
-  if (!s) return <GeekLoader text="Counting your month…" />;
+  if (holdMonth || !s) return <GeekLoader text="Counting your month…" />;
   const cardW = Math.min(width, CARD_MAX);
   return (
     <View onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}>

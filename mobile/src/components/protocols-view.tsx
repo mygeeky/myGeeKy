@@ -20,7 +20,7 @@ import type { MyRepo } from '../lib/wins';
 import { Button, GCard, s, Thumbs } from './growth-parts';
 import { Empty, open } from './ui';
 import { logDid } from '../lib/badges';
-import { GeekLoader } from './geek-loader';
+import { GeekLoader, useHold } from './geek-loader';
 
 const STATUS = { done: ['✅', 'Done'], known: ['🎓', 'You know this'], current: ['▶', 'Start here'], todo: ['○', ''] } as const;
 const SOURCE = { reviewed: '✓ Reviewed', auto: 'Auto-built, not reviewed', mine: 'Yours' } as const;
@@ -455,7 +455,8 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
 
   const views = useMemo(() => Object.values(state).map((e) => P.view(e, P.evidence(e.protocol, repos, profile)))
     .sort((a, b) => Number(a.finished) - Number(b.finished) || a.startedAt.localeCompare(b.startedAt)), [state, repos, profile]);
-  if (!lists) return <GeekLoader />;
+  const hold = useHold(!lists);
+  if (hold || !lists) return <GeekLoader />;
   const started = new Set(views.flatMap((v) => [v.id, v.based_on]));
   const offer = byFit(lists.protocols.filter((p) => !started.has(p.id)), weights);   // best fit to your field first
   const best = offer.slice(0, REVIEWED_SHOWN);

@@ -15,13 +15,24 @@ from mygeeky import curated, highlights, highlight_shape as shape
 ROOT = Path(__file__).resolve().parents[1]
 MOBILE = ROOT / "mobile"
 
-BODY = ["About 3% of human genes are so important that almost nobody carries a broken copy of them.",
-        "The work was led by Ada Lovelace at the Broad Institute and appeared in Nature in May 2020, with 12 "
-        "institutions in 4 countries.",
-        "Earlier catalogues of human variation were too small to tell which genes can't be broken.",
-        "The team sequenced 141,456 people and used Hail and VEP to find variants that break genes.",
-        "Genes that can't be broken were often linked to disease.",
-        "Most of the people studied were of European ancestry, which the authors say limits what can be concluded."]
+BODY = [
+    "About 3% of human genes are so important that almost nobody carries a broken copy of them. A team that "
+    "read the genomes of 141,456 people found these genes by looking for the variants that are missing, not the "
+    "ones that are there. The catalogue tells doctors which broken genes are likely to matter when they read a "
+    "patient's genome, and tells researchers which genes to look at first.",
+    "The work was led by Ada Lovelace at the Broad Institute and appeared in Nature in May 2020. It was a large "
+    "collaboration: 12 institutions in 4 countries pooled sequencing data that had been collected for other "
+    "studies. Pooling it was the only way to reach a sample big enough to see variants that are very rare.",
+    "Earlier catalogues of human variation held tens of thousands of people at most. That was too few to tell "
+    "a gene that can't be broken from one where breaking variants are simply rare by chance, so lists of "
+    "essential genes were guesses built from small numbers.",
+    "The team sequenced 141,456 people and used Hail, a tool for very large genetic datasets, and VEP, which "
+    "predicts what a variant does to a gene. They counted, gene by gene, how many breaking variants they saw "
+    "against how many they would expect if breaking it did no harm.",
+    "Genes that can't be broken were often linked to disease, and many had no known role before. Most of the "
+    "people studied were of European ancestry, which the authors say limits what can be concluded for others; "
+    "they call for more diverse samples.",
+]
 GOOD = {"id": "hl-genes-that-cannot-break-abc123", "kind": "article", "title": "  Some genes   can't be broken ",
         "hook": "A catalogue of 141,456 people shows it.", "url": "https://doi.org/10.1038/s41586-020-2308-7",
         "doi": "10.1038/s41586-020-2308-7", "added": "2026-10-18", "coverage": "full", "body": BODY + ["", "  "],
@@ -31,7 +42,7 @@ GOOD = {"id": "hl-genes-that-cannot-break-abc123", "kind": "article", "title": "
         "translations": {"ar": {"name": "العربية", "rtl": True, "title": "بعض الجينات لا تنكسر", "hook": "",
                                 "body": ["حوالي 3% من الجينات البشرية مهمة جدًا.", "قاد العمل آدا لوفلايس.",
                                          "كانت الكتالوجات السابقة صغيرة.", "درس الفريق 141,456 شخصًا.",
-                                         "ارتبطت هذه الجينات بالأمراض.", "معظم المشاركين من أصل أوروبي."]},
+                                         "ارتبطت هذه الجينات بالأمراض، ومعظم المشاركين من أصل أوروبي."]},
                          "es": {"title": "Algunos genes", "body": ["solo uno", "dos", "tres"]},
                          "fr": {"title": ""}, "xx-yy-zz": {"title": "bad code"}}}
 ENTRIES = [GOOD, {**GOOD, "id": "hl-older-one", "added": "2026-01-02", "coverage": "nope", "doi": "not a doi"},
@@ -55,7 +66,7 @@ def test_a_highlight_is_checked_and_trimmed():
     assert h["body"] == BODY and list(h["translations"]) == ["ar", "es"] and h["translations"]["ar"]["rtl"]
     assert out[1]["coverage"] == "abstract" and out[1]["doi"] == ""
     ar = shape.read_in(h, "ar")
-    assert ar["body"][0].startswith("حوالي 3%") and len(ar["body"]) == len(BODY)
+    assert ar["body"][0].startswith("حوالي 3%") and len(ar["body"]) == len(BODY) == 5
     assert ar["labels"]["read"] == "اقرأ المقال" and shape.read_in(h, "zz")["code"] == "en"
     es = shape.read_in(h, "es")
     assert es["title"] == "Algunos genes" and es["body"] == BODY      # 3 paragraphs for 6: they don't line up
@@ -135,7 +146,7 @@ class _Resp:
 def test_a_draft_is_written_translated_checked_and_merged(monkeypatch, tmp_path):
     monkeypatch.setattr(highlights, "STATE_FILE", tmp_path / "highlights.json")
     story = {"title": "Some genes can't be broken", "hook": "A big catalogue shows it.",
-             "body": BODY[:4] + ["About 3% of genes, and 42% more, in 2020."],
+             "body": BODY[:3] + ["One line.", BODY[3], "About 3% of genes, and 42% more, in 2020."],
              "tool_names": ["Hail", "Seurat"], "skills": ["gwas"], "keywords": ["genetics"], "coverage": "abstract"}
     asked = []
 
@@ -143,7 +154,7 @@ def test_a_draft_is_written_translated_checked_and_merged(monkeypatch, tmp_path)
         asked.append(json["messages"][0]["content"])
         if "The language:" in json["messages"][0]["content"]:
             return _Resp({"choices": [{"message": {"content": __import__("json").dumps(
-                {"title": "Titre", "hook": "Accroche", "body": ["Un", "Deux", "Trois", "Quatre", "Environ 3%"]})}}]})
+                {"title": "Titre", "hook": "Accroche", "body": ["Un", "Deux", "Trois", "Environ 3%"]})}}]})
         return _Resp({"choices": [{"message": {"content": __import__("json").dumps(story)}}]})
 
     class Session:
@@ -156,6 +167,8 @@ def test_a_draft_is_written_translated_checked_and_merged(monkeypatch, tmp_path)
     d = highlights.drafts("new")[0]
     it = d["item"]
     assert it["coverage"] == "abstract" and it["meta"]["lead"] == "Ada Lovelace"
+    assert len(it["body"]) == 4 and it["body"][3].startswith("One line. The team")   # a line joins the next paragraph
+    assert all(len(p.split()) >= highlights.MIN_PARAGRAPH_WORDS for p in it["body"])
     assert it["translations"]["fr"]["body"][-1] == "Environ 3%"
     assert any("42%" in w for w in d["warnings"]) and any("Seurat" in w for w in d["warnings"])
     assert not any("2020" in w for w in d["warnings"])           # the year is in the looked-up facts
@@ -173,3 +186,19 @@ def test_the_article_skill_has_both_steps():
         assert rule in write, rule
     assert "Keep exactly as they are" in translate and "same number of paragraphs" in translate
     assert "What you write" not in translate
+
+
+def test_lines_join_into_paragraphs():
+    out = highlights.paragraphs(["Short.", "Also short.", " ".join(["word"] * 40), "", "A tail."])
+    assert len(out) == 1 and out[0].startswith("Short. Also short. word") and out[0].endswith("A tail.")
+    assert highlights.paragraphs(BODY) == BODY                    # real paragraphs are left alone
+
+
+def test_the_same_languages_as_chances():
+    from mygeeky import scout
+    assert highlights.LANGUAGES == scout.SAY_LANGUAGES                      # what DeepSeek translates into
+    assert {c: v for c, v in shape.NAMES.items()} == curated.LANGUAGES      # the buttons' names and directions
+    assert set(shape.LABELS) == {"en", *curated.LANGUAGES}                  # the words around a story
+    phone = (MOBILE / "src" / "lib" / "highlight-shape.ts").read_text(encoding="utf-8")
+    for code, (name, _rtl) in curated.LANGUAGES.items():
+        assert f"{code}: ['{name}'" in phone, code

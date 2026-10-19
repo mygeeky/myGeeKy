@@ -13,7 +13,6 @@ const LAYERS: [LayerName, ImageSourcePropType][] = [
   ['m', require('../../assets/loader/loader_m.png')],
   ['y', require('../../assets/loader/loader_y.png')],
 ];
-const BADGE = '#151521';
 const SECONDS = INTRO.times[INTRO.times.length - 1];
 
 function along(t: Animated.Value, values: number[]) {
@@ -61,7 +60,7 @@ export function LoadingIntro({ onDone }: { onDone: () => void }) {
       {/* a tap skips it */}
       <Pressable style={st.center} onPress={finish} accessibilityLabel="myGeeKy is starting. Tap to skip.">
         <Animated.View style={{ width: size, height: size }}>
-          <Animated.View style={[st.layer, { borderRadius: size / 2, backgroundColor: BADGE, opacity: along(t, INTRO.badge.opacity) }]} />
+          {/* no disc behind it: the ring and letters stand on their own, as the logo does (the desktop's the same) */}
           {LAYERS.map(([name, src]) => {
             const f = INTRO[name];
             const [cx, cy] = INTRO.centres[name];

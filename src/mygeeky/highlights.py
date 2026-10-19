@@ -40,7 +40,7 @@ STATE_FILE = DATA_DIR / "highlights.json"
 SKILL_FILE = Path(__file__).resolve().parent / "data" / "article_skill.md"
 OPENALEX = "https://api.openalex.org"
 UA = {"User-Agent": "mygeeky (https://github.com/mygeeky/myGeeKy)"}
-LANGUAGES = {"ar": "Arabic", "fr": "French", "de": "German", "es": "Spanish", "zh": "Chinese (Simplified)"}
+from .scout import SAY_LANGUAGES as LANGUAGES     # the same languages as Chances (tests/test_highlights.py)
 TEXT_CHARS = 60_000             # of an article's text sent to DeepSeek
 MIN_TEXT = 1500                 # less pasted text than this for an article: its abstract is used instead
 _DOI = re.compile(r"10\.\d{4,9}/[^\s\"<>]+", re.I)
@@ -213,6 +213,29 @@ def checks(story: dict[str, Any], text: str, fact: dict[str, Any]) -> list[str]:
     return out
 
 
+MIN_PARAGRAPH_WORDS = 35        # shorter than this is a line, not a paragraph: it joins the next one
+
+
+def paragraphs(body: list[Any]) -> list[str]:
+    """Whole paragraphs: one that is only a line or two is joined to the next (the last to the one before), so
+    a story always reads as an article, never as a list of lines -- whatever came back from DeepSeek."""
+    out: list[str] = []
+    carry = ""
+    for p in (" ".join(str(x).split()) for x in body if str(x).strip()):
+        p = f"{carry} {p}".strip()
+        if len(p.split()) < MIN_PARAGRAPH_WORDS:
+            carry = p
+            continue
+        out.append(p)
+        carry = ""
+    if carry:
+        if out:
+            out[-1] = f"{out[-1]} {carry}"
+        else:
+            out.append(carry)
+    return out
+
+
 def _slug(text: str) -> str:
     return "-".join(_norm(text).split()[:6])[:48].strip("-") or "article"
 
@@ -226,7 +249,7 @@ def item(fact: dict[str, Any], story: dict[str, Any], said: dict[str, dict[str, 
         "url": fact["url"], "doi": fact["doi"], "added": (today or date.today()).isoformat(), "coverage": coverage,
         "meta": {k: fact.get(k) for k in ("journal", "published", "lead", "authors", "institutions", "countries",
                                           "open_access")},
-        "body": list(story.get("body") or []),
+        "body": paragraphs(list(story.get("body") or [])),
         "tools": story.get("tool_names") or [], "skills": story.get("skills") or [],
         "keywords": story.get("keywords") or [],
         "translations": {c: {"name": shape.NAMES[c][0], "rtl": shape.NAMES[c][1], **v} for c, v in said.items()
@@ -278,6 +301,8 @@ def draft(pasted_links: str, text: str = "", abstract_only: bool = False, key: s
         say(f"Writing “{f['title'][:60]}”…")
         try:
             story = write(key, f, body, coverage, post)
+            story["body"] = paragraphs(list(story.get("body") or []))    # whole paragraphs before translating,
+                                                                          # so each language lines up with them
             said = {}
             for code in languages:
                 say(f"…in {LANGUAGES.get(code, code)}")

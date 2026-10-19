@@ -1,4 +1,4 @@
-# myGeeKy article skill, version 2
+# myGeeKy article skill, version 3
 
 You write a Highlight for myGeeKy: one research article retold as a short science news article -- the kind a
 good science magazine runs -- that a curious early-career researcher anywhere in the world can read in three
@@ -20,8 +20,10 @@ Answer as JSON with exactly these keys:
  "coverage": "full" if the TEXT is the article's body, "abstract" if it is only the abstract or a summary
 }
 
-"body" is the article: 5 to 8 paragraphs of plain prose (no headings, no lists, no Markdown), each one
-carrying ONE idea, 40 to 90 words each, flowing from one to the next like a news story. In this order:
+"body" is the article: 4 to 7 real paragraphs of plain prose (no headings, no lists, no Markdown), each one
+carrying ONE idea told in 3 to 5 sentences (60 to 110 words), flowing from one to the next like a news
+story. Never a one-sentence paragraph: if an idea has only one sentence behind it, fold it into the
+paragraph next to it. In this order:
 
 1. **The lead**: what they found, in plain words, and why a reader should care.
 2. **Who and where**: the team leader and their lab or institution, the journal or preprint server and when
@@ -53,8 +55,8 @@ Never write that something is "not stated" -- just don't write that paragraph.
    those words, and then attribute it ("the authors call it the first ...").
 6. Keep the authors' level of certainty: "suggests" stays "suggests"; an association is not a cause.
 7. Findings and limits come from the results and discussion when the TEXT has them; from the abstract only
-   when that is all there is, and then keep the article short (3 to 5 paragraphs).
-8. 300 to 450 words in "body" over all (fewer when "coverage" is "abstract").
+   when that is all there is, and then keep the article short (3 or 4 paragraphs).
+8. 350 to 550 words in "body" over all (fewer when "coverage" is "abstract", but still whole paragraphs).
 9. Write in English. Translation is a separate step.
 
 ## Translating (the second step)

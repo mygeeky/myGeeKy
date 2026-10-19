@@ -18,7 +18,7 @@ import { ProtocolsView } from './protocols-view';
 import { QuizView } from './quiz-view';
 import { HighlightsView } from './highlights-view';
 import { Empty, open, Segments } from './ui';
-import { GeekLoader } from './geek-loader';
+import { GeekLoader, useHold } from './geek-loader';
 
 type Mode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'wins' | 'collab';
 const MODES: [Mode, string][] = [['highlights', 'Highlights'], ['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'],
@@ -89,6 +89,7 @@ export function GrowView() {
   const [signals, setSignals] = useState<boolean | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const holdSkills = useHold(!skills), holdLists = useHold(!lists), holdPeople = useHold(busy || !people);
   const weights = useMemo(() => profile?.weights ?? (settings ? quickProfile(settings).weights : {}), [profile, settings]);
   const keywords = useMemo(() => [...(settings?.keywords ?? []), ...(settings?.topics ?? [])], [settings]);
 
@@ -168,7 +169,7 @@ export function GrowView() {
       {mode === 'highlights' ? <HighlightsView items={lists ? lists.highlights : null} onLearn={(skill) => onPath(skill)} /> : null}
 
       {mode === 'skills' ? (
-        !skills ? <GeekLoader text="Reading your field…" /> : (
+        holdSkills || !skills ? <GeekLoader text="Reading your field…" /> : (
           <View>
             {!skills.skills.length ? <Empty>No rising skills yet. They come from what myGeeKy read about your field: open Papers, Repos and AI models once, then come back.</Empty> : null}
             {skills.skills.map((sk) => (
@@ -200,7 +201,7 @@ export function GrowView() {
           {resources.items.slice(0, 30).map((r) => (
             <ResourceCard key={r.id} r={r} onVote={vote('resource', r.id, r.title, [...(r.skills ?? []), ...r.keywords], rank)} />
           ))}
-          {!resources.items.length ? (lists ? <Empty>No learning resources yet.</Empty> : <GeekLoader />) : null}
+          {!resources.items.length ? (holdLists ? <GeekLoader /> : <Empty>No learning resources yet.</Empty>) : null}
           <Hidden n={resources.hidden} onShow={async () => { await taste.unhide('resource'); rank(); }} />
         </View>
       ) : null}
@@ -226,7 +227,7 @@ export function GrowView() {
       {mode === 'collab' ? (
         !me ? <Empty>Collaborator matching uses Signals, which needs GitHub: add it in You → Settings.</Empty>
         : signals === false ? <Empty>Collaborator matching uses Signals: turn it on in the Signals planet, and people who complement you show up here.</Empty>
-        : busy || !people ? <GeekLoader text="Finding people…" />
+        : holdPeople || !people ? <GeekLoader text="Finding people…" />
         : (
           <View>
             {!people.people.length ? <Empty>Nobody on Signals complements you yet. As more people join myGeeKy, matches show up here.</Empty> : null}

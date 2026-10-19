@@ -15,7 +15,7 @@ import * as taste from '../lib/taste';
 import { GCard, Hidden, s, Thumbs } from './growth-parts';
 import { Empty, open, Segments } from './ui';
 import { logDid } from '../lib/badges';
-import { GeekLoader } from './geek-loader';
+import { GeekLoader, useHold } from './geek-loader';
 
 type Mode = 'seasons' | 'jobs' | 'funding' | 'conferences';
 type ListMode = Exclude<Mode, 'seasons'>;
@@ -273,6 +273,7 @@ export function ChancesView() {
   const { settings, profile } = useApp();
   const [mode, setMode] = useState<Mode>('jobs');
   const [lists, setLists] = useState<Lists | null>(null);
+  const holdLists = useHold(!lists);
   const [data, setData] = useState<{ items: Ranked[]; hidden: number }>({ items: [], hidden: 0 });
   const [country, setCountry] = useState(EVERYWHERE);
   // null until somebody picks: the period shown is then DERIVED, so the picker needs no effect to set
@@ -333,14 +334,14 @@ export function ChancesView() {
 
       {mode === 'seasons' ? (<>
         {showing ? <Text style={s.muted}>Opening {showing.from} to {showing.opens_to} · everything in it closed by {showing.to}</Text> : null}
-        {!lists ? <GeekLoader /> : !offered.length ? <Empty>No seasons yet. They arrive with the lists, which myGeeKy checks every few hours.</Empty>
+        {holdLists || !lists ? <GeekLoader /> : !offered.length ? <Empty>No seasons yet. They arrive with the lists, which myGeeKy checks every few hours.</Empty>
           : !inSeason.length ? <Empty>{country === EVERYWHERE ? NONE.seasons
             : `Nothing in this period leads to ${country}. Try another period, or 🌍 Anywhere.`}</Empty> : null}
         {inSeason.map((it) => <SeasonCard key={`${it.id}${it.occurrence?.opens ?? ''}`} it={it} unverified={!seasons.evidenced(it)} />)}
         {maker && unconfirmed ? <Text style={s.warn}>{unconfirmed} season(s) have no sentence found on their own page yet, so only you
           see them. Run the season check on your computer to confirm or drop them.</Text> : null}
       </>) : (<>
-        {!lists ? <GeekLoader /> : !shown.length ? <Empty>{NONE[mode]}</Empty> : null}
+        {holdLists || !lists ? <GeekLoader /> : !shown.length ? <Empty>{NONE[mode]}</Empty> : null}
         {shown.map((it) => (
           <Chance key={it.id} kind={mode as ListMode} it={it} onVote={async (up) => {
             const v = await taste.vote(kind!, it.id, up, `${it.title} ${it.summary}`, it.keywords);

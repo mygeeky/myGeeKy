@@ -4316,9 +4316,15 @@ class MyGeekyPanel(QWidget):
                                    "what to suggest; 🧭 turns a skill into steps.")
             rising = data.get("rising") or {}
             started = {p["skill"] for p in data.get("paths") or []}
+            from .geek_loader import GeekLoader, Hold
+            hold = self.__dict__.setdefault("_grow_hold", Hold())
             if not data:
-                from .geek_loader import GeekLoader
+                hold.shown()
                 self.grow_area.addWidget(GeekLoader("Reading your field…", theme["muted"]))
+                return
+            if wait := hold.wait():                    # he only just appeared: let him be seen first
+                self.grow_area.addWidget(GeekLoader("Reading your field…", theme["muted"]))
+                QTimer.singleShot(wait, self._render_grow)
                 return
             if not rising.get("skills"):
                 self._grow_note("No rising skills yet. They come from what myGeeKy has read about your field: "
@@ -4554,8 +4560,13 @@ class MyGeekyPanel(QWidget):
                                   "looks fake.")
         block = data.get(mode) or {}
         items = block.get("items") or []
-        if not data:
-            from .geek_loader import GeekLoader
+        from .geek_loader import GeekLoader, Hold
+        hold = self.__dict__.setdefault("_chances_hold", Hold())
+        if not data or hold.wait():                    # loading, or he only just appeared: let him be seen first
+            if not data:
+                hold.shown()
+            else:
+                QTimer.singleShot(hold.wait(), self._render_chances)
             self.chances_area.addWidget(GeekLoader("Loading the lists…", theme["muted"]))
             return
         held_back = 0

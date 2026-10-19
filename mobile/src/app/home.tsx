@@ -37,7 +37,7 @@ import { fetchPeople } from '../lib/people';
 import { fetchResearch } from '../lib/research';
 import { INNER, ordered, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
 import { C, ink, tint } from '../lib/theme';
-import { GeekLoader } from '../components/geek-loader';
+import { GeekLoader, useHold } from '../components/geek-loader';
 
 
 
@@ -278,6 +278,15 @@ export default function Home() {
   const ring = INNER.includes(sel) ? RING_NAME.inner : OUTER.includes(sel) ? RING_NAME.outer : RING_NAME.you;
   const fs = feedsOf[view];
   const loading = fs.some((f) => f.loading);
+  const holdLoading = useHold(loading);
+  // the pull-down circle only for a pull you made: loading on its own shows GeekOc instead
+  const [pulled, setPulled] = useState(false);
+  useEffect(() => {
+    if (pulled && !loading) {
+      const t = setTimeout(() => setPulled(false), 0);
+      return () => clearTimeout(t);
+    }
+  }, [pulled, loading]);
   const error = fs.map((f) => f.error).find(Boolean) ?? null;
   const at = fs.map((f) => f.at).filter(Boolean).sort()[0] ?? null;
 
@@ -363,7 +372,8 @@ export default function Home() {
           onScroll={onScroll} scrollEventThrottle={32}
           contentContainerStyle={[st.list, { minHeight: viewH + (collapsed ? 0 : 60) }]}
           refreshControl={fs.length ? (
-            <RefreshControl refreshing={loading} onRefresh={() => fs.forEach((f) => f.refresh())} tintColor={C.pink} colors={[C.pink]} />
+            <RefreshControl refreshing={pulled && loading} onRefresh={() => { setPulled(true); fs.forEach((f) => f.refresh()); }}
+                            tintColor={C.pink} colors={[C.pink]} />
           ) : undefined}
         >
           {sel === 'you' ? (
@@ -390,7 +400,7 @@ export default function Home() {
                        touched();
                      }} />
           </View>)) : (
-            loading ? <GeekLoader /> : <Empty>{error ? 'Pull down to try again.' : EMPTY[sel]}</Empty>
+            holdLoading ? <GeekLoader /> : <Empty>{error ? 'Pull down to try again.' : EMPTY[sel]}</Empty>
           )}
         </ScrollView>
       </View>

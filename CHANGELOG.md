@@ -6,8 +6,8 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 ## Unreleased
 
 - **✨ Highlights in Grow** (first, on the computer and the phone): research articles picked by the maker,
-  each retold as a short science news article -- a headline, a standfirst and a few paragraphs, one idea
-  each: what they found, who did it and where (and the collaboration), the problem and what came before,
+  each retold as a short science news article -- a headline, a standfirst and 4 to 7 whole paragraphs, one
+  idea each (a line or two on its own is joined into a paragraph): what they found, who did it and where (and the collaboration), the problem and what came before,
   what they did and with which tools, the findings, the limits -- readable in Arabic, French, German,
   Spanish and Chinese, with "learn these tools" turning a skill into a protocol. Opening one counts as a
   paper read. (`highlight_shape.py`, `lib/highlight-shape.ts`, `gui/highlights_ui.py`,
@@ -18,7 +18,10 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
   (team leader, institutions, countries, journal, date, open access) come from OpenAlex, not from the model;
   every number and tool in the article is checked against the text. Accepted ones go out with Publish.
 - **GeekOc swims while things load**, on the computer (`gui/geek_loader.py`) and the phone
-  (`components/geek-loader.tsx`), instead of a spinner or a plain "Loading…".
+  (`components/geek-loader.tsx`), instead of a spinner or a plain "Loading…". Once he appears he stays at least 0.8 s, so
+  he's seen rather than flashed; the phone's pull-down circle now shows only for a pull you made.
+- **The opening animation has no disc behind the logo** (`gui/splash.py`, `components/loading-intro.tsx`):
+  the ring and letters stand on their own.
 - **🎖 My month and your rank**, the first part of **You** on the computer (`gui/month_ui.py`; the Model tab now
   has two parts, My month and Model) and the phone (`components/month-view.tsx`). What you did this month as a calendar card with GeekOc, your three highlights
   (firsts get a ribbon) and every count; and a rank from Soldier to General, from points for what you do yourself
