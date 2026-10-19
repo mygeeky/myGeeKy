@@ -202,3 +202,9 @@ def test_the_same_languages_as_chances():
     phone = (MOBILE / "src" / "lib" / "highlight-shape.ts").read_text(encoding="utf-8")
     for code, (name, _rtl) in curated.LANGUAGES.items():
         assert f"{code}: ['{name}'" in phone, code
+
+
+def test_the_skill_ships_with_the_package():
+    import tomllib
+    data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["setuptools"]["package-data"]
+    assert any(p.endswith("data/*.md") for p in data["mygeeky"]), "data/article_skill.md must be in the wheel"

@@ -71,5 +71,5 @@ Issues = "https://github.com/mygeeky/myGeeKy/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-mygeeky = ["py.typed", "data/*.json"]
+mygeeky = ["py.typed", "data/*.json", "data/*.md"]          # data/article_skill.md: the Highlights skill
 "mygeeky.gui" = ["assets/*.png", "assets/*.ico"]
