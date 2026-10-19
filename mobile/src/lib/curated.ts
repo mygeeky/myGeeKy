@@ -84,12 +84,24 @@ export function languagesOf(it: Item): string[] {
   return Object.keys(it.translations ?? {}).sort((a, b) => at(a) - at(b) || a.localeCompare(b));
 }
 
+// curated.english_enough: the boards may be in any language; what people are shown is English. Function words are
+// counted, not accents: a London post at the Universite de Paris is still English, a French listing is full of
+// "de", "pour", "la"; nothing marking either (a short title) counts as English.
+const ENGLISH = new Set(['about', 'an', 'and', 'applications', 'apply', 'are', 'as', 'at', 'be', 'by', 'candidate', 'candidates', 'closing', 'conference', 'date', 'deadline', 'department', 'engineer', 'fellowship', 'for', 'from', 'funding', 'grant', 'has', 'have', 'in', 'institute', 'into', 'is', 'it', 'its', 'meeting', 'of', 'on', 'or', 'our', 'phd', 'position', 'postdoc', 'postdoctoral', 'research', 'researcher', 'school', 'scientist', 'student', 'that', 'the', 'this', 'to', 'under', 'university', 'we', 'what', 'who', 'will', 'with', 'within', 'workshop', 'years', 'you', 'your']);
+const OTHER = new Set(['au', 'aux', 'avec', 'bei', 'borsa', 'candidature', 'cette', 'chez', 'como', 'con', 'dans', 'das', 'de', 'degli', 'del', 'della', 'delle', 'dem', 'den', 'der', 'des', 'die', 'dont', 'dos', 'du', 'een', 'ein', 'eine', 'einen', 'emploi', 'en', 'für', 'het', 'investigación', 'la', 'laboratoire', 'las', 'le', 'les', 'leur', 'los', 'met', 'mit', 'nel', 'nicht', 'nous', 'não', 'offre', 'ont', 'par', 'para', 'pela', 'pelo', 'plaza', 'por', 'poste', 'pour', 'questo', 'recrute', 'ricerca', 'sao', 'sein', 'ses', 'sind', 'sobre', 'sono', 'sont', 'stage', 'sur', 'una', 'und', 'une', 'van', 'voor', 'vous', 'zijn']);
+export function englishEnough(...parts: unknown[]): boolean {
+  const ws = parts.map((p) => String(p ?? '')).join(' ').toLowerCase().match(/[a-zà-öø-ÿ']+/g) ?? [];
+  if (!ws.length) return false;
+  return ws.filter((w) => ENGLISH.has(w)).length >= ws.filter((w) => OTHER.has(w)).length;
+}
+
 export function cleanItem(kind: ListName, raw: any): Item | null {
   if (!raw || typeof raw !== 'object' || !ID_RE.test(String(raw.id ?? ''))) return null;
   const it: Item = { id: raw.id, title: text(raw.title, 140), url: https(raw.url), keywords: words(raw.keywords), summary: text(raw.summary, 400) };
   if (!it.title || !it.url) return null;
   const original = text(raw.original_title, 140), language = text(raw.language, 30);
   if (original && language) Object.assign(it, { original_title: original, language });   // translated, and says so
+  if (DATED.includes(kind) && !englishEnough(it.title, it.summary)) return null;
   if (DATED.includes(kind)) {
     it.deadline = day(raw.deadline);
     if (!it.deadline) return null;

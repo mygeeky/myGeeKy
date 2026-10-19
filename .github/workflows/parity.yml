@@ -1,0 +1,21 @@
+# On every pull request: shared desktop/phone files changed on one side only get a warning ("and the other
+# side?"). A reminder, never a block -- some changes rightly touch one side. The map is the table in
+# .claude/skills/mygeeky-platforms/SKILL.md (tools/parity.py).
+name: Desktop and phone in step
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Shared files changed on one side only
+        run: |
+          python tools/parity.py drift "origin/${{ github.base_ref }}" --github | tee -a "$GITHUB_STEP_SUMMARY"

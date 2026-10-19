@@ -5,6 +5,13 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **The phone shows only English listings, like the computer**: a job written only in French was kept on the
+  phone (`lib/curated.ts` now has `englishEnough`, the desktop's `english_enough`). Found by the new check below.
+- **Keeping the two apps in step** (for development): `tests/phone.py` runs any phone file in Node next to the
+  desktop's code; `tests/test_phone_rules_match_desktop.py` checks curated lists and deadlines, 👍/👎 taste, quiz
+  banks, protocol shapes and token expiry on both; `tools/parity.py` reads the desktop↔phone map, lists shared files
+  changed on one side only (also on every pull request, `.github/workflows/parity.yml`) and which pairs have a test.
+
 - **🔔 Careful notifications, off unless you switch them on**, on the computer and the phone. Choose kinds in
   setup or Settings (a Season opening; a job, funding or conference that fits you very well; an important new
   paper in your field; a new Highlight), daily or weekly, and quiet hours. Only what's really worth it, each
