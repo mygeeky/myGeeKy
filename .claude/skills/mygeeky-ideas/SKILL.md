@@ -1,13 +1,32 @@
 ---
 name: mygeeky-ideas
-description: Use when the user adds, orders, reviews or works through myGeeKy ideas ("add this to the ideas", "what's next", "let's do the ideas one by one"), or when finishing work that matches an idea.
+description: Use when the user adds, orders, reviews or works through myGeeKy ideas ("add this to the ideas", "what's next", "let's do the ideas one by one"), leaves something "for the future", or when finishing work that matches an idea.
 ---
 
-# The myGeeKy ideas list
+# The myGeeKy ideas list (and the future plans)
 
-The list lives in `ideas.md` at the repo root. It is the maintainer's private file: it is in `.gitignore`, so it
-exists only on their computer and must never be committed. If it's missing (another computer), say so and offer
-to start one; don't invent its contents.
+Two private files, kept in the maintainer's **private repo `AlsammanAlsamman/mygeeky_ideas`**, cloned next to
+this repo at `../mygeeky_ideas/`:
+
+- `ideas.md`: the ideas, in order, marked (done) when built;
+- `future.md`: plans deliberately left for later ("leave this for the future"), each with what was found (numbers,
+  evidence), why it waits, and the plan -- so it can be picked up months later without rediscovering anything.
+
+In this repo, `ideas.md` and `future.md` are symlinks to those files and are in `.gitignore`: never commit them
+here. If `../mygeeky_ideas` is missing (another computer), clone it
+(`gh repo clone AlsammanAlsamman/mygeeky_ideas ../mygeeky_ideas`) or say so; don't invent its contents.
+
+**Keep the private repo up to date, automatically.** After ANY change to `ideas.md` or `future.md` (adding,
+reordering, marking done, editing), commit and push it in `../mygeeky_ideas` in the same turn, without asking --
+the maintainer authorised this for that private repo only:
+
+```bash
+git -C ../mygeeky_ideas add -A && git -C ../mygeeky_ideas commit -q -m "<what changed, one line>" \
+  && git -C ../mygeeky_ideas push -q
+```
+
+This standing permission covers only `mygeeky_ideas`. Pushing the myGeeKy repo itself, tags, PyPI and Play still
+need the maintainer's go-ahead each time (`CLAUDE.md`).
 
 ## Its shape
 
@@ -30,5 +49,6 @@ to start one; don't invent its contents.
 2. Apply the `mygeeky-platforms` skill: an idea is only **(done)** when every platform it concerns has it, or
    the missing side is written as "still to do" on the idea (and in `PARITY.md` if it's a shared rule).
 3. Verify (tests, type check, a look at the screen), then mark it and tell the user what changed and what's left.
-4. Commit the code locally (never `ideas.md`), then ask whether to push it to GitHub. Never push, tag or upload
+4. Commit the code locally (never `ideas.md` or `future.md` here; they go to `mygeeky_ideas` as above), then ask
+   whether to push the code to GitHub. Never push, tag or upload
    without the maintainer's go-ahead for that work (see `CLAUDE.md`).

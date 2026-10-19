@@ -167,3 +167,30 @@ def test_model_tab_shows_green_and_red_keywords(monkeypatch):
             w.wait(2000)
         panel.close()
         panel.deleteLater()
+
+
+# one everyday word from each field: each must be in the dictionary (green, with related words) and suggested
+# while typing its first letters -- so someone outside AI and biology gets help too
+FIELD_WORDS = {
+    "physics": "astrophysics", "chemistry": "computational-chemistry", "materials": "materials-science",
+    "mathematics": "mathematics", "earth": "climate-change", "ocean": "oceanography", "energy": "renewable-energy",
+    "medicine": "public-health", "imaging": "medical-imaging", "engineering": "signal-processing",
+    "economics": "econometrics", "social": "sociology", "psychology": "psychology", "language": "linguistics",
+    "humanities": "digital-humanities", "history": "archaeology", "education": "education",
+    "agriculture": "agriculture", "ecology": "biodiversity", "biology": "genomics", "ai": "machine-learning",
+}
+
+
+@pytest.mark.parametrize("field,word", sorted(FIELD_WORDS.items()))
+def test_every_field_has_words(field, word):
+    from mygeeky import keywords
+    entry = keywords.lookup(word)
+    assert entry and len(entry.get("related") or []) >= 5, f"{field}: '{word}' isn't learned well"
+    label = keywords.label_of(word)
+    assert label in keywords.suggest(label[:4], limit=12), f"{field}: typing '{label[:4]}' doesn't suggest {label}"
+
+
+def test_the_phone_copy_stays_small():
+    from mygeeky import keywords
+    size = len(keywords.PHONE_COPY.read_bytes())
+    assert size < 300_000, f"the phone's word list is {size // 1024} KB"

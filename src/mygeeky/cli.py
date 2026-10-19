@@ -1573,7 +1573,7 @@ def admin_keywords_requests() -> None:
 
 
 @admin_keywords.command("build")
-@click.option("--max-terms", default=300, show_default=True, help="Keywords to learn (one search call each).")
+@click.option("--max-terms", default=1200, show_default=True, help="Keywords to learn (one search call each).")
 @click.option("--no-requests", is_flag=True, help="Don't add the requested keywords to the seeds.")
 @click.option("--out", type=click.Path(dir_okay=False, path_type=Path), default=None,
               help="Where to write it (default: the package's data/keywords.json).")

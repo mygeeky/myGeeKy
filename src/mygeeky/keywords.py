@@ -51,19 +51,48 @@ MAX_RELATED = 12
 
 # where the model starts; it then follows what these topics are used with
 SEEDS = [
+    # AI, data and computing (the start)
     "ai", "artificial-intelligence", "machine-learning", "deep-learning", "llm", "nlp", "computer-vision",
     "reinforcement-learning", "generative-ai", "data-science", "statistics", "bayesian", "causal-inference",
-    "time-series", "visualization", "bioinformatics", "genomics", "genetics", "gwas", "single-cell",
-    "rna-seq", "transcriptomics", "proteomics", "metagenomics", "microbiome", "phylogenetics",
-    "population-genetics", "epidemiology", "neuroscience", "medical-imaging", "drug-discovery",
-    "protein-structure", "cheminformatics", "plant-biology", "ecology", "climate", "remote-sensing",
-    "gis", "physics", "astronomy", "chemistry", "materials-science", "quantum-computing", "robotics",
-    "economics", "finance", "social-science", "education", "healthcare", "workflow", "snakemake",
-    "nextflow", "hpc", "cloud", "kubernetes", "devops", "databases", "web-development", "rust",
-    "python", "r", "julia", "cpp", "javascript", "security", "privacy", "open-science",
-    "reproducibility", "research-software", "scientific-computing", "simulation", "optimization",
-    "graph-neural-networks", "knowledge-graph", "recommender-system", "information-retrieval",
-    "speech-recognition", "accessibility",
+    "time-series", "visualization", "graph-neural-networks", "knowledge-graph", "recommender-system",
+    "information-retrieval", "speech-recognition", "accessibility", "workflow", "snakemake", "nextflow", "hpc",
+    "cloud", "kubernetes", "devops", "databases", "web-development", "rust", "python", "r", "julia", "cpp",
+    "javascript", "security", "privacy", "open-science", "reproducibility", "research-software",
+    "scientific-computing", "simulation", "optimization", "quantum-computing", "robotics",
+    # life sciences
+    "bioinformatics", "genomics", "genetics", "gwas", "single-cell", "rna-seq", "transcriptomics", "proteomics",
+    "metabolomics", "epigenomics", "metagenomics", "microbiome", "phylogenetics", "population-genetics",
+    "evolution", "structural-biology", "protein-structure", "systems-biology", "synthetic-biology", "crispr",
+    "immunology", "virology", "microbiology", "cell-biology", "neuroscience", "plant-biology", "ecology",
+    "biodiversity", "conservation", "zoology", "marine-biology", "agriculture", "plant-breeding",
+    # medicine and health
+    "epidemiology", "public-health", "medical-imaging", "radiology", "clinical-trials", "drug-discovery",
+    "pharmacology", "cancer", "oncology", "cardiology", "mental-health", "healthcare", "health-informatics",
+    "biostatistics", "survival-analysis", "nutrition", "global-health", "electronic-health-records",
+    # physical sciences and mathematics
+    "physics", "particle-physics", "condensed-matter", "quantum-mechanics", "optics", "photonics",
+    "plasma-physics", "fluid-dynamics", "computational-physics", "astronomy", "astrophysics", "cosmology",
+    "exoplanets", "chemistry", "cheminformatics", "computational-chemistry", "quantum-chemistry",
+    "molecular-dynamics", "materials-science", "nanotechnology", "crystallography", "spectroscopy",
+    "mathematics", "numerical-methods", "linear-algebra", "differential-equations", "topology",
+    "number-theory", "probability", "operations-research",
+    # earth, climate and environment
+    "climate", "climate-change", "climate-science", "meteorology", "weather", "oceanography", "hydrology",
+    "geology", "geophysics", "seismology", "earth-science", "remote-sensing", "gis", "geospatial",
+    "environmental-science", "energy", "renewable-energy", "solar-energy", "sustainability", "air-quality",
+    # engineering
+    "engineering", "mechanical-engineering", "electrical-engineering", "civil-engineering",
+    "control-systems", "signal-processing", "embedded-systems", "iot", "cad", "finite-element-analysis",
+    "aerospace", "automotive", "power-systems", "biomedical-engineering",
+    # social sciences, economics and policy
+    "economics", "econometrics", "finance", "social-science", "sociology", "political-science",
+    "psychology", "cognitive-science", "linguistics", "computational-linguistics", "demography",
+    "survey", "public-policy", "law", "urban-planning", "geography", "anthropology", "network-analysis",
+    "computational-social-science",
+    # humanities, education and the arts
+    "digital-humanities", "history", "archaeology", "philosophy", "literature", "text-mining",
+    "archives", "museums", "music", "musicology", "art", "education", "edtech", "learning-analytics",
+    "open-educational-resources", "journalism", "library",
 ]
 # what people type -> the topic GitHub uses
 ALIASES = {
@@ -73,6 +102,24 @@ ALIASES = {
     "genai": "generative-ai", "scrna-seq": "single-cell", "scrnaseq": "single-cell", "single cell": "single-cell",
     "rnaseq": "rna-seq", "genome-wide association": "gwas", "c++": "cpp", "js": "javascript",
     "quantum": "quantum-computing", "gnn": "graph-neural-networks", "nf-core": "nextflow",
+    "climate change": "climate-change", "public health": "public-health", "mental health": "mental-health",
+    "global health": "global-health", "clinical trials": "clinical-trials", "drug discovery": "drug-discovery",
+    "particle physics": "particle-physics", "high energy physics": "particle-physics", "hep": "particle-physics",
+    "condensed matter": "condensed-matter", "quantum mechanics": "quantum-mechanics", "fluid dynamics": "fluid-dynamics",
+    "materials science": "materials-science", "molecular dynamics": "molecular-dynamics", "md": "molecular-dynamics",
+    "earth science": "earth-science", "remote sensing": "remote-sensing", "renewable energy": "renewable-energy",
+    "solar energy": "solar-energy", "air quality": "air-quality", "signal processing": "signal-processing",
+    "finite element": "finite-element-analysis", "fem": "finite-element-analysis", "fea": "finite-element-analysis",
+    "political science": "political-science", "social science": "social-science", "cognitive science": "cognitive-science",
+    "public policy": "public-policy", "urban planning": "urban-planning", "digital humanities": "digital-humanities",
+    "dh": "digital-humanities", "text mining": "text-mining", "operations research": "operations-research",
+    "or": "operations-research", "health informatics": "health-informatics", "ehr": "electronic-health-records",
+    "electronic health records": "electronic-health-records", "survival analysis": "survival-analysis",
+    "plant breeding": "plant-breeding", "marine biology": "marine-biology", "cell biology": "cell-biology",
+    "structural biology": "structural-biology", "systems biology": "systems-biology", "synthetic biology": "synthetic-biology",
+    "computational chemistry": "computational-chemistry", "quantum chemistry": "quantum-chemistry",
+    "computational linguistics": "computational-linguistics", "network analysis": "network-analysis",
+    "learning analytics": "learning-analytics", "econometric": "econometrics", "astro": "astrophysics",
 }
 # topics that go with almost everything, so they say nothing about meaning
 GENERIC = {
@@ -240,9 +287,11 @@ def _repos_for(client, topic: str, per_page: int = 100) -> list[list[str]]:
     return [[t for t in (it.get("topics") or []) if _SLUG_RE.match(t)] for it in resp.json().get("items", [])]
 
 
-def build(client, seeds: Iterable[str] = SEEDS, extra: Iterable[str] = (), max_terms: int = 300,
-          min_repos: int = 15, log: Callable[[str], None] = lambda m: None) -> dict[str, Any]:
-    """Learn the dictionary from GitHub (one search call per keyword)."""
+def build(client, seeds: Iterable[str] = SEEDS, extra: Iterable[str] = (), max_terms: int = 1200,
+          min_repos: int = 15, seed_min_repos: int = 6, log: Callable[[str], None] = lambda m: None) -> dict[str, Any]:
+    """Learn the dictionary from GitHub (one search call per keyword). Every seed and requested word is learned
+    first; a seed needs only `seed_min_repos` repos (a smaller field still has few), a neighbour `min_repos`."""
+    chosen = {slug(s) for s in list(extra) + list(seeds)}
     queue = list(dict.fromkeys([slug(s) for s in list(extra) + list(seeds) if _SLUG_RE.match(slug(s))]))
     seen: set[str] = set()
     per_topic: dict[str, list[list[str]]] = {}
@@ -253,7 +302,7 @@ def build(client, seeds: Iterable[str] = SEEDS, extra: Iterable[str] = (), max_t
             continue
         seen.add(topic)
         repos = _repos_for(client, topic)
-        if len(repos) < min_repos:
+        if len(repos) < (seed_min_repos if topic in chosen else min_repos):
             continue
         per_topic[topic] = repos
         for topics in repos:
