@@ -45,8 +45,8 @@ type NewsPart = 'headlines' | 'discuss';
 const NEWS_PARTS: [NewsPart, string][] = [['headlines', '📰 Headlines'], ['discuss', '💬 Papers & discussions']];
 type RepoPart = 'help' | 'rising';
 const REPO_PARTS: [RepoPart, string][] = [['help', '🛠 Help out'], ['rising', '📈 Rising']];
-type YouPart = 'model' | 'badges' | 'more' | 'ideas' | 'admin';
-const YOU_PARTS: [YouPart, string][] = [['model', 'Model'], ['badges', 'Badges'], ['more', 'Settings'], ['ideas', 'Ideas']];
+type YouPart = 'month' | 'model' | 'badges' | 'more' | 'ideas' | 'admin';
+const YOU_PARTS: [YouPart, string][] = [['month', 'My month'], ['model', 'Model'], ['badges', 'Badges'], ['more', 'Settings'], ['ideas', 'Ideas']];
 
 const EMPTY: Partial<Record<SectionId, string>> = {
   live: 'Nothing new around you yet. Pull down to check again.',
@@ -197,7 +197,7 @@ export default function Home() {
   const launches = useFeed('launches', 6, (p) => fetchLaunches(p.weights));
   const feedsOf: Record<SectionId, { loading: boolean; error: string | null; at: string | null; refresh: () => Promise<void> }[]> = {
     live: [live, people], activity: [live], people: [people], signals: [], news: [headlines, discuss], papers: [research],
-    repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], month: [], chances: [], market: [market], discuss: [discuss],
+    repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market], discuss: [discuss],
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
@@ -210,7 +210,7 @@ export default function Home() {
   useEffect(() => { checkTokens().then((t) => setTokenWarn(t.find((x) => x.warn) ?? null)).catch(() => undefined); }, []);
   const [newsPart, setNewsPart] = useState<NewsPart>('headlines');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
-  const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' ? params.part : 'model');
+  const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' || params.part === 'model' ? params.part : 'month');
   // the maker's Admin part: only for the account GitHub says owns the connected data repo (lib/admin.ts)
   const [admin, setAdmin] = useState<string | null>(null);
   useEffect(() => {
@@ -239,7 +239,7 @@ export default function Home() {
   const shownFor = useRef<SectionId | null>(null);
   useEffect(() => { loadSeen().then(setSeen); }, []);
   useEffect(() => {                  // a promotion since you were last told: said once, a little after opening
-    const t = setTimeout(() => rankNews().then((name) => name && toast(`🎖  Promoted to ${name}! See it in My month.`)).catch(() => undefined), 6000);
+    const t = setTimeout(() => rankNews().then((name) => name && toast(`🎖  Promoted to ${name}! See it in You → My month.`)).catch(() => undefined), 6000);
     return () => clearTimeout(t);
   }, [toast]);
   const counts = useMemo(() => {
@@ -367,7 +367,7 @@ export default function Home() {
         >
           {sel === 'you' ? (
             <View style={{ marginHorizontal: -4 }}>
-              {youPart === 'model' ? <ModelPart /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart me={admin} /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
+              {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart me={admin} /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
             </View>
           ) : !user && NEEDS_GITHUB[sel] ? (
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />
@@ -375,8 +375,6 @@ export default function Home() {
             <SignalsView />
           ) : sel === 'grow' ? (
             <GrowView />
-          ) : sel === 'month' ? (
-            <MonthView />
           ) : sel === 'chances' ? (
             <ChancesView />
           ) : rows.length ? rows.map((r, i) => (<View key={r.id}>

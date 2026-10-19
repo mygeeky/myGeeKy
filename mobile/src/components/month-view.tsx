@@ -54,6 +54,11 @@ async function extras(keywords: number) {
   return { protocols, badges, sent, received, github: gh.events ?? [], langs: gh.langs ?? {} };
 }
 
+type Extras = Awaited<ReturnType<typeof extras>>;
+// The last records, kept while the app runs: opening You again shows them at once, then refreshes quietly.
+const last: { data: Records | null; more: Extras | null } = { data: null, more: null };
+const REVEAL_MS = 90;          // the drawings appear one after another, so the rank and card show first
+
 function heightOf(svg: string): number {
   return Number(/viewBox="0 0 \d+ (\d+)"/.exec(svg)?.[1] ?? 200);
 }
@@ -73,21 +78,24 @@ export function MonthView() {
   const toast = useToast();
   const { settings, token } = useApp();
   const username = settings?.username ?? '', keywords = settings?.keywords.length ?? 0;
-  const [more, setMore] = useState<Awaited<ReturnType<typeof extras>> | null>(null);
+  const [more, setMoreState] = useState<Extras | null>(last.more);
+  const setMore = useCallback((m: Extras) => { last.more = m; setMoreState(m); }, []);
   const today = new Date();
   const thisMonth: [number, number] = [today.getFullYear(), today.getMonth() + 1];
   const [shown, setShown] = useState<[number, number]>(thisMonth);
-  const [data, setData] = useState<Records | null>(null);
+  const [data, setDataState] = useState<Records | null>(last.data);
+  const setData = useCallback((d: Records) => { last.data = d; setDataState(d); }, []);
+  const [reveal, setReveal] = useState(0);
   const [hidden, setHidden] = useState<string[]>([]);
   const [width, setWidth] = useState(0);
   const [sharing, setSharing] = useState(false);
   const shot = useRef<View>(null);
 
-  useEffect(() => { records().then(setData).catch(() => setData({ usage: [], events: [], wins: [], terms: [], myRepos: {} })); }, []);
+  useEffect(() => { records().then(setData).catch(() => setData({ usage: [], events: [], wins: [], terms: [], myRepos: {} })); }, [setData]);
   useEffect(() => {
     extras(keywords).then(setMore).catch(() => undefined);
     refreshMyGitHub(username, token).then((read) => (read ? extras(keywords).then(setMore) : undefined)).catch(() => undefined);
-  }, [username, keywords, token]);
+  }, [username, keywords, token, setMore]);
   const stats = useMemo(() => (data && more ? MV.stats({
     has_github: !!username, github: more.github, repo_langs: { ...more.langs, ...data.myRepos }, wins: data.wins,
     events: [...data.terms, ...data.events.filter((e) => (e as { kind?: string }).kind === 'follow' && !(data.terms as { at?: string; kind?: string }[])
@@ -99,6 +107,16 @@ export function MonthView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data]);
   const card = useMemo(() => (s ? M.cardSvg(s, POSES[M.cardPose(s)] ?? '', hidden) : ''), [s, hidden]);
+  const ladder = useMemo(() => (s ? M.ladderSvg(s.points, !C.dark) : ''), [s]);
+  const drawings = useMemo(() => (stats ? MV.DIVES.map(([key, title, , draw]) => {
+    const svg = draw(stats, POSES);
+    return { key, title, svg, h: heightOf(svg), said: MV.say(stats, key) };
+  }) : []), [stats]);
+  useEffect(() => {
+    if (!drawings.length || reveal >= drawings.length) return;
+    const t = setTimeout(() => setReveal(reveal + 1), REVEAL_MS);
+    return () => clearTimeout(t);
+  }, [drawings, reveal]);
 
   const move = (step: number) => {
     let [y, m] = shown;
@@ -140,7 +158,7 @@ export function MonthView() {
       </View>
       <Text style={st.rank}>🎖  {M.rankLine(s)}</Text>
       <Text style={st.muted}>{M.monthLine(s)}</Text>
-      {width > 0 ? <SvgXml xml={M.ladderSvg(s.points, !C.dark)} width={width} height={(width * 170) / 640} /> : null}
+      {width > 0 ? <SvgXml xml={ladder} width={width} height={(width * 170) / 640} /> : null}
 
       <Text style={st.head}>YOUR CARD</Text>
       {cardW > 0 ? (
@@ -168,24 +186,19 @@ export function MonthView() {
         <Text style={st.shareText}>{sharing ? 'Making the picture…' : '📤  Share my month'}</Text>
       </Pressable>
       <Text style={st.head}>YOUR MONTH IN PICTURES</Text>
-      {stats && width > 0 ? MV.DIVES.map(([key, title, pose, draw]) => {
-        const svg = draw(stats, POSES);
+      {drawings.length && width > 0 ? drawings.slice(0, reveal).map(({ key, title, svg, h, said }) => {
         const w = Math.min(width, 440);
         return (
           <View key={key} style={{ marginBottom: 16 }}>
-            <View style={st.dive}>
-              <SvgXml xml={`<svg viewBox="0 0 620 620">${POSES[pose] ?? ''}</svg>`} width={48} height={48} />
-              <View style={{ flex: 1 }}>
-                <Text style={st.diveTitle}>{title}</Text>
-                <Text style={st.diveSay}>{MV.say(stats, key)}</Text>
-              </View>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <SvgXml xml={svg} width={w} height={(w * heightOf(svg)) / 320} />
+            <Text style={st.diveTitle}>{title}</Text>
+            <Text style={st.diveSay}>🐙 {said}</Text>
+            <View style={{ alignItems: 'center', marginTop: 8 }}>
+              <SvgXml xml={svg} width={w} height={(w * h) / 320} />
             </View>
           </View>
         );
-      }) : <Text style={st.muted}>Drawing your month…</Text>}
+      }) : null}
+      {reveal < Math.max(drawings.length, 1) ? <Text style={st.muted}>Drawing your month…</Text> : null}
 
       <Text style={st.note}>
         Points come from what you do yourself: reading, learning, building, sharing ideas and meeting people. They count
@@ -215,7 +228,6 @@ const st = StyleSheet.create({
   share: { backgroundColor: C.violet, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
   shareText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   note: { color: C.muted, fontSize: 12, lineHeight: 17, marginTop: 10 },
-  dive: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   diveTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
   diveSay: { color: C.muted, fontSize: 12.5, marginTop: 2 },
 });

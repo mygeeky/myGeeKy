@@ -574,8 +574,8 @@ once a week; if GitHub changes that page, they just don't show.
 
 ## 🎖 My month and your rank
 
-The 🎖 **My month** tab (on the phone, the **My month** planet) shows what you did this month and your rank,
-with a card you can share.
+**You → 🎖 My month** (the first part of You, on the computer and the phone) shows what you did this month and your
+rank, with a card you can share.
 
 **Your rank** climbs from Soldier to General as you earn points for what you do yourself:
 

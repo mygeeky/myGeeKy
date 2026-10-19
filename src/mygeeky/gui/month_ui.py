@@ -8,6 +8,7 @@ posted: you save or copy the picture and share it yourself.
 
 from __future__ import annotations
 
+import time
 from datetime import date
 from pathlib import Path
 from typing import Any, Callable
@@ -25,6 +26,7 @@ from .. import monthviz
 from . import app as logic
 
 CARD_PX = (1080, 1350)
+FRESH_SECONDS = 60                # coming back to You within this shows what's drawn; later, it's redrawn
 CARD_MAX = 380                   # the card's width on the panel
 DRAWING_MAX = 420                # each drawing's
 
@@ -184,12 +186,18 @@ class MonthPage(QWidget):
         self.hidden.clear()
         self.render()
 
+    def show(self) -> None:
+        """You opened the page: redraw unless it was drawn a moment ago (it reads several files)."""
+        if self.data is None or time.monotonic() - getattr(self, "_drawn_at", 0.0) > FRESH_SECONDS:
+            self.render()
+
     def svg(self) -> str:
         s = self.data or {}
         return months.card_svg(s, months.geekoc(months.card_pose(s)), self.hidden)
 
     def render(self) -> None:
         t = self.theme()
+        self._drawn_at = time.monotonic()
         self.data = s = logic.get_month(self.cfg, *self.shown)
         today = date.today()
         self.prev_btn.setEnabled(self.shown > tuple(s["first"]))
