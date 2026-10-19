@@ -15,6 +15,8 @@ this repo at `../mygeeky_ideas/`:
 In this repo, `ideas.md` and `future.md` are symlinks to those files and are in `.gitignore`: never commit them
 here. If `../mygeeky_ideas` is missing (another computer), clone it
 (`gh repo clone AlsammanAlsamman/mygeeky_ideas ../mygeeky_ideas`) or say so; don't invent its contents.
+Edit them with the Edit tool or in `../mygeeky_ideas/` directly: `sed -i` replaces a symlink with a plain copy, so
+the change never reaches the private repo (check with `ls -la ideas.md` that it is still a link).
 
 **Keep the private repo up to date, automatically.** After ANY change to `ideas.md` or `future.md` (adding,
 reordering, marking done, editing), commit and push it in `../mygeeky_ideas` in the same turn, without asking --
