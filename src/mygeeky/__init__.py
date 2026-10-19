@@ -4,7 +4,7 @@ myGeeKy never follows anyone automatically. It only ever suggests; you
 decide who to follow, by hand, on github.com.
 """
 
-__version__ = "0.26.2"
+__version__ = "0.27.0"
 
 
 def use_system_certificates() -> None:

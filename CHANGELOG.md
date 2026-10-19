@@ -3,7 +3,23 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.27.0 (2026-10-19): your month, your rank, and research told as stories
+
+- **Continue as a guest**, on the computer and the phone: setup offers GitHub, ORCID or a guest start with your
+  keywords (word suggestions while you type, from myGeeKy's dictionary). After a GitHub sign-in the phone walks
+  you through your data repo and Signals, both optional. Tabs put You first, and without GitHub the ones that
+  would only say "add GitHub" go last.
+- **Learning before an account**: what you open is learned on the device even with no data repo, and nothing is
+  lost when you connect one later (it's sent then).
+- **Token guides in pictures**: what to click on GitHub to make each token, drawn step by step, on both apps.
+- **Ideas by email** for people without GitHub ("✉ Send by email").
+- **"Your protocol is built"** floats up after building one, wherever you've scrolled; reviewed protocols show
+  the 3 that fit your field best, then "See all".
+- **Seasons**: 74 more scholarships and calls from around the world (and CIHEAM Chania's MSc in Greece), each
+  checked on its own site; a season's period no longer chains into a whole year.
+- **Security**: text from the internet is never shown as HTML in the panel, and quiz code written by AI never
+  runs. Phone pairing accepts long and dotted GitHub tokens.
+- **Saving the same file from two threads at once** no longer fails (`files.write_text_atomic`).
 
 - **✨ Highlights in Grow** (first, on the computer and the phone): research articles picked by the maker,
   each retold as a short science news article -- a headline, a standfirst and 4 to 7 whole paragraphs, one
