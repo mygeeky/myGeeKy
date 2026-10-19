@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.28.0 (2026-10-19): careful notifications, and words for every field
 
 - **A dictionary for every field**: myGeeKy's keyword dictionary grew from 300 words to 1,200, built from 197
   starting topics across physics, chemistry, materials, mathematics, earth and ocean science, energy, medicine,
