@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -25,7 +26,9 @@ from typing import Any
 def write_text_atomic(path: Path, text: str, retries: int = 6) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    # its own temporary file per thread: the panel saves from background threads too, and two saves of the
+    # same file sharing one name made the second one's swap fail (its file already moved by the first)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
     with open(tmp, "w", encoding="utf-8") as fh:
         fh.write(text)
         fh.flush()
