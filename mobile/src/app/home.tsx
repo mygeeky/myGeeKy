@@ -37,6 +37,7 @@ import { fetchPeople } from '../lib/people';
 import { fetchResearch } from '../lib/research';
 import { INNER, ordered, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
 import { C, ink, tint } from '../lib/theme';
+import { GeekLoader } from '../components/geek-loader';
 
 
 
@@ -389,7 +390,7 @@ export default function Home() {
                        touched();
                      }} />
           </View>)) : (
-            <Empty>{loading ? 'Loading…' : error ? 'Pull down to try again.' : EMPTY[sel]}</Empty>
+            loading ? <GeekLoader /> : <Empty>{error ? 'Pull down to try again.' : EMPTY[sel]}</Empty>
           )}
         </ScrollView>
       </View>

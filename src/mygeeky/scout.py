@@ -149,9 +149,10 @@ def page(url: str, session: requests.Session | None = None, timeout: float = 25.
 
 
 # --------------------------------------------------------------------------- DeepSeek
-def ask(key: str, system: str, user: str, post: Callable[..., Any] | None = None, timeout: float = 120.0) -> dict[str, Any]:
+def ask(key: str, system: str, user: str, post: Callable[..., Any] | None = None, timeout: float = 120.0,
+        max_tokens: int = 2000) -> dict[str, Any]:
     """One JSON answer from DeepSeek (temperature 0: the same page gives the same answer)."""
-    body = {"model": MODEL, "temperature": 0, "response_format": {"type": "json_object"}, "max_tokens": 2000,
+    body = {"model": MODEL, "temperature": 0, "response_format": {"type": "json_object"}, "max_tokens": max_tokens,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
     r = (post or requests.post)(API_URL, json=body, timeout=timeout,
                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
@@ -899,11 +900,12 @@ def _git(args: list[str], cwd: Path) -> str:
 
 
 def publish(dry_run: bool = False, repo_url: str = REPO_URL) -> dict[str, Any]:
-    """Add every accepted listing to curated.json on GitHub's main branch: a fresh shallow copy of main in
+    """Add every accepted listing and Highlight to curated.json on GitHub's main branch: a fresh shallow copy of main in
     a temporary folder, one commit, one push, with your own git login. Your own checkouts aren't touched.
     {"published": n, "commit": sha} -- or, with dry_run, the change without pushing."""
-    accepted = candidates("accepted")
-    if not accepted:
+    from . import highlights
+    accepted, stories = candidates("accepted"), highlights.accepted()       # stories: accepted Highlights
+    if not accepted and not stories:
         return {"published": 0, "commit": ""}
     tmp = Path(tempfile.mkdtemp(prefix="mygeeky-publish-"))
     try:
@@ -915,6 +917,8 @@ def publish(dry_run: bool = False, repo_url: str = REPO_URL) -> dict[str, Any]:
                                     "Chances work into main first, then publish.")
         data = json.loads(path.read_text(encoding="utf-8"))
         merged, added = merge(data, accepted)
+        merged, added_stories = highlights.merge(merged, stories)
+        added += added_stories
         problems = curated.problems(merged)
         if problems:
             raise ValueError("The file wouldn't pass its check: " + "; ".join(problems[:3]))
@@ -922,6 +926,7 @@ def publish(dry_run: bool = False, repo_url: str = REPO_URL) -> dict[str, Any]:
             raise ValueError("They're all on the lists already")
         path.write_text(json.dumps(merged, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         counts = {k: sum(1 for c in accepted if c["kind"] == k) for k in KINDS}
+        counts["highlights"] = added_stories
         summary = ", ".join(f"{n} {k}" for k, n in counts.items() if n)
         if dry_run:
             return {"published": 0, "would_add": added, "summary": summary}
@@ -931,6 +936,7 @@ def publish(dry_run: bool = False, repo_url: str = REPO_URL) -> dict[str, Any]:
         sha = _git(["rev-parse", "--short", "HEAD"], repo).strip()
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    highlights.mark_published([h["id"] for h in stories])
     state = load()
     for c in accepted:
         if c["id"] in state["candidates"]:

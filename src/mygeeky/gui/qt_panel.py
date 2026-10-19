@@ -4003,7 +4003,7 @@ class MyGeekyPanel(QWidget):
         return scroll
 
     # ------------------------------------------------------------------ 🌱 Grow and 🎯 Chances
-    GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("quiz", "🏆 Quiz"), ("learn", "📚 Learn"),
+    GROW_MODES = (("highlights", "✨ Highlights"), ("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("quiz", "🏆 Quiz"), ("learn", "📚 Learn"),
                   ("wins", "🎉 Wins"), ("collab", "🤝 Collaborators"))
     CHANCE_MODES = (("seasons", "🗓 Seasons"), ("jobs", "💼 Jobs"), ("funding", "💶 Funding"),
                     ("conferences", "🎤 Conferences"))
@@ -4056,7 +4056,7 @@ class MyGeekyPanel(QWidget):
         return buttons
 
     def _build_grow_tab(self) -> QScrollArea:
-        self._grow_mode = "skills"
+        self._grow_mode = "highlights"
         self._growth: dict[str, Any] = {}
         self._collabs: dict[str, Any] = {}
         self._growth_running = False
@@ -4251,6 +4251,25 @@ class MyGeekyPanel(QWidget):
         self._chances = data if isinstance(data, dict) else {}
         self._render_chances()
 
+    def _render_highlights(self, theme: dict[str, Any]) -> None:
+        from .highlights_ui import HighlightCard
+        self.grow_hint.setText("Research articles picked by the maker, each retold as a short news article in plain "
+                               "words: what they found, who did it, what they did and with which tools. Tap one to "
+                               "read it in your language.")
+        items = logic.get_highlights()
+        if not items:
+            self._grow_note("No Highlights yet. They arrive with the lists, a few a week.", theme)
+        for it in items:
+            self.grow_area.addWidget(HighlightCard(it, theme, self._open_highlight))
+
+    def _open_highlight(self, item: dict[str, Any], warnings: list[str] | None = None) -> None:
+        from .highlights_ui import HighlightDialog
+        if warnings is None:
+            logic.read_highlight(item)
+        HighlightDialog(item, THEMES[self._theme_name()], logic.open_link,
+                        on_learn=None if warnings is not None else self._on_start_path, parent=self,
+                        warnings=warnings).exec()
+
     def _set_grow_mode(self, mode: str) -> None:
         self._grow_mode = mode
         if mode == "collab":
@@ -4289,14 +4308,17 @@ class MyGeekyPanel(QWidget):
             self.grow_updated_label.setText(err or ("updated " + _time_ago(updated) if updated else ""))
         mode = self._grow_mode
         open_ = logic.open_link
-        if mode == "skills":
+        if mode == "highlights":
+            self._render_highlights(theme)
+        elif mode == "skills":
             self.grow_hint.setText("Skills growing in your field that your profile doesn't show yet, from the "
                                    "papers, repos, models and people myGeeKy follows for you. 👍 / 👎 teach it "
                                    "what to suggest; 🧭 turns a skill into steps.")
             rising = data.get("rising") or {}
             started = {p["skill"] for p in data.get("paths") or []}
             if not data:
-                self._grow_note("Reading your field…", theme)
+                from .geek_loader import GeekLoader
+                self.grow_area.addWidget(GeekLoader("Reading your field…", theme["muted"]))
                 return
             if not rising.get("skills"):
                 self._grow_note("No rising skills yet. They come from what myGeeKy has read about your field: "
@@ -4533,9 +4555,8 @@ class MyGeekyPanel(QWidget):
         block = data.get(mode) or {}
         items = block.get("items") or []
         if not data:
-            lbl = QLabel("Loading…")
-            lbl.setStyleSheet(f"color:{theme['muted']}; font-size:11px; background:transparent;")
-            self.chances_area.addWidget(lbl)
+            from .geek_loader import GeekLoader
+            self.chances_area.addWidget(GeekLoader("Loading the lists…", theme["muted"]))
             return
         held_back = 0
         if self._country:
@@ -5433,6 +5454,12 @@ class MyGeekyPanel(QWidget):
         self.admin_scout.setContentsMargins(0, 0, 0, 0)
         self.admin_scout.setSpacing(6)
         layout.addWidget(scout_box)
+        from .highlights_ui import AdminHighlights
+        self.admin_hl_header = QLabel("\u2728 HIGHLIGHTS TO WRITE")
+        layout.addWidget(self.admin_hl_header)
+        self.admin_highlights = AdminHighlights(lambda: THEMES[self._theme_name()], self._run_async,
+                                                lambda it, warn: self._open_highlight(it, warn), self._on_scout_publish)
+        layout.addWidget(self.admin_highlights)
         self.admin_quiz_header = QLabel("\U0001f4dd QUIZZES")
         layout.addWidget(self.admin_quiz_header)
         quiz_box = QWidget()
@@ -5530,7 +5557,9 @@ class MyGeekyPanel(QWidget):
         self.admin_kw.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; background:transparent;")
         self._render_scout()
         self._render_quizwriter()
-        for lbl in self.admin_headers + [self.admin_kw_header, self.admin_scout_header, self.admin_quiz_header]:
+        self.admin_highlights.render()
+        for lbl in self.admin_headers + [self.admin_kw_header, self.admin_scout_header, self.admin_quiz_header,
+                                         self.admin_hl_header]:
             lbl.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
                               "margin-top:6px; background:transparent;")
         for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated, self.admin_calls):
@@ -5781,7 +5810,8 @@ class MyGeekyPanel(QWidget):
                             self._on_scout_find, accent=key_ok and not running)
         find.setEnabled(key_ok and not running)
         tools.add(find)
-        n_acc = len(st["accepted"])
+        from .. import highlights
+        n_acc = len(st["accepted"]) + len(highlights.accepted())
         pub = _pill_button(f"🚀 Publish {n_acc} to mygeeky.org" if n_acc else "🚀 Publish",
                            "Adds what you accepted to everyone's lists", theme, self._on_scout_publish, accent=n_acc > 0)
         pub.setEnabled(n_acc > 0 and not getattr(self, "_scout_publishing", False))
@@ -6153,9 +6183,12 @@ class MyGeekyPanel(QWidget):
         self._render_scout()
 
     def _on_scout_publish(self) -> None:
-        st = logic.scout_state()
+        from .. import highlights
+        st, n_hl = logic.scout_state(), len(highlights.accepted())
+        what = " and ".join(x for x in (f"{len(st['accepted'])} listing(s) to everyone's Chances" if st["accepted"] else "",
+                                        f"{n_hl} Highlight(s) to Grow" if n_hl else "") if x)
         box = self._box("Publish to mygeeky.org",
-                        f"Add {len(st['accepted'])} listing(s) to everyone's Chances?\n\n"
+                        f"Add {what}?\n\n"
                         "This makes one commit to the curated lists on GitHub (main), with your own git login. "
                         "Every myGeeKy shows them within a few hours. Each one disappears after its deadline.")
         go = box.addButton("Publish", QMessageBox.AcceptRole)
@@ -6173,6 +6206,7 @@ class MyGeekyPanel(QWidget):
         out = out if isinstance(out, dict) else {}
         self._scout_note = out.get("error") or f"Published {out.get('summary', '')} (commit {out.get('commit', '')})."
         self._render_scout()
+        self.admin_highlights.render()
 
     def _refresh_admin(self) -> None:
         if getattr(self, "_admin_running", False):

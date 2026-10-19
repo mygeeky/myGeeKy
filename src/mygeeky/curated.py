@@ -297,6 +297,8 @@ def clean(data: Any) -> dict[str, Any]:
                 seen.add(it["id"])
                 items.append(it)
         out[kind] = items
+    from .highlight_shape import clean_all as clean_highlights   # the maker's stories (highlight_shape.py)
+    out["highlights"] = clean_highlights(data.get("highlights") if isinstance(data, dict) else None)
     from .seasons import clean as clean_seasons   # scholarships that come back every year (seasons.py)
     out["seasons"] = clean_seasons(data.get("seasons") if isinstance(data, dict) else None)
     from .protocols import clean_protocol     # reviewed protocols: a skill as ordered stages (protocols.py)
@@ -470,6 +472,8 @@ def problems(data: Any) -> list[str]:
                 out.append(f"{label}: the url must start with https://")
             if kind in DATED and not _day(raw.get("deadline")):
                 out.append(f"{label}: deadline must be a date like 2026-12-31")
+    from .highlight_shape import problems as highlight_problems
+    out += highlight_problems(data.get("highlights"))
     from .protocols import clean_protocol, clean_stage, clean_item as clean_link
     ids = set()
     for i, raw in enumerate(data.get("protocols") or []):

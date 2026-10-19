@@ -21,6 +21,7 @@ import { loadReceived, loadSent } from '../lib/signals';
 import { C } from '../lib/theme';
 import { loadWins } from '../lib/wins';
 import { useToast } from './toast';
+import { GeekLoader } from './geek-loader';
 
 const POSES = geekocData.poses as Record<string, string>;
 const CARD_MAX = 380;
@@ -145,7 +146,7 @@ export function MonthView() {
     }
   }, [toast]);
 
-  if (!s) return <Text style={st.muted}>Counting your month…</Text>;
+  if (!s) return <GeekLoader text="Counting your month…" />;
   const cardW = Math.min(width, CARD_MAX);
   return (
     <View onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}>
@@ -198,7 +199,7 @@ export function MonthView() {
           </View>
         );
       }) : null}
-      {reveal < Math.max(drawings.length, 1) ? <Text style={st.muted}>Drawing your month…</Text> : null}
+      {reveal < Math.max(drawings.length, 1) ? <GeekLoader text="Drawing your month…" size={56} /> : null}
 
       <Text style={st.note}>
         Points come from what you do yourself: reading, learning, building, sharing ideas and meeting people. They count

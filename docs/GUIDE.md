@@ -54,6 +54,17 @@ myGeeKy is for researchers who build things **at a computer**. Setup asks which 
 (*I mostly build software* / *I mostly analyse data* / *both*), and it only sets the starting balance of what's
 suggested: your model still learns from what you open. Change it any time (`work_style` in `config.json`).
 
+### ✨ Highlights
+
+Grow opens on **Highlights**: research articles picked by myGeeKy's maker, each retold as a short science news
+article -- a headline, a one-line standfirst and a few paragraphs, each with one idea: what they found, who
+did it and where (and whether it was a collaboration), the problem and what came before, what they did and
+with which tools, the findings and the limits. Tap a language button to read it in Arabic, French, German,
+Spanish or Chinese. "Learn these tools" turns a skill from the article into a protocol, and "Read the
+article" opens it. Each says whether it was written from the full article or from its abstract only. Facts
+such as the team leader, institutions and journal are looked up on OpenAlex, never guessed. Highlights
+arrive with the curated lists, like jobs and funding.
+
 ### What myGeeKy does not teach
 
 **Laboratory work.** myGeeKy covers code, data, statistics, figures and pipelines. It does not give protocols,

@@ -15,6 +15,7 @@ import * as taste from '../lib/taste';
 import { GCard, Hidden, s, Thumbs } from './growth-parts';
 import { Empty, open, Segments } from './ui';
 import { logDid } from '../lib/badges';
+import { GeekLoader } from './geek-loader';
 
 type Mode = 'seasons' | 'jobs' | 'funding' | 'conferences';
 type ListMode = Exclude<Mode, 'seasons'>;
@@ -332,14 +333,14 @@ export function ChancesView() {
 
       {mode === 'seasons' ? (<>
         {showing ? <Text style={s.muted}>Opening {showing.from} to {showing.opens_to} · everything in it closed by {showing.to}</Text> : null}
-        {!lists ? <Empty>Loading…</Empty> : !offered.length ? <Empty>No seasons yet. They arrive with the lists, which myGeeKy checks every few hours.</Empty>
+        {!lists ? <GeekLoader /> : !offered.length ? <Empty>No seasons yet. They arrive with the lists, which myGeeKy checks every few hours.</Empty>
           : !inSeason.length ? <Empty>{country === EVERYWHERE ? NONE.seasons
             : `Nothing in this period leads to ${country}. Try another period, or 🌍 Anywhere.`}</Empty> : null}
         {inSeason.map((it) => <SeasonCard key={`${it.id}${it.occurrence?.opens ?? ''}`} it={it} unverified={!seasons.evidenced(it)} />)}
         {maker && unconfirmed ? <Text style={s.warn}>{unconfirmed} season(s) have no sentence found on their own page yet, so only you
           see them. Run the season check on your computer to confirm or drop them.</Text> : null}
       </>) : (<>
-        {!lists ? <Empty>Loading…</Empty> : !shown.length ? <Empty>{NONE[mode]}</Empty> : null}
+        {!lists ? <GeekLoader /> : !shown.length ? <Empty>{NONE[mode]}</Empty> : null}
         {shown.map((it) => (
           <Chance key={it.id} kind={mode as ListMode} it={it} onVote={async (up) => {
             const v = await taste.vote(kind!, it.id, up, `${it.title} ${it.summary}`, it.keywords);

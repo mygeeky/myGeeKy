@@ -4,7 +4,7 @@
 // builds one from GitHub and papers. Edit it as you like, then 📤 publish it for everyone.
 import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput,
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput,
   View } from 'react-native';
 import type { Lists } from '../lib/curated';
 import { ITEM_KINDS, type Stage } from '../lib/protocol-shape';
@@ -20,6 +20,7 @@ import type { MyRepo } from '../lib/wins';
 import { Button, GCard, s, Thumbs } from './growth-parts';
 import { Empty, open } from './ui';
 import { logDid } from '../lib/badges';
+import { GeekLoader } from './geek-loader';
 
 const STATUS = { done: ['✅', 'Done'], known: ['🎓', 'You know this'], current: ['▶', 'Start here'], todo: ['○', ''] } as const;
 const SOURCE = { reviewed: '✓ Reviewed', auto: 'Auto-built, not reviewed', mine: 'Yours' } as const;
@@ -454,7 +455,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
 
   const views = useMemo(() => Object.values(state).map((e) => P.view(e, P.evidence(e.protocol, repos, profile)))
     .sort((a, b) => Number(a.finished) - Number(b.finished) || a.startedAt.localeCompare(b.startedAt)), [state, repos, profile]);
-  if (!lists) return <Empty>Loading…</Empty>;
+  if (!lists) return <GeekLoader />;
   const started = new Set(views.flatMap((v) => [v.id, v.based_on]));
   const offer = byFit(lists.protocols.filter((p) => !started.has(p.id)), weights);   // best fit to your field first
   const best = offer.slice(0, REVIEWED_SHOWN);
@@ -500,7 +501,7 @@ export function ProtocolsView({ lists, docs, repos, profile, token, weights, sta
       </View>
       <View style={s.row}>
         <Button accent label={building ? 'Building…' : '🧭 Build a protocol'} disabled={building || !skill.trim()} onPress={() => buildOne(skill, goal)} />
-        {building ? <ActivityIndicator color={C.pink} /> : null}
+        {building ? <GeekLoader text="Building your protocol…" size={60} /> : null}
       </View>
       {building ? <Text style={s.muted}>Searching GitHub and papers, and sorting what comes back into stages…</Text> : null}
       {note ? <Text style={s.warn}>{note}</Text> : null}

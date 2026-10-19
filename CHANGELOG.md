@@ -5,6 +5,20 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **✨ Highlights in Grow** (first, on the computer and the phone): research articles picked by the maker,
+  each retold as a short science news article -- a headline, a standfirst and a few paragraphs, one idea
+  each: what they found, who did it and where (and the collaboration), the problem and what came before,
+  what they did and with which tools, the findings, the limits -- readable in Arabic, French, German,
+  Spanish and Chinese, with "learn these tools" turning a skill into a protocol. Opening one counts as a
+  paper read. (`highlight_shape.py`, `lib/highlight-shape.ts`, `gui/highlights_ui.py`,
+  `components/highlights-view.tsx`; `tests/test_highlights.py`.)
+- **Writing Highlights, in the admin tab** (`highlights.py`, skill `mygeeky-article`): paste DOIs or links,
+  open the articles, paste their text (all in one box, split at each title) or drop PDFs, or write from the
+  abstracts; DeepSeek writes each with the article skill (`data/article_skill.md`) and translates it. Facts
+  (team leader, institutions, countries, journal, date, open access) come from OpenAlex, not from the model;
+  every number and tool in the article is checked against the text. Accepted ones go out with Publish.
+- **GeekOc swims while things load**, on the computer (`gui/geek_loader.py`) and the phone
+  (`components/geek-loader.tsx`), instead of a spinner or a plain "Loading…".
 - **🎖 My month and your rank**, the first part of **You** on the computer (`gui/month_ui.py`; the Model tab now
   has two parts, My month and Model) and the phone (`components/month-view.tsx`). What you did this month as a calendar card with GeekOc, your three highlights
   (firsts get a ribbon) and every count; and a rank from Soldier to General, from points for what you do yourself

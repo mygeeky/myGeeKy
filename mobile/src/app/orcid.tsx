@@ -2,9 +2,10 @@
 // Hand it to the sign-in that's waiting, then go back to where it started.
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { finishOrcidSignIn } from '../lib/orcid-login';
 import { C } from '../lib/theme';
+import { GeekLoader } from '../components/geek-loader';
 
 export default function OrcidReturn() {
   const params = useLocalSearchParams<Record<string, string>>();
@@ -36,7 +37,7 @@ export default function OrcidReturn() {
             <Text style={st.buttonText}>Back to setup</Text>
           </Pressable>
         </>
-      ) : <ActivityIndicator color={C.pink} />}
+      ) : <GeekLoader text="Signing you in…" />}
     </View>
   );
 }

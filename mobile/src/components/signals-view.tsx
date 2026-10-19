@@ -4,7 +4,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { quickProfile, timeAgo, useApp } from '../lib/app-state';
 import {
   blockPerson, type CallForMe, closeCall, createCall, GESTURES, hideCall, isSetUp, joinCall, leaveCall, loadBeacons,
@@ -16,6 +16,7 @@ import { type Dot, FieldMap } from './field-map';
 import { type CallInput, InviteSheet, SendSheet } from './signals-sheets';
 import { Card, Empty, open, Section } from './ui';
 import { TokenGuide } from './token-guide';
+import { GeekLoader } from './geek-loader';
 
 
 const TOKEN_PAGE = 'https://github.com/settings/personal-access-tokens/new';
@@ -63,7 +64,7 @@ export function SignalsView() {
     });
   }, [load]);
 
-  if (ready === null) return <ActivityIndicator color={C.pink} style={{ marginTop: 24 }} />;
+  if (ready === null) return <GeekLoader />;
   if (!ready) return <SetupCard me={me} onDone={() => { setReady(true); load(); }} />;
 
   const fold = (v: boolean) => {
@@ -199,18 +200,18 @@ export function SignalsView() {
             <FlagButton login={g.from} onPress={() => flag(g.from)} />
           </View>
         </Card>
-      )) : <Empty>{loading ? 'Loading…' : 'Nothing yet. When someone sends you a signal, it shows here.'}</Empty>}
+      )) : loading ? <GeekLoader /> : <Empty>Nothing yet. When someone sends you a signal, it shows here.</Empty>}
 
       <Section>PROJECTS CALLING FOR YOU {data.calls.length ? data.calls.length : ''}</Section>
       {data.calls.length ? data.calls.map(callCard)
-        : <Empty>{loading ? 'Loading…' : 'No calls fit your work right now. When someone invites contributors with your skills, it shows here.'}</Empty>}
+        : loading ? <GeekLoader /> : <Empty>No calls fit your work right now. When someone invites contributors with your skills, it shows here.</Empty>}
 
       <Section>YOUR CALLS {data.myCalls.length ? data.myCalls.length : ''}</Section>
       {data.myCalls.map((c) => <MyCallView key={c.id} c={c} busy={busy === `mine:${c.id}`} onClose={(f) => close(c, f)} />)}
       {!data.myCalls.length ? <Empty>{"Invite people whose skills fit to help with one of your repos: they say they're in, privately."}</Empty> : null}
 
       <Section>PEOPLE ON SIGNALS {data.people.length ? data.people.length : ''}</Section>
-      {data.people.length ? data.people.map(personCard) : <Empty>{loading ? 'Loading…' : 'Nobody else on Signals found yet.'}</Empty>}
+      {data.people.length ? data.people.map(personCard) : loading ? <GeekLoader /> : <Empty>{'Nobody else on Signals found yet.'}</Empty>}
 
       {data.blocked.length ? (
         <>

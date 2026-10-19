@@ -15,6 +15,7 @@ import { Button, GCard, s } from './growth-parts';
 import { QuizRunView } from './protocols-view';
 import { Empty } from './ui';
 import { logDid } from '../lib/badges';
+import { GeekLoader } from './geek-loader';
 
 export type QuizRow = {
   id: string; title: string; skill: string; mine: boolean; counts: Record<string, number>;
@@ -123,7 +124,7 @@ export function QuizView({ lists, onStart, open, onOpened }: {
     Promise.resolve().then(() => take(pid, wanted));
   }, [open, onOpened, take]);
 
-  if (!lists || !data) return <Empty>Loading…</Empty>;
+  if (!lists || !data) return <GeekLoader />;
   if (quiz) {                       // a quiz is being taken: it lives here, in this tab
     return (
       <QuizRunView quiz={quiz} stage={stage}

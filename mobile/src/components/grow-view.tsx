@@ -3,7 +3,7 @@
 // and Collaborators (fellow users who complement you). Everything is matched here,
 // on the phone; 👍/👎 teach your model.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { quickProfile, timeAgo, useApp } from '../lib/app-state';
 import { matches, type Match } from '../lib/collab';
 import { loadLists, type Lists, ranked, RESOURCE_TYPES, type Ranked } from '../lib/curated';
@@ -16,12 +16,16 @@ import { recent, refreshWins, type WinsState, loadWins } from '../lib/wins';
 import { Button, GCard, Hidden, s, Thumbs } from './growth-parts';
 import { ProtocolsView } from './protocols-view';
 import { QuizView } from './quiz-view';
+import { HighlightsView } from './highlights-view';
 import { Empty, open, Segments } from './ui';
+import { GeekLoader } from './geek-loader';
 
-type Mode = 'skills' | 'paths' | 'quiz' | 'learn' | 'wins' | 'collab';
-const MODES: [Mode, string][] = [['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'],
+type Mode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'wins' | 'collab';
+const MODES: [Mode, string][] = [['highlights', 'Highlights'], ['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'],
   ['wins', 'Wins'], ['collab', 'People']];
 const ABOUT: Record<Mode, string> = {
+  highlights: 'Research articles picked by the maker, each retold as a short news article in plain words: what they found, '
+    + 'who did it, what they did and with which tools. Tap one to read it in your language.',
   skills: "Skills growing in your field that you don't show yet. 👍 / 👎 teach it what to suggest; 🧭 turns one into steps.",
   paths: 'A skill as stages, e.g. R basics → statistics with R → data analysis → a real project. A short check skips what you know. '
     + 'Reviewed ones come from the maker; for any other skill myGeeKy builds one from GitHub and papers. Change it, then 📤 publish it.',
@@ -70,7 +74,7 @@ function ResourceCard({ r, onVote }: { r: Ranked; onVote: (up: boolean) => Promi
 export function GrowView() {
   const { settings, token, profile } = useApp();
   const me = settings?.username ?? '';
-  const [mode, setMode] = useState<Mode>('skills');
+  const [mode, setMode] = useState<Mode>('highlights');
   // 🏁 pressed on a protocol: which quiz the 🏆 Quiz tab opens when it appears
   const [openQuiz, setOpenQuiz] = useState<{ pid: string; stage: string } | null>(null);
   const [lists, setLists] = useState<Lists | null>(null);
@@ -161,8 +165,10 @@ export function GrowView() {
       <Text style={s.muted}>{ABOUT[mode]}</Text>
       {note ? <Text style={s.warn}>{note}</Text> : null}
 
+      {mode === 'highlights' ? <HighlightsView items={lists ? lists.highlights : null} onLearn={(skill) => onPath(skill)} /> : null}
+
       {mode === 'skills' ? (
-        !skills ? <Empty>Reading your field…</Empty> : (
+        !skills ? <GeekLoader text="Reading your field…" /> : (
           <View>
             {!skills.skills.length ? <Empty>No rising skills yet. They come from what myGeeKy read about your field: open Papers, Repos and AI models once, then come back.</Empty> : null}
             {skills.skills.map((sk) => (
@@ -194,7 +200,7 @@ export function GrowView() {
           {resources.items.slice(0, 30).map((r) => (
             <ResourceCard key={r.id} r={r} onVote={vote('resource', r.id, r.title, [...(r.skills ?? []), ...r.keywords], rank)} />
           ))}
-          {!resources.items.length ? <Empty>{lists ? 'No learning resources yet.' : 'Loading…'}</Empty> : null}
+          {!resources.items.length ? (lists ? <Empty>No learning resources yet.</Empty> : <GeekLoader />) : null}
           <Hidden n={resources.hidden} onShow={async () => { await taste.unhide('resource'); rank(); }} />
         </View>
       ) : null}
@@ -220,7 +226,7 @@ export function GrowView() {
       {mode === 'collab' ? (
         !me ? <Empty>Collaborator matching uses Signals, which needs GitHub: add it in You → Settings.</Empty>
         : signals === false ? <Empty>Collaborator matching uses Signals: turn it on in the Signals planet, and people who complement you show up here.</Empty>
-        : busy || !people ? <ActivityIndicator color={C.pink} style={{ marginTop: 16 }} />
+        : busy || !people ? <GeekLoader text="Finding people…" />
         : (
           <View>
             {!people.people.length ? <Empty>Nobody on Signals complements you yet. As more people join myGeeKy, matches show up here.</Empty> : null}

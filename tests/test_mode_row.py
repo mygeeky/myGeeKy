@@ -29,7 +29,7 @@ def test_the_sections_are_still_written_out_in_one_place():
 
 @pytest.mark.parametrize("tab,row,modes,opens", [
     ("chances", "chance_mode_buttons", "CHANCE_MODES", "jobs"),
-    ("grow", "grow_mode_buttons", "GROW_MODES", "skills"),
+    ("grow", "grow_mode_buttons", "GROW_MODES", "highlights"),     # Grow opens on ✨ Highlights
 ])
 def test_only_the_open_section_says_its_name(qapp_offscreen, monkeypatch, tab, row, modes, opens):
     qapp, panel = _panel(monkeypatch)
@@ -73,13 +73,13 @@ def test_the_name_moves_when_a_different_section_is_opened(qapp_offscreen, monke
         panel.close()
 
 
-def test_six_sections_sit_on_one_line(qapp_offscreen, monkeypatch):
-    """This is the whole reason for the change: written out, six wrapped onto three lines."""
+def test_all_the_sections_sit_on_one_line(qapp_offscreen, monkeypatch):
+    """This is the whole reason for the change: written out, six wrapped onto three lines (seven now)."""
     qapp, panel = _panel(monkeypatch)
     try:
         _settle(qapp, panel, "grow")
         buttons = list(panel.grow_mode_buttons.values())
-        assert len(buttons) == 6
+        assert len(buttons) == len(MyGeekyPanel.GROW_MODES) == 7
         tops = {b.y() for b in buttons}
         assert len(tops) == 1, f"the row wrapped onto {len(tops)} lines"
         holder = buttons[0].parentWidget()
@@ -94,7 +94,7 @@ def test_the_open_section_takes_the_room_and_the_rest_share_what_is_left(qapp_of
         _settle(qapp, panel, "grow")
         from PySide6.QtWidgets import QSizePolicy
         for mode, b in panel.grow_mode_buttons.items():
-            want = QSizePolicy.Preferred if mode == "skills" else QSizePolicy.Expanding
+            want = QSizePolicy.Preferred if mode == "highlights" else QSizePolicy.Expanding
             assert b.sizePolicy().horizontalPolicy() == want, mode
     finally:
         panel.close()
@@ -110,7 +110,7 @@ def test_the_row_follows_the_theme(qapp_offscreen, monkeypatch):
         holder = next(iter(panel.grow_mode_buttons.values())).parentWidget()
         assert "modeRow" in holder.styleSheet() and theme["card_bg"] in holder.styleSheet()
         assert theme["muted"] in panel.grow_mode_buttons["wins"].styleSheet(), "a closed one is dimmed"
-        assert theme["text"] in panel.grow_mode_buttons["skills"].styleSheet(), "the open one is not"
+        assert theme["text"] in panel.grow_mode_buttons["highlights"].styleSheet(), "the open one is not"
     finally:
         panel.close()
 

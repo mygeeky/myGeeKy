@@ -466,6 +466,23 @@ def record_click(cfg: MyGeekyConfig, kind: str, item: dict[str, Any]) -> None:
         pass
 
 
+def get_highlights() -> list[dict[str, Any]]:
+    """Grow -> Highlights: the maker's stories, newest first (from the curated lists)."""
+    from .. import curated
+    return curated.load().get("highlights") or []
+
+
+def read_highlight(item: dict[str, Any]) -> None:
+    """Opening a Highlight counts as reading a paper (badges, My month), and teaches the model its words."""
+    _log_click_for_badges("paper", item)
+    try:
+        from .. import interests
+        interests.record("news", f"{item.get('title', '')} {item.get('hook', '')}", item.get("keywords") or [],
+                         source=item.get("doi") or item.get("id", ""), cfg=load_config())
+    except Exception:
+        pass
+
+
 def _log_click_for_badges(kind: str, item: dict[str, Any]) -> None:
     from .. import achievements, badges
     if kind == "news":
@@ -1886,6 +1903,11 @@ def _curated_link(url: str) -> bool:
         from .. import curated
         data = curated.load()
         if any(url == it.get("url") for kind in curated.LISTS for it in data.get(kind, [])):
+            return True
+        if any(url == h.get("url") for h in data.get("highlights", [])):
+            return True
+        from .. import highlights        # a Highlight the maker is reviewing
+        if any(url == d["item"]["url"] for d in highlights.load()["drafts"].values() if isinstance(d, dict)):
             return True
         from .. import scout             # a listing the scout found, for you to check
         if any(url == c["item"]["url"] for c in scout.load()["candidates"].values()):

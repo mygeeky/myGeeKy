@@ -1,7 +1,8 @@
 import { Redirect } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { useApp } from '../lib/app-state';
 import { C } from '../lib/theme';
+import { GeekLoader } from '../components/geek-loader';
 
 // First run goes to setup; after that, straight to the orbit.
 export default function Index() {
@@ -9,7 +10,7 @@ export default function Index() {
   if (!ready) {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={C.pink} />
+        <GeekLoader text="" />
       </View>
     );
   }

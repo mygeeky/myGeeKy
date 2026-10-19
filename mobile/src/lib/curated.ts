@@ -10,6 +10,7 @@ import { fetchT } from './net';
 import { cleanProtocol, type Protocol } from './protocol-shape';
 import { isStale, readCache, writeCache } from './storage';
 import * as taste from './taste';
+import { cleanAll as cleanHighlights, type Highlight } from './highlight-shape';
 
 export const REMOTE_URL = 'https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/data/curated.json';
 const CHECK_EVERY_HOURS = 6;
@@ -37,7 +38,7 @@ export type Item = {
 };
 export type Said = { name: string; rtl: boolean; title: string; summary?: string; who?: string;
   amount?: string; student?: string };
-export type Lists = { version: string; protocols: Protocol[]; seasons: unknown[] } & Record<ListName, Item[]>;
+export type Lists = { version: string; protocols: Protocol[]; seasons: unknown[]; highlights: Highlight[] } & Record<ListName, Item[]>;
 export type Ranked = Item & { score: number; match: string[]; daysLeft: number | null; vote: number };
 
 const text = (v: unknown, n: number) => (typeof v === 'string' || typeof v === 'number' ? String(v).split(/\s+/).join(' ').trim().slice(0, n) : '');
@@ -116,7 +117,8 @@ export function cleanItem(kind: ListName, raw: any): Item | null {
 export function clean(data: any): Lists {
   // `seasons` is passed through raw and cleaned by seasons.ts, the way protocols are by protocol-shape.ts
   const out = { version: text(data?.version, 40), protocols: [] as Protocol[],
-    seasons: Array.isArray(data?.seasons) ? data.seasons.slice(0, 300) : [] } as Lists;
+    seasons: Array.isArray(data?.seasons) ? data.seasons.slice(0, 300) : [],
+    highlights: cleanHighlights(data?.highlights) } as Lists;      // the maker's stories (highlight-shape.ts)
   const pids = new Set<string>();
   for (const raw of (Array.isArray(data?.protocols) ? data.protocols : []).slice(0, 200)) {
     const p = cleanProtocol(raw, true);                 // reviewed protocols: a skill as ordered stages (protocols.ts)
