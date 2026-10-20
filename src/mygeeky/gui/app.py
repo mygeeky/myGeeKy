@@ -1040,6 +1040,17 @@ def get_headlines(cfg: MyGeekyConfig) -> dict[str, Any]:
     return headlines.load_state()
 
 
+def ai_race(refresh: bool = False) -> dict[str, Any]:
+    """News → AI race: the newest data we have (airace.py), fetched from GitHub at most once a day when asked."""
+    from .. import airace
+    if refresh:
+        try:
+            airace.refresh_if_due()
+        except Exception:       # offline or GitHub away: the copy we have
+            pass
+    return airace.load()
+
+
 def refresh_headlines(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
     from .. import headlines
     try:

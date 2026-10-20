@@ -479,7 +479,16 @@ mygeeky trends --refresh    # ask OpenAlex again now (otherwise daily)
 
 ## News for your field (`mygeeky news`)
 
-**Headlines** (the default view in the News tab, or `mygeeky headlines`): just
+**🏁 AI race** (the first view in the News tab, on the computer and the phone): who leads the AI race and how far
+open-weights models trail (in points and in months), the newest releases with where each lands, the race replayed
+month by month, what each recent model is best at (reasoning, coding, math, science, agents, knowledge, writing,
+vision, security), each top model's "fingerprint", and a picker that ranks models for the skills your work needs.
+The numbers are [Epoch AI](https://epoch.ai/benchmarks)'s open benchmark data (CC BY 4.0), turned into one small
+file once a day by a GitHub Action and read from GitHub; the skill groups and scores are myGeeKy's own: each
+benchmark scored from a random guess (0) to its ceiling (1), averaged per skill, among models from the last 18
+months.
+
+**Headlines** (the second view in the News tab, or `mygeeky headlines`): just
 titles, so you know what's happening across your work at a glance. Every three
 hours myGeeKy reads the public feeds of AI labs (OpenAI, Google AI and DeepMind,
 Hugging Face, MIT Technology Review, The Verge, TechCrunch), journals (Nature,

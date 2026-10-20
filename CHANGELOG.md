@@ -5,6 +5,13 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **🏁 AI race, the first part of News**, on the computer and the phone: who leads and how far open models trail
+  (in points and in months), the newest releases and where each lands (NEW for the last two weeks), the race replayed
+  month by month, what each recent model is best at (a dot per model under reasoning, coding, math, science, agents,
+  knowledge, writing, vision or security; tap for the top five), a colourful "fingerprint" of the top models, and a
+  picker that ranks models for the skills your work needs. Built for the panel's and the phone's narrow width.
+  From Epoch AI's open benchmark data (CC BY 4.0), rebuilt daily by a GitHub Action (`.github/workflows/ai-race.yml`)
+  into one file both apps read; `airace.py` and `lib/ai-race.ts` give the same numbers (`tests/test_airace.py`).
 - **📝 Drop a CV, thesis or abstract**, on the computer and the phone: a new way to start in setup, and in ⚙ /
   You → Settings any time later. Drop or pick a PDF, Word (.docx) or text file, or paste the text; myGeeKy picks
   out your field's keywords (from the 1,200-word dictionary), your methods and tools (RNA-seq to thematic analysis,

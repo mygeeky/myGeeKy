@@ -3890,7 +3890,7 @@ class MyGeekyPanel(QWidget):
         mode_row = QHBoxLayout()
         mode_row.setSpacing(4)
         self.news_mode_buttons: dict[str, QPushButton] = {}
-        for mode, label in (("headlines", "Headlines"), ("papers", "Papers && discussions")):
+        for mode, label in (("airace", "\U0001f3c1 AI race"), ("headlines", "Headlines"), ("papers", "Papers && discussions")):
             b = QPushButton(label)
             b.setCursor(Qt.PointingHandCursor)
             b.clicked.connect(lambda checked=False, m=mode: self._set_news_mode(m))
@@ -3902,6 +3902,10 @@ class MyGeekyPanel(QWidget):
         self.news_hint.setWordWrap(True)
         self.news_hint.setTextFormat(Qt.RichText)
         layout.addWidget(self.news_hint)
+        # 🏁 the AI race (airace.py): the first part of News
+        from .airace_ui import AiRacePage
+        self.airace_page = AiRacePage(lambda: THEMES[self._theme_name()], self._load_ai_race)
+        layout.addWidget(self.airace_page)
         headlines_box = QWidget()
         self.headlines_area = QVBoxLayout(headlines_box)
         self.headlines_area.setContentsMargins(0, 0, 0, 0)
@@ -3914,8 +3918,8 @@ class MyGeekyPanel(QWidget):
         self.news_area.setSpacing(6)
         layout.addWidget(container)
         self.news_box = container
-        self._news_mode = "headlines"
-        QTimer.singleShot(0, lambda: self._set_news_mode("headlines"))
+        self._news_mode = "airace"
+        QTimer.singleShot(0, lambda: self._set_news_mode("airace"))
         layout.addStretch(1)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -8258,17 +8262,27 @@ class MyGeekyPanel(QWidget):
 
     # ------------------------------------------------------------------ market
     NEWS_HINTS = {
+        "airace": "",
         "headlines": "What's happening across your work, as titles: AI labs, journals and the tech press, ranked by "
                      "your interests. \U0001f30d = the big picture.<br>" + BADGE_LEGEND,
         "papers": "New papers and discussions about your interests, from arXiv, bioRxiv and Hacker News. "
                   "\U0001f52d = outside your usual interests, on purpose.<br>" + BADGE_LEGEND,
     }
 
+    def _load_ai_race(self) -> None:
+        """The AI race, the first time it's seen: what we have at once, then the newest from GitHub (once a day)."""
+        self.airace_page.set_data(logic.ai_race())
+        self._run_async(lambda: logic.ai_race(refresh=True), self.airace_page.set_data)
+
     def _set_news_mode(self, mode: str) -> None:
         self._news_mode = mode
         self.headlines_box.setVisible(mode == "headlines")
         self.news_box.setVisible(mode == "papers")
+        self.airace_page.setVisible(mode == "airace")
         self.news_hint.setText(self.NEWS_HINTS[mode])
+        self.news_hint.setVisible(bool(self.NEWS_HINTS[mode]))
+        if mode == "airace" and self.airace_page.data is not None:
+            self.airace_page.render()              # the theme may have changed
         theme = THEMES[self._theme_name()]
         for m, b in self.news_mode_buttons.items():
             active = m == mode

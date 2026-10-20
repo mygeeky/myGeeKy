@@ -140,3 +140,11 @@ def qapp_offscreen():
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QApplication
     return QApplication.instance() or QApplication([])
+
+
+@pytest.fixture(autouse=True)
+def _no_ai_race_fetch(monkeypatch):
+    """The News tab's AI race asks GitHub for the newest data in the background: never over the network in tests."""
+    import mygeeky.airace as airace
+    monkeypatch.setattr(airace, "refresh_if_due", lambda *a, **kw: False)
+    monkeypatch.setattr(airace, "_loaded", None)

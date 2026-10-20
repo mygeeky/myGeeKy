@@ -1,0 +1,43 @@
+name: AI race
+
+# News → 🏁 AI race reads one small file, src/mygeeky/data/ai_race.json, made from Epoch AI's open Benchmarking Hub
+# (CC BY 4.0). Once a day this downloads Epoch's data, rebuilds the file (python -m mygeeky.airace build, which
+# also writes the phone app's identical copy, mobile/src/data/ai_race.json) and commits it if anything changed.
+# Every myGeeKy then picks it up from GitHub within a day; no key and no server.
+
+on:
+  schedule:
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ai-race
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild the AI race from Epoch AI's data
+        env:
+          PYTHONPATH: src
+        run: |
+          pip install --quiet requests platformdirs
+          python -m mygeeky.airace build
+
+      - name: Save the changes (if any)
+        run: |
+          if git diff --quiet; then echo "nothing to change"; exit 0; fi
+          git config user.name "myGeeKy"
+          git config user.email "housekeeping@mygeeky.invalid"
+          git commit -am "AI race: today's numbers from Epoch AI"
+          git push

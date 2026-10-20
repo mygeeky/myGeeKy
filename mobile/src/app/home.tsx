@@ -14,6 +14,7 @@ import { PersonCard } from '../components/person-card';
 import { ChancesView } from '../components/chances-view';
 import { GrowView } from '../components/grow-view';
 import { MonthView, rankNews } from '../components/month-view';
+import { AiRaceView } from '../components/ai-race-view';
 import { useToast } from '../components/toast';
 import { SignalsView } from '../components/signals-view';
 import { Empty, open, Segments } from '../components/ui';
@@ -44,8 +45,8 @@ import { retryWhois } from '../lib/whois-store';
 
 
 const HINT_KEY = 'mygeeky.orbitHinted';
-type NewsPart = 'headlines' | 'discuss';
-const NEWS_PARTS: [NewsPart, string][] = [['headlines', '📰 Headlines'], ['discuss', '💬 Papers & discussions']];
+type NewsPart = 'airace' | 'headlines' | 'discuss';
+const NEWS_PARTS: [NewsPart, string][] = [['airace', '🏁 AI race'], ['headlines', '📰 Headlines'], ['discuss', '💬 Papers']];
 type RepoPart = 'help' | 'rising';
 const REPO_PARTS: [RepoPart, string][] = [['help', '🛠 Help out'], ['rising', '📈 Rising']];
 type YouPart = 'month' | 'model' | 'badges' | 'more' | 'ideas' | 'admin';
@@ -225,7 +226,7 @@ export default function Home() {
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
   const [tokenWarn, setTokenWarn] = useState<TokenState | null>(null);   // a token about to stop working
   useEffect(() => { checkTokens().then((t) => setTokenWarn(t.find((x) => x.warn) ?? null)).catch(() => undefined); }, []);
-  const [newsPart, setNewsPart] = useState<NewsPart>('headlines');
+  const [newsPart, setNewsPart] = useState<NewsPart>('airace');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' || params.part === 'model' ? params.part : 'month');
   // the maker's Admin part: only for the account GitHub says owns the connected data repo (lib/admin.ts)
@@ -398,6 +399,8 @@ export default function Home() {
             </View>
           ) : !user && NEEDS_GITHUB[sel] ? (
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />
+          ) : sel === 'news' && newsPart === 'airace' ? (
+            <AiRaceView />
           ) : sel === 'signals' ? (
             <SignalsView />
           ) : sel === 'grow' ? (
