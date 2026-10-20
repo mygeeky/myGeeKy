@@ -6,6 +6,7 @@
 // desktop's (tests/test_wisep.py checks both decide the same). Nothing leaves the phone but the requests themselves.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchT } from './net';
+import { getOpenAlexKey, setOpenAlexKey } from './storage';
 
 export const CONTACT = 'support@mygeeky.org';
 const KEY = 'mygeeky.wisep';
@@ -16,10 +17,11 @@ const TOP_UP_HOUR = 20, TOP_UP_SHARE = 0.5, TOP_UP_MAX = 15, TOP_UP_FLOOR = 0.15
 export const TUNE_MIN_ANSWERS = 5, TUNE_MIN_HOURS = 14 * 24;
 export const PROVEN_DAYS = 14, PROVEN_LOOKS = 100, PROVEN_SAVED = 0.4, PROVEN_FAILED = 0.15;
 const MODULE_GAP_HOURS = 0.5;
+export const RESERVE = 0.05;
 export type Mode = 'auto' | 'on' | 'off';
 
-export const SOURCES: Record<string, [number, number, string[]]> = {
-  openalex: [1500, 0.12, ['api.openalex.org']], crossref: [500, 0.2, ['api.crossref.org']], arxiv: [300, 3.1, ['export.arxiv.org']],
+export const SOURCES: Record<string, [number, number, string[]]> = {     // the budget: a guess until the source says
+  openalex: [900, 0.12, ['api.openalex.org']], crossref: [500, 0.2, ['api.crossref.org']], arxiv: [300, 3.1, ['export.arxiv.org']],
   biorxiv: [300, 0.5, ['api.biorxiv.org']], zenodo: [300, 2.1, ['zenodo.org']], ncbi: [500, 0.35, ['eutils.ncbi.nlm.nih.gov']],
   figshare: [300, 0.3, ['api.figshare.com']], huggingface: [300, 0.2, ['huggingface.co']],
 };
@@ -49,6 +51,26 @@ export function threshold(used: number, budget: number, dayFrac: number): number
 }
 
 export type Decision = { action: 'fetch' | 'cache' | 'none'; why: string; worth: number; bar: number | null };
+
+/** What an ask costs against the source's budget (wisep.credit_cost): OpenAlex charges for a search or list, not for one record by id. */
+export function creditCost(source: string, url: string): number {
+  if (source !== 'openalex') return 1;
+  let path = '', query = '';
+  try { const u = new URL(url); path = decodeURIComponent(u.pathname); query = decodeURIComponent(u.search.slice(1)); } catch { return 1; }
+  if (['filter=', 'search=', 'sort=', 'group_by=', 'sample='].some((k) => query.includes(k))) return 1;
+  const seg = path.split('/');
+  const one = (path.match(/\//g) ?? []).length >= 2 && !path.endsWith('/')
+    && ['works', 'authors', 'sources', 'institutions', 'topics', 'concepts', 'funders', 'publishers'].includes(seg[1]);
+  return one ? 0 : 1;
+}
+
+/** [used, budget, dayFrac] to decide with (wisep.server_budget): the source's own numbers when it gave them, else ours. */
+export function serverBudget(limit: number, remaining: number, resetSeconds: number, usedHere: number, guess: number, dayFracHere: number): [number, number, number] {
+  if (limit <= 0) return [usedHere, guess, dayFracHere];
+  const budget = Math.max(1, Math.trunc(limit * (1 - RESERVE)));
+  const used = Math.max(0, limit - Math.max(remaining, 0));
+  return [used, budget, r4(Math.min(1, Math.max(0, 1 - resetSeconds / 86400)))];
+}
 
 /** A kind's prior hours between changes from what this phone watched (wisep.tuned_prior), or null while too little. */
 export function tunedPrior(changes: number, hours: number, answers: number, kind: string): number | null {
@@ -123,9 +145,9 @@ export const canonical = (page: string) => (page.startsWith('admin:') || page.st
 // --------------------------------------------------------------------------- the store (one JSON value in AsyncStorage)
 type Answer = { url: string; source: string; kind: string; body: string; digest: string; fetched: number; checks: number; changes: number;
   watched: number; used: number; page: string };
-type State = { answers: Record<string, Answer>; calls: Record<string, Record<string, { asked: number; saved: number; stale: number; failed: number; topup: number }>>;
+type State = { answers: Record<string, Answer>; calls: Record<string, Record<string, { asked: number; saved: number; stale: number; failed: number; topup: number; credits?: number }>>;
   opens: Record<string, { n: number[]; at: number }>; paused: Record<string, number>; priors?: Record<string, number>; tunedDay?: string; mode?: Mode;
-  github?: Record<string, { asked: number; saved: number }> };
+  github?: Record<string, { asked: number; saved: number }>; server?: Record<string, { limit: number; remaining: number; resetAt: number; key: boolean }> };
 let mem: State | null = null;
 const last: Record<string, number> = {};
 
@@ -134,7 +156,8 @@ async function load(): Promise<State> {
   try {
     const raw = JSON.parse((await AsyncStorage.getItem(KEY)) ?? '{}');
     mem = { answers: raw.answers ?? {}, calls: raw.calls ?? {}, opens: raw.opens ?? {}, paused: raw.paused ?? {}, priors: raw.priors ?? {},
-      tunedDay: raw.tunedDay ?? '', mode: (['auto', 'on', 'off'].includes(raw.mode) ? raw.mode : 'auto') as Mode, github: raw.github ?? {} };
+      tunedDay: raw.tunedDay ?? '', mode: (['auto', 'on', 'off'].includes(raw.mode) ? raw.mode : 'auto') as Mode, github: raw.github ?? {},
+      server: raw.server ?? {} };
   } catch {
     mem = { answers: {}, calls: {}, opens: {}, paused: {} };
   }
@@ -163,11 +186,19 @@ function digest(s: string): string {
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
   return (h >>> 0).toString(16);
 }
-function count(st: State, source: string, field: 'asked' | 'saved' | 'stale' | 'failed' | 'topup', now: number) {
+function count(st: State, source: string, field: 'asked' | 'saved' | 'stale' | 'failed' | 'topup' | 'credits', now: number) {
   const d = (st.calls[dayOf(now)] ??= {});
-  const c = (d[source] ??= { asked: 0, saved: 0, stale: 0, failed: 0, topup: 0 });
-  c[field]++;
+  const c = (d[source] ??= { asked: 0, saved: 0, stale: 0, failed: 0, topup: 0, credits: 0 });
+  c[field] = (c[field] ?? 0) + 1;
 }
+
+function noteServer(st: State, source: string, res: Response, now: number, key: boolean) {
+  const limit = Number(res.headers.get('X-RateLimit-Limit')) || 0, remaining = Number(res.headers.get('X-RateLimit-Remaining')) || 0;
+  const reset = Number(res.headers.get('X-RateLimit-Reset')) || 0;
+  if (limit > 0) (st.server ??= {})[source] = { limit, remaining, resetAt: now + reset * 1000, key };
+}
+
+const serverOf = (st: State, source: string, now: number) => { const s = st.server?.[source]; return s && s.resetAt > now ? s : null; };
 
 function opensNow(st: State, now: number): Record<string, number[]> {
   return Object.fromEntries(Object.entries(st.opens).map(([p, o]) => [p, o.n.map((v) => fade(v, now - o.at))]));
@@ -209,6 +240,38 @@ function withContact(url: string, source: string): string {
   try { const u = new URL(url); if (!u.searchParams.has('mailto')) u.searchParams.set('mailto', CONTACT); return u.toString(); } catch { return url; }
 }
 
+async function withKey(source: string, init?: RequestInit): Promise<{ init?: RequestInit; key: boolean }> {
+  if (source !== 'openalex') return { init, key: false };
+  const key = await getOpenAlexKey().catch(() => null);
+  if (!key) return { init, key: false };
+  return { init: { ...init, headers: { ...(init?.headers as Record<string, string> ?? {}), Authorization: `Bearer ${key}` } }, key: true };
+}
+
+/** Ask OpenAlex for a free key (only when the person asks): they get an email with a link; the key works once clicked. */
+export async function requestKey(email: string): Promise<{ ok: boolean; key: boolean; message: string }> {
+  email = email.trim();
+  if (!email.includes('@') || email.includes(' ') || email.length > 200) return { ok: false, key: false, message: "That doesn't look like an email address." };
+  try {
+    const r = await fetchT('https://api.openalex.org/api-keys', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+    const data: any = await r.json().catch(() => ({}));
+    if (!r.ok) return { ok: false, key: false, message: String(data?.message ?? `OpenAlex said ${r.status}.`).slice(0, 300) };
+    const key = String(data?.key ?? data?.api_key ?? '');
+    if (key) await setOpenAlexKey(key);
+    return { ok: true, key: !!key, message: `Check your email and click OpenAlex's link: the key works after that.${key ? '' : ' Then paste the key here.'}` };
+  } catch {
+    return { ok: false, key: false, message: "OpenAlex didn't answer. Try again later." };
+  }
+}
+
+export async function saveKey(key: string): Promise<boolean> {
+  key = key.trim();
+  if (key.length < 8 || key.length > 200 || /\s/.test(key)) return false;
+  await setOpenAlexKey(key);
+  return true;
+}
+export const forgetKey = () => setOpenAlexKey(null);
+export const hasKey = async () => !!(await getOpenAlexKey().catch(() => null));
+
 /** A GET through WISEP (for POSTs and unmanaged hosts it is plain fetchT). `page` names what the answer is for. */
 export async function wiseFetch(url: string, opts: { page?: string; force?: boolean; init?: RequestInit; ms?: number } = {}): Promise<Response> {
   const source = sourceOf(url);
@@ -216,25 +279,33 @@ export async function wiseFetch(url: string, opts: { page?: string; force?: bool
   if (!source || method !== 'GET') return fetchT(url, opts.init, opts.ms);
   const st = await load(), now = Date.now(), key = keyOf(url), page = opts.page ?? '';
   const kept = st.answers[key];
-  const kind = kindOf(source, key);
-  const used = st.calls[dayOf(now)]?.[source]?.asked ?? 0;
+  const kind = kindOf(source, key), cost = creditCost(source, key), srv = serverOf(st, source, now);
+  let [used, budget, frac] = serverBudget(srv?.limit ?? 0, srv?.remaining ?? 0, srv ? (srv.resetAt - now) / 1000 : 0,
+    st.calls[dayOf(now)]?.[source]?.credits ?? 0, SOURCES[source][0], dayFrac(now));
+  if (cost === 0) { used = 0; budget = Math.max(budget, 1); }       // a free record by id: only spacing and the kept answer matter
+  const resting = (st.paused[source] ?? 0) > now || (cost > 0 && !!srv && srv.remaining <= 0);
   const d = decide(kept ? (now - kept.fetched) / 3600000 : null, kind, kept?.changes ?? 0, kept?.watched ?? 0, careFor(st, page, now),
-    used, SOURCES[source][0], dayFrac(now), !!opts.force, (st.paused[source] ?? 0) > now, st.priors?.[kind] ?? null);
+    used, budget, frac, !!opts.force, resting, st.priors?.[kind] ?? null);
   if (d.action === 'cache' && kept) { count(st, source, 'saved', now); kept.used = now; save(); return respond(kept.body, 200, `cache:${d.why}`); }
   if (d.action === 'none') { count(st, source, 'failed', now); save(); return respond('{}', 503, 'resting'); }
   await space(source);
   count(st, source, 'asked', now);
+  if (cost) count(st, source, 'credits', now);
+  const keyed = await withKey(source, opts.init);
   let res: Response;
   try {
-    res = await fetchT(withContact(url, source), opts.init, opts.ms);
+    res = await fetchT(withContact(url, source), keyed.init, opts.ms);
   } catch (e) {
     if (kept) { count(st, source, 'stale', now); save(); return respond(kept.body, 200, 'stale:offline'); }
     count(st, source, 'failed', now); save();
     throw e;
   }
+  noteServer(st, source, res, now, keyed.key);
   if (res.status === 429 || res.status === 503) {
     const wait = Number(res.headers.get('Retry-After')) || 60, before = st.paused[source] ?? 0;
-    st.paused[source] = now + Math.min(3600, Math.max(wait, before > now ? (before - now) / 500 : wait)) * 1000;
+    // a 429 with Retry-After (OpenAlex: until its budget resets) is honoured in full; a busy 503 doubles up to an hour
+    st.paused[source] = now + (res.status === 429 && Number(res.headers.get('Retry-After')) > 0 ? Math.min(wait, 86400)
+      : Math.min(3600, Math.max(wait, before > now ? (before - now) / 500 : wait))) * 1000;
     if (kept) { count(st, source, 'stale', now); save(); return respond(kept.body, 200, 'stale:busy'); }
     save();
     return res;
@@ -267,11 +338,16 @@ export async function topUp(): Promise<Record<string, number>> {
     const left = SOURCES[a.source][0] - (st.calls[dayOf(now)]?.[a.source]?.asked ?? 0);
     if (worth < TOP_UP_FLOOR || (spent[a.source] ?? 0) >= Math.floor(left * TOP_UP_SHARE)
       || Object.values(spent).reduce((x, y) => x + y, 0) >= TOP_UP_MAX) continue;
+    const srv = serverOf(st, a.source, now), cost = creditCost(a.source, key);
+    if (cost && srv && srv.remaining <= srv.limit * RESERVE * 2) continue;   // the network's budget is nearly spent
     await space(a.source);
     count(st, a.source, 'asked', now);
     count(st, a.source, 'topup', now);
+    if (cost) count(st, a.source, 'credits', now);
     try {
-      const res = await fetchT(withContact(key, a.source));
+      const keyed = await withKey(a.source);
+      const res = await fetchT(withContact(key, a.source), keyed.init);
+      noteServer(st, a.source, res, now, keyed.key);
       if (res.status === 200) {
         const body = await res.text(), dg = digest(body);
         st.answers[key] = { ...a, body, digest: dg, fetched: now, checks: a.checks + 1, changes: a.changes + (a.digest !== dg ? 1 : 0),
@@ -335,12 +411,14 @@ export async function noteGitHub(field: 'asked' | 'saved'): Promise<void> {
 /** What the admin view shows: today's calls per source, saved by the cache, budgets, what was learned. */
 export async function stats(): Promise<{ today: Record<string, { asked: number; saved: number; stale: number; failed: number; topup: number; budget: number }>;
   asked: number; saved: number; pages: { page: string; opens: number }[]; answers: number; github: { asked: number; saved: number };
-  priors: Record<string, number>; proven: Proven & { mode: Mode; alone: boolean } }> {
+  priors: Record<string, number>; proven: Proven & { mode: Mode; alone: boolean }; key: boolean;
+  server: Record<string, { limit: number; remaining: number; resetIn: number }> }> {
   const st = await load(), now = Date.now(), today = st.calls[dayOf(now)] ?? {};
   const out = Object.fromEntries(Object.entries(today).map(([s, c]) => [s, { ...c, budget: SOURCES[s]?.[0] ?? 0 }]));
   const pages = Object.entries(opensNow(st, now)).map(([page, v]) => ({ page, opens: Math.round(v.reduce((a, b) => a + b, 0) * 100) / 100 }))
     .sort((a, b) => b.opens - a.opens).slice(0, 8);
   return { today: out, asked: Object.values(today).reduce((a, c) => a + c.asked, 0), saved: Object.values(today).reduce((a, c) => a + c.saved, 0),
     pages, answers: Object.keys(st.answers).length, github: st.github?.[dayOf(now)] ?? { asked: 0, saved: 0 }, priors: st.priors ?? {},
-    proven: await proven() };
+    proven: await proven(), key: await hasKey(),
+    server: Object.fromEntries(Object.keys(SOURCES).flatMap((s) => { const v = serverOf(st, s, now); return v ? [[s, { limit: v.limit, remaining: v.remaining, resetIn: Math.trunc((v.resetAt - now) / 1000) }]] : []; })) };
 }

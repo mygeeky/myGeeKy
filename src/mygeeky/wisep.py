@@ -21,7 +21,12 @@ fresh, fast screen against asking aimlessly:
 6. **It takes over from the old timers once proven.** Modules used to keep their own "once a day" timers; after 14
    days of use with the cache saving at least 40% and few failures (`proven_by`), those timers stop gating and
    WISEP decides alone (`timer_due`). Admin → Settings can say Always or Never instead of Auto.
-7. **The evening top-up.** Budget left at the end of the day is spent wisely: the answers most worth having fresh
+7. **The source's own budget wins.** OpenAlex now gives every network (IP address) without a key a free daily budget
+   of 1,000 credits ($0.10), shared by everyone on it: a search or list costs 1 credit, one record by its id costs
+   nothing. Every answer says what's left (X-RateLimit-Remaining, -Limit, -Reset); WISEP paces itself to those real
+   numbers (`server_budget`), counts credits rather than requests (`credit_cost`), keeps a reserve, and rests until
+   the reset when they're spent. A free OpenAlex key (Settings) gives the person a budget of their own.
+8. **The evening top-up.** Budget left at the end of the day is spent wisely: the answers most worth having fresh
    tomorrow (by the same measure) are refreshed in the evening, using at most half of what is left.
 
 The decision rules (`change_rate`, `p_changed`, `care`, `threshold`, `decide`) are pure and the phone runs the same ones
@@ -64,11 +69,14 @@ PROVEN_LOOKS = 100                   # ... this many answers given ...
 PROVEN_SAVED = 0.4                   # ... this share of them from the cache ...
 PROVEN_FAILED = 0.15                 # ... and failures (or stale answers) under this share of the asks
 MODULE_GAP_HOURS = 0.5              # even when WISEP decides alone, a module refreshes at most this often
-MODES = ("auto", "on", "off")        # Admin → Settings: WISEP decides alone when proven / always / never
+MODES = ("auto", "on", "off")
+RESERVE = 0.05                       # of a source's real budget kept back for what you ask for yourself
+KEY_SERVICE, KEY_USER = "mygeeky-openalex", "key"   # a free OpenAlex key, in the system's credential store        # Admin → Settings: WISEP decides alone when proven / always / never
 
-# per source: (daily budget, seconds between calls, hosts)
+# per source: (daily budget, seconds between calls, hosts) -- the budget is WISEP's own guess, used only until the
+# source says what it really allows (OpenAlex's rate-limit headers; server_budget)
 SOURCES: dict[str, tuple[int, float, tuple[str, ...]]] = {
-    "openalex": (1500, 0.12, ("api.openalex.org",)),
+    "openalex": (900, 0.12, ("api.openalex.org",)),
     "crossref": (500, 0.2, ("api.crossref.org",)),
     "arxiv": (300, 3.1, ("export.arxiv.org",)),
     "biorxiv": (300, 0.5, ("api.biorxiv.org",)),
@@ -127,6 +135,33 @@ def threshold(used: int, budget: int, day_frac: float) -> float:
         return math.inf
     pace = used / max(1.0, budget * max(day_frac, 0.02))
     return _r(0.15 * (1.0 + 3.0 * max(0.0, pace - 0.5)))
+
+
+def credit_cost(source: str, url: str) -> int:
+    """What an ask costs against the source's budget: OpenAlex charges a credit for a search or a list and nothing for
+    one record by its id (/works/W…, /authors/A…, /works/doi:…); other sources count each ask as one."""
+    if source != "openalex":
+        return 1
+    parts = urlsplit(url)
+    path, query = unquote(parts.path), unquote(parts.query)
+    if any(k in query for k in ("filter=", "search=", "sort=", "group_by=", "sample=")):
+        return 1
+    one = path.count("/") >= 2 and not path.endswith("/") and path.split("/")[1] in (
+        "works", "authors", "sources", "institutions", "topics", "concepts", "funders", "publishers")
+    return 0 if one else 1
+
+
+def server_budget(limit: int, remaining: int, reset_seconds: float, used_here: int, guess: int,
+                  day_frac_here: float) -> tuple[int, int, float]:
+    """(used, budget, day_frac) to decide with: the source's own numbers when it gave them (`limit` > 0) -- everyone on
+    the network counts, a reserve is kept back, and the day is the source's day (it resets in `reset_seconds`) --
+    else this device's count against WISEP's guess."""
+    if limit <= 0:
+        return used_here, guess, day_frac_here
+    budget = max(1, int(limit * (1 - RESERVE)))
+    used = max(0, limit - max(remaining, 0))
+    frac = min(1.0, max(0.0, 1 - reset_seconds / 86400))
+    return used, budget, _r(frac)
 
 
 def tuned_prior(changes: int, hours: float, answers: int, kind: str) -> float | None:
@@ -227,6 +262,9 @@ class Store:
             CREATE TABLE IF NOT EXISTS opens (page TEXT, hour INTEGER, n REAL, at REAL, PRIMARY KEY (page, hour));
             CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
         """)
+        cols = {r[1] for r in self.db.execute("PRAGMA table_info(calls)").fetchall()}
+        if "credits" not in cols:                   # a file from before credits were counted
+            self.db.execute("ALTER TABLE calls ADD COLUMN credits INTEGER DEFAULT 0")
         self.db.commit()
 
     # ---- the answers
@@ -275,14 +313,16 @@ class Store:
     # ---- the day's tally
     def count(self, source: str, field: str, day: str) -> None:
         with self.lock:
-            self.db.execute("INSERT OR IGNORE INTO calls VALUES (?,?,0,0,0,0,0)", (day, source))
+            self.db.execute("INSERT OR IGNORE INTO calls (day, source, asked, saved, stale, failed, topup, credits) "
+                            "VALUES (?,?,0,0,0,0,0,0)", (day, source))
             self.db.execute(f"UPDATE calls SET {field}={field}+1 WHERE day=? AND source=?", (day, source))
             self.db.commit()
 
     def used(self, source: str, day: str) -> int:
+        """Credits spent here today (for OpenAlex, searches only; one record by id is free)."""
         with self.lock:
-            row = self.db.execute("SELECT asked FROM calls WHERE day=? AND source=?", (day, source)).fetchone()
-        return int(row[0]) if row else 0
+            row = self.db.execute("SELECT credits FROM calls WHERE day=? AND source=?", (day, source)).fetchone()
+        return int(row[0] or 0) if row else 0
 
     def tally(self, days: int = 7) -> list[dict[str, Any]]:
         with self.lock:
@@ -449,6 +489,70 @@ def opened(page: str, now: float | None = None) -> None:
         store().opened(canonical(page), now, datetime.fromtimestamp(now).hour)
 
 
+def get_key() -> str | None:
+    try:
+        import keyring
+        return keyring.get_password(KEY_SERVICE, KEY_USER) or None
+    except Exception:
+        return None
+
+
+def set_key(key: str) -> bool:
+    key = (key or "").strip()
+    if not (8 <= len(key) <= 200) or any(c.isspace() for c in key):
+        return False
+    import keyring
+    keyring.set_password(KEY_SERVICE, KEY_USER, key)
+    return True
+
+
+def forget_key() -> None:
+    try:
+        import keyring
+        keyring.delete_password(KEY_SERVICE, KEY_USER)
+    except Exception:
+        pass
+
+
+def request_key(email: str, session: requests.Session | None = None) -> dict[str, Any]:
+    """Ask OpenAlex for a free key for this person (only when they ask): OpenAlex emails them a link, and the key works
+    once they click it. {"ok", "key"?, "message"}. The address goes to OpenAlex only."""
+    email = (email or "").strip()
+    if "@" not in email or " " in email or len(email) > 200:
+        return {"ok": False, "message": "That doesn't look like an email address."}
+    try:
+        r = (session or requests).post("https://api.openalex.org/api-keys", json={"email": email}, headers=UA, timeout=30)
+        data = r.json() if r.content else {}
+    except Exception as exc:
+        return {"ok": False, "message": f"OpenAlex didn't answer ({type(exc).__name__}). Try again later."}
+    key = next((str(v) for k, v in (data.items() if isinstance(data, dict) else []) if k in ("key", "api_key") and v), "")
+    if r.status_code >= 400:
+        return {"ok": False, "message": str((data or {}).get("message") or f"OpenAlex said {r.status_code}.")[:300]}
+    if key:
+        set_key(key)
+    return {"ok": True, "key": bool(key), "message": "Check your email and click OpenAlex's link: the key works after "
+            "that." + ("" if key else " Then paste the key here.")}
+
+
+def _note_server(source: str, resp: requests.Response, now: float) -> None:
+    """Keep what the source says is left of its budget (OpenAlex's rate-limit headers)."""
+    h = resp.headers
+    try:
+        limit, remaining = int(h.get("X-RateLimit-Limit") or 0), int(h.get("X-RateLimit-Remaining") or 0)
+        reset = float(h.get("X-RateLimit-Reset") or 0)
+    except (TypeError, ValueError):
+        return
+    if limit > 0:
+        store().set_meta(f"server:{source}", {"limit": limit, "remaining": remaining, "reset_at": now + reset,
+                                              "key": bool(get_key())})
+
+
+def server_of(source: str, now: float) -> dict[str, Any] | None:
+    """What the source last said is left of its budget, while that day lasts."""
+    s = store().meta(f"server:{source}")
+    return s if isinstance(s, dict) and s.get("reset_at", 0) > now else None
+
+
 def key_of(url: str, params: dict[str, Any] | None = None) -> str:
     q = urlencode(sorted((k, str(v)) for k, v in (params or {}).items() if k != "mailto"))
     return f"{url}?{q}" if q else url
@@ -464,6 +568,16 @@ def _response(url: str, body: bytes, status: int = 200, note: str = "") -> reque
 
 
 def _pause(source: str, resp: requests.Response | None, st: Store, now: float) -> None:
+    """Rest a source: as long as it asks (Retry-After: OpenAlex says until its budget resets), doubling up to an hour
+    for one that just says it's busy."""
+    if resp is not None and resp.status_code == 429:
+        try:
+            wait = float(resp.headers.get("Retry-After") or 0)
+        except (TypeError, ValueError):
+            wait = 0
+        if wait > 0:
+            st.paused_until[source] = now + min(wait, 86400.0)
+            return
     wait = 60.0
     try:
         wait = float((resp.headers.get("Retry-After") if resp is not None else None) or wait)
@@ -485,10 +599,14 @@ def _space(source: str, st: Store) -> None:
 def fetch_raw(url: str, params: dict[str, Any] | None, headers: dict[str, str] | None, timeout: float,
               base: requests.Session | None = None) -> requests.Response:
     params = dict(params or {})
+    extra: dict[str, str] = {}
     if source_of(url) == "openalex":
         params.setdefault("mailto", CONTACT)
+        key = get_key()
+        if key:                                     # the person's own free key: their own budget, not the network's
+            extra["Authorization"] = f"Bearer {key}"
     sess = base or requests.Session()
-    asked = {"params": params, "headers": {**UA, **(headers or {})}, "timeout": timeout}
+    asked = {"params": params, "headers": {**UA, **(headers or {}), **extra}, "timeout": timeout}
     if isinstance(sess, Session):                   # WISEP's own session: past its gate, or it would ask itself
         return requests.Session.request(sess, "GET", url, **asked)
     return sess.request("GET", url, **asked)
@@ -510,10 +628,16 @@ def get(url: str, params: dict[str, Any] | None = None, page: str = "", kind: st
     kind = kind or kind_of(source, key)
     kept = st.get(key)
     age = (now - kept["fetched"]) / 3600 if kept else None
-    budget = SOURCES[source][0]
+    cost = credit_cost(source, key)
+    srv = server_of(source, now) or {}
+    used, budget, frac = server_budget(int(srv.get("limit") or 0), int(srv.get("remaining") or 0),
+                                       float(srv.get("reset_at", now)) - now, st.used(source, day), SOURCES[source][0],
+                                       _day_frac(now))
+    if cost == 0:                                   # a free record by id: only the spacing and the kept answer matter
+        used, budget = 0, max(budget, 1)
+    resting = st.paused_until.get(source, 0.0) > now or (cost > 0 and srv and int(srv.get("remaining") or 0) <= 0)
     d = decide(age, kind, kept["changes"] if kept else 0, kept["watched"] if kept else 0.0, care_for(page, now),
-               st.used(source, day), budget, _day_frac(now), force, st.paused_until.get(source, 0.0) > now,
-               priors().get(kind))
+               used, budget, frac, force, bool(resting), priors().get(kind))
     if d["action"] == "cache":
         st.count(source, "saved", day)
         st.touch(key, now)
@@ -523,6 +647,8 @@ def get(url: str, params: dict[str, Any] | None = None, page: str = "", kind: st
         return _response(key, b"{}", 503, "resting")
     _space(source, st)
     st.count(source, "asked", day)
+    if cost:
+        st.count(source, "credits", day)
     try:
         resp = fetch_raw(url, params, headers, timeout, base)
     except requests.RequestException:
@@ -531,6 +657,7 @@ def get(url: str, params: dict[str, Any] | None = None, page: str = "", kind: st
             return _response(key, kept["body"], note="stale:offline")
         st.count(source, "failed", day)
         raise
+    _note_server(source, resp, now)
     if resp.status_code in (429, 503):
         _pause(source, resp, st, now)
         if kept:
@@ -592,13 +719,19 @@ def top_up(now: float | None = None, limit: int = TOP_UP_MAX, base: requests.Ses
         left = SOURCES[source][0] - st.used(source, day)
         if worth < TOP_UP_FLOOR or spent.get(source, 0) >= int(left * TOP_UP_SHARE) or sum(spent.values()) >= limit:
             continue
+        srv = server_of(source, now)
+        if credit_cost(source, url) and srv and int(srv.get("remaining") or 0) <= int(srv.get("limit", 0) * RESERVE * 2):
+            continue                                # the network's own budget is nearly spent: leave it for the day
         _space(source, st)
         st.count(source, "asked", day)
         st.count(source, "topup", day)
+        if credit_cost(source, url):
+            st.count(source, "credits", day)
         try:
             resp = fetch_raw(url, None, None, 30.0, base)
         except requests.RequestException:
             continue
+        _note_server(source, resp, now)
         if resp.status_code in (429, 503):
             _pause(source, resp, st, now)
             continue
@@ -627,7 +760,9 @@ def stats(now: float | None = None) -> dict[str, Any]:
     except Exception:
         github = {"asked": 0, "saved": 0}
     return {"today": {t["source"]: {**t, "budget": SOURCES.get(t["source"], (0,))[0]} for t in today}, "github": github,
-            "priors": priors(), "proven": proven(now),
+            "priors": priors(), "proven": proven(now), "key": bool(get_key()),
+            "server": {s: {"limit": v["limit"], "remaining": v["remaining"], "reset_in": int(v["reset_at"] - now)}
+                       for s in SOURCES if (v := server_of(s, now))},
             "asked": asked, "saved": saved, "share_saved": _r(saved / (asked + saved), 3) if asked + saved else 0.0,
             "pages": [{"page": p, "opens": _r(v, 2)} for p, v in pages], "answers": n, "bytes": size,
             "resting": {s: int(u - now) for s, u in st.paused_until.items() if u > now}, "week": tally}

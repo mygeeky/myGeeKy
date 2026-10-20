@@ -63,6 +63,11 @@ export async function setToken(token: string | null): Promise<void> {
   if (!token) await saveSignin(null);              // signing out forgets the refresh token too
 }
 
+// ---- a free OpenAlex key (WISEP, lib/wisep.ts): the person's own budget instead of the one their network shares
+const OPENALEX_KEY = 'mygeeky.openalex.key';
+export const getOpenAlexKey = () => readSecure(OPENALEX_KEY);
+export const setOpenAlexKey = (key: string | null) => writeSecure(OPENALEX_KEY, key);
+
 // ---- 8-hour sign-in tokens that renew themselves
 type SigninRecord = { refresh: string; expiresAt: number; refreshExpiresAt: number };
 

@@ -29,10 +29,16 @@ def summary() -> str:
                   f"{wisep.PROVEN_DAYS} days, {pr['looks']} of {wisep.PROVEN_LOOKS} answers, "
                   f"{round(100 * pr['saved'])}% from what it kept (it needs {round(100 * wisep.PROVEN_SAVED)}%).")
     tuned = ", ".join(f"{k} about every {v:g} hours" for k, v in sorted(s["priors"].items()))
+    oa = s["server"].get("openalex")
+    whose = "your own key's" if s["key"] else "the free budget your whole network shares"
+    budget = (f" OpenAlex: {oa['remaining']} of {oa['limit']} credits left ({whose}; a search costs 1, one record "
+              f"nothing), back in {oa['reset_in'] // 3600} h {oa['reset_in'] % 3600 // 60} min." if oa else
+              (" OpenAlex: with your own key." if s["key"] else
+               " OpenAlex: no key, so the free budget your whole network shares (1,000 searches a day)."))
     return ("Today: " + ("; ".join(parts) + "." if parts else "nothing asked yet.")
             + f" GitHub (with its own cache): {g['asked']} asked, {g['saved']} free."
             + (f" You open most: {pages}." if pages else "") + f" {alone}"
-            + (f" It learned how often answers change here: {tuned}." if tuned else ""))
+            + (f" It learned how often answers change here: {tuned}." if tuned else "") + budget)
 
 
 class WisepSection(QWidget):
@@ -65,7 +71,11 @@ class WisepSection(QWidget):
         self.forget_btn.setToolTip("The pages you open and how often answers change here. What it kept from the "
                                    "databases stays: it's public, and only makes the screen faster.")
         self.forget_btn.clicked.connect(self.forget)
-        for b in (self.mode_btn, self.forget_btn):
+        self.key_btn = QPushButton("")
+        self.key_btn.setToolTip("A free OpenAlex key gives you your own daily budget instead of the one everyone on "
+                                "your network shares. Kept in this computer's credential store.")
+        self.key_btn.clicked.connect(self.key_menu)
+        for b in (self.mode_btn, self.forget_btn, self.key_btn):
             b.setCursor(Qt.PointingHandCursor)
             row.addWidget(b)
         row.addStretch(1)
@@ -78,7 +88,32 @@ class WisepSection(QWidget):
         except Exception:
             self.numbers.setText("")
         self.mode_btn.setText("🧠 Decides alone: " + MODE_WORDS[wisep.mode()])
+        self.key_btn.setText("🔑 OpenAlex key ✓" if wisep.get_key() else "🔑 Get a free OpenAlex key")
         self.apply_theme()
+
+    def key_menu(self) -> None:
+        from PySide6.QtWidgets import QInputDialog, QMessageBox
+        if wisep.get_key():
+            if QMessageBox.question(self, "OpenAlex key", "Forget your OpenAlex key? myGeeKy goes back to the free "
+                                    "budget your network shares.") == QMessageBox.Yes:
+                wisep.forget_key()
+                self.refresh()
+            return
+        choice, ok = QInputDialog.getItem(self, "A free OpenAlex key", "OpenAlex gives everyone a free key with its own "
+                                          "daily budget.", ["Send me one by email", "I have one: paste it"], 0, False)
+        if not ok:
+            return
+        if choice.startswith("Send"):
+            email, ok = QInputDialog.getText(self, "A free OpenAlex key", "Your email (it goes to OpenAlex only; they "
+                                             "email you a link, and the key works once you click it):")
+            if ok and email.strip():
+                out = wisep.request_key(email)
+                QMessageBox.information(self, "OpenAlex key", out["message"])
+        else:
+            key, ok = QInputDialog.getText(self, "OpenAlex key", "Paste your OpenAlex key:")
+            if ok and key.strip() and not wisep.set_key(key):
+                QMessageBox.information(self, "OpenAlex key", "That doesn't look like a key.")
+        self.refresh()
 
     def next_mode(self) -> None:
         wisep.set_mode({"auto": "on", "on": "off", "off": "auto"}[wisep.mode()])
@@ -96,6 +131,6 @@ class WisepSection(QWidget):
                                 "background:transparent;")
         for lbl in (self.about, self.numbers):
             lbl.setStyleSheet(f"color:{t['muted']}; font-size:10.5px; background:transparent;")
-        for b in (self.mode_btn, self.forget_btn):
+        for b in (self.mode_btn, self.forget_btn, self.key_btn):
             b.setStyleSheet(f"QPushButton {{ background:{t['section_btn']}; color:{t['text']}; border:none; "
                             "border-radius:8px; padding:5px 10px; font-size:11px; }")

@@ -90,7 +90,9 @@ experiments* and *images into numbers with Fiji* are for.
   when it has probably changed and you're likely to look -- within a daily budget and kindly to the databases (WISEP).
   It learns which pages you open and when, on your device only; it spends what's left of the day's budget in the
   evening on what you'll want tomorrow. Here you see today's numbers, what it learned, how far it is from deciding
-  alone (Auto, Always or Never) and a button to make it forget what it learned.
+  alone (Auto, Always or Never) and a button to make it forget what it learned. OpenAlex gives each network a free daily
+  budget shared by everyone on it (1,000 searches without a key): it shows what's left today, and **🔑 Get a free
+  OpenAlex key** gets you a budget of your own (OpenAlex emails you a link; the key works once you click it).
 - **🗂️ Data**: public datasets to practise and train on, across the sciences (biology, plants, medicine,
   neuroscience, ecology, climate, chemistry, physics and astronomy, social science, machine learning). Every one
   passes the same rules: an open licence, a download with no login or application, laptop-sized (or with a named

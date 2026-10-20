@@ -31,6 +31,14 @@ leaves it.
    `PAGES` are pure and identical; `tests/test_wisep.py` runs the phone's on the same inputs. Python's `sum()`
    rounds differently from JavaScript's adding: add floats one by one where both must agree.
 
+## OpenAlex's budget is real and shared
+
+Without a key OpenAlex allows **1,000 credits a day per network (IP)**, shared by everyone on it: a search or list costs
+1, one record by id costs 0. WISEP reads its rate-limit headers (`_note_server`, `server_budget`), counts credits
+(`credit_cost`), and rests until the reset on a 429. So: prefer a record by id over a search where you can; batch ids
+into one search (`filter=id:a|b|c`); never loop a search per item. A free key (`wisep.request_key`, `set_key`; the
+phone: `requestKey`, `saveKey`) gives the person their own budget.
+
 ## The decision, in one line
 
 `worth = (1 - exp(-rate * age)) * care(page, hour)`; fetch when `worth >= threshold(used, budget, time of day)`.

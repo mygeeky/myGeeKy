@@ -44,11 +44,25 @@ under 15% of the asks (`proven_by`), those timers stop gating: a refresh may run
 decides which answers are worth asking for (`timer_due`). ⚙ Settings → How myGeeKy asks the internet switches this
 between Auto (once proven), Always and Never, for each user on their own device, and shows how far it is ("6 of 14 days, 48 of 100 answers, 55% from the cache").
 
+**The source's own budget wins.** Since 2026 OpenAlex gives every network (IP address) without a key a **free daily
+budget of 1,000 credits ($0.10), shared by everyone on it** -- a whole university floor shares one -- and resets it at
+midnight UTC. A search or a list costs 1 credit; one record by its id (`/authors/A…`, `/works/W…`, `/works/doi:…`)
+costs nothing. Every answer says what's left (`X-RateLimit-Limit`, `-Remaining`, `-Reset`). WISEP keeps those
+numbers and paces itself to them (`server_budget`: everyone on the network counts, 5% is kept back for what you ask
+yourself, the day is OpenAlex's day), counts credits rather than requests (`credit_cost`: a free record by id is
+never held back by the budget), and when OpenAlex says the budget is spent (429 with Retry-After) it rests until the
+reset and serves what it kept. A **free OpenAlex key** (Settings → How myGeeKy asks the internet → Get a free OpenAlex
+key: OpenAlex emails a link, and the key works once it's clicked; or paste one) gives the person a budget of their own,
+sent as `Authorization: Bearer …` and kept in the system's credential store.
+
+On 2026-10-20 the measurement found this network's free budget spent two hours before midnight UTC, by the installed
+myGeeKy (without WISEP) and the day's development work together: that's what WISEP and the key are for.
+
 ## Daily budgets (well under each source's published limits)
 
 | Source | Budget a day | Gap between calls |
 |---|---|---|
-| OpenAlex | 1,500 | 0.12 s |
+| OpenAlex | OpenAlex's own numbers (1,000 credits a day per network without a key; 900 assumed until it says) | 0.12 s |
 | Crossref | 500 | 0.2 s |
 | arXiv | 300 | 3.1 s (arXiv asks for 3 s) |
 | bioRxiv / medRxiv | 300 | 0.5 s |

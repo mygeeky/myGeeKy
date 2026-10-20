@@ -230,3 +230,81 @@ def test_every_user_sees_their_own_wisep_in_settings_and_can_forget_what_it_lear
     assert wisep.store().opens(NOON) == {} and wisep.priors() == {}
     assert "You open most" not in box.numbers.text()
     assert wisep.mode() == "on"                                                  # forgetting doesn't touch your choice
+
+
+# --------------------------------------------------------------------------- the source's own budget (OpenAlex credits)
+def test_a_search_costs_a_credit_and_one_record_by_id_costs_nothing():
+    c = wisep.credit_cost
+    assert c("openalex", "https://api.openalex.org/works?filter=cites:W1") == 1
+    assert c("openalex", "https://api.openalex.org/authors?search=ada") == 1
+    assert c("openalex", "https://api.openalex.org/topics?search=x") == 1
+    assert c("openalex", "https://api.openalex.org/authors/A5083340569?select=id,topics") == 0
+    assert c("openalex", "https://api.openalex.org/works/W123") == 0
+    assert c("openalex", "https://api.openalex.org/works/doi:10.1/x") == 0
+    assert c("zenodo", "https://zenodo.org/api/records/1") == 1
+    assert wisep.server_budget(0, 0, 0, 7, 900, 0.5) == (7, 900, 0.5)          # no word from the source: our own count
+    assert wisep.server_budget(1000, 400, 43200, 7, 900, 0.9) == (600, 950, 0.5)   # its numbers: everyone on the network
+
+
+def _oa_net(remaining, status=200, retry=None):
+    h = {"X-RateLimit-Limit": "1000", "X-RateLimit-Remaining": str(remaining), "X-RateLimit-Reset": "7200"}
+    if retry:
+        h["Retry-After"] = str(retry)
+    return _Net(status=status, headers=h)
+
+
+def test_wisep_paces_itself_to_what_openalex_says_is_left_and_rests_when_it_is_spent(monkeypatch):
+    monkeypatch.setattr(wisep, "_space", lambda source, st: None)
+    wisep.get("https://api.openalex.org/works", {"filter": "cites:W1"}, page="you:cited", now=NOON, base=_oa_net(600))
+    srv = wisep.server_of("openalex", NOON)
+    assert srv["limit"] == 1000 and srv["remaining"] == 600
+    assert wisep.store().used("openalex", wisep._day(NOON)) == 1                    # a search: one credit
+    wisep.get("https://api.openalex.org/authors/A1", page="you", now=NOON, base=_oa_net(600))
+    assert wisep.store().used("openalex", wisep._day(NOON)) == 1                    # one record by id: free
+    spent = _oa_net(0, status=429, retry=7063)
+    r = wisep.get("https://api.openalex.org/works", {"search": "gwas"}, page="world:papers", now=NOON + 10, base=spent)
+    assert r.status_code == 429 and wisep.store().paused_until["openalex"] == pytest.approx(NOON + 10 + 7063)
+    after = _Net()
+    wisep.get("https://api.openalex.org/works", {"search": "other"}, page="world:papers", now=NOON + 600, base=after)
+    assert after.calls == []                                                         # resting until OpenAlex's reset
+    s = wisep.stats(NOON + 600)
+    assert s["server"]["openalex"]["remaining"] == 0 and s["key"] is False
+
+
+def test_a_free_openalex_key_goes_with_every_ask_and_can_be_requested_by_email(monkeypatch):
+    monkeypatch.setattr(wisep, "_space", lambda source, st: None)
+    kept = {}
+    monkeypatch.setattr(wisep, "get_key", lambda: kept.get("k"))
+    monkeypatch.setattr(wisep, "set_key", lambda k: kept.__setitem__("k", k) or True)
+
+    class Post:
+        def post(self, url, json=None, **kw):
+            assert url == "https://api.openalex.org/api-keys" and json == {"email": "ada@uni.edu"}
+            r = requests.Response()
+            r.status_code, r._content = 200, b'{"api_key": "oa-free-123456"}'
+            return r
+
+    assert wisep.request_key("not an email")["ok"] is False
+    out = wisep.request_key("ada@uni.edu", session=Post())
+    assert out["ok"] and out["key"] and kept["k"] == "oa-free-123456" and "click" in out["message"]
+    net = _Net()
+    sent = {}
+    orig = net.request
+    net.request = lambda method, url, params=None, headers=None, timeout=None, **kw: (sent.update(headers or {}), orig(method, url, params, headers, timeout))[1]
+    wisep.get("https://api.openalex.org/works", {"search": "x"}, page="world:papers", now=NOON, base=net)
+    assert sent.get("Authorization") == "Bearer oa-free-123456"
+
+
+@pytest.mark.skipif(not phone.node_ok(), reason="needs Node 22.6+ and the phone's packages")
+def test_the_phone_counts_credits_and_reads_the_budget_the_same():
+    urls = ["https://api.openalex.org/works?filter=cites:W1", "https://api.openalex.org/authors?search=ada",
+            "https://api.openalex.org/authors/A5083340569?select=id,topics", "https://api.openalex.org/works/W123",
+            "https://api.openalex.org/works/doi:10.1/x", "https://api.openalex.org/topics?search=x",
+            "https://api.openalex.org/works", "https://zenodo.org/api/records/1"]
+    cases = [[0, 0, 0, 7, 900, 0.5], [1000, 400, 43200, 7, 900, 0.9], [1000, 0, 7063, 0, 900, 0.2], [500, 999, 10, 1, 900, 0.1]]
+    said = phone.run("""
+import { creditCost, serverBudget, sourceOf } from './lib/wisep.ts';
+out({ c: INPUT.urls.map((u: string) => creditCost(sourceOf(u) ?? '', u)), b: INPUT.cases.map((x: number[]) => serverBudget(x[0], x[1], x[2], x[3], x[4], x[5])) });
+""", {"urls": urls, "cases": cases})
+    assert said["c"] == [wisep.credit_cost(wisep.source_of(u) or "", u) for u in urls]
+    assert said["b"] == [list(wisep.server_budget(*x)) for x in cases]
