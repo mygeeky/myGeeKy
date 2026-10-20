@@ -1,0 +1,46 @@
+name: Datasets
+
+# Grow → Data lists public datasets to practise and train on: src/mygeeky/data/datasets.json. Once a week this
+# re-harvests the Galaxy Training Network and field searches on Zenodo, GEO's curated DataSets and OpenML's CC18
+# suite, keeps the hand-checked core (data/datasets_core.json), drops anything that now breaks a rule (the rules:
+# .claude/skills/mygeeky-datasets/SKILL.md, enforced by datasets.accept), writes the phone's identical copy, and
+# commits a change. Every myGeeKy picks it up from GitHub within a day; no key and no server.
+
+on:
+  schedule:
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datasets
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Harvest and check the datasets
+        env:
+          PYTHONPATH: src
+        run: |
+          pip install --quiet requests platformdirs
+          python -m mygeeky.datasets build
+
+      - name: Save the changes (if any)
+        run: |
+          if git diff --quiet; then echo "nothing to change"; exit 0; fi
+          git config user.name "myGeeKy"
+          git config user.email "housekeeping@mygeeky.invalid"
+          git commit -am "Datasets: this week's harvest"
+          git pull --rebase
+          git push

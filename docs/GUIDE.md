@@ -85,6 +85,15 @@ This is enforced in code (`src/mygeeky/safety.py`), not only in words:
 experiments* and *images into numbers with Fiji* are for.
 
 **🌱 Grow** has five parts:
+- **🗂️ Data**: public datasets to practise and train on, across the sciences (biology, plants, medicine,
+  neuroscience, ecology, climate, chemistry, physics and astronomy, social science, machine learning). Every one
+  passes the same rules: an open licence, a download with no login or application, laptop-sized (or with a named
+  starter file), common formats, documented, stable, validated by its source or widely used, and no personal
+  data. The list is a hand-checked core (PBMC 3k, the Palmer penguins, Mauna Loa CO2, MNIST...) plus the Galaxy
+  Training Network's tutorial data and well-used datasets on Zenodo, NCBI's curated GEO DataSets and OpenML's vetted
+  CC18 suite, re-checked every week. ✨ For you puts first what matches your field and teaches the skills rising
+  for you; pick a field to browse the rest. Each card says what to practise, its size, format and licence, with
+  ⬇ Download, the page and a tutorial when there is one.
 - **📈 Skills**: Rising Skills, the skills growing in your field that you don't show yet. What myGeeKy reads
   for you is picked by your interests, so on its own it would call anything you started reading about "rising".
   Growth is therefore measured where no one picked for you: the explore share of your feeds, plus one shared file

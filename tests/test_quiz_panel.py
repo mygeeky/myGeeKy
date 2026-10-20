@@ -173,7 +173,7 @@ def test_the_quiz_tab_is_one_of_the_grow_tabs():
     from mygeeky.gui.qt_panel import MyGeekyPanel
     modes = dict(MyGeekyPanel.GROW_MODES)
     assert modes["quiz"] == "🏆 Quiz"
-    assert list(modes) == ["highlights", "skills", "paths", "quiz", "learn", "wins", "collab"]   # right after Protocols
+    assert list(modes) == ["highlights", "skills", "paths", "quiz", "learn", "data", "wins", "collab"]   # right after Protocols
 
 
 def test_the_overview_lists_yours_first_then_reviewed_ones_you_could_start(qapp_offscreen, started):

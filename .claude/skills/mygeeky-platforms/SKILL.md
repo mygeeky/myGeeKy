@@ -68,6 +68,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `signal-crypto.ts` | `signal_crypto.py` |
 | `signals.ts`, `signals-core.ts` | `beacon.py` |
 | `skills.ts` (+ `components/skill-views.tsx`) | `skills.py`, `skilltrends.py` (+ `gui/skillviews_ui.py`) |
+| `datasets.ts` (+ `components/datasets-view.tsx`) | `datasets.py` (+ `gui/datasets_ui.py`, `gui/app.py` `get_growth`); the rules: skill `mygeeky-datasets` |
 | `taste.ts` | `taste.py` |
 | `theme.ts` | `gui/app.py` (THEMES) |
 | `components/token-guide.tsx` | `gui/token_guide.py` |
@@ -103,6 +104,7 @@ The desktop file is the source; the phone copy must be identical or generated fr
 | `src/mygeeky/data/geekoc.json` | `mobile/src/data/geekoc.json` (identical) | `tools/geekoc_poses.py` writes both; `test_phone_month_match_desktop.py` |
 | `src/mygeeky/data/docread.json` | `mobile/src/data/docread.json` (identical) | `test_docread.py` |
 | `src/mygeeky/data/ai_race.json` | `mobile/src/data/ai_race.json` (identical) | `airace.save()` / `.github/workflows/ai-race.yml` write both; `test_airace.py` |
+| `src/mygeeky/data/datasets.json` | `mobile/src/data/datasets.json` (identical) | `datasets.save()` / `.github/workflows/datasets.yml` write both; `test_datasets.py` |
 | `src/mygeeky/data/skill_trends.json` | `mobile/src/data/skill_trends.json` (identical) | `skilltrends.save()` / `.github/workflows/skill-trends.yml` write both; `test_growth.py` |
 
 After editing a desktop data file, update the phone copy in the same change (`cmp` them).

@@ -4087,7 +4087,7 @@ class MyGeekyPanel(QWidget):
 
     # ------------------------------------------------------------------ 🌱 Grow and 🎯 Chances
     GROW_MODES = (("highlights", "✨ Highlights"), ("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("quiz", "🏆 Quiz"), ("learn", "📚 Learn"),
-                  ("wins", "🎉 Wins"), ("collab", "🤝 Collaborators"))
+                  ("data", "🗂️ Data"), ("wins", "🎉 Wins"), ("collab", "🤝 Collaborators"))
     CHANCE_MODES = (("seasons", "🗓 Seasons"), ("jobs", "💼 Jobs"), ("funding", "💶 Funding"),
                     ("conferences", "🎤 Conferences"))
 
@@ -4447,6 +4447,15 @@ class MyGeekyPanel(QWidget):
                 self._grow_note("No learning resources yet.", theme)
             if res.get("hidden"):
                 self._hidden_note(self.grow_area, res["hidden"], "resource", theme)
+        elif mode == "data":
+            self.grow_hint.setText("Public datasets to practise and train on, across the sciences: open, documented, "
+                                   "laptop-sized and downloadable without a login. Yours first: your field and the "
+                                   "skills rising for you. 👍 / 👎 teach it what helps.")
+            from .datasets_ui import DatasetsSection
+            d = data.get("datasets") or {}
+            self.grow_area.addWidget(DatasetsSection(
+                d.get("items") or [], d.get("weights") or {}, d.get("wanted") or [], theme,
+                lambda ds, up: logic.vote("dataset", ds["id"], up, ds["title"], ds["skills"]), open_))
         elif mode == "wins":
             self.grow_hint.setText("New stars and forks on your repos, and new citations of your papers "
                                    "(with the newest paper citing you). Checked once a day.")

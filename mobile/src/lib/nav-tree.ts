@@ -103,7 +103,8 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     { ...G.grow, icon: 'leaf-outline', children: [
       leaf('grow', 'highlights', 'Highlights', 'sparkles-outline'), leaf('grow', 'skills', 'Skills', 'trending-up-outline'),
       leaf('grow', 'paths', 'Protocols', 'compass-outline'), leaf('grow', 'quiz', 'Quiz', 'trophy-outline'),
-      leaf('grow', 'learn', 'Learn', 'library-outline'), leaf('grow', 'wins', 'Wins', 'happy-outline'),
+      leaf('grow', 'learn', 'Learn', 'library-outline'), leaf('grow', 'data', 'Data', 'server-outline'),
+      leaf('grow', 'wins', 'Wins', 'happy-outline'),
       leaf('grow', 'collab', 'People', 'hand-left-outline')] },
     { ...G.world, icon: 'earth-outline', children: [
       { id: 'news', label: 'News', icon: 'newspaper-outline', tab: 'news', children: [

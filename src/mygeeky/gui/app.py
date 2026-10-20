@@ -1379,8 +1379,11 @@ def get_growth(cfg: MyGeekyConfig, save: bool = True) -> dict[str, Any]:
     wanted = {s["name"].lower(): 0.7 for s in rising["skills"][:6]}
     data = curated.load()
     resources = curated.ranked(cfg, "resources", data=data, extra_terms=wanted)
-    from .. import protocols
+    from .. import datasets, protocols
+    wanted_data = [s["name"] for s in rising["skills"][:8]] + [d["name"] for d in rising.get("directions") or []]
     return {"rising": rising, "paths": protocols.views(cfg, data), "resources": resources,
+            "datasets": {"items": datasets.load()["datasets"], "weights": interests.profile_terms(cfg),
+                         "wanted": wanted_data},
             "reviewed": [{"id": p["id"], "skill": p["skill"], "goal": p.get("goal", ""), "title": p["title"],
                           "summary": p.get("summary", "")}
                          for p in protocols.by_fit(protocols.reviewed(data), interests.profile_terms(cfg))],
@@ -1403,6 +1406,11 @@ def refresh_growth(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
         skilltrends.refresh_if_due(force=force)        # the shared world file Rising skills measures growth on
     except Exception:
         pass                                           # the copy myGeeKy shipped with still works
+    try:
+        from .. import datasets
+        datasets.refresh_if_due(force=force)           # Grow → Data's list
+    except Exception:
+        pass
     try:
         client = _build_client(cfg) if cfg.github_username else None
         wins.refresh(cfg, client=client, force=force)
@@ -1536,7 +1544,7 @@ def did(what: str) -> None:
 
 
 def vote(kind: str, item_id: str, up: bool, text: str = "", tags: list[str] | None = None) -> int:
-    """👍 / 👎 on a skill, resource, job, call, conference or person. Same thumb again: taken back."""
+    """👍 / 👎 on a skill, resource, dataset, job, call, conference or person. Same thumb again: taken back."""
     from .. import taste
     v = taste.vote(kind, item_id, up, text, tags or [])
     if v > 0 and kind in CHANCE_KINDS:

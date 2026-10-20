@@ -26,7 +26,7 @@ from .files import read_json, write_json
 HALF_LIFE_DAYS = 365
 MAX_TERMS = 10
 MAX_VOTES = 2000            # the oldest go first; plenty for years of use
-KINDS = ("skill", "resource", "job", "funding", "conference", "collaborator")
+KINDS = ("skill", "resource", "job", "funding", "conference", "collaborator", "dataset")
 _WORD = re.compile(r"[a-z][a-z0-9+#.-]{2,}")
 _SKIP = set("""
 the and for with from into this that your their our are was were has have had not but all any can

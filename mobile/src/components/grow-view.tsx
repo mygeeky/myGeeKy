@@ -11,6 +11,7 @@ import { collabAsked, isSetUp, loadBeacons, type Parsed, send, signalsData } fro
 import { load as loadProtocols } from '../lib/protocols';
 import { type Doc, fieldDocs, find, note, ownText, rising, type Rising, type RisingResult, shapes, skillsIn } from '../lib/skills';
 import { SkillViews } from './skill-views';
+import { DatasetsView } from './datasets-view';
 import * as taste from '../lib/taste';
 import { C } from '../lib/theme';
 import { recent, refreshWins, type WinsState, loadWins } from '../lib/wins';
@@ -21,9 +22,9 @@ import { HighlightsView } from './highlights-view';
 import { Empty, open, Segments } from './ui';
 import { GeekLoader, useHold } from './geek-loader';
 
-export type GrowMode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'wins' | 'collab';
+export type GrowMode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'data' | 'wins' | 'collab';
 type Mode = GrowMode;
-const MODES: [Mode, string][] = [['highlights', 'Highlights'], ['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'],
+const MODES: [Mode, string][] = [['highlights', 'Highlights'], ['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'], ['data', 'Data'],
   ['wins', 'Wins'], ['collab', 'People']];
 const ABOUT: Record<Mode, string> = {
   highlights: 'Research articles picked by the maker, each retold as a short news article in plain words: what they found, '
@@ -34,6 +35,8 @@ const ABOUT: Record<Mode, string> = {
   quiz: "Ten questions from a protocol's own bank: half basics, then applied, then a few real pitfalls. Each one shows the "
     + 'source it came from once you answer. Only your best counts, one attempt a day, and it stays on this phone.',
   learn: "Free courses, books, tutorials and repos picked by myGeeKy's maker, matched to you and your rising skills.",
+  data: 'Public datasets to practise and train on, across the sciences: open, documented, laptop-sized and downloadable without a login. '
+    + 'Yours first: your field and the skills rising for you.',
   wins: 'New stars and forks on your repos, and new citations of your papers. Checked once a day.',
   collab: "Fellow myGeeKy users whose skills complement yours. 🤝 is sealed: they only see it if they pick you too.",
 };
@@ -212,6 +215,10 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
           {!resources.items.length ? (holdLists ? <GeekLoader /> : <Empty>No learning resources yet.</Empty>) : null}
           <Hidden n={resources.hidden} onShow={async () => { await taste.unhide('resource'); rank(); }} />
         </View>
+      ) : null}
+
+      {mode === 'data' ? (
+        <DatasetsView weights={weights} wanted={[...(skills?.skills ?? []).slice(0, 8).map((x) => x.name), ...(skills?.directions ?? []).map((x) => x.name)]} />
       ) : null}
 
       {mode === 'wins' ? (

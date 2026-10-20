@@ -156,6 +156,8 @@ def _no_skill_trends(monkeypatch):
     import mygeeky.skilltrends as skilltrends
     monkeypatch.setattr(skilltrends, "refresh_if_due", lambda *a, **kw: False)
     monkeypatch.setattr(skilltrends, "load", lambda *a, **kw: skilltrends.clean({}))
+    import mygeeky.datasets as datasets
+    monkeypatch.setattr(datasets, "refresh_if_due", lambda *a, **kw: False)    # Grow → Data's list: never fetched
 
 
 @pytest.fixture(autouse=True)
