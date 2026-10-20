@@ -17,7 +17,8 @@ import { Empty, open, Segments } from './ui';
 import { logDid } from '../lib/badges';
 import { GeekLoader, useHold } from './geek-loader';
 
-type Mode = 'seasons' | 'jobs' | 'funding' | 'conferences';
+export type ChanceMode = 'seasons' | 'jobs' | 'funding' | 'conferences';
+type Mode = ChanceMode;
 type ListMode = Exclude<Mode, 'seasons'>;
 const MODES: [Mode, string][] = [['seasons', 'Seasons'], ['jobs', 'Jobs'], ['funding', 'Funding'],
   ['conferences', 'Conferences']];
@@ -269,9 +270,12 @@ const p = StyleSheet.create({
   none: { color: C.muted, fontSize: 13, padding: 12 },
 });
 
-export function ChancesView() {
+/** `mode`/`onMode`: the part shown, when the orbit or the dock chooses it (home.tsx); else the view keeps its own. */
+export function ChancesView({ mode: chosen, onMode }: { mode?: Mode; onMode?: (m: Mode) => void } = {}) {
   const { settings, profile } = useApp();
-  const [mode, setMode] = useState<Mode>('jobs');
+  const [own, setOwn] = useState<Mode>('jobs');
+  const mode = chosen ?? own;
+  const setMode = (m: Mode) => { setOwn(m); onMode?.(m); };
   const [lists, setLists] = useState<Lists | null>(null);
   const holdLists = useHold(!lists);
   const [data, setData] = useState<{ items: Ranked[]; hidden: number }>({ items: [], hidden: 0 });
@@ -329,7 +333,7 @@ export function ChancesView() {
           options={offered.map((w) => [w.id, `${w.label}${w.now ? ' (now)' : w.past ? ' (just gone)' : ''}`] as [string, string])}
           onChange={setPicked} />
       ) : null}
-      <View style={{ marginHorizontal: -16 }}><Segments value={mode} options={MODES} onChange={setMode} /></View>
+      {onMode ? null : <View style={{ marginHorizontal: -16 }}><Segments value={mode} options={MODES} onChange={setMode} /></View>}
       <Text style={s.muted}>{ABOUT[mode]}{mode === 'seasons' ? '' : ' Each one disappears after its deadline.'} 👍 / 👎 teach your model; 🚩 tells the maker one looks fake.</Text>
 
       {mode === 'seasons' ? (<>

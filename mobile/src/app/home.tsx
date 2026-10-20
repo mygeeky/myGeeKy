@@ -1,6 +1,7 @@
 // The whole app on one screen: what you picked on top, the orbit below (under
-// your thumb, clear of the phone's own buttons). Reading folds the orbit into a
-// dock of two rows; scrolling back to the top, or double-tapping "Spin the rings", brings it back.
+// your thumb, clear of the phone's own buttons). The orbit zooms: six groups, a group's pages, a page's parts
+// (lib/nav-tree.ts, components/orbit-zoom.tsx). Reading folds it into a dock of planets that moves the same way,
+// with a back planet first; scrolling back to the top, or "Orbit", brings the orbit back.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -9,15 +10,16 @@ import { Image, LayoutAnimation, Linking, NativeScrollEvent, NativeSyntheticEven
          useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline } from 'react-native-svg';
-import { Orbit, orbitHeight } from '../components/orbit';
+import { darker, OrbitZoom, orbitHeight } from '../components/orbit-zoom';
+import { find, leafFor, level, path as navPath, phoneTree, rows as dockRows, tap as navTap, walk } from '../lib/nav-tree';
 import { PersonCard } from '../components/person-card';
-import { ChancesView } from '../components/chances-view';
-import { GrowView } from '../components/grow-view';
+import { type ChanceMode, ChancesView } from '../components/chances-view';
+import { type GrowMode, GrowView } from '../components/grow-view';
 import { MonthView, rankNews } from '../components/month-view';
 import { AiRaceView } from '../components/ai-race-view';
 import { useToast } from '../components/toast';
 import { SignalsView } from '../components/signals-view';
-import { Empty, open, Segments } from '../components/ui';
+import { Empty, open } from '../components/ui';
 import { AdminPart } from '../components/admin-part';
 import { IdeaForm } from '../components/idea-sheet';
 import { BadgesPart, ModelPart, MorePart } from '../components/you-parts';
@@ -36,7 +38,7 @@ import { loadSeen, markSeen } from '../lib/seen';
 import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
 import { fetchPeople } from '../lib/people';
 import { fetchResearch } from '../lib/research';
-import { INNER, ordered, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
+import { INNER, OUTER, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
 import { C, ink, tint } from '../lib/theme';
 import { GeekLoader, useHold } from '../components/geek-loader';
 import { checkNow } from '../lib/notify-store';
@@ -46,11 +48,8 @@ import { retryWhois } from '../lib/whois-store';
 
 const HINT_KEY = 'mygeeky.orbitHinted';
 type NewsPart = 'airace' | 'headlines' | 'discuss';
-const NEWS_PARTS: [NewsPart, string][] = [['airace', '🏁 AI race'], ['headlines', '📰 Headlines'], ['discuss', '💬 Papers']];
 type RepoPart = 'help' | 'rising';
-const REPO_PARTS: [RepoPart, string][] = [['help', '🛠 Help out'], ['rising', '📈 Rising']];
 type YouPart = 'month' | 'model' | 'badges' | 'more' | 'ideas' | 'admin';
-const YOU_PARTS: [YouPart, string][] = [['month', 'My month'], ['model', 'Model'], ['badges', 'Badges'], ['more', 'Settings'], ['ideas', 'Ideas']];
 
 const EMPTY: Partial<Record<SectionId, string>> = {
   live: 'Nothing new around you yet. Pull down to check again.',
@@ -181,9 +180,6 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const user = settings?.username ?? '';
-  // You first; without GitHub the planets that would only say "add GitHub" go last (sections.ts ordered)
-  const inner = useMemo(() => ordered(INNER, !!user), [user]);
-  const DOCK: SectionId[] = useMemo(() => ['you', ...inner, ...OUTER], [inner]);
   const keywords = [...(settings?.keywords ?? []), ...(settings?.topics ?? [])];
 
   const live = useFeed('live', 0.25, () => user ? fetchLive(user, token) : Promise.resolve({ events: [], following: 0 }));
@@ -229,6 +225,8 @@ export default function Home() {
   const [newsPart, setNewsPart] = useState<NewsPart>('airace');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' || params.part === 'model' ? params.part : 'month');
+  const [growMode, setGrowMode] = useState<GrowMode>('highlights');
+  const [chanceMode, setChanceMode] = useState<ChanceMode>('jobs');
   // the maker's Admin part: only for the account GitHub says owns the connected data repo (lib/admin.ts)
   const [admin, setAdmin] = useState<string | null>(null);
   useEffect(() => {
@@ -236,6 +234,44 @@ export default function Home() {
   }, [sel]);
   const [hint, setHint] = useState(false);
   const [viewH, setViewH] = useState(0);
+
+  // where you are: six groups, a group's pages, a page's parts (lib/nav-tree.ts); without GitHub its pages go last
+  const tree = useMemo(() => phoneTree(!!user, !!admin), [user, admin]);
+  const partOf = (s: SectionId) => ({ you: youPart, news: newsPart, repos: repoPart, grow: growMode, chances: chanceMode } as Record<string, string>)[s] ?? '';
+  const leaf = leafFor(tree, sel, partOf(sel));
+  const [navAt, setNavAt] = useState('home');
+  const navNode = find(tree, navAt) ?? tree;
+  useEffect(() => {                                       // the page changed from elsewhere (a part's tabs, a link): follow it
+    if (leaf && !navPath(leaf).includes(navNode)) {
+      const t = setTimeout(() => setNavAt(leaf.parent?.id ?? 'home'), 0);
+      return () => clearTimeout(t);
+    }
+  }, [leaf, navNode]);
+  const openNode = (id: string) => {
+    const n = find(tree, id);
+    if (!n || !n.tab) return;
+    const part = n.part;
+    if (n.tab === 'you' && part) setYouPart(part as YouPart);
+    if (n.tab === 'news' && part) setNewsPart(part as NewsPart);
+    if (n.tab === 'repos' && part) setRepoPart(part as RepoPart);
+    if (n.tab === 'grow' && part) setGrowMode(part as GrowMode);
+    if (n.tab === 'chances' && part) setChanceMode(part as ChanceMode);
+    setSel(n.tab as SectionId);
+    setOpenId(null);
+  };
+  const onNav = (picked: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const out = navTap(tree, navAt, picked, leaf?.id ?? '');
+    setNavAt(out.at);
+    if (out.open !== leaf?.id) openNode(out.open);
+    dockUsed();
+    touched();
+  };
+  const onJump = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setNavAt(id);
+    touched();
+  };
 
   useEffect(() => {
     AsyncStorage.getItem(HINT_KEY).then((v) => setHint(!v)).catch(() => undefined);
@@ -268,6 +304,14 @@ export default function Home() {
     return c;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live.data, people.data, headlines.data, research.data, repos.data, models.data, launches.data, market.data, discuss.data, seen]);
+  const nodeCounts = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const n of walk(tree)) {
+      const tabs = n.children.length ? [...new Set(walk(n).map((x) => x.tab).filter(Boolean))] : n.part ? [] : [n.tab];
+      out[n.id] = tabs.reduce((s, tb) => s + (counts[tb as SectionId] ?? 0), 0);
+    }
+    return out;
+  }, [tree, counts]);
   const view: SectionId = sel === 'repos' && repoPart === 'rising' ? 'market' : sel === 'news' && newsPart === 'discuss' ? 'discuss' : sel;
   const listed = rowsFor(view, data);
   // opening a list marks what is in it as seen; what was new keeps its dot until you leave
@@ -292,7 +336,9 @@ export default function Home() {
   });
   const firstSeen = parts.length > 1 ? -1 : rows.findIndex((r) => !fresh(r));
   const section = SECTIONS[view];
-  const ring = INNER.includes(sel) ? RING_NAME.inner : OUTER.includes(sel) ? RING_NAME.outer : RING_NAME.you;
+  // the heading is the page you're on (a part, if it has one); beside it, where it lives: WORLD › NEWS
+  const title = leaf && leaf.part ? leaf.label : section.label;
+  const ring = (leaf ? navPath(leaf).slice(1, -1).map((n) => n.label).join(' › ') || navPath(leaf)[1]?.label || '' : '').toUpperCase();
   const fs = feedsOf[view];
   const loading = fs.some((f) => f.loading);
   const holdLoading = useHold(loading);
@@ -331,42 +377,27 @@ export default function Home() {
     dockUsed();
   };
 
-  const pick = (id: SectionId) => {
-    dockUsed();
-    setSel(id);
-    setOpenId(null);
-    touched();
-  };
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
     if (y > 24 && !collapsed) fold();
     else if (y <= 0 && collapsed) setCollapsed(false);
   };
   const ringsH = collapsed ? 0 : orbitHeight(width);
-  const perRow = Math.ceil(DOCK.length / 2);                                   // two rows, so each is a finger wide
-  const dot = Math.min(46, Math.floor((width - 12) / perRow) - 14);
-  // the rings open on a double tap, so a near miss on a dock button doesn't spin them
-  const lastTap = useRef(0);
-  const [tapAgain, setTapAgain] = useState(false);
-  const spinTap = () => {
-    dockUsed();
-    const now = Date.now();
-    if (now - lastTap.current < 400) {
-      lastTap.current = 0;
-      setTapAgain(false);
-      setCollapsed(false);
-    } else {
-      lastTap.current = now;
-      setTapAgain(true);
-      setTimeout(() => setTapAgain(false), 1500);
-    }
-  };
+  // the folded dock: this level's planets in one or two rows, a back planet first (named after where it goes)
+  const lvl = level(navNode);
+  const dockItems: { id: string; label: string; color: string; icon: string; back?: boolean }[] = [
+    ...(lvl.back ? [{ id: 'back', label: lvl.back.label, color: lvl.back.color, icon: 'chevron-back', back: true }] : []),
+    ...navNode.children.map((n) => ({ id: n.id, label: n.label, color: n.color, icon: n.icon })),
+  ];
+  const perRow = dockRows(dockItems.length)[0];
+  const dot = Math.min(46, Math.floor((width - 12) / Math.max(perRow, 5)) - 14);
+  const onLeafPath = new Set(navPath(leaf).map((n) => n.id));
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
       <View style={st.panel}>
         <View style={st.head}>
-          <Text style={st.h1}>{section.label}</Text>
+          <Text style={st.h1} numberOfLines={1}>{title}</Text>
           <Text style={[st.ring, { color: section.color }]}>{ring}</Text>
         </View>
         <Text style={st.about}>{section.about}</Text>
@@ -380,9 +411,6 @@ export default function Home() {
           <Text style={st.meta}>{loading ? 'updating…' : at ? `updated ${timeAgo(at)} · pull down to refresh` : ''}</Text>
         ) : null}
         {error ? <Text style={st.error}>{error}</Text> : null}
-        {sel === 'news' ? <View style={{ marginTop: 10 }}><Segments value={newsPart} options={NEWS_PARTS} onChange={setNewsPart} /></View> : null}
-        {sel === 'repos' ? <View style={{ marginTop: 10 }}><Segments value={repoPart} options={REPO_PARTS} onChange={setRepoPart} /></View> : null}
-        {sel === 'you' ? <View style={{ marginTop: 10 }}><Segments value={youPart} options={admin ? [...YOU_PARTS, ['admin', 'Admin'] as [YouPart, string]] : YOU_PARTS} onChange={setYouPart} /></View> : null}
 
         <ScrollView
           onLayout={(e) => setViewH(e.nativeEvent.layout.height)}
@@ -404,9 +432,9 @@ export default function Home() {
           ) : sel === 'signals' ? (
             <SignalsView />
           ) : sel === 'grow' ? (
-            <GrowView />
+            <GrowView mode={growMode} onMode={setGrowMode} />
           ) : sel === 'chances' ? (
-            <ChancesView />
+            <ChancesView mode={chanceMode} onMode={setChanceMode} />
           ) : rows.length ? rows.map((r, i) => (<View key={r.id}>
             {r.section && r.section !== rows[i - 1]?.section ? <Text style={st.part}>{r.section}</Text> : null}
             {i === firstSeen ? (
@@ -431,23 +459,31 @@ export default function Home() {
         </Pressable>
       ) : collapsed ? (
         <View style={st.dock}>
-          <Pressable onPress={spinTap} style={st.unfold} accessibilityLabel="Show the rings" accessibilityHint="Double-tap"
-                     onAccessibilityTap={() => setCollapsed(false)}>
-            <Ionicons name="chevron-up" size={16} color={C.muted} />
-            <Text style={st.unfoldText}>{tapAgain ? 'Tap again to spin the rings' : 'Double-tap to spin the rings'}</Text>
-          </Pressable>
-          {[DOCK.slice(0, perRow), DOCK.slice(perRow)].map((row, r) => (
+          <View style={st.unfold}>
+            <Text style={st.trail} numberOfLines={1}>
+              {navNode.parent ? navPath(navNode).slice(1).map((n) => n.label).join(' › ') : 'Tap a group to see its pages'}
+            </Text>
+            <Pressable onPress={() => setCollapsed(false)} hitSlop={8} style={st.orbitBtn} accessibilityRole="button" accessibilityLabel="Show the orbit">
+              <Ionicons name="chevron-up" size={14} color={C.text} />
+              <Text style={st.orbitText}>Orbit</Text>
+            </Pressable>
+          </View>
+          {[dockItems.slice(0, perRow), dockItems.slice(perRow)].filter((r) => r.length).map((row, r) => (
             <View key={r} style={st.dockRow}>
-              {row.map((id) => {
-                const s = SECTIONS[id];
-                const on = sel === id;
+              {row.map((it) => {
+                const on = !it.back && onLeafPath.has(it.id);
+                const n = nodeCounts[it.id] ?? 0;
                 return (
-                  <Pressable key={id} onPress={() => pick(id)} style={({ pressed }) => [st.dockBtn, pressed && { opacity: 0.6 }]}
-                             accessibilityRole="button" accessibilityLabel={`${s.label}${counts[id] ? `, ${counts[id]} new` : ''}`}>
-                    <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: s.color, backgroundColor: on ? s.color : C.raised }]}>
-                      <Ionicons name={s.icon} size={Math.round(dot * 0.46)} color={on ? '#0d0d16' : s.color} />
+                  <Pressable key={it.id} onPress={() => onNav(it.id)} style={({ pressed }) => [st.dockBtn, pressed && { opacity: 0.6 }]}
+                             accessibilityRole="button" accessibilityLabel={it.back ? `Back to ${it.label}` : `${it.label}${n ? `, ${n} new` : ''}`}>
+                    <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: it.color,
+                                                backgroundColor: it.back ? darker(it.color) : on ? it.color : C.raised }]}>
+                      <Ionicons name={it.icon as never} size={Math.round(dot * 0.46)} color={it.back ? '#fff' : on ? '#0d0d16' : it.color} />
+                      {n && !it.back ? <View style={st.dockCount}><Text style={st.dockCountText}>{n > 99 ? '99+' : n}</Text></View> : null}
                     </View>
-                    <Text style={[st.dockLabel, on && { color: s.color }]} numberOfLines={1}>{s.label}</Text>
+                    <Text style={[st.dockLabel, on && { color: it.color }, it.back && { color: C.text, fontWeight: '800' }]} numberOfLines={1}>
+                      {it.back ? `‹ ${it.label}` : it.label}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -456,8 +492,8 @@ export default function Home() {
         </View>
       ) : (
         <View style={{ height: ringsH }}>
-          <Orbit width={width} sel={sel} counts={counts} onSelect={pick} hint={hint} onTouched={touched} inner={inner}
-                 youLetter={(user[0] ?? '?').toUpperCase()} />
+          <OrbitZoom width={width} height={ringsH} at={navNode} open={leaf} counts={nodeCounts} onTap={onNav} onJump={onJump}
+                     youLetter={(user[0] ?? '?').toUpperCase()} hint={hint} />
           <Pressable onPress={() => fold()} style={[st.fold, { top: ringsH - 50 }]} accessibilityLabel="Fold the rings away">
             <Ionicons name="chevron-down" size={20} color={C.muted} />
           </Pressable>
@@ -510,8 +546,13 @@ const st = StyleSheet.create({
   dock: { paddingHorizontal: 6, paddingTop: 2 },
   handle: { height: 34, alignItems: 'center', justifyContent: 'center', gap: 2 },
   handleBar: { width: 44, height: 4, borderRadius: 2, backgroundColor: ink(0.28) },
-  unfold: { height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  unfoldText: { color: C.muted, fontSize: 12, fontWeight: '700' },
+  unfold: { height: 32, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10 },
+  trail: { flex: 1, color: C.muted, fontSize: 12, fontWeight: '700' },
+  orbitBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: tint(0.08) },
+  orbitText: { color: C.text, fontSize: 12, fontWeight: '800' },
+  dockCount: { position: 'absolute', top: -5, right: -8, minWidth: 16, height: 16, paddingHorizontal: 3, borderRadius: 8,
+    backgroundColor: C.text, alignItems: 'center', justifyContent: 'center' },
+  dockCountText: { color: C.bg, fontSize: 9, fontWeight: '800' },
   dockRow: { flexDirection: 'row', justifyContent: 'space-between' },
   dockBtn: { flex: 1, minHeight: 64, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 },
   dockLabel: { color: C.muted, fontSize: 10, fontWeight: '600', marginTop: 3 },

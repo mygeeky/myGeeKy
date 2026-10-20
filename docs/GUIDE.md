@@ -962,6 +962,13 @@ The first run sets up Qt (PySide6, about 80 MB) by itself. It uses this
 Python's normal package folder when Windows' path limit allows, and otherwise
 a short private folder, `~/.mygeeky/qt` (or `$MYGEEKY_QT_DIR`).
 
+**Moving around** (the panel and the phone): everything sits under six groups, **You, Grow, World, Circle, Repos
+and Chances**. Tap a group and its pages take its place, with a back planet first (in the colour of where it goes,
+named after it: "‹ All", "‹ World"); tap a page with parts (News: AI race, Headlines, Papers & discussions) and its
+parts appear the same way. The panel's row of planets and the phone's folded dock work like this; on the phone the
+orbit zooms: the group you open flies to the centre with its pages around it, and "‹ Back to …", the trail beside
+it, or the ↑ on the centre planet take you back. The heading always names the page and where it lives.
+
 A small, translucent, always-on-top panel docked to the edge of your
 screen (Windows and Linux), built with [PySide6/Qt](https://doc.qt.io/qtforpython-6/)
 — native widgets, not a webview. (An earlier version used pywebview; its

@@ -71,7 +71,8 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `taste.ts` | `taste.py` |
 | `theme.ts` | `gui/app.py` (THEMES) |
 | `components/token-guide.tsx` | `gui/token_guide.py` |
-| `tab-order.ts` (used by `app/home.tsx`, `components/orbit.tsx`) | `gui/qt_panel.py` (`tab_order`, `NEEDS_GITHUB_TABS`) |
+| `tab-order.ts` (used by `app/home.tsx`) | `gui/qt_panel.py` (`tab_order`, `NEEDS_GITHUB_TABS`) |
+| `nav-tree.ts` (+ `components/orbit-zoom.tsx`, the folded dock in `app/home.tsx`) | `navtree.py` (+ `gui/qt_panel.py` `panel_tree`, `_nav_tap`, the planet row) |
 | `tokens.ts` | `tokens.py`, `token_check.py` |
 | `wins.ts` | `wins.py` |
 | `word-suggest.ts` | `keywords.py` (`suggest`, `pick`) + `gui/word_suggest.py` |

@@ -75,7 +75,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .. import freshness
+from .. import freshness, navtree
 from . import app as logic
 from .app import THEME_NAMES, THEMES
 from .window_ui import SIDE_LABELS, LayerSwitch, ScreenPicker
@@ -1522,16 +1522,25 @@ PLANETS = {
     "badges": ("#f0a35e", "M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM8.2 13.9 7 23l5-3 5 3-1.2-9.1"),
     "admin": ("#94a3b8", "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"),
 }
+# the groups' line icons (navtree.GROUPS), and the back planet's chevron
+GROUP_ICONS = {
+    "you": PLANETS["model"][1], "grow": PLANETS["grow"][1], "repos": PLANETS["repos"][1], "chances": PLANETS["chances"][1],
+    "world": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
+    "circle": PLANETS["suggestions"][1],
+}
+BACK_ICON = "M15 18l-6-6 6-6"
 
 
 class PlanetButton(QPushButton):
     """One planet in the dock: a coloured ring with a line icon. The selected one
     swells into a filled planet with a soft halo, with a little spring to it."""
 
-    def __init__(self, color: str, path: str) -> None:
+    def __init__(self, color: str, path: str, emoji: str = "", solid: bool = False) -> None:
         super().__init__("")
         self._color = QColor(color)
         self._path = path
+        self._emoji = emoji              # a part's planet shows its emoji instead of a line icon
+        self._solid = solid              # the back planet: filled in its colour, darker, with a white chevron
         self._grow = 0.0
         self._hover = False
         self._dot = False
@@ -1614,12 +1623,21 @@ class PlanetButton(QPushButton):
             int(self._bg.red() + (self._color.red() - self._bg.red()) * min(max(g, 0), 1)),
             int(self._bg.green() + (self._color.green() - self._bg.green()) * min(max(g, 0), 1)),
             int(self._bg.blue() + (self._color.blue() - self._bg.blue()) * min(max(g, 0), 1)))
+        if self._solid:
+            fill = self._color.darker(150)
         painter.setPen(QPen(self._color, 2))
         painter.setBrush(fill)
         painter.drawEllipse(c, r, r)
         side = r * 1.05
-        icon_color = QColor("#0d0d16") if g > 0.5 else self._color
-        self._icon(icon_color).render(painter, QRectF(c.x() - side / 2, c.y() - side / 2, side, side))
+        if self._emoji:
+            font = painter.font()
+            font.setPixelSize(int(r * 1.05))
+            painter.setFont(font)
+            painter.setPen(QColor("#0d0d16") if g > 0.5 else self._color)
+            painter.drawText(QRectF(c.x() - r, c.y() - r, 2 * r, 2 * r), Qt.AlignCenter, self._emoji)
+        else:
+            icon_color = QColor("#ffffff") if self._solid else QColor("#0d0d16") if g > 0.5 else self._color
+            self._icon(icon_color).render(painter, QRectF(c.x() - side / 2, c.y() - side / 2, side, side))
         if self._count > 0 and g < 0.5:                   # how many new things wait in this tab
             text = "9+" if self._count > 9 else str(self._count)
             font = painter.font()
@@ -3317,6 +3335,35 @@ def tab_order(names: list[str], has_github: bool) -> list[str]:
     return (["model"] if "model" in names else []) + rest
 
 
+def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
+    """The panel's pages under the six groups (navtree.py): a tab, or a tab and one of its parts."""
+    n = navtree.node
+    G = {g["id"]: g for g in navtree.GROUPS}
+
+    def modes(tab: str, table) -> list[dict[str, Any]]:
+        return [n(f"{tab}:{m}", label.split(" ", 1)[1], icon=label.split(" ", 1)[0], tab=tab, part=m) for m, label in table]
+
+    def group(gid: str, children: list[dict[str, Any]]) -> dict[str, Any]:
+        return n(gid, G[gid]["label"], G[gid]["color"], children=children)
+    circle = {"live": n("live", "Live", tab="live"), "suggestions": n("suggestions", "People", tab="suggestions"),
+              "activity": n("activity", "Activity", tab="activity"), "signals": n("signals", "Signals", tab="signals")}
+    return navtree.finish(n("home", "Home", children=[
+        group("you", [n("model:month", "My month", icon="\U0001f396", tab="model", part="month"),
+                      n("model:model", "Model", icon="\U0001f9e0", tab="model", part="model"),
+                      n("badges", "Badges", tab="badges")] + ([n("admin", "Admin", tab="admin")] if is_admin else [])),
+        group("grow", modes("grow", MyGeekyPanel.GROW_MODES)),
+        group("world", [n("news", "News", tab="news", children=[
+            n("news:airace", "AI race", icon="\U0001f3c1", tab="news", part="airace"),
+            n("news:headlines", "Headlines", icon="\U0001f5de", tab="news", part="headlines"),
+            n("news:papers", "Papers & discussions", icon="\U0001f4ac", tab="news", part="papers")]),
+            n("market:research", "Research", icon="\U0001f52c", tab="market", part="research"),
+            n("market:models", "AI models", icon="\U0001f917", tab="market", part="models")]),
+        group("circle", [circle[k] for k in navtree.ordered(list(circle), has_github, NEEDS_GITHUB_TABS)]),
+        group("repos", [n("repos", "Help out", tab="repos"), n("market:repos", "Rising", icon="\U0001f4c8", tab="market", part="repos")]),
+        group("chances", modes("chances", MyGeekyPanel.CHANCE_MODES)),
+    ]))
+
+
 class MyGeekyPanel(QWidget):
     def __init__(self, cfg: MyGeekyConfig) -> None:
         super().__init__()
@@ -3535,25 +3582,50 @@ class MyGeekyPanel(QWidget):
         self._is_admin = logic.is_admin(self.cfg)
         tabs = tab_order([name for name in TABS if name != "admin" or self._is_admin], bool(self.cfg.github_username))
         self._badges_new = False
-        for name in tabs:
-            btn = PlanetButton(*PLANETS[name])
-            btn.setToolTip(TABS[name][1])
-            btn.setAccessibleName(TABS[name][1])
+        # The dock: six groups as planets (navtree.py). Click one and its pages take the row, with a back planet
+        # first; a page with parts opens the same way. The open page's planets swell (hover any for its name).
+        self.nav_tree = panel_tree(bool(self.cfg.github_username), self._is_admin)
+        self.nav_buttons: dict[str, PlanetButton] = {}
+        for nd in navtree.walk(self.nav_tree)[1:]:
+            if nd["parent"] is self.nav_tree:
+                btn = PlanetButton(nd["color"], GROUP_ICONS[nd["id"]])
+            elif nd["part"] or nd["tab"] not in PLANETS:
+                btn = PlanetButton(nd["color"], "", emoji=nd["icon"] or "\u2022")
+            else:
+                btn = PlanetButton(PLANETS[nd["tab"]][0], PLANETS[nd["tab"]][1])
+            btn.setToolTip(nd["label"])
+            btn.setAccessibleName(nd["label"])
             # Qt's Windows style gives every push button a ~75px minimum width;
             # five of those made the panel wider than gui_expanded_width.
             btn.setMinimumWidth(1)
             btn.setCursor(Qt.PointingHandCursor)
-            btn.clicked.connect(lambda checked=False, n=name: self._switch_tab(n))
-            self.tab_buttons[name] = btn
-        # The dock: every tab is a planet; the open one swells into the selected
-        # planet (hover any planet for its name).
+            btn.clicked.connect(lambda checked=False, i=nd["id"]: self._nav_tap(i))
+            self.nav_buttons[nd["id"]] = btn
+            if nd["tab"] and nd["tab"] not in self.tab_buttons:
+                self.tab_buttons[nd["tab"]] = btn          # the planet that carries the tab's count and dots
+        self.nav_back = PlanetButton("#ff6fd8", BACK_ICON, solid=True)
+        self.nav_back.setMinimumWidth(1)
+        self.nav_back.setCursor(Qt.PointingHandCursor)
+        self.nav_back.clicked.connect(lambda: self._nav_tap("back"))
+        self._nav_at = "home"
+        # above the row, inside a group: a clear "‹ Back to …" and where you are
+        self.nav_head = QWidget()
+        nh = QHBoxLayout(self.nav_head)
+        nh.setContentsMargins(2, 0, 2, 0)
+        nh.setSpacing(6)
+        self.nav_back_text = QPushButton("")
+        self.nav_back_text.setCursor(Qt.PointingHandCursor)
+        self.nav_back_text.clicked.connect(lambda: self._nav_tap("back"))
+        self.nav_trail = QLabel("")
+        self.nav_trail.setTextFormat(Qt.PlainText)
+        nh.addWidget(self.nav_back_text)
+        nh.addWidget(self.nav_trail, 1)
+        panel_layout.addWidget(self.nav_head)
         self.tab_bar = QFrame()
         self.tab_bar.setObjectName("tabBar")
-        bar = QHBoxLayout(self.tab_bar)
-        bar.setContentsMargins(3, 3, 3, 3)
-        bar.setSpacing(1)
-        for name in tabs:
-            bar.addWidget(self.tab_buttons[name], 1)
+        self.nav_row = QHBoxLayout(self.tab_bar)
+        self.nav_row.setContentsMargins(3, 3, 3, 3)
+        self.nav_row.setSpacing(1)
         panel_layout.addWidget(self.tab_bar)
 
         self.content_stack = QStackedWidget()
@@ -3701,6 +3773,7 @@ class MyGeekyPanel(QWidget):
             b.setCursor(Qt.PointingHandCursor)
             b.clicked.connect(lambda checked=False, m=mode: self._set_market_mode(m))
             self.market_mode_buttons[mode] = b
+            b.setVisible(False)                  # Rising lives under Repos, Research and AI models under World
             switch.addWidget(b)
         switch.addStretch(1)
         outer.addLayout(switch)
@@ -3716,6 +3789,7 @@ class MyGeekyPanel(QWidget):
         self._market_mode = mode
         self.market_stack.setCurrentIndex({"repos": 0, "research": 1, "models": 2}[mode])
         self._style_market_switch()
+        self._nav_mark()
         if mode == "research" and logic.trends_due(self.cfg):
             self._refresh_research(force=False)
         if mode == "models":
@@ -3895,6 +3969,7 @@ class MyGeekyPanel(QWidget):
             b.setCursor(Qt.PointingHandCursor)
             b.clicked.connect(lambda checked=False, m=mode: self._set_news_mode(m))
             self.news_mode_buttons[mode] = b
+            b.setVisible(False)                  # the dock's planet row chooses the part now (navtree.py)
             mode_row.addWidget(b)
         mode_row.addStretch(1)
         layout.addLayout(mode_row)
@@ -4060,6 +4135,7 @@ class MyGeekyPanel(QWidget):
             buttons[mode] = b
             row.addWidget(b)
         layout.addWidget(holder)
+        holder.setVisible(False)          # the dock's planet row chooses the part now (navtree.py); kept for the code
         return buttons
 
     def _build_grow_tab(self) -> QScrollArea:
@@ -4282,10 +4358,12 @@ class MyGeekyPanel(QWidget):
         if mode == "collab":
             self._load_collaborators()
         self._render_grow()
+        self._nav_mark()
 
     def _set_chance_mode(self, mode: str) -> None:
         self._chance_mode = mode
         self._render_chances()
+        self._nav_mark()
 
     # ---- drawing
     def _grow_note(self, text: str, theme: dict[str, Any]) -> None:
@@ -6954,19 +7032,106 @@ class MyGeekyPanel(QWidget):
         self._style_model_grade()
         self._update_tab_styles()
 
+    # ------------------------------------------------------------------ the dock: groups → pages → parts
+    def _nav_part(self, tab: str) -> str:
+        """The part open in a tab, as the tree names it."""
+        return {"news": getattr(self, "_news_mode", ""), "market": getattr(self, "_market_mode", ""),
+                "grow": getattr(self, "_grow_mode", ""), "chances": getattr(self, "_chance_mode", ""),
+                "model": getattr(self, "you_part", "")}.get(tab, "")
+
+    def _nav_leaf(self) -> dict[str, Any] | None:
+        tab = getattr(self, "active_tab", "")
+        return navtree.leaf_for(self.nav_tree, tab, self._nav_part(tab))
+
+    def _nav_tap(self, picked: str) -> None:
+        leaf = self._nav_leaf()
+        out = navtree.tap(self.nav_tree, self._nav_at, picked, leaf["id"] if leaf else "")
+        self._nav_at = out["at"]
+        if not leaf or out["open"] != leaf["id"]:
+            self._nav_open(navtree.find(self.nav_tree, out["open"]))
+        self._update_tab_styles()
+
+    def _nav_open(self, nd: dict[str, Any] | None) -> None:
+        """Open a page: its part first (so the row doesn't jump to where the tab's old part lives), then its tab."""
+        if not nd or not nd["tab"]:
+            return
+        tab, part = nd["tab"], nd["part"]
+        if part:
+            setter = {"news": self._set_news_mode, "market": self._set_market_mode, "grow": self._set_grow_mode,
+                      "chances": self._set_chance_mode, "model": self._show_you_part}.get(tab)
+            if setter:
+                self._nav_opening = True          # the part changes before the tab: don't move the row meanwhile
+                try:
+                    setter(part)
+                finally:
+                    self._nav_opening = False
+        self._switch_tab(tab)
+
+    def _nav_follow(self) -> None:
+        """The open page changed from elsewhere (a notification, a link): show the level it lives on."""
+        leaf, at = self._nav_leaf(), navtree.find(self.nav_tree, self._nav_at)
+        if leaf and at not in navtree.path(leaf):
+            self._nav_at = leaf["parent"]["id"]
+
+    def _render_nav(self, theme: dict[str, Any]) -> None:
+        at = navtree.find(self.nav_tree, self._nav_at) or self.nav_tree
+        lvl = navtree.level(at)
+        while self.nav_row.count():
+            w = self.nav_row.takeAt(0).widget()
+            if w is not None:
+                w.hide()
+        if lvl["back"]:
+            back = lvl["back"]
+            self.nav_back._color = QColor(back["color"])
+            self.nav_back.setToolTip(f"Back to {back['label']}")
+            self.nav_back.setAccessibleName(f"Back to {back['label']}")
+            self.nav_row.addWidget(self.nav_back, 1)
+            self.nav_back.show()
+            self.nav_back.update()
+        for i in lvl["items"]:
+            self.nav_row.addWidget(self.nav_buttons[i], 1)
+            self.nav_buttons[i].show()
+        # always says where you are: the page that's open (its group › page › part), and, inside a group, the way back
+        leaf = self._nav_leaf()
+        self.nav_back_text.setVisible(bool(lvl["back"]))
+        if lvl["back"]:
+            c = QColor(lvl["back"]["color"]).darker(150).name()
+            self.nav_back_text.setText(f"\u2039  Back to {lvl['back']['label']}")
+            self.nav_back_text.setStyleSheet(f"QPushButton {{ background:{c}; color:#ffffff; border:none; border-radius:10px; "
+                                             "padding:2px 10px; font-size:10.5px; font-weight:800; }")
+        self.nav_trail.setText(" \u203a ".join(n["label"] for n in navtree.path(leaf)[1:]) if leaf else "")
+        self.nav_trail.setStyleSheet(f"color:{theme['muted']}; font-size:10px; font-weight:600; background:transparent;")
+
+    def _update_group_counts(self) -> None:
+        """A group's (or a page's) planet counts what's new in the pages under it."""
+        for nd in navtree.walk(self.nav_tree)[1:]:
+            if not nd["children"]:
+                continue
+            btn = self.nav_buttons[nd["id"]]
+            tabs = {x["tab"] for x in navtree.walk(nd) if x["tab"]}
+            btn.set_count(sum(self.tab_buttons[t]._count for t in tabs
+                              if t in self.tab_buttons and self.tab_buttons[t] is not btn))
+
     def _update_tab_styles(self) -> None:
         theme = THEMES[self._theme_name()]
         self.tab_bar.setStyleSheet(f"QFrame#tabBar {{ background:{theme['card_bg']}; border-radius:10px; }}")
+        leaf = self._nav_leaf()
+        on_path = {n["id"] for n in navtree.path(leaf)} if leaf else set()
+        planet_bg = QColor("#1c1c2c") if theme["dark"] else QColor("#ffffff")
+        for nid, btn in self.nav_buttons.items():
+            btn.setStyleSheet("QPushButton { background: transparent; border: none; }")
+            btn.set_planet_bg(planet_bg)
+            btn.set_selected(nid in on_path)
+        self.nav_back.setStyleSheet("QPushButton { background: transparent; border: none; }")
+        self.nav_back.set_planet_bg(planet_bg)
         for name, btn in self.tab_buttons.items():
             active = name == self.active_tab
             icon, label = TABS[name]
             new_badge = name == "badges" and self._badges_new
             # the text isn't drawn (the planet is): it's for screen readers and the tests
             btn.setText(f"{icon}  {label}" if active else icon + ("\u2022" if new_badge else ""))
-            btn.setStyleSheet("QPushButton { background: transparent; border: none; }")
-            btn.set_planet_bg(QColor("#1c1c2c") if theme["dark"] else QColor("#ffffff"))
             btn.set_dot(new_badge)
-            btn.set_selected(active)
+        self._render_nav(theme)
 
     def _on_theme_clicked(self, name: str) -> None:
         if logic.set_theme(self.cfg, name):
@@ -7386,6 +7551,7 @@ class MyGeekyPanel(QWidget):
                      if card.property("fresh_state") == "new" and card.property("fresh_key") not in self._seen_done})
             btn.set_count(n)
             btn.setToolTip(f"{TABS[tab][1]}: {n} new" if n else TABS[tab][1])
+        self._update_group_counts()
 
     def _refresh_fresh_tab(self, tab: str) -> None:
         """Opening the panel or a tab: let what you've seen make room, and show what
@@ -7652,6 +7818,7 @@ class MyGeekyPanel(QWidget):
             b.setCursor(Qt.PointingHandCursor)
             b.clicked.connect(lambda checked=False, part=part: self._show_you_part(part))
             self.you_buttons[part] = b
+            b.setVisible(False)                  # the dock's planet row chooses the part now (navtree.py)
             row.addWidget(b, 1)
         lay.addLayout(row)
         self.you_stack = QStackedWidget()
@@ -7663,6 +7830,7 @@ class MyGeekyPanel(QWidget):
     def _show_you_part(self, part: str) -> None:
         self.you_part = part
         self.you_stack.setCurrentIndex(0 if part == "month" else 1)
+        self._nav_mark()
         theme = THEMES[self._theme_name()]
         for name, b in self.you_buttons.items():
             on = name == part
@@ -8269,6 +8437,14 @@ class MyGeekyPanel(QWidget):
                   "\U0001f52d = outside your usual interests, on purpose.<br>" + BADGE_LEGEND,
     }
 
+    def _nav_mark(self) -> None:
+        """A part changed inside a page: the planets on its path swell (if the row exists yet)."""
+        if getattr(self, "_nav_opening", False):
+            return
+        if hasattr(self, "nav_buttons") and hasattr(self, "active_tab") and hasattr(self, "content_stack"):
+            self._nav_follow()
+            self._update_tab_styles()
+
     def _load_ai_race(self) -> None:
         """The AI race, the first time it's seen: what we have at once, then the newest from GitHub (once a day)."""
         self.airace_page.set_data(logic.ai_race())
@@ -8276,6 +8452,7 @@ class MyGeekyPanel(QWidget):
 
     def _set_news_mode(self, mode: str) -> None:
         self._news_mode = mode
+        self._nav_mark()
         self.headlines_box.setVisible(mode == "headlines")
         self.news_box.setVisible(mode == "papers")
         self.airace_page.setVisible(mode == "airace")
@@ -8683,6 +8860,7 @@ class MyGeekyPanel(QWidget):
             self._fresh_dirty.add(previous)           # what you saw there makes room next time
         QTimer.singleShot(0, lambda: self._refresh_fresh_tab(name))
         self.content_stack.setCurrentIndex(self._tab_order.index(name))
+        self._nav_follow()
         self._update_tab_styles()
         if name == "badges":
             self._render_badges()

@@ -71,9 +71,19 @@ def test_the_panel_shows_its_tabs_in_that_order_and_still_opens_on_live(monkeypa
     try:
         shown = [n for n in panel._tab_order]
         assert shown == tab_order([n for n in TABS if n in shown], bool(username))
+        from mygeeky import navtree
         bar = panel.tab_bar.layout()
-        buttons = [bar.itemAt(i).widget() for i in range(bar.count())]
-        assert buttons == [panel.tab_buttons[n] for n in shown]           # the dock in the same order
+        row = lambda: [bar.itemAt(i).widget() for i in range(bar.count())]   # noqa: E731
+        assert row() == [panel.nav_buttons[g["id"]] for g in navtree.GROUPS]   # the dock: the six groups
+        assert panel.nav_back_text.isHidden() and panel.nav_trail.text() == "Circle \u203a Live"   # where you are
+        panel.nav_buttons["circle"].click()                                    # a group: back planet, then its pages
+        circle = [panel.nav_buttons[i] for i in ("live", "suggestions", "activity", "signals")]
+        if not username:                                                       # what needs GitHub goes last
+            assert [b.accessibleName() for b in row()[1:]] == ["Live", "People", "Activity", "Signals"]
+        assert row()[0] is panel.nav_back and set(row()[1:]) == set(circle)
+        assert panel.nav_back_text.text().endswith("Back to All") and panel.nav_trail.text() == "Circle \u203a Live"
+        panel.nav_back.click()
+        assert row() == [panel.nav_buttons[g["id"]] for g in navtree.GROUPS]
         assert panel.active_tab == "live" and panel.content_stack.currentIndex() == shown.index("live")
         panel._switch_tab("model")
         assert panel.content_stack.currentWidget() is panel.content_stack.widget(0)   # You is the first page

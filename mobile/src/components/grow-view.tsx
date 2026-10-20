@@ -20,7 +20,8 @@ import { HighlightsView } from './highlights-view';
 import { Empty, open, Segments } from './ui';
 import { GeekLoader, useHold } from './geek-loader';
 
-type Mode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'wins' | 'collab';
+export type GrowMode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'wins' | 'collab';
+type Mode = GrowMode;
 const MODES: [Mode, string][] = [['highlights', 'Highlights'], ['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'],
   ['wins', 'Wins'], ['collab', 'People']];
 const ABOUT: Record<Mode, string> = {
@@ -71,10 +72,13 @@ function ResourceCard({ r, onVote }: { r: Ranked; onVote: (up: boolean) => Promi
   );
 }
 
-export function GrowView() {
+/** `mode`/`onMode`: the part shown, when the orbit or the dock chooses it (home.tsx); else the view keeps its own. */
+export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mode) => void } = {}) {
   const { settings, token, profile } = useApp();
   const me = settings?.username ?? '';
-  const [mode, setMode] = useState<Mode>('highlights');
+  const [own, setOwn] = useState<Mode>('highlights');
+  const mode = shown ?? own;
+  const setMode = (m: Mode) => { setOwn(m); onMode?.(m); };
   // 🏁 pressed on a protocol: which quiz the 🏆 Quiz tab opens when it appears
   const [openQuiz, setOpenQuiz] = useState<{ pid: string; stage: string } | null>(null);
   const [lists, setLists] = useState<Lists | null>(null);
@@ -162,7 +166,7 @@ export function GrowView() {
 
   return (
     <View>
-      <View style={{ marginHorizontal: -16 }}><Segments value={mode} options={MODES} onChange={setMode} /></View>
+      {onMode ? null : <View style={{ marginHorizontal: -16 }}><Segments value={mode} options={MODES} onChange={setMode} /></View>}
       <Text style={s.muted}>{ABOUT[mode]}</Text>
       {note ? <Text style={s.warn}>{note}</Text> : null}
 

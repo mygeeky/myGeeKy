@@ -73,17 +73,15 @@ def test_the_name_moves_when_a_different_section_is_opened(qapp_offscreen, monke
         panel.close()
 
 
-def test_all_the_sections_sit_on_one_line(qapp_offscreen, monkeypatch):
-    """This is the whole reason for the change: written out, six wrapped onto three lines (seven now)."""
+def test_the_parts_are_chosen_in_the_dock_not_inside_the_page(qapp_offscreen, monkeypatch):
+    """The planet row (navtree.py) holds a page's parts now, so the row inside the page is hidden."""
     qapp, panel = _panel(monkeypatch)
     try:
         _settle(qapp, panel, "grow")
-        buttons = list(panel.grow_mode_buttons.values())
-        assert len(buttons) == len(MyGeekyPanel.GROW_MODES) == 7
-        tops = {b.y() for b in buttons}
-        assert len(tops) == 1, f"the row wrapped onto {len(tops)} lines"
-        holder = buttons[0].parentWidget()
-        assert holder.height() <= 46, f"the row is {holder.height()}px tall"
+        holder = next(iter(panel.grow_mode_buttons.values())).parentWidget()
+        assert not holder.isVisibleTo(panel), "the in-page row is gone"
+        for row in (panel.news_mode_buttons, panel.market_mode_buttons, panel.you_buttons):
+            assert not any(b.isVisibleTo(panel) for b in row.values())
     finally:
         panel.close()
 
@@ -116,11 +114,13 @@ def test_the_row_follows_the_theme(qapp_offscreen, monkeypatch):
 
 
 def test_every_section_stays_one_press_away(qapp_offscreen, monkeypatch):
-    """What a drop box would have taken in exchange for the same saving."""
+    """Inside Grow, each of its parts is one planet in the dock's row."""
     qapp, panel = _panel(monkeypatch)
     try:
-        _settle(qapp, panel, "grow")
+        panel.nav_buttons["grow"].click()
+        bar = panel.tab_bar.layout()
+        shown = {bar.itemAt(i).widget() for i in range(bar.count())}
         for mode in dict(MyGeekyPanel.GROW_MODES):
-            assert panel.grow_mode_buttons[mode].isVisibleTo(panel), f"{mode} is not on screen"
+            assert panel.nav_buttons[f"grow:{mode}"] in shown, f"{mode} is not in the row"
     finally:
         panel.close()

@@ -5,6 +5,13 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **A new way to move around**, on the computer and the phone: the twelve planets are gathered into six groups
+  (You, Grow, World, Circle, Repos, Chances). Tap one and its pages take its place, with a back planet first named
+  after where it goes ("‹ All", "‹ World"); a page with parts (News, Repos, You, Grow, Chances) opens the same way,
+  so the tabs inside pages are gone. On the phone the orbit zooms: the group flies to the centre with its pages
+  around it, with a clear "‹ Back to …", the trail, and an ↑ on the centre planet; the folded dock moves the same
+  way. On the computer, the planet row does, with "‹ Back to …" and where you are above it. `navtree.py` and
+  `lib/nav-tree.ts` share the groups and the rules (`tests/test_navtree.py`).
 - **🏁 AI race, the first part of News**, on the computer and the phone: who leads and how far open models trail
   (in points and in months), the newest releases and where each lands (NEW for the last two weeks), the race replayed
   month by month, what each recent model is best at (a dot per model under reasoning, coding, math, science, agents,
