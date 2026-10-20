@@ -3,6 +3,13 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **Data's fields are planets in the navigation** (Grow → Data → ✨ For you and the ten fields), on the computer and the phone, like News: no tabs inside the page.
+- **The maker's Admin, in six sections** (You → Admin → 📊 Overview, 📥 Review, ✍ Write, 💡 Inbox, 🤝 People, ⚙ Settings), as planets on the computer and the phone. Overview counts what's waiting and lists exactly what 🚀 Publish would send; Review puts listings, Highlight drafts and quizzes together; Settings holds the DeepSeek key, the scout's sites and field, the mailbox and the GitHub cache.
+- **Bring your own answer** (Admin → ✍ Write, on the computer): paste or import (.json / .txt) an answer written anywhere -- another AI, a colleague, by hand -- for a Highlight, listings or quiz questions. It goes through exactly the checks a DeepSeek answer does (facts from OpenAlex, titles and deadline quotes found in the page's text, quotes on the quiz's source page) and waits in Review. Each kind shows its JSON shape and copies the very prompt myGeeKy gives DeepSeek. No DeepSeek key needed.
+- The macOS check no longer counts hidden widgets when it measures the panel's width.
+
 ## 0.29.0 (2026-10-20): where your field is heading, and data to practise on
 
 - **🗂️ Data** (Grow → Data), on the computer and the phone: public datasets to practise and train on, across the sciences. Every one passes the same ten rules (open licence, no login, laptop-sized, common formats, documented, stable, validated or used, no personal data, says what to practise, one field), written down as a project skill and enforced in code. A hand-checked core plus the Galaxy Training Network's tutorial data and well-used datasets on Zenodo, NCBI's curated GEO DataSets and OpenML's vetted CC18 suite, re-harvested every week by a GitHub Action. ✨ For you first: your field and the skills rising for you.

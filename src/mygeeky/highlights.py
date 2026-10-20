@@ -278,7 +278,7 @@ def draft(pasted_links: str, text: str = "", abstract_only: bool = False, key: s
     from .scout import get_key
     key = key or get_key()
     if not key:
-        raise PermissionError("Add your DeepSeek key in the admin tab first (the same one the scout uses).")
+        raise PermissionError("Add your DeepSeek key in Admin → ⚙ Settings first (the same one the scout uses), or paste an answer written elsewhere in ✍ Write.")
     say = progress or (lambda _m: None)
     dois = find_dois(pasted_links)
     if not dois:

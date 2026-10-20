@@ -228,7 +228,13 @@ class AdminHighlights(QWidget):
         super().__init__()
         self.theme, self.run_async, self.on_read, self.on_publish = theme, run_async, on_read, on_publish
         self.running = False
-        lay = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(6)
+        # the writing form and the drafts are two widgets, so the admin dashboard can put the form in ✍ Write
+        # and the drafts in 📥 Review
+        self.form = QWidget()
+        lay = QVBoxLayout(self.form)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(6)
         self.links = QPlainTextEdit()
@@ -255,11 +261,12 @@ class AdminHighlights(QWidget):
         lay.addWidget(self.write_btn)
         self.note = _label("", "font-size:10.5px;")
         lay.addWidget(self.note)
-        box = QWidget()
-        self.list = QVBoxLayout(box)
+        self.drafts = QWidget()
+        self.list = QVBoxLayout(self.drafts)
         self.list.setContentsMargins(0, 0, 0, 0)
         self.list.setSpacing(6)
-        lay.addWidget(box)
+        outer.addWidget(self.form)
+        outer.addWidget(self.drafts)
 
     # ---- the inputs
     def open_all(self) -> None:

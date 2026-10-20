@@ -308,26 +308,35 @@ def write_for(proto: dict[str, Any], key: str, want: int = PER_PROTOCOL, session
         for raw in write_batch(key, step, source, text, PER_CALL, post):
             if len(kept) >= want:
                 break
-            res = check_question(raw, source, text, step, key, texts, post, rng)
-            if not res.passed:
-                dropped.append((res.reason, str(raw.get("q", ""))[:80]))
-                continue
-            n = len([q for q in kept if q["stage"] == step["id"]]) + 1
-            q = quiz.clean_question({
-                "id": f"{proto['id']}.{step['id']}.{n:02d}", "protocol": proto["id"], "stage": step["id"],
-                "level": raw.get("level"), "kind": raw.get("kind"), "q": raw.get("q"),
-                "code": _CODE_FENCE.sub("", str(raw.get("code") or "")).strip(),
-                "options": raw.get("options"), "answer": raw.get("answer"), "why": raw.get("why"),
-                "source": {"title": source.get("title", ""), "url": source["url"],
-                           "kind": source.get("kind", "website"), "quote": raw.get("quote")},
-                "checks": [t for ok_, t in res.checks if ok_]})
-            if not q:
-                dropped.append(("didn't survive the shape check", str(raw.get("q", ""))[:80]))
-                continue
-            q["needs_eyes"] = res.needs_eyes
-            kept.append(q)
-            texts.append(q["q"])
+            keep_one(raw, proto, step, source, text, key, texts, kept, dropped, post, rng)
     return {"questions": kept, "dropped": dropped, "spot_check": spot_check(kept, rng), "asked": asked}
+
+
+def keep_one(raw: dict[str, Any], proto: dict[str, Any], step: dict[str, Any], source: dict[str, Any], text: str,
+             key: str | None, texts: list[str], kept: list[dict[str, Any]], dropped: list[tuple[str, str]],
+             post=None, rng: random.Random | None = None) -> bool:
+    """Check one written question (DeepSeek's, or one pasted into the admin tab) and keep it if it passes.
+    Without a key there is no blind second opinion, so the maker's spot check reads more of them."""
+    res = check_question(raw, source, text, step, key, texts, post, rng)
+    if not res.passed:
+        dropped.append((res.reason, str(raw.get("q", ""))[:80]))
+        return False
+    n = len([q for q in kept if q["stage"] == step["id"]]) + 1
+    q = quiz.clean_question({
+        "id": f"{proto['id']}.{step['id']}.{n:02d}", "protocol": proto["id"], "stage": step["id"],
+        "level": raw.get("level"), "kind": raw.get("kind"), "q": raw.get("q"),
+        "code": _CODE_FENCE.sub("", str(raw.get("code") or "")).strip(),
+        "options": raw.get("options"), "answer": raw.get("answer"), "why": raw.get("why"),
+        "source": {"title": source.get("title", ""), "url": source["url"],
+                   "kind": source.get("kind", "website"), "quote": raw.get("quote")},
+        "checks": [t for ok_, t in res.checks if ok_]})
+    if not q:
+        dropped.append(("didn't survive the shape check", str(raw.get("q", ""))[:80]))
+        return False
+    q["needs_eyes"] = res.needs_eyes or not key
+    kept.append(q)
+    texts.append(q["q"])
+    return True
 
 
 def spot_check(questions: list[dict[str, Any]], rng: random.Random | None = None) -> list[str]:

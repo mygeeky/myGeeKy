@@ -455,15 +455,23 @@ def from_paste(kind: str, text: str, url: str, key: str | None = None, focus: st
         raise ValueError("Paste the page's https link too, so each listing has somewhere to point at.")
     today = today or date.today()
     say = progress or (lambda m: None)
-    state = load()
-    focus = focus or state.get("focus") or DEFAULT_FOCUS
-    known = {c["item"]["url"] for c in state["candidates"].values()}
-    known |= {it["url"] for k in KINDS for it in curated.load().get(k, [])}
-    # the pasted text stands in for the page, for the checks and for the quote
-    pretend = {"url": page_url, "text": text, "links": []}
+    focus = focus or load().get("focus") or DEFAULT_FOCUS
     say("Reading what you pasted…")
     answers = read_paste(key, kind, text, focus, today, post)
     say(f"{len(answers)} listing(s) found; checking each against what you pasted…")
+    return queue_listings(kind, answers, text, page_url, today)
+
+
+def queue_listings(kind: str, answers: list[dict[str, Any]], text: str, page_url: str, today: date | None = None,
+                   came_from: str = "pasted") -> dict[str, Any]:
+    """Check listings read out of `text` (DeepSeek's answer, or one written elsewhere and pasted into the admin
+    tab: admin_import.py) and queue the ones that pass for the maker. The text stands in for the page, so a
+    title and a deadline quote must still be found in it word for word."""
+    today = today or date.today()
+    state = load()
+    known = {c["item"]["url"] for c in state["candidates"].values()}
+    known |= {it["url"] for k in KINDS for it in curated.load().get(k, [])}
+    pretend = {"url": page_url, "text": text, "links": []}
     added, dropped, why = 0, 0, []
     for ans in answers:
         link = curated._https(ans.get("link")) or page_url
@@ -480,7 +488,7 @@ def from_paste(kind: str, text: str, url: str, key: str | None = None, focus: st
             dropped += 1
             continue
         state["candidates"][item["id"]] = {"kind": kind, "item": item, "score": out["score"],
-                                           "checks": out["checks"], "status": "new", "from": "pasted",
+                                           "checks": out["checks"], "status": "new", "from": came_from,
                                            "source": page_url, "seen": today.isoformat()}
         known.add(item["url"])
         added += 1

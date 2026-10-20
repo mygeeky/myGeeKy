@@ -184,7 +184,7 @@ On top of that:
 - **if GitHub or your network is away, the tabs still fill** from what was kept, with an honest "updated N
   hours ago" instead of an empty page.
 
-The Admin tab shows what was asked and what was free today, with a **Forget** button. Forgetting loses
+The maker's Admin (You → Admin → 📊 Overview) shows what was asked and what was free today; **Forget GitHub's answers** is in Admin → ⚙ Settings. Forgetting loses
 nothing: the next refresh asks again. It is a small SQLite database, `github_cache.sqlite` in your data
 folder: each answer is its own row, so a refresh never rewrites the whole cache. It is capped in size, and never
 synced — it only holds public data GitHub served.

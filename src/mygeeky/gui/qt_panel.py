@@ -3335,6 +3335,11 @@ def tab_order(names: list[str], has_github: bool) -> list[str]:
     return (["model"] if "model" in names else []) + rest
 
 
+# You → Admin's sections, as planets: (part, label, emoji) -- the phone has the same (components/admin-part.tsx)
+ADMIN_PARTS = [("overview", "Overview", "\U0001f4ca"), ("review", "Review", "\U0001f4e5"), ("write", "Write", "\u270d"),
+               ("inbox", "Inbox", "\U0001f4a1"), ("people", "People", "\U0001f91d"), ("settings", "Settings", "\u2699")]
+
+
 def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
     """The panel's pages under the six groups (navtree.py): a tab, or a tab and one of its parts."""
     n = navtree.node
@@ -3357,7 +3362,9 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
         group("you", [n("model:month", "My month", icon="\U0001f396", tab="model", part="month"),
                       n("model:model", "Model", icon="\U0001f9e0", tab="model", part="model"),
                       n("model:cited", "Cited by", icon="\U0001f4d1", tab="model", part="cited"),
-                      n("badges", "Badges", tab="badges")] + ([n("admin", "Admin", tab="admin")] if is_admin else [])),
+                      n("badges", "Badges", tab="badges")] + ([n("admin", "Admin", tab="admin", children=[
+                          n(f"admin:{p}", label, icon=emoji, tab="admin", part=p) for p, label, emoji in ADMIN_PARTS])]
+                                                              if is_admin else [])),
         group("grow", grow()),
         group("world", [n("news", "News", tab="news", children=[
             n("news:airace", "AI race", icon="\U0001f3c1", tab="news", part="airace"),
@@ -5542,73 +5549,126 @@ class MyGeekyPanel(QWidget):
         actions.addWidget(self.admin_undo_btn)
         actions.addWidget(self.admin_refresh_btn)
         layout.addLayout(actions)
+        # six sections, one at a time: the planets under You → Admin choose which (ADMIN_PARTS)
+        self._admin_part = getattr(self, "_admin_part", "overview")
+        self.admin_sections: dict[str, QWidget] = {}
+        self.admin_section_heads: dict[str, QLabel] = {}
+
+        def section(part: str) -> QVBoxLayout:
+            box = QWidget()
+            lay = QVBoxLayout(box)
+            lay.setContentsMargins(0, 0, 0, 0)
+            lay.setSpacing(8)
+            head = QLabel("")
+            head.setWordWrap(True)
+            lay.addWidget(head)
+            self.admin_section_heads[part] = head
+            self.admin_sections[part] = box
+            layout.addWidget(box)
+            return lay
+
+        overview, review, write, inbox, people, settings = (section(p) for p, *_ in ADMIN_PARTS)
         self.admin_headers = [QLabel("\U0001f4c8 ADOPTION"), QLabel("\U0001f4ec IDEAS INBOX"),
                               QLabel("\U0001f3af PEOPLE TO INVITE")]
-        layout.addWidget(self.admin_headers[0])
+        # 📊 Overview: adoption, what's waiting, and exactly what Publish would send
+        overview.addWidget(self.admin_headers[0])
         tiles = QHBoxLayout()
         tiles.setSpacing(6)
         self.admin_tiles = {k: StatTile(c) for k, c in (("pypi_week", "PyPI / week"), ("installer_downloads", "installs (.exe)"),
                                                         ("stars", "stars"), ("signals_users", "on Signals"))}
-        for t in self.admin_tiles.values():
-            tiles.addWidget(t, 1)
-        layout.addLayout(tiles)
+        for t_ in self.admin_tiles.values():
+            tiles.addWidget(t_, 1)
+        overview.addLayout(tiles)
         self.admin_funnel = QLabel("")
         self.admin_funnel.setWordWrap(True)
-        layout.addWidget(self.admin_funnel)
+        overview.addWidget(self.admin_funnel)
         # what the ETag cache saved today: a 304 costs nothing against your limit (ghcache.py)
-        calls_row = QHBoxLayout()
         self.admin_calls = QLabel("")
         self.admin_calls.setWordWrap(True)
-        forget = QPushButton("Forget")
-        forget.setCursor(Qt.PointingHandCursor)
-        forget.setToolTip("Throw away what GitHub told us. Nothing is lost: the next refresh asks again.")
-        forget.clicked.connect(self._on_forget_cache)
-        calls_row.addWidget(self.admin_calls, 1)
-        calls_row.addWidget(forget, 0, Qt.AlignTop)
-        layout.addLayout(calls_row)
+        overview.addWidget(self.admin_calls)
+        self.admin_waiting = QLabel("")
+        self.admin_waiting.setWordWrap(True)
+        self.admin_waiting.setTextFormat(Qt.PlainText)
+        overview.addWidget(self.admin_waiting)
+        self.admin_publish_btn = QPushButton("🚀 Publish")
+        self.admin_publish_btn.setCursor(Qt.PointingHandCursor)
+        self.admin_publish_btn.clicked.connect(self._on_scout_publish)
+        overview.addWidget(self.admin_publish_btn, 0, Qt.AlignLeft)
+        # 📥 Review: listings, Highlight drafts and quizzes, together
         self.admin_scout_header = QLabel("\U0001f3af LISTINGS TO REVIEW")
-        layout.addWidget(self.admin_scout_header)
+        review.addWidget(self.admin_scout_header)
         scout_box = QWidget()
         self.admin_scout = QVBoxLayout(scout_box)
         self.admin_scout.setContentsMargins(0, 0, 0, 0)
         self.admin_scout.setSpacing(6)
-        layout.addWidget(scout_box)
+        review.addWidget(scout_box)
         from .highlights_ui import AdminHighlights
-        self.admin_hl_header = QLabel("\u2728 HIGHLIGHTS TO WRITE")
-        layout.addWidget(self.admin_hl_header)
+        self.admin_hl_header = QLabel("\u2728 HIGHLIGHTS TO REVIEW")
+        review.addWidget(self.admin_hl_header)
         self.admin_highlights = AdminHighlights(lambda: THEMES[self._theme_name()], self._run_async,
                                                 lambda it, warn: self._open_highlight(it, warn), self._on_scout_publish)
-        layout.addWidget(self.admin_highlights)
+        review.addWidget(self.admin_highlights.drafts)
         self.admin_quiz_header = QLabel("\U0001f4dd QUIZZES")
-        layout.addWidget(self.admin_quiz_header)
+        review.addWidget(self.admin_quiz_header)
         quiz_box = QWidget()
         self.admin_quiz = QVBoxLayout(quiz_box)
         self.admin_quiz.setContentsMargins(0, 0, 0, 0)
         self.admin_quiz.setSpacing(6)
-        layout.addWidget(quiz_box)
-        layout.addWidget(self.admin_headers[1])
+        review.addWidget(quiz_box)
+        # ✍ Write: Highlights from DOIs, and any answer written elsewhere
+        self.admin_write_header = QLabel("\u2728 WRITE HIGHLIGHTS")
+        write.addWidget(self.admin_write_header)
+        write.addWidget(self.admin_highlights.form)
+        self.admin_import_header = QLabel("\U0001f4e5 BRING YOUR OWN ANSWER")
+        write.addWidget(self.admin_import_header)
+        from .admin_ui import ImportBox
+        self.admin_import = ImportBox(lambda: THEMES[self._theme_name()], self._run_async, logic.reviewed_protocols,
+                                      lambda: self._render_admin())
+        write.addWidget(self.admin_import)
+        # 💡 Inbox: ideas and problems, and the words people want taught
+        inbox.addWidget(self.admin_headers[1])
         inbox_box = QWidget()
         self.admin_inbox = QVBoxLayout(inbox_box)
         self.admin_inbox.setContentsMargins(0, 0, 0, 0)
         self.admin_inbox.setSpacing(5)
-        layout.addWidget(inbox_box)
-        layout.addWidget(self.admin_headers[2])
+        inbox.addWidget(inbox_box)
+        self.admin_kw_header = QLabel("\U0001f524 KEYWORDS TO TEACH")
+        inbox.addWidget(self.admin_kw_header)
+        self.admin_kw = QLabel("")
+        self.admin_kw.setWordWrap(True)
+        self.admin_kw.setTextFormat(Qt.RichText)
+        inbox.addWidget(self.admin_kw)
+        # 🤝 People to invite
+        people.addWidget(self.admin_headers[2])
         self.admin_hint = QLabel("Ranked by how likely they are to want myGeeKy. Nothing is ever sent from here: "
                                  "Email opens a draft in your mail app, Copy puts the invite on your clipboard. "
                                  "Mark them once you've reached out (10 a day, at most).")
         self.admin_hint.setWordWrap(True)
-        layout.addWidget(self.admin_hint)
+        people.addWidget(self.admin_hint)
         prospect_box = QWidget()
         self.admin_prospects = QVBoxLayout(prospect_box)
         self.admin_prospects.setContentsMargins(0, 0, 0, 0)
         self.admin_prospects.setSpacing(6)
-        layout.addWidget(prospect_box)
-        self.admin_kw_header = QLabel("\U0001f524 KEYWORDS TO TEACH")
-        layout.addWidget(self.admin_kw_header)
-        self.admin_kw = QLabel("")
-        self.admin_kw.setWordWrap(True)
-        self.admin_kw.setTextFormat(Qt.RichText)
-        layout.addWidget(self.admin_kw)
+        people.addWidget(prospect_box)
+        # ⚙ Settings: the DeepSeek key, the sites and field, the mailbox, GitHub's cache
+        self.admin_settings_note = QLabel("")
+        self.admin_settings_note.setWordWrap(True)
+        settings.addWidget(self.admin_settings_note)
+        self.admin_settings_btns = []
+        for text, tip, fn in (("🔑 DeepSeek key", "Kept in this computer's credential store, never in a file",
+                               self._on_scout_key),
+                              ("🌐 Sites and field", "Which sites the scout looks through, and your field",
+                               self._on_scout_sites),
+                              ("📧 Job-alert mailbox", "One folder of your mailbox, read-only", self._on_scout_alerts),
+                              ("🧹 Forget GitHub's answers", "Throw away what GitHub told us. Nothing is lost: the "
+                               "next refresh asks again.", self._on_forget_cache)):
+            b = QPushButton(text)
+            b.setToolTip(tip)
+            b.setCursor(Qt.PointingHandCursor)
+            b.clicked.connect(fn)
+            settings.addWidget(b, 0, Qt.AlignLeft)
+            self.admin_settings_btns.append(b)
+        self._show_admin_part()
         layout.addStretch(1)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -5677,11 +5737,13 @@ class MyGeekyPanel(QWidget):
         self._render_scout()
         self._render_quizwriter()
         self.admin_highlights.render()
+        self._render_admin_summary(theme, data)
         for lbl in self.admin_headers + [self.admin_kw_header, self.admin_scout_header, self.admin_quiz_header,
-                                         self.admin_hl_header]:
+                                         self.admin_hl_header, self.admin_write_header, self.admin_import_header]:
             lbl.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
                               "margin-top:6px; background:transparent;")
-        for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated, self.admin_calls):
+        for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated, self.admin_calls, self.admin_waiting,
+                    self.admin_settings_note):
             lbl.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
         self.admin_refresh_btn.setStyleSheet(
             f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
@@ -5689,6 +5751,49 @@ class MyGeekyPanel(QWidget):
         self.admin_undo_btn.setStyleSheet(
             f"QPushButton {{ background:transparent; color:{theme['link']}; border:none; padding:4px 6px; "
             f"font-size:11px; text-decoration:underline; }}")
+
+    def _render_admin_summary(self, theme: dict[str, Any], data: dict[str, Any]) -> None:
+        """Each section's heading with its count, what's waiting, and exactly what Publish would send."""
+        from .. import highlights
+        st = logic.scout_state()
+        drafts = highlights.drafts("new")
+        quiz = [pid for pid, b in (logic.quizwriter_state().get("batches") or {}).items() if not b.get("verdict")]
+        counts = {"overview": "", "review": f"{len(st['new']) + len(drafts) + len(quiz)} waiting",
+                  "write": "", "inbox": f"{len(data.get('inbox') or [])} ideas",
+                  "people": f"{len(data.get('prospects') or [])} to consider", "settings": ""}
+        for p, label, emoji in ADMIN_PARTS:
+            head = self.admin_section_heads[p]
+            head.setText(f"{emoji} {label.upper()}" + (f"  ·  {counts[p]}" if counts[p] else ""))
+            head.setStyleSheet(f"color:{theme['text']}; font-size:13px; font-weight:800; background:transparent;")
+        going = [f"{self.SCOUT_EMOJI.get(c['kind'], '')} {c['item']['title']}" for c in st["accepted"]] + \
+                [f"✨ {d['item']['title']}" for d in highlights.accepted()]
+        self.admin_waiting.setText(
+            f"Waiting for you in Review: {len(st['new'])} listings, {len(drafts)} Highlights, {len(quiz)} quiz batches."
+            + ("\n\nPublish would send these to everyone's lists:\n" + "\n".join(f"  {g}" for g in going[:20])
+               + (f"\n  …and {len(going) - 20} more" if len(going) > 20 else "") if going
+               else "\n\nNothing accepted yet, so Publish has nothing to send."))
+        self.admin_publish_btn.setText(f"🚀 Publish {len(going)} to mygeeky.org" if going else "🚀 Publish")
+        self.admin_publish_btn.setEnabled(bool(going) and not getattr(self, "_scout_publishing", False))
+        self.admin_publish_btn.setStyleSheet(
+            f"QPushButton {{ background:{theme['accent'] if going else theme['section_btn']}; color:{theme['text']}; "
+            "border:none; border-radius:8px; padding:6px 12px; font-size:11.5px; font-weight:700; }")
+        self.admin_settings_note.setText(
+            ("DeepSeek key: kept in this computer's credential store. " if st["has_key"] else
+             "No DeepSeek key yet: the scout and the writers need one (✍ Write → Bring your own answer doesn't). ")
+            + "Sites and field decide where the scout looks.")
+        for b in self.admin_settings_btns:
+            b.setStyleSheet(f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
+                            "border-radius:8px; padding:6px 10px; font-size:11.5px; }")
+        self.admin_import.apply_theme()
+
+    def _set_admin_part(self, part: str) -> None:
+        self._admin_part = part if part in {p for p, *_ in ADMIN_PARTS} else "overview"
+        self._show_admin_part()
+        self._nav_mark()
+
+    def _show_admin_part(self) -> None:
+        for p, box in getattr(self, "admin_sections", {}).items():
+            box.setVisible(p == self._admin_part)
 
     def _on_forget_cache(self) -> None:
         n = logic.forget_github_cache()
@@ -5719,7 +5824,7 @@ class MyGeekyPanel(QWidget):
                               "is the other way: tools/quiz/sources.py, then tools/quiz/add.py.",
                               _muted(theme, 10.5)))
         if not st["has_key"]:
-            area.addWidget(_label("Add your DeepSeek key in 🎯 Listings above: the writer uses the same key.",
+            area.addWidget(_label("Add your DeepSeek key in ⚙ Settings: the writer uses the same key. Or paste questions written elsewhere in ✍ Write.",
                                   _muted(theme, 10.5)))
             return
         running = getattr(self, "_quizwriter_running", "")
@@ -5908,10 +6013,9 @@ class MyGeekyPanel(QWidget):
         st = logic.scout_state()
         tools = FlowRow()
         key_ok = st["has_key"]
-        tools.add(_pill_button("🔑 DeepSeek key ✓" if key_ok else "🔑 Add DeepSeek key",
-                               "Kept in this computer's credential store, never in a file", theme, self._on_scout_key))
-        tools.add(_pill_button("🌐 Sites and field", "Which sites to look through, and your field", theme,
-                               self._on_scout_sites))
+        if not key_ok:                                 # the key and the sites live in ⚙ Settings
+            tools.add(_pill_button("🔑 Add DeepSeek key", "Kept in this computer's credential store, never in a file",
+                                   theme, self._on_scout_key))
         paste = _pill_button("📋 Paste a page", "For a site myGeeKy can't read: open it yourself and paste "
                              "the text", theme, self._on_scout_paste)
         paste.setEnabled(key_ok and not getattr(self, "_scout_running", False))
@@ -7060,7 +7164,7 @@ class MyGeekyPanel(QWidget):
         """The part open in a tab, as the tree names it."""
         return {"news": getattr(self, "_news_mode", ""), "market": getattr(self, "_market_mode", ""),
                 "grow": getattr(self, "_grow_mode", ""), "chances": getattr(self, "_chance_mode", ""),
-                "model": getattr(self, "you_part", "")}.get(tab, "")
+                "model": getattr(self, "you_part", ""), "admin": getattr(self, "_admin_part", "")}.get(tab, "")
 
     def _nav_leaf(self) -> dict[str, Any] | None:
         tab = getattr(self, "active_tab", "")
@@ -7081,7 +7185,8 @@ class MyGeekyPanel(QWidget):
         tab, part = nd["tab"], nd["part"]
         if part:
             setter = {"news": self._set_news_mode, "market": self._set_market_mode, "grow": self._set_grow_mode,
-                      "chances": self._set_chance_mode, "model": self._show_you_part}.get(tab)
+                      "chances": self._set_chance_mode, "model": self._show_you_part,
+                      "admin": self._set_admin_part}.get(tab)
             if setter:
                 self._nav_opening = True          # the part changes before the tab: don't move the row meanwhile
                 try:

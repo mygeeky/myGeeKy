@@ -22,7 +22,8 @@ type Loaded = {
 };
 const KIND_EMOJI: Record<string, string> = { jobs: '💼', funding: '💰', conferences: '🎤' };
 
-export function AdminPart({ me }: { me: string }) {
+/** `section`: which of You → Admin's planets is open (nav-tree.ts ADMIN_PARTS): overview, review, write, inbox, people, settings. */
+export function AdminPart({ me, section = 'overview' }: { me: string; section?: string }) {
   const [unlocked, setUnlocked] = useState(false);
   const [note, setNote] = useState('');
   const [got, setGot] = useState<Loaded | null>(null);
@@ -125,6 +126,9 @@ export function AdminPart({ me }: { me: string }) {
       </View>
       {note ? <Text style={[s.small, { color: C.amber, marginTop: 4 }]}>{note}</Text> : null}
 
+      {section === 'overview' ? <>
+      <Section>📊 OVERVIEW</Section>
+      <Text style={s.small}>Waiting for you in Review: {listings?.toReview.length ?? 0} listings, {(quiz?.rows ?? []).filter((r) => r.spotCheck).length} quiz batches. Highlights are reviewed and Publish is pressed on your computer.</Text>
       <Section>📈 ADOPTION</Section>
       <StatTiles tiles={[[fmt(ad.pypi_week), 'PyPI / week'], [fmt(ad.installer_downloads), 'installs (.exe)'],
         [fmt(ad.stars), 'stars'], [fmt(ad.signals_users), 'on Signals']]} />
@@ -132,14 +136,23 @@ export function AdminPart({ me }: { me: string }) {
         Invites: {f.invited} sent · {f.joined} joined{f.invited ? ` (${Math.round((100 * f.joined) / f.invited)}%)` : ''} · {f.new} to
         consider · {today}/{INVITE_DAILY_LIMIT} today
       </Text>
+      </> : null}
 
+      {section === 'review' ? <>
       <Section>🎯 LISTINGS TO REVIEW</Section>
       <Listings listings={listings} onStatus={(c, status, item) => doing({ kind: 'listing', id_listing: c.id, status, item },
         status === 'accepted' ? `${c.item.title} accepted: it goes online when you press Publish on your computer.` : '')} />
 
       <Section>📝 QUIZZES</Section>
       <Quizzes quiz={quiz} />
+      </> : null}
 
+      {section === 'write' ? <>
+      <Section>✍ WRITE</Section>
+      <Text style={s.small}>Writing happens on your computer (You → Admin → Write): Highlights from DOIs, and 📥 Bring your own answer, which takes an answer written anywhere (another AI, a colleague, by hand) for a Highlight, listings or quiz questions, checks it exactly like DeepSeek&apos;s, and puts it in Review here.</Text>
+      </> : null}
+
+      {section === 'inbox' ? <>
       <Section>📬 IDEAS INBOX</Section>
       {data.inbox.length ? data.inbox.slice(0, 15).map((i) => (
         <Card key={i.number} onPress={i.url ? () => open(i.url) : undefined}>
@@ -147,22 +160,31 @@ export function AdminPart({ me }: { me: string }) {
           <Text style={s.small}>#{i.number} · {i.author} · {i.created_at ? timeAgo(i.created_at) : ''} · 💬 {i.comments} · 👍 {i.reactions}</Text>
         </Card>
       )) : <Empty>No ideas yet. They arrive from the 💡 button in everyone&apos;s panel.</Empty>}
+      </> : null}
 
+      {section === 'people' ? <>
       <Section>🎯 PEOPLE TO INVITE</Section>
       <Text style={s.small}>Ranked by how likely they are to want myGeeKy. Nothing is ever sent from here: Email opens it filled
         in for you to send, at most {INVITE_DAILY_LIMIT} a day.</Text>
       {prospects(people).length ? prospects(people).slice(0, 25).map((p) => (
         <Prospect key={p.login} p={p} me={me} onMark={(st) => mark(p, st)} onNote={setNote} />
       )) : <Empty>No prospects yet: click Refresh on your computer.</Empty>}
+      </> : null}
 
+      {section === 'inbox' ? <>
       <Section>🔤 KEYWORDS TO TEACH</Section>
       <Text style={s.small}>
         {data.keywordRequests.length
           ? `${data.keywordRequests.slice(0, 30).map((r) => `${r.word}${r.people ? ` (${r.people} on Signals)` : ''}${r.suggested ? ` (${r.suggested} suggested)` : ''}`).join(' · ')}\nTeach them on your computer: mygeeky admin keywords build, then publish a release.`
           : 'No unknown keywords yet. They come from beacons and from the suggest button.'}
       </Text>
-      <Text style={[s.small, { marginTop: 12 }]}>On your computer only: finding listings (🔎 Find, 📋 Paste, 📧 alerts), 🚀 Publish, and writing
+      </> : null}
+
+      {section === 'settings' ? <>
+      <Section>⚙ SETTINGS</Section>
+      <Text style={[s.small, { marginTop: 4 }]}>On your computer only: finding listings (🔎 Find, 📋 Paste, 📧 alerts), 🚀 Publish, and writing
         or spot-checking quizzes. They need its DeepSeek key, mailbox password or push rights, and those never come to the phone.</Text>
+      </> : null}
     </>
   );
 }

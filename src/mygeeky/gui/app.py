@@ -1773,6 +1773,12 @@ def quizwriter_state() -> dict[str, Any]:
             "missing": [pid for pid in reviewed if pid not in ready]}
 
 
+def reviewed_protocols() -> list[tuple[str, str]]:
+    """(id, title) of every reviewed protocol: the ones quiz questions can be written for."""
+    from .. import curated, protocols
+    return [(p["id"], p["title"]) for p in protocols.reviewed(curated.load())]
+
+
 def quizwriter_run(cfg: MyGeekyConfig, pid: str) -> dict[str, Any]:
     """Write and check a batch of questions for one protocol. Slow (reads pages, asks DeepSeek)."""
     import requests
