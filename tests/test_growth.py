@@ -229,11 +229,15 @@ def test_the_world_file_is_cleaned_and_the_phone_has_the_same_one():
     from mygeeky import skilltrends
     c = skilltrends.clean({"version": "2026-10-19", "docs": [10, 12], "skills": {"Nextflow": [1, 2], "Made up": [1, 1],
                                                                                 "Docker": ["x", -3]}})
-    assert c == {"version": "2026-10-19", "docs": [10, 12], "skills": {"Nextflow": [1, 2], "Docker": [0, 0]}}
+    assert c == {"version": "2026-10-19", "docs": [10, 12, 0], "skills": {"Nextflow": [1, 2, 0], "Docker": [0, 0, 0]}, "pairs": {}}
+    assert skilltrends.clean({"docs": [5, 6, 7], "skills": {"Nextflow": [1, 2, 3]}})["skills"] == {"Nextflow": [1, 2, 3]}
+    pairs = skilltrends.clean({"pairs": {"Docker|Nextflow": 3, "Nextflow|Docker": 2, "Docker|Made up": 4, "Docker|Python": "x"}})
+    assert pairs["pairs"] == {"Docker|Nextflow": 3}
     assert skilltrends.clean("junk")["skills"] == {}
     root = Path(__file__).resolve().parents[1]
     assert (root / "src/mygeeky/data/skill_trends.json").read_bytes() == (root / "mobile/src/data/skill_trends.json").read_bytes()
-    (old_lo, old_hi), (new_lo, new_hi) = skilltrends.windows(TODAY)
+    (old_lo, old_hi), (new_lo, new_hi), (year_lo, _) = skilltrends.windows(TODAY)
+    assert (new_lo - year_lo).days == 365
     assert (new_hi - new_lo).days == (old_hi - old_lo).days == skilltrends.WINDOW_DAYS - 1 and (new_lo - old_hi).days == 1
 
 
@@ -377,8 +381,8 @@ def test_the_phone_corrects_rising_skills_the_same_way():
     for k in range(6):
         docs = [{"skills": rng.sample(names, rng.randint(0, 3)), "pick": rng.choice(["mine", "mine", "wide"]),
                  "recent": rng.random() < 0.6} for _ in range(rng.randint(0, 40))]
-        trends = {"version": "2026-10-19", "docs": [rng.randint(0, 900), rng.randint(0, 900)],
-                  "skills": {n: [rng.randint(0, 30), rng.randint(0, 30)] for n in rng.sample(names, 4)}} if k else {}
+        trends = {"version": "2026-10-19", "docs": [rng.randint(0, 900), rng.randint(0, 900), rng.randint(0, 900)],
+                  "skills": {n: [rng.randint(0, 30), rng.randint(0, 30), rng.randint(0, 30)] for n in rng.sample(names, 4)}} if k else {}
         feed = {n: round(rng.uniform(0.5, 3), 2) for n in names}
         cases.append({"docs": docs, "trends": trends, "feed": feed})
     cfg = MyGeekyConfig()
@@ -387,10 +391,19 @@ def test_the_phone_corrects_rising_skills_the_same_way():
             _doc("polars dataframes")]
     world = {"docs": [1000, 1000], "skills": {"Nextflow": [5, 40], "Docker": [30, 30], "GWAS": [20, 60]}}
     result = skills.rising(cfg, docs=docs, mine="I do GWAS in Python", weights={}, today=TODAY, save=False, trends=world)
+    ahead = {"docs": [2000, 2000, 1800], "skills": {"AI agents": [50, 60, 9], "Genomic language models": [5, 50, 4],
+                                              "Quantum computing": [10, 60], "Docker": [30, 30], "Deep learning": [40, 40]},
+             "pairs": {"AI agents|Python": 12, "GWAS|Genomic language models": 9, "Deep learning|Quantum computing": 6,
+                       "Deep learning|GWAS": 8, "AI agents|Docker": 3}}
+    for c in cases[1:]:
+        c["trends"]["pairs"] = {f"{a}|{b}": rng.randint(1, 9) for a in names for b in names if a < b and rng.random() < 0.3}
+    cases.append({"docs": [], "trends": ahead, "feed": {}})
     said = phone.run("""
-import { cleanTrends, corrected, note, shapes } from './lib/skills.ts';
+import { cleanTrends, corrected, directionLine, directions, note, shapes } from './lib/skills.ts';
 out({ corrected: INPUT.cases.map((c: any) => corrected(c.docs, cleanTrends(c.trends), c.feed)), shapes: shapes(INPUT.result),
       notes: [...INPUT.result.skills, ...INPUT.result.strengths].map(note),
+      directions: INPUT.cases.map((c: any) => { const tr = cleanTrends(c.trends); const d = directions(corrected(c.docs, tr, c.feed), tr,
+        new Set(['GWAS', 'Python']), new Set(['Docker']), { 'Genomic language models': 'direction' }); return [d, d.map(directionLine)]; }),
       clean: INPUT.cases.map((c: any) => cleanTrends(c.trends)) });
 """, {"cases": cases, "result": result})
     from mygeeky import skilltrends
@@ -399,4 +412,38 @@ out({ corrected: INPUT.cases.map((c: any) => corrected(c.docs, cleanTrends(c.tre
         assert json.loads(json.dumps(skills.corrected(c["docs"], skilltrends.clean(c["trends"]), c["feed"]))) == got
     assert json.loads(json.dumps(skills.shapes(result))) == said["shapes"]
     assert [skills.note(s) for s in result["skills"] + result["strengths"]] == said["notes"]
+    for c, (got, lines) in zip(cases, said["directions"]):
+        tr = skilltrends.clean(c["trends"])
+        d = skills.directions(skills.corrected(c["docs"], tr, c["feed"]), tr, {"GWAS", "Python"}, {"Docker"},
+                              {"Genomic language models": "direction"})
+        assert json.loads(json.dumps(d)) == got and [skills.direction_line(x) for x in d] == lines
+    assert said["directions"][-1][0]
     assert any(said["notes"])
+
+
+def test_directions_look_past_your_feed_and_say_how_they_touch_you():
+    cfg = MyGeekyConfig()
+    docs = [_doc("GWAS study"), _doc("GWAS again"), _doc("python code"), _doc("python more")]
+    world = {"docs": [2000, 2000],
+             "skills": {"AI agents": [10, 60], "Genomic language models": [5, 50], "Quantum computing": [10, 60],
+                        "Docker": [30, 30], "Deep learning": [40, 40]},
+             "pairs": {"AI agents|Python": 12, "GWAS|Genomic language models": 9, "Deep learning|Quantum computing": 6,
+                       "Deep learning|GWAS": 8}}
+    out = skills.rising(cfg, docs=docs, mine="I do GWAS in Python", weights={}, today=TODAY, save=False, trends=world)
+    by = {d["name"]: d for d in out["directions"]}
+    assert set(by) == {"AI agents", "Genomic language models", "Quantum computing"}      # none were in your feed
+    assert out["directions"][0]["name"] == "Genomic language models"                     # a whole direction, tied closely
+    assert by["AI agents"]["with"] == ["Python"] and by["AI agents"]["together"] == 12
+    assert by["Quantum computing"]["via"] == "Deep learning" and by["Quantum computing"]["with"] == ["GWAS"]
+    assert "appears with your GWAS in 9 of them" in skills.direction_line(by["Genomic language models"])
+    assert "close to Deep learning" in skills.direction_line(by["Quantum computing"])
+    taste.vote("skill", "AI agents", False)
+    out = skills.rising(cfg, docs=docs, mine="I do GWAS in Python", weights={}, today=TODAY, save=False, trends=world)
+    assert "AI agents" not in {d["name"] for d in out["directions"]}
+    year = {"docs": [2000, 2000, 2000], "skills": {"Large language models": [50, 58, 8]},     # flat lately, 7x in a year
+            "pairs": {"Large language models|Python": 20}}
+    d = skills.rising(cfg, docs=docs, mine="I do GWAS in Python", weights={}, today=TODAY, save=False, trends=year)["directions"]
+    assert d[0]["name"] == "Large language models" and d[0]["since"] == "year" and d[0]["growth"] > 5
+    assert "since a year ago; appears with your Python in 20 of them" in skills.direction_line(d[0])
+    lone = {"docs": [2000, 2000], "skills": {"AI agents": [10, 60]}, "pairs": {}}       # rising, but nothing ties it to you
+    assert skills.rising(cfg, docs=docs, mine="GWAS", weights={}, today=TODAY, save=False, trends=lone)["directions"] == []

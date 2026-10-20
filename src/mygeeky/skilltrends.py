@@ -3,9 +3,12 @@
 What myGeeKy reads for you is picked by your interests, so on its own it can't tell "the field is moving" from "you
 started reading about it". This file is the same for everyone and picked by no one: once a day a GitHub Action
 (.github/workflows/skill-trends.yml) takes an even sample of new preprints across broad bioRxiv, medRxiv and arXiv
-categories in two windows -- the last 45 days and the 45 before -- and counts, for each skill in data/skills.json,
-how many of them mention it. Each source gives the same number of documents to both windows, so the counts compare
-directly. skills.py (and the phone's lib/skills.ts) measure growth on this plus your own explore picks, and use what
+categories in three windows -- the last 45 days, the 45 before, and the same 45 days a year ago -- and counts, for each skill in data/skills.json,
+how many of them mention it, and which skills appear together in the same preprint (so a direction rising
+across the field can be tied to the skills you have: skills.directions). Each source gives the same number of documents to both windows, so the counts compare
+directly. The two recent windows say what is rising now; the year-ago one shows the big shifts a few weeks can't
+(a direction can be large and flat lately but many times bigger than a year ago). skills.py (and the phone's
+lib/skills.ts) measure growth on this plus your own explore picks, and use what
 you chose to read only for "is it for you?" -- see skills.corrected().
 
 Every myGeeKy reads the file from GitHub at most once a day (`refresh_if_due`), falling back to the copy it shipped
@@ -37,16 +40,19 @@ RXIV_PAGES = {"biorxiv": 40, "medrxiv": 15}       # pages of 30, spread evenly o
 ARXIV_CATS = ("q-bio.GN", "q-bio.QM", "q-bio.BM", "q-bio.NC", "stat.ML", "stat.AP", "stat.ME", "cs.LG", "cs.CL",
               "cs.CV", "cs.CE", "cs.DC")
 ARXIV_PER_CAT = 150                               # per window, in three slices of 50
+MIN_TOGETHER = 2                                  # pairs seen together fewer times aren't kept
 UA = {"User-Agent": "mygeeky-skill-trends (https://mygeeky.org)"}
 _DATE_LEN = 10
 
 
 # --------------------------------------------------------------------------- building it (the daily Action)
-def windows(today: date) -> tuple[tuple[date, date], tuple[date, date]]:
-    """(older, newer): two back-to-back windows of WINDOW_DAYS, the newer ending yesterday."""
+def windows(today: date) -> tuple[tuple[date, date], ...]:
+    """(older, newer, a year ago): two back-to-back windows of WINDOW_DAYS, the newer ending yesterday, and the
+    newer one's dates a year earlier."""
     end = today - timedelta(days=1)
     mid = end - timedelta(days=WINDOW_DAYS)
-    return (mid - timedelta(days=WINDOW_DAYS - 1), mid), (mid + timedelta(days=1), end)
+    newer = (mid + timedelta(days=1), end)
+    return (mid - timedelta(days=WINDOW_DAYS - 1), mid), newer, (newer[0] - timedelta(days=365), newer[1] - timedelta(days=365))
 
 
 def _get(session, url: str, **kw):
@@ -85,55 +91,64 @@ def _arxiv(cat: str, lo: date, hi: date, session) -> list[str]:
         a = lo + timedelta(days=k * span // 3)
         b = lo + timedelta(days=(k + 1) * span // 3 - 1)
         q = f"cat:{cat} AND submittedDate:[{a:%Y%m%d}0000 TO {b:%Y%m%d}2359]"
-        r = _get(session, "https://export.arxiv.org/api/query",
-                 params={"search_query": q, "start": 0, "max_results": ARXIV_PER_CAT // 3,
-                         "sortBy": "submittedDate", "sortOrder": "descending"})
-        for e in ET.fromstring(r.content).findall("a:entry", ns):
-            out.append(f"{e.findtext('a:title', '', ns)} ; {e.findtext('a:summary', '', ns)}")
-        time.sleep(3.1)                             # arXiv asks for one request every 3 seconds
+        for wait in (0, 30, 90):                    # when busy, arXiv answers with an empty list: wait, ask again
+            time.sleep(wait)
+            r = _get(session, "https://export.arxiv.org/api/query",
+                     params={"search_query": q, "start": 0, "max_results": ARXIV_PER_CAT // 3,
+                             "sortBy": "submittedDate", "sortOrder": "descending"})
+            entries = ET.fromstring(r.content).findall("a:entry", ns)
+            time.sleep(3.1)                         # arXiv asks for one request every 3 seconds
+            if entries:
+                break
+        out += [f"{e.findtext('a:title', '', ns)} ; {e.findtext('a:summary', '', ns)}" for e in entries]
     return out
 
 
-def fetch(today: date, session) -> dict[str, tuple[list[str], list[str]]]:
-    """{source: (older texts, newer texts)} -- each source trimmed to the same number in both windows."""
-    (o_lo, o_hi), (n_lo, n_hi) = windows(today)
-    got: dict[str, tuple[list[str], list[str]]] = {}
+def fetch(today: date, session) -> dict[str, tuple[list[str], ...]]:
+    """{source: (older texts, newer texts, year-ago texts)} -- each source trimmed to the same number in every window."""
+    wins = windows(today)
+    got: dict[str, tuple[list[str], ...]] = {}
     for server, pages in RXIV_PAGES.items():
         name = "bioRxiv" if server == "biorxiv" else "medRxiv"
-        got[name] = (_rxiv(server, o_lo, o_hi, session, pages), _rxiv(server, n_lo, n_hi, session, pages))
-    older, newer = [], []
+        got[name] = tuple(_rxiv(server, lo, hi, session, pages) for lo, hi in wins)
+    arxiv: tuple[list[str], ...] = ([], [], [])
     for cat in ARXIV_CATS:
-        try:                                        # a category counts only with both windows read
-            o, n = _arxiv(cat, o_lo, o_hi, session), _arxiv(cat, n_lo, n_hi, session)
+        try:                                        # a category counts only with every window read
+            parts = [_arxiv(cat, lo, hi, session) for lo, hi in wins]
         except Exception as exc:
             print(f"skill trends: skipped arXiv {cat} ({exc})", file=sys.stderr)
             continue
-        k = min(len(o), len(n))                     # the same number from each category in both windows
-        older += o[:k]
-        newer += n[:k]
-    got["arXiv"] = (older, newer)
+        k = min(len(x) for x in parts)              # the same number from each category in every window
+        for side, x in zip(arxiv, parts):
+            side += x[:k]
+    got["arXiv"] = arxiv
     rng = random.Random(today.toordinal())
-    for name, (o, n) in got.items():
-        k = min(len(o), len(n))
-        got[name] = (rng.sample(o, k), rng.sample(n, k))
+    for name, parts in got.items():
+        k = min(len(x) for x in parts)
+        got[name] = tuple(rng.sample(x, k) for x in parts)
     return got
 
 
-def count(texts: dict[str, tuple[list[str], list[str]]], today: date) -> dict[str, Any]:
+def count(texts: dict[str, tuple[list[str], ...]], today: date) -> dict[str, Any]:
     from . import skills
-    totals = [0, 0]
+    totals = [0, 0, 0]
     per_skill: dict[str, list[int]] = {}
+    together: dict[str, int] = {}
     per_source = {}
     for name, pair in texts.items():
-        per_source[name] = [len(pair[0]), len(pair[1])]
+        per_source[name] = [len(x) for x in pair]
         for side, docs in enumerate(pair):
             totals[side] += len(docs)
             for t in docs:
-                for s in skills.skills_in(t):
-                    per_skill.setdefault(s, [0, 0])[side] += 1
-    (o_lo, o_hi), (n_lo, n_hi) = windows(today)
-    return {"version": today.isoformat(), "windows": [[o_lo.isoformat(), o_hi.isoformat()], [n_lo.isoformat(), n_hi.isoformat()]],
-            "docs": totals, "sources": per_source, "skills": dict(sorted(per_skill.items()))}
+                found = sorted(skills.skills_in(t))
+                for s in found:
+                    per_skill.setdefault(s, [0, 0, 0])[side] += 1
+                for i, a in enumerate(found):
+                    for b in found[i + 1:]:
+                        together[f"{a}|{b}"] = together.get(f"{a}|{b}", 0) + 1
+    return {"version": today.isoformat(), "windows": [[lo.isoformat(), hi.isoformat()] for lo, hi in windows(today)],
+            "docs": totals, "sources": per_source, "skills": dict(sorted(per_skill.items())),
+            "pairs": {k: v for k, v in sorted(together.items()) if v >= MIN_TOGETHER}}
 
 
 def build(today: date | None = None, session=None) -> dict[str, Any]:
@@ -157,19 +172,27 @@ def _int(x: Any) -> int:
 
 
 def clean(data: Any) -> dict[str, Any]:
-    """{"version", "docs": [older, newer], "skills": {name: [older, newer]}} with only known skills and sane numbers."""
+    """{"version", "docs": [older, newer, a year ago], "skills": {name: [older, newer, a year ago]},
+    "pairs": {"A|B": together}} with only
+    known skills (A before B) and sane numbers."""
     from . import skills
     data = data if isinstance(data, dict) else {}
     known = {s["name"] for s in skills.vocabulary()}
-    docs = data.get("docs") if isinstance(data.get("docs"), list) and len(data["docs"]) == 2 else [0, 0]
+    docs = data.get("docs") if isinstance(data.get("docs"), list) and len(data["docs"]) in (2, 3) else [0, 0]
     out = {}
     raw = data.get("skills") if isinstance(data.get("skills"), dict) else {}
     for name, pair in raw.items():
-        if name in known and isinstance(pair, list) and len(pair) == 2:
-            out[name] = [_int(pair[0]), _int(pair[1])]
+        if name in known and isinstance(pair, list) and len(pair) in (2, 3):        # an older file has no year-ago count
+            out[name] = [_int(pair[0]), _int(pair[1]), _int(pair[2]) if len(pair) == 3 and len(docs) == 3 else 0]
+    pairs = {}
+    raw = data.get("pairs") if isinstance(data.get("pairs"), dict) else {}
+    for key, k in list(raw.items())[:20000]:
+        a, _, b = str(key).partition("|")
+        if a in known and b in known and a < b and _int(k):
+            pairs[f"{a}|{b}"] = _int(k)
     version = str(data.get("version") or "")
     return {"version": version if len(version) == _DATE_LEN and version[4] == "-" else "",
-            "docs": [_int(docs[0]), _int(docs[1])], "skills": out}
+            "docs": [_int(docs[0]), _int(docs[1]), _int(docs[2]) if len(docs) == 3 else 0], "skills": out, "pairs": pairs}
 
 
 _loaded: dict[str, Any] | None = None

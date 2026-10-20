@@ -1,4 +1,4 @@
-"""Grow → Skills, drawn: next steps, bridges (a flow from your skills to rising ones), the ladder (your rising
+"""Grow → Skills, drawn: directions (where the field is going, and how it touches you), next steps, bridges (a flow from your skills to rising ones), the ladder (your rising
 strengths joined to new rising skills) and your lens (what your feed sees against the world). skills.shapes() works
 out every number; the phone draws the same four (components/skill-views.tsx). Skill names come from myGeeKy's own
 dictionary, but they're still drawn as plain text.
@@ -6,11 +6,11 @@ dictionary, but they're still drawn as plain text.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QToolTip, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QToolTip, QVBoxLayout, QWidget
 
 from .growth_ui import qcolor
 
@@ -213,7 +213,8 @@ def _legend(items: list[tuple[str, str]], theme: dict[str, Any]) -> QWidget:
 class SkillViews(QWidget):
     """The four views, one under the other, each with a line saying what it shows."""
 
-    def __init__(self, shapes: dict[str, Any], theme: dict[str, Any]) -> None:
+    def __init__(self, shapes: dict[str, Any], theme: dict[str, Any], on_path: Callable[[str], None] | None = None,
+                 started: set[str] | None = None) -> None:
         super().__init__()
         self.setStyleSheet("background:transparent;")
         dark = bool(theme.get("dark"))
@@ -222,6 +223,12 @@ class SkillViews(QWidget):
         lay.setSpacing(4)
         head = f"color:{theme['text']}; font-size:11px; font-weight:800; letter-spacing:0.5px; margin-top:8px;"
         hint = f"color:{theme['muted']}; font-size:10.5px;"
+        if shapes.get("directions"):
+            lay.addWidget(_label("🚀 DIRECTIONS", head))
+            lay.addWidget(_label("Where your field is heading: rising for sure across new preprints, and tied to "
+                                 "what you know, even if your feed hasn't shown them yet.", hint))
+            for d in shapes["directions"]:
+                lay.addWidget(self._direction(d, theme, dark, on_path, d["name"] in (started or set())))
         if shapes["next"]:
             lay.addWidget(_label("🧭 NEXT STEPS", head))
             lay.addWidget(_label("What to learn, and the skill of yours that leads there.", hint))
@@ -244,6 +251,34 @@ class SkillViews(QWidget):
             lay.addWidget(_legend([(YOURS[dark], "your feed"), (RISING[dark], "the world"),
                                    (BOTH[dark], "names in green are yours")], theme))
             lay.addWidget(LensView(shapes["lens"], theme))
+
+    @staticmethod
+    def _direction(d: dict[str, Any], theme: dict[str, Any], dark: bool, on_path: Callable[[str], None] | None,
+                   started: bool) -> QWidget:
+        w = QWidget()
+        w.setObjectName("direction")
+        w.setStyleSheet(f"#direction {{ background:rgba(128,128,128,22); border-left:3px solid {RISING[dark]}; "
+                        "border-radius:6px; } QLabel { background:transparent; }")
+        col = QVBoxLayout(w)
+        col.setContentsMargins(10, 6, 8, 6)
+        col.setSpacing(2)
+        top = QHBoxLayout()
+        top.addWidget(_label(d["name"], f"color:{theme['text']}; font-size:12.5px; font-weight:800;"), 1)
+        top.addWidget(_label(f"×{d['growth']:g}", f"color:{RISING[dark]}; font-size:11px; font-weight:800;"))
+        col.addLayout(top)
+        col.addWidget(_label(d["line"], f"color:{theme['muted']}; font-size:10.5px;"))
+        if on_path:
+            btn = QPushButton("✓ In your protocols" if started else "🧭 Make it a protocol")
+            btn.setEnabled(not started)
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.setStyleSheet(f"QPushButton {{ color:{theme['text']}; background:rgba(128,128,128,40); border:none; "
+                              "border-radius:8px; padding:3px 9px; font-size:10.5px; }")
+            btn.clicked.connect(lambda: on_path(d["name"]))
+            row = QHBoxLayout()
+            row.addWidget(btn)
+            row.addStretch(1)
+            col.addLayout(row)
+        return w
 
     @staticmethod
     def _step(i: int, n: dict[str, Any], top: int, theme: dict[str, Any], dark: bool) -> QWidget:

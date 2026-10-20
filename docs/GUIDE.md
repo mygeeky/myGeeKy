@@ -89,9 +89,15 @@ experiments* and *images into numbers with Fiji* are for.
   for you is picked by your interests, so on its own it would call anything you started reading about "rising".
   Growth is therefore measured where no one picked for you: the explore share of your feeds, plus one shared file
   (the same for everyone, rebuilt daily) counting each skill in an even sample of new bioRxiv, medRxiv and arXiv
-  preprints, the last 45 days against the 45 before. A skill is **📈 rising** only when that growth is clear for
+  preprints, the last 45 days against the 45 before and against the same 45 days a year ago. A skill is **📈 rising** only when that growth is clear for
   how few mentions it has; **🌍 beyond your usual** when it's rising across the field but rare in your feed; **🪞 in
-  your feed only** when it's busy mostly in what you chose to read. Four views sit above the list: 🧭 next steps
+  your feed only** when it's busy mostly in what you chose to read. **🚀 Directions** come first: where your field
+  is heading, even if your feed never mentioned it. Anything rising for sure across the new preprints counts, over
+  the last 45 days or since the same 45 days a year ago (a big shift can be flat lately but many times bigger than
+  a year ago), as long as preprints tie it to a skill you have, directly or through one skill between. The
+  dictionary has direction-sized entries for this, such as genomic language models, AI agents, virtual cell, AI
+  protein design and self-driving labs: "×7.7 in new preprints since a year ago; appears with your Genomics in 9 of
+  them". Then 🧭 next steps
   (what to learn, and the skill of yours that leads there), 🌉 bridges (bands from your skills to rising ones),
   🪜 rising with you (your rising strengths and the new skills they appear with) and 🔍 your lens (how often a skill
   shows in your feed against the world).

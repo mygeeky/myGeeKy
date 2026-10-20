@@ -178,7 +178,7 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
         holdSkills || !skills ? <GeekLoader text="Reading your field…" /> : (
           <View>
             {!skills.skills.length ? <Empty>No rising skills yet. They come from what myGeeKy read about your field: open Papers, Repos and AI models once, then come back.</Empty> : null}
-            {skills.skills.length ? <SkillViews shapes={shapes(skills)} /> : null}
+            {skills.skills.length || skills.directions.length ? <SkillViews shapes={shapes(skills)} onPath={onPath} started={started} /> : null}
             {skills.skills.length ? <Text style={s.section}>ALL SUGGESTIONS</Text> : null}
             {skills.skills.map((sk) => (
               <SkillCard key={sk.name} sk={sk} started={started.has(sk.name)} onPath={() => onPath(sk.name)}

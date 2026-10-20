@@ -1,5 +1,5 @@
 {
- "version": "2026-10-14b",
+ "version": "2026-10-20",
  "skills": [
   {
    "name": "Python",
@@ -1450,6 +1450,273 @@
    "aliases": [
     "power analysis",
     "sample size calculation"
+   ]
+  },
+  {
+   "name": "Genomic language models",
+   "kind": "direction",
+   "aliases": [
+    "dna language model",
+    "dna language models",
+    "genomic language model",
+    "genomic language models",
+    "genomic foundation model",
+    "genomic foundation models",
+    "nucleotide transformer",
+    "evo 2",
+    "hyenadna",
+    "alphagenome"
+   ]
+  },
+  {
+   "name": "Single-cell foundation models",
+   "kind": "direction",
+   "aliases": [
+    "single-cell foundation model",
+    "single-cell foundation models",
+    "cell foundation model",
+    "scgpt",
+    "geneformer",
+    "scfoundation"
+   ]
+  },
+  {
+   "name": "Virtual cell",
+   "kind": "direction",
+   "aliases": [
+    "virtual cell",
+    "virtual cells",
+    "in silico perturbation",
+    "perturbation prediction",
+    "perturbation modeling"
+   ]
+  },
+  {
+   "name": "AI protein design",
+   "kind": "direction",
+   "aliases": [
+    "protein design",
+    "de novo protein",
+    "rfdiffusion",
+    "proteinmpnn",
+    "generative protein",
+    "protein generation"
+   ]
+  },
+  {
+   "name": "AI drug design",
+   "kind": "direction",
+   "aliases": [
+    "generative chemistry",
+    "ai drug discovery",
+    "ai-driven drug discovery",
+    "molecular generation",
+    "de novo drug design",
+    "generative molecular design"
+   ]
+  },
+  {
+   "name": "Self-driving labs",
+   "kind": "direction",
+   "aliases": [
+    "self-driving lab",
+    "self-driving labs",
+    "self-driving laboratory",
+    "autonomous laboratory",
+    "autonomous lab",
+    "lab automation",
+    "laboratory automation",
+    "cloud lab"
+   ]
+  },
+  {
+   "name": "AI scientists",
+   "kind": "direction",
+   "aliases": [
+    "ai scientist",
+    "ai scientists",
+    "ai co-scientist",
+    "automated scientific discovery",
+    "autonomous research agent",
+    "agents for science",
+    "ai for scientific discovery"
+   ]
+  },
+  {
+   "name": "Multimodal AI",
+   "kind": "direction",
+   "aliases": [
+    "multimodal foundation model",
+    "multimodal foundation models",
+    "vision-language model",
+    "vision-language models",
+    "multimodal large language model",
+    "multimodal llm",
+    "multimodal biomedical"
+   ]
+  },
+  {
+   "name": "LLM fine-tuning",
+   "kind": "direction",
+   "aliases": [
+    "lora fine-tuning",
+    "instruction tuning",
+    "parameter-efficient fine-tuning",
+    "fine-tuning large language models",
+    "fine-tuned llm"
+   ]
+  },
+  {
+   "name": "Medical AI",
+   "kind": "direction",
+   "aliases": [
+    "medical llm",
+    "medical llms",
+    "clinical large language model",
+    "clinical llm",
+    "medical foundation model",
+    "clinical ai",
+    "medical ai"
+   ]
+  },
+  {
+   "name": "Computational pathology",
+   "kind": "direction",
+   "aliases": [
+    "computational pathology",
+    "digital pathology",
+    "whole slide image",
+    "whole-slide image",
+    "pathology foundation model"
+   ]
+  },
+  {
+   "name": "Spatial multi-omics",
+   "kind": "direction",
+   "aliases": [
+    "spatial proteomics",
+    "spatial multi-omics",
+    "spatial multiomics"
+   ]
+  },
+  {
+   "name": "Causal machine learning",
+   "kind": "direction",
+   "aliases": [
+    "causal machine learning",
+    "causal discovery",
+    "causal representation learning"
+   ]
+  },
+  {
+   "name": "Knowledge graphs",
+   "kind": "direction",
+   "aliases": [
+    "knowledge graph",
+    "knowledge graphs",
+    "biomedical knowledge graph"
+   ]
+  },
+  {
+   "name": "Mechanistic interpretability",
+   "kind": "direction",
+   "aliases": [
+    "mechanistic interpretability",
+    "sparse autoencoder",
+    "sparse autoencoders",
+    "circuit analysis"
+   ]
+  },
+  {
+   "name": "LLM evaluation",
+   "kind": "direction",
+   "aliases": [
+    "llm evaluation",
+    "evaluating large language models",
+    "llm benchmark",
+    "llm-as-a-judge"
+   ]
+  },
+  {
+   "name": "Reasoning models",
+   "kind": "direction",
+   "aliases": [
+    "reasoning model",
+    "reasoning models",
+    "chain-of-thought",
+    "test-time compute",
+    "test-time scaling"
+   ]
+  },
+  {
+   "name": "Quantum machine learning",
+   "kind": "direction",
+   "aliases": [
+    "quantum machine learning",
+    "quantum neural network",
+    "variational quantum"
+   ]
+  },
+  {
+   "name": "Small language models",
+   "kind": "direction",
+   "aliases": [
+    "small language model",
+    "small language models",
+    "on-device ai",
+    "edge ai"
+   ]
+  },
+  {
+   "name": "Liquid biopsy",
+   "kind": "direction",
+   "aliases": [
+    "liquid biopsy",
+    "cell-free dna",
+    "cfdna",
+    "circulating tumor dna",
+    "ctdna"
+   ]
+  },
+  {
+   "name": "Biobank genomics",
+   "kind": "direction",
+   "aliases": [
+    "biobank",
+    "biobanks",
+    "uk biobank",
+    "all of us research program",
+    "finngen"
+   ]
+  },
+  {
+   "name": "Digital health",
+   "kind": "direction",
+   "aliases": [
+    "digital health",
+    "digital biomarker",
+    "digital biomarkers",
+    "wearable sensor",
+    "wearable sensors",
+    "wearables"
+   ]
+  },
+  {
+   "name": "Precision oncology",
+   "kind": "direction",
+   "aliases": [
+    "precision oncology",
+    "precision medicine in cancer",
+    "molecular tumor board"
+   ]
+  },
+  {
+   "name": "Synthetic data",
+   "kind": "direction",
+   "aliases": [
+    "synthetic data",
+    "synthetic datasets",
+    "data synthesis"
    ]
   }
  ]

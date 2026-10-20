@@ -1,8 +1,8 @@
-// Grow → Skills, drawn: next steps, bridges (a flow from your skills to rising ones), the ladder (your rising
+// Grow → Skills, drawn: directions (where the field is going, and how it touches you), next steps, bridges (a flow from your skills to rising ones), the ladder (your rising
 // strengths joined to new rising skills) and your lens (what your feed sees against the world) -- the desktop's
 // gui/skillviews_ui.py. lib/skills.ts shapes() works out every number (the same as skills.shapes).
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import type { Link, Shapes } from '../lib/skills';
 import { C } from '../lib/theme';
@@ -106,11 +106,32 @@ function Lens({ lens, width }: { lens: Shapes['lens']; width: number }) {
   );
 }
 
-export function SkillViews({ shapes }: { shapes: Shapes }) {
+export function SkillViews({ shapes, onPath, started }: { shapes: Shapes; onPath?: (name: string) => void; started?: Set<string> }) {
   const [width, setWidth] = useState(0);
   const top = Math.max(1, ...shapes.next.map((n) => n.weight));
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {shapes.directions.length ? <>
+        <Text style={st.head}>🚀 DIRECTIONS</Text>
+        <Text style={st.muted}>Where your field is heading: rising for sure across new preprints, and tied to what you know, even if your feed hasn&apos;t shown them yet.</Text>
+        {shapes.directions.map((d) => {
+          const done = !!started?.has(d.name);
+          return (
+            <View key={d.name} style={st.dir}>
+              <View style={st.dirTop}>
+                <Text style={[st.name, { flex: 1 }]}>{d.name}</Text>
+                <Text style={st.growth}>×{d.growth}</Text>
+              </View>
+              <Text style={st.muted}>{d.line}</Text>
+              {onPath ? (
+                <Pressable disabled={done} onPress={() => onPath(d.name)} style={({ pressed }) => [st.btn, (pressed || done) && { opacity: 0.6 }]}>
+                  <Text style={st.btnText}>{done ? '✓ In your protocols' : '🧭 Make it a protocol'}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          );
+        })}
+      </> : null}
       {shapes.next.length ? <>
         <Text style={st.head}>🧭 NEXT STEPS</Text>
         <Text style={st.muted}>What to learn, and the skill of yours that leads there.</Text>
@@ -157,4 +178,9 @@ const st = StyleSheet.create({
   track: { width: 54, height: 7, borderRadius: 4, backgroundColor: C.line, overflow: 'hidden' },
   fill: { height: 7, borderRadius: 4, backgroundColor: RISING },
   legend: { marginBottom: 2 },
+  dir: { backgroundColor: C.card, borderLeftWidth: 3, borderLeftColor: RISING, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 6 },
+  dirTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  growth: { color: RISING, fontSize: 12.5, fontWeight: '800' },
+  btn: { alignSelf: 'flex-start', backgroundColor: C.cardHi, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, marginTop: 2 },
+  btnText: { color: C.text, fontSize: 12, fontWeight: '700' },
 });

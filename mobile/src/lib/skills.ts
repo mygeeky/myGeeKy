@@ -99,20 +99,28 @@ export type Rising = { name: string; kind: string; score: number; growth: number
 export type Link = [string, string, number];
 
 // --------------------------------------------------------------------------- the world file (skilltrends.py)
-export type Trends = { version: string; docs: [number, number]; skills: Record<string, [number, number]> };
+export type Trends = { version: string; docs: number[]; skills: Record<string, number[]>; pairs: Record<string, number> };   // [older, newer, a year ago]
 const int = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) && x >= 0 && x < 1e8 ? Math.trunc(x) : 0);
 
 export function cleanTrends(data: any): Trends {
   data = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
   const known = new Set(vocabulary().map((s) => s.name));
-  const docs = Array.isArray(data.docs) && data.docs.length === 2 ? data.docs : [0, 0];
-  const skills: Record<string, [number, number]> = {};
+  const docs = Array.isArray(data.docs) && (data.docs.length === 2 || data.docs.length === 3) ? data.docs : [0, 0];
+  const skills: Record<string, number[]> = {};
   const raw = data.skills && typeof data.skills === 'object' && !Array.isArray(data.skills) ? data.skills : {};
   for (const [name, pair] of Object.entries(raw)) {
-    if (known.has(name) && Array.isArray(pair) && pair.length === 2) skills[name] = [int(pair[0]), int(pair[1])];
+    if (known.has(name) && Array.isArray(pair) && (pair.length === 2 || pair.length === 3)) {   // an older file has no year-ago count
+      skills[name] = [int(pair[0]), int(pair[1]), pair.length === 3 && docs.length === 3 ? int(pair[2]) : 0];
+    }
+  }
+  const pairs: Record<string, number> = {};
+  const rawPairs = data.pairs && typeof data.pairs === 'object' && !Array.isArray(data.pairs) ? data.pairs : {};
+  for (const [key, k] of Object.entries(rawPairs).slice(0, 20000)) {
+    const at = key.indexOf('|'), a = at < 0 ? key : key.slice(0, at), b = at < 0 ? '' : key.slice(at + 1);
+    if (known.has(a) && known.has(b) && a < b && int(k)) pairs[`${a}|${b}`] = int(k);
   }
   const version = String(data.version ?? '');
-  return { version: version.length === 10 && version[4] === '-' ? version : '', docs: [int(docs[0]), int(docs[1])], skills };
+  return { version: version.length === 10 && version[4] === '-' ? version : '', docs: [int(docs[0]), int(docs[1]), docs.length === 3 ? int(docs[2]) : 0], skills, pairs };
 }
 
 /** The newest world file: the copy in the app, or a newer one fetched from GitHub (at most once a day). */
@@ -176,6 +184,67 @@ export function corrected(docs: { skills: Iterable<string>; pick: string; recent
   return out;
 }
 
+// --------------------------------------------------------------------------- directions (skills.directions)
+const DIRECTIONS = 5;
+const DIRECTION_BONUS = 1.3;
+const GROWTH_CAP = 5;
+export type Direction = { name: string; kind: string; growth: number; lo: number; hi: number; since: 'year' | 'weeks'; mentions: number; with: string[];
+  together: number; via: string; score: number };
+
+/** Where the field is going and how it touches you: skills rising for sure across new preprints that you don't have,
+ *  tied to yours by preprints mentioning both, or through one skill that is. `skip`: already suggested or hidden. */
+export function directions(world: Record<string, Corrected>, trends: Trends, have: Set<string>, skip: Set<string>,
+  kinds: Record<string, string>, top = DIRECTIONS): Direction[] {
+  const near: Record<string, Record<string, number>> = {};
+  for (const [key, k] of Object.entries(trends.pairs ?? {})) {
+    const at = key.indexOf('|'), a = key.slice(0, at), b = key.slice(at + 1);
+    (near[a] ??= {})[b] = k;
+    (near[b] ??= {})[a] = k;
+  }
+  const yoursOf = (n: string) => Object.entries(near[n] ?? {}).filter(([h]) => have.has(h)).sort((x, y) => y[1] - x[1] || cmp(x[0], y[0]));
+  const rows: Direction[] = [];
+  for (const [s, c] of Object.entries(world)) {
+    if (have.has(s) || skip.has(s)) continue;
+    const o = trends.skills[s]?.[0] ?? 0, r = trends.skills[s]?.[1] ?? 0, y = trends.skills[s]?.[2] ?? 0, docs = trends.docs;
+    const mentions = o + r;
+    let year: [number, number, number] | null = null;
+    if ((docs[2] ?? 0) && r + y >= MIN_EVIDENCE) {
+      const lg = Math.log(((r + 0.5) / (docs[1] + 1)) / ((y + 0.5) / (docs[2] + 1)));
+      const se = Math.sqrt(1 / (r + 0.5) + 1 / (y + 0.5));
+      if (lg - SURE_Z * se > Math.log(SURE_ABOVE)) year = [round(Math.exp(lg), 2), round(Math.exp(lg - SURE_Z * se), 2), round(Math.exp(lg + SURE_Z * se), 2)];
+    }
+    if (!mentions || !(year || (c.sure && c.growth != null))) continue;
+    const [growth, lo, hi] = year ?? [c.growth as number, c.lo, c.hi];
+    let mine = yoursOf(s), via = '';
+    let together = mine.reduce((a, [, k]) => a + k, 0), tie = together / mentions;
+    if (!mine.length) {                               // one step further: a skill seen with it, and with yours
+      let best: [number, string, [string, number][]] | null = null;
+      for (const [n, k] of Object.entries(near[s] ?? {})) {
+        const yours = yoursOf(n);
+        if (have.has(n) || !yours.length) continue;
+        const step = Math.min(k, yours.reduce((a, [, j]) => a + j, 0));
+        if (!best || step > best[0] || (step === best[0] && n > best[1])) best = [step, n, yours];
+      }
+      if (!best) continue;
+      [together, via, mine] = best;
+      tie = (0.5 * together) / mentions;
+    }
+    const score = Math.log1p(mentions) * Math.min(growth, GROWTH_CAP) * (0.25 + 0.75 * Math.sqrt(Math.min(tie, 1)))
+      * (kinds[s] === 'direction' ? DIRECTION_BONUS : 1);
+    rows.push({ name: s, kind: kinds[s] ?? '', growth, lo, hi, since: year ? 'year' : 'weeks', mentions, with: mine.slice(0, 2).map(([h]) => h),
+      together, via, score: round(score) });
+  }
+  return rows.sort((a, b) => b.score - a.score || cmp(a.name, b.name)).slice(0, top);
+}
+
+/** Why a direction is shown (skills.direction_line: the same words on the computer). */
+export function directionLine(d: Direction): string {
+  const w = d.with.join(' and ');
+  const grew = `×${d.growth} in new preprints ${d.since === 'year' ? 'since a year ago' : 'over the last 45 days'}`;
+  if (d.via) return `${grew}; close to ${d.via}, which appears with your ${w}`;
+  return `${grew}; appears with your ${w} in ${d.together} of them`;
+}
+
 /** One line on whether a skill is really rising, under its card (skills.note: the same words on the computer). */
 export function note(s: Rising): string {
   const g = s.growth;
@@ -187,6 +256,7 @@ export function note(s: Rising): string {
 
 export type LensRow = { name: string; mine: number; world: number; yours: boolean };
 export type Shapes = {
+  directions: (Direction & { line: string })[];
   next: { name: string; via: string; more: number; weight: number; sure: boolean; beyond: boolean }[];
   flow: { left: string[]; right: string[]; bands: Link[] };
   ladder: { left: string[]; right: string[]; links: Link[] };
@@ -196,7 +266,7 @@ const ratio = (r: LensRow) => (r.mine + 0.002) / (r.world + 0.002);
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 /** The four views (skills.shapes): next steps, flow, ladder and your lens. */
-export function shapes(result: { skills: Rising[]; strengths: Rising[]; links: Link[] }): Shapes {
+export function shapes(result: { skills: Rising[]; strengths: Rising[]; links: Link[]; directions?: Direction[] }): Shapes {
   const sug = result.skills, strong = result.strengths, links = result.links;
   const names = sug.map((s) => s.name);
   const next = sug.slice(0, 6).map((s) => {
@@ -212,6 +282,7 @@ export function shapes(result: { skills: Rising[]; strengths: Rising[]; links: L
   const rows: LensRow[] = [...strong, ...sug].map((s, i) => ({ name: s.name, mine: s.mine ?? 0, world: s.world ?? 0, yours: i < strong.length }))
     .filter((r) => r.mine + r.world > 0);
   return {
+    directions: (result.directions ?? []).map((d) => ({ ...d, line: directionLine(d) })),
     next,
     flow: { left, right, bands: links.filter((l) => left.includes(l[0]) && right.includes(l[1])) },
     ladder: { left: lLeft, right: lRight, links: links.filter((l) => lLeft.includes(l[0]) && lRight.includes(l[1])) },
@@ -230,7 +301,7 @@ async function history(): Promise<Record<string, Record<string, number>>> {
   }
 }
 
-export type RisingResult = { skills: Rising[]; strengths: Rising[]; hidden: number; links: Link[] };
+export type RisingResult = { skills: Rising[]; strengths: Rising[]; hidden: number; links: Link[]; directions: Direction[] };
 
 export async function rising(opts: { docs: Doc[]; mine: string; weights: Weights; github: boolean; top?: number; save?: boolean;
   trends?: Trends }): Promise<RisingResult> {
@@ -291,7 +362,8 @@ export async function rising(opts: { docs: Doc[]; mine: string; weights: Weights
     return Math.max(0.5, Math.min(growth, 3));
   };
   const feed = Object.fromEntries(vocabulary().filter((s) => hits[s.name]).map((s) => [s.name, feedGrowth(s.name)]));
-  const world = corrected(seen, opts.trends ?? await loadTrends(), feed);
+  const trends = opts.trends ?? await loadTrends();
+  const world = corrected(seen, trends, feed);
   const out: Rising[] = [];
   const strengths: Rising[] = [];
   let hidden = 0;
@@ -322,7 +394,10 @@ export async function rising(opts: { docs: Doc[]; mine: string; weights: Weights
   const top = out.slice(0, opts.top ?? 12), shown = new Set(top.map((x) => x.name));
   const links = [...pairs].map(([k, c]) => [...k.split('\n'), c] as Link).filter((l) => shown.has(l[1]))
     .sort((a, b) => b[2] - a[2] || cmp(a[0], b[0]) || cmp(a[1], b[1])).slice(0, 80);
-  return { skills: top, strengths: strengths.slice(0, 8), hidden, links };
+  const hiddenNames = vocabulary().filter((s) => taste.voteOf(votes, 'skill', s.name) < 0).map((s) => s.name);
+  const ahead = directions(world, trends, have, new Set([...out.slice(0, 6).map((x) => x.name), ...hiddenNames]),
+    Object.fromEntries(vocabulary().map((s) => [s.name, s.kind])));
+  return { skills: top, strengths: strengths.slice(0, 8), hidden, links, directions: ahead };
 }
 
 export { loadWins };

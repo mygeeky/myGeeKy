@@ -31,6 +31,13 @@ only what's close to you. A skill busy mostly in your own feed is "rising in
 your feed only"; one rising in the world but rare in your feed is "rising
 beyond your usual". `shapes` turns the result into the four views.
 
+**Directions.** Suggestions above come from your feed, so they stay near what
+you do. `directions` looks wider: anything rising for sure across new
+preprints, whether or not your feed mentions it, tied to your skills by the
+preprints that mention both (or, one step further, through a skill that is).
+The dictionary has direction-sized entries for this (kind "direction":
+genomic language models, AI scientists, virtual cell...).
+
 Everything here is local: it reads files myGeeKy already saved (and the world
 file), and sends nothing.
 """
@@ -60,6 +67,9 @@ SURE_Z = 1.28               # "sure it's rising": the lower edge of an 80% inter
 SURE_ABOVE = 1.1            # ... is above 1.1x
 MIN_EVIDENCE = 3            # world mentions needed before its growth counts at all
 LENS_LOW, LENS_HIGH = 0.7, 2.0   # your feed's share of a skill against the world's: rare / mostly yours
+DIRECTIONS = 5
+DIRECTION_BONUS = 1.3       # a whole direction beats a single tool at the same growth
+GROWTH_CAP = 5.0            # beyond this, more growth doesn't push a direction higher
 
 # where a mention comes from: (one, several, weight)
 SOURCES = {
@@ -244,14 +254,14 @@ def corrected(docs: list[dict[str, Any]], trends: dict[str, Any], feed_growth: d
     `trends`: the shared world file (skilltrends.clean); `feed_growth`: growth over everything you read.
     For each skill: growth (x, with an 80% interval lo..hi), sure (rising for certain), how often it shows in your
     feed and in the world (share of documents), lens (yours / world's), self_made and beyond."""
-    t_old, t_new = trends.get("docs") or [0, 0]
+    t_old, t_new = (trends.get("docs") or [0, 0])[:2]
     n = {"old": t_old, "new": t_new, "mine": 0}
     old: dict[str, float] = defaultdict(float)
     new: dict[str, float] = defaultdict(float)
     mine: dict[str, int] = defaultdict(int)
-    for name, (o, r) in (trends.get("skills") or {}).items():
-        old[name] += o
-        new[name] += r
+    for name, pair in (trends.get("skills") or {}).items():
+        old[name] += pair[0]
+        new[name] += pair[1]
     for d in docs:
         if d["pick"] == "wide":
             side = new if d["recent"] else old
@@ -293,12 +303,76 @@ def note(s: dict[str, Any]) -> str:
     return ""
 
 
+def directions(world: dict[str, dict[str, Any]], trends: dict[str, Any], have: set[str], skip: set[str],
+               kinds: dict[str, str], top: int = DIRECTIONS) -> list[dict[str, Any]]:
+    """Where the field is going and how it touches you: skills you don't have that are rising for sure across new
+    preprints -- over the last weeks (`world`, from corrected) or since a year ago (the world file's third window, which
+    shows big shifts that are flat lately) -- tied to yours by preprints mentioning both, or through one skill that is.
+    `skip`: names already suggested or hidden."""
+    docs = list(trends.get("docs") or [0, 0]) + [0]
+    near: dict[str, dict[str, int]] = defaultdict(dict)       # skill -> {skill seen with it: together}
+    for key, k in (trends.get("pairs") or {}).items():
+        a, _, b = key.partition("|")
+        near[a][b] = k
+        near[b][a] = k
+    counts = trends.get("skills") or {}
+    rows = []
+    for s, c in world.items():
+        if s in have or s in skip:
+            continue
+        pair = list(counts.get(s, [0, 0])) + [0]
+        o, r, y = pair[0], pair[1], pair[2]
+        mentions = o + r
+        year = None
+        if docs[2] and r + y >= MIN_EVIDENCE:
+            lg = math.log(((r + 0.5) / (docs[1] + 1)) / ((y + 0.5) / (docs[2] + 1)))
+            se = math.sqrt(1 / (r + 0.5) + 1 / (y + 0.5))
+            if lg - SURE_Z * se > math.log(SURE_ABOVE):
+                year = (_round(math.exp(lg), 2), _round(math.exp(lg - SURE_Z * se), 2), _round(math.exp(lg + SURE_Z * se), 2))
+        if not mentions or not (year or c.get("sure")):
+            continue
+        growth, lo, hi = year or (c["growth"], c["lo"], c["hi"])
+        mine = sorted(((h, k) for h, k in near[s].items() if h in have), key=lambda x: (-x[1], x[0]))
+        together, via = sum(k for _, k in mine), ""
+        tie = together / mentions
+        if not mine:                                  # one step further: a skill seen with it, and with yours
+            best = None
+            for n, k in near[s].items():
+                yours = sorted(((h, j) for h, j in near[n].items() if h in have), key=lambda x: (-x[1], x[0]))
+                if n not in have and yours:
+                    step = min(k, sum(j for _, j in yours))
+                    if best is None or (step, n) > (best[0], best[1]):
+                        best = (step, n, yours)
+            if best is None:
+                continue
+            together, via, mine = best[0], best[1], best[2]
+            tie = 0.5 * together / mentions
+        g = min(growth, GROWTH_CAP)
+        score = math.log1p(mentions) * g * (0.25 + 0.75 * math.sqrt(min(tie, 1.0))) * \
+            (DIRECTION_BONUS if kinds.get(s) == "direction" else 1.0)
+        rows.append({"name": s, "kind": kinds.get(s, ""), "growth": growth, "lo": lo, "hi": hi, "since": "year" if year else "weeks",
+                     "mentions": mentions, "with": [h for h, _ in mine[:2]], "together": together, "via": via,
+                     "score": _round(score)})
+    rows.sort(key=lambda r: (-r["score"], r["name"]))
+    return rows[:top]
+
+
+def direction_line(d: dict[str, Any]) -> str:
+    """Why a direction is shown (the same words on the phone)."""
+    w = " and ".join(d["with"])
+    grew = f"×{d['growth']:g} in new preprints " + ("since a year ago" if d["since"] == "year" else "over the last 45 days")
+    if d["via"]:
+        return f"{grew}; close to {d['via']}, which appears with your {w}"
+    return f"{grew}; appears with your {w} in {d['together']} of them"
+
+
 def _ratio(r: dict[str, Any]) -> float:
     return (r["mine"] + 0.002) / (r["world"] + 0.002)
 
 
 def shapes(result: dict[str, Any]) -> dict[str, Any]:
-    """The four views of Rising skills, from `rising()`'s answer:
+    """The views of Rising skills, from `rising()`'s answer:
+    directions -- where the field is going (directions()), each with its why-line;
     next   -- for each suggestion, the skill of yours that leads there (and how many more of yours do);
     flow   -- bands from your skills to suggestions, as wide as the documents they share;
     ladder -- your rising strengths joined to the suggestions they appear with;
@@ -324,7 +398,8 @@ def shapes(result: dict[str, Any]) -> dict[str, Any]:
             for i, s in enumerate(strong + sug) if s.get("mine", 0.0) + s.get("world", 0.0) > 0]
     more_mine = sorted((r for r in rows if r["mine"] > r["world"]), key=lambda r: (-_ratio(r), r["name"]))[:5]
     more_world = sorted((r for r in rows if r["world"] > r["mine"]), key=lambda r: (_ratio(r), r["name"]))[:5]
-    return {"next": nxt, "flow": flow, "ladder": ladder, "lens": {"mine": more_mine, "world": more_world}}
+    return {"directions": [dict(d, line=direction_line(d)) for d in result.get("directions") or []],
+            "next": nxt, "flow": flow, "ladder": ladder, "lens": {"mine": more_mine, "world": more_world}}
 
 
 # --------------------------------------------------------------------------- rising
@@ -416,7 +491,8 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
 
     from . import skilltrends
     feed = {s["name"]: score_of(s["name"])[1] for s in vocabulary() if hits[s["name"]]}
-    world = corrected(seen, skilltrends.load() if trends is None else trends, feed)
+    trends = skilltrends.load() if trends is None else trends
+    world = corrected(seen, trends, feed)
     out, strengths, hidden = [], [], 0
     for s in vocabulary():
         name = s["name"]
@@ -446,7 +522,11 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
     out.sort(key=lambda r: r["score"], reverse=True)
     strengths.sort(key=lambda r: r["score"], reverse=True)
     shown = {r["name"] for r in out[:top]}
+    hidden_names = {s["name"] for s in vocabulary() if int(votes.get(taste.key_of("skill", s["name"]), {}).get("vote", 0)) < 0}
+    ahead = directions(world, trends, have,
+                       {r["name"] for r in out[:6]} | hidden_names, {s["name"]: s["kind"] for s in vocabulary()})
     links = sorted(([h, s, k] for (h, s), k in pairs.items() if s in shown), key=lambda x: (-x[2], x[0], x[1]))[:80]
     return {"skills": out[:top], "strengths": strengths[:8], "hidden": hidden, "documents": len(docs), "links": links,
+            "directions": ahead,
             "have": sorted(have),                  # the skills you already show (Collaborators reuses them)
             "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
