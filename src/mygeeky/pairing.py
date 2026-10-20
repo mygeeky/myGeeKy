@@ -58,6 +58,8 @@ def payload(cfg: MyGeekyConfig, token: str | None = None) -> str:
     data: dict[str, Any] = {"u": cfg.github_username, "o": cfg.orcid_id or "",
                             "k": list(cfg.keywords)[:40], "t": list(cfg.topics)[:40],
                             "w": terms, "f": field, "b": badges}
+    if cfg.openalex_id and not cfg.orcid_id:     # "Is this you?": the author you confirmed (whois.py)
+        data["a"] = cfg.openalex_id
     if token:
         data["tok"] = token
     raw = json.dumps(data, separators=(",", ":"), ensure_ascii=True).encode("ascii")

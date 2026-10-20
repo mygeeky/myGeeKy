@@ -98,8 +98,8 @@ export function GrowView() {
     loadLists().then(setLists).catch(() => undefined);
     fieldDocs().then(setDocs).catch(() => setDocs([]));
     loadWins().then(setWins).catch(() => undefined);
-    refreshWins(me, settings?.orcid ?? '', token).then(setWins).catch(() => undefined);
-  }, [me, settings?.orcid, token]);
+    refreshWins(me, settings?.orcid || settings?.openalex || '', token).then(setWins).catch(() => undefined);
+  }, [me, settings?.orcid, settings?.openalex, token]);
 
   // the planets keep reading your field while you're elsewhere: look again when you come back to it
   useEffect(() => {

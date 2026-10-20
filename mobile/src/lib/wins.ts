@@ -71,9 +71,11 @@ async function openalex(path: string): Promise<any> {
   return r.json();
 }
 
-async function readPapers(orcid: string): Promise<Record<string, Paper>> {
-  if (!/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(orcid)) return {};
-  const author = await openalex(`/authors/orcid:${orcid}?select=id`);
+/** `who`: your ORCID iD, or the OpenAlex author id you confirmed ("Is this you?", whois.ts). */
+async function readPapers(who: string): Promise<Record<string, Paper>> {
+  const path = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(who) ? `orcid:${who}` : /^A\d{2,12}$/.test(who) ? who : '';
+  if (!path) return {};
+  const author = await openalex(`/authors/${path}?select=id`);
   const aid = String(author?.id ?? '').split('/').pop() ?? '';
   if (!/^A\d+$/.test(aid)) return {};
   const data = await openalex(`/works?filter=author.id:${aid}&per-page=200&select=id,title,cited_by_count,doi`);

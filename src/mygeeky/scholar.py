@@ -129,8 +129,10 @@ def _abstract_from_inverted_index(inv: dict[str, list[int]] | None) -> str:
     return " ".join(word for _, word in sorted(positions))
 
 
-def fetch_openalex(orcid: str, max_works: int = 100) -> dict[str, Any]:
-    author = _get_json(f"{OPENALEX_API}/authors/orcid:{orcid}")
+def fetch_openalex(orcid: str, max_works: int = 100, author_id: str = "") -> dict[str, Any]:
+    """Your OpenAlex record and works, by ORCID -- or, with no ORCID, by the author id you confirmed ("Is this
+    you?", whois.py)."""
+    author = _get_json(f"{OPENALEX_API}/authors/orcid:{orcid}" if orcid else f"{OPENALEX_API}/authors/{author_id}")
     if not author:
         return {"author_id": "", "topics": [], "works": []}
     author_id = (author.get("id") or "").rsplit("/", 1)[-1]
@@ -153,7 +155,7 @@ def fetch_openalex(orcid: str, max_works: int = 100) -> dict[str, Any]:
             "works_count": author.get("works_count", 0), "topics": topics, "works": works}
 
 
-def refresh_scholar_profile(orcid: str = "", scholar_id: str = "") -> dict[str, Any]:
+def refresh_scholar_profile(orcid: str = "", scholar_id: str = "", openalex_id: str = "") -> dict[str, Any]:
     """Fetch ORCID + OpenAlex for `orcid` and/or the Google Scholar profile
     `scholar_id` (either may be blank) and cache the combined result.
     `profile["google_scholar_blocked"]` is True when Scholar refused the
@@ -164,7 +166,8 @@ def refresh_scholar_profile(orcid: str = "", scholar_id: str = "") -> dict[str, 
         "orcid": orcid,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "orcid_record": fetch_orcid(orcid) if orcid else {"keywords": [], "titles": []},
-        "openalex": fetch_openalex(orcid) if orcid else {"author_id": "", "topics": [], "works": []},
+        "openalex": (fetch_openalex(orcid) if orcid else fetch_openalex("", author_id=openalex_id)
+                     if re.match(r"^A\d{2,12}$", openalex_id or "") else {"author_id": "", "topics": [], "works": []}),
     }
     if scholar_id:
         gs = fetch_google_scholar(scholar_id)

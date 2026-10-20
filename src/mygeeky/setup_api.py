@@ -79,7 +79,7 @@ def save_profile(req: dict[str, Any]) -> dict[str, Any]:
     from .text_utils import load_cv_text
     cfg = load_config()
     username = str(req.get("github_username") or "").strip().lstrip("@")
-    has_field = any(str(req.get(k) or "").strip() for k in ("orcid_id", "topics", "keywords", "cv_path"))
+    has_field = any(str(req.get(k) or "").strip() for k in ("orcid_id", "openalex_id", "topics", "keywords", "cv_path"))
     if not username and not has_field:
         return {"ok": False, "error": "Add your GitHub username, sign in with ORCID, or give a few topics: "
                                       "any one of them is enough to start."}
@@ -103,6 +103,18 @@ def save_profile(req: dict[str, Any]) -> dict[str, Any]:
     if cfg.orcid_id and not checksum_ok(cfg.orcid_id):
         return {"ok": False, "error": f"{cfg.orcid_id} isn't a valid ORCID iD: a digit is probably mistyped. "
                                       "Check it on orcid.org, or sign in with ORCID instead."}
+    oa = str(req.get("openalex_id") or "").strip()
+    if oa:                                     # "Is this you?": the author you confirmed
+        import re as _re
+        cfg.openalex_id = oa if _re.match(r"^A\d{2,12}$", oa) else ""
+    if req.get("whois_pending"):               # OpenAlex was busy: keep the search, try again later
+        import time
+        from . import whois
+        from .config import WHOIS_FILE
+        from .files import write_json
+        p = req["whois_pending"]
+        write_json(WHOIS_FILE, {"pending": {"name": str(p.get("name", ""))[:120], "hint": str(p.get("hint", ""))[:200],
+                                            "next_try": whois.next_try(time.time(), int(p.get("retry_after") or 0))}})
     gs = str(req.get("scholar_id") or "").strip()
     cfg.scholar_id = scholar.normalize_scholar_id(gs) if gs else ""
     if gs and not cfg.scholar_id:
@@ -110,6 +122,9 @@ def save_profile(req: dict[str, Any]) -> dict[str, Any]:
     for key in ("languages", "topics", "keywords"):
         if key in req:
             setattr(cfg, key, _split(req[key]))
+    if req.get("coauthors"):                   # from a CV, thesis or abstract you dropped in (docread.py)
+        from . import docread
+        cfg.coauthors = docread.merge_words(cfg.coauthors, [str(c)[:80] for c in req["coauthors"] if str(c).strip()][:20])
     if "work_style" in req:                   # code / analysis / both: only the starting balance
         style = str(req.get("work_style") or "").strip().lower()
         cfg.work_style = style if style in ("code", "analysis", "both") else ""
@@ -122,9 +137,9 @@ def save_profile(req: dict[str, Any]) -> dict[str, Any]:
                          f"{', '.join(red)}. They're passed on so the next dictionary learns them.")
     except Exception:
         pass
-    if cfg.orcid_id or cfg.scholar_id:
+    if cfg.orcid_id or cfg.scholar_id or cfg.openalex_id:
         try:
-            scholar.refresh_scholar_profile(cfg.orcid_id, cfg.scholar_id)
+            scholar.refresh_scholar_profile(cfg.orcid_id, cfg.scholar_id, cfg.openalex_id)
             notes.append("Fetched your publications.")
         except Exception as exc:  # never block setup on a publication lookup
             notes.append(f"Couldn't fetch publications right now ({exc}); `mygeeky profile refresh` retries.")
@@ -318,6 +333,18 @@ def save_notify(req: dict[str, Any]) -> dict[str, Any]:
     return {"ok": True, "message": notify.describe(s)}
 
 
+def whois_search(req: dict[str, Any]) -> dict[str, Any]:
+    """"Is this you?" in setup: the researchers OpenAlex knows by this name, best first (or busy)."""
+    from . import whois
+    return {"ok": True, **whois.search(str(req.get("name") or ""), str(req.get("hint") or ""))}
+
+
+def read_document(req: dict[str, Any]) -> dict[str, Any]:
+    """Drop a CV, thesis or abstract in setup: the keywords, methods and co-authors in it (read here, kept nowhere)."""
+    from . import docread
+    return docread.read_from(str(req.get("path") or ""), str(req.get("text") or ""), str(req.get("own_name") or ""))
+
+
 ACTIONS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "status": status,
     "save_profile": save_profile,
@@ -333,6 +360,8 @@ ACTIONS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "beacon_create_repo": beacon_create_repo,
     "schedule": schedule,
     "save_notify": save_notify,
+    "whois_search": whois_search,
+    "read_document": read_document,
 }
 
 

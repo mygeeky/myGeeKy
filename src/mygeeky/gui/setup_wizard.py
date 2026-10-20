@@ -758,6 +758,32 @@ class InstallPage(Page):
         self.completeChanged.emit()
 
 
+class DropBox(QFrame):
+    """Drop a file here (a CV, thesis or abstract): `dropped` gets its path."""
+    dropped = Signal(str)
+    TYPES = (".pdf", ".docx", ".txt", ".md", ".tex")
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setAcceptDrops(True)
+        self.setObjectName("drop")
+        self.setStyleSheet("QFrame#drop { border:2px dashed #b6a8f0; border-radius:12px; background:#f7f4ff; }")
+
+    def _path(self, event) -> str:
+        urls = event.mimeData().urls() if event.mimeData().hasUrls() else []
+        path = urls[0].toLocalFile() if urls else ""
+        return path if path.lower().endswith(self.TYPES) else ""
+
+    def dragEnterEvent(self, event) -> None:  # noqa: N802 -- Qt's naming
+        if self._path(event):
+            event.acceptProposedAction()
+
+    def dropEvent(self, event) -> None:  # noqa: N802
+        path = self._path(event)
+        if path:
+            self.dropped.emit(path)
+
+
 class ProfilePage(Page):
     """Who you are, then your field -- as the phone's first screen (mobile/src/app/setup.tsx).
 
@@ -771,7 +797,11 @@ class ProfilePage(Page):
 
     def __init__(self) -> None:
         super().__init__("About you", "Choose how to start. You can add the others any time later.")
-        self.mode = ""                     # "github" | "orcid" | "guest", once chosen
+        self.mode = ""                     # "github" | "orcid" | "papers" | "doc" | "guest", once chosen
+        self.doc_coauthors: list[str] = []  # from a CV, thesis or abstract you dropped in (docread.py)
+        self.doc_checks: list[tuple[str, QCheckBox]] = []
+        self.whois_id = ""                 # "Is this you?": the OpenAlex author confirmed (whois.py)
+        self.whois_pending: dict[str, Any] | None = None   # OpenAlex was busy: the search, kept to try later
         self._orcid_name = ""
         self.github_btn = QPushButton("\U0001f511  Sign in with GitHub")
         self.github_btn.setObjectName("github")
@@ -782,11 +812,21 @@ class ProfilePage(Page):
         self.orcid_btn.setObjectName("orcid")
         self.orcid_btn.setToolTip("Opens orcid.org in your browser. myGeeKy only receives your ORCID iD and name.")
         self.orcid_btn.clicked.connect(self._orcid_sign_in)
+        self.papers_btn = QPushButton("\U0001f4c4  Find my papers")
+        self.papers_btn.setObjectName("papers")
+        self.papers_btn.setToolTip("No ORCID? Type your name and institution: myGeeKy finds your papers on OpenAlex "
+                                   "and you confirm it's you.")
+        self.papers_btn.clicked.connect(lambda: self._choose("papers"))
+        self.doc_btn = QPushButton("\U0001f4dd  Drop a CV, thesis or abstract")
+        self.doc_btn.setObjectName("doc")
+        self.doc_btn.setToolTip("Your CV, thesis, proposal or an abstract: myGeeKy picks out your field, methods and "
+                                "co-authors, read on this computer. Only the words you keep are saved.")
+        self.doc_btn.clicked.connect(lambda: self._choose("doc"))
         self.guest_btn = QPushButton("\U0001f464  Continue as guest")
         self.guest_btn.setObjectName("guest")
         self.guest_btn.setToolTip("No account, no token: just a few keywords for your field.")
         self.guest_btn.clicked.connect(lambda: self._choose("guest"))
-        for b in (self.github_btn, self.orcid_btn, self.guest_btn):
+        for b in (self.github_btn, self.orcid_btn, self.papers_btn, self.doc_btn, self.guest_btn):
             b.setMinimumHeight(38)
             b.setCursor(Qt.PointingHandCursor)
             self.add(b)
@@ -794,11 +834,73 @@ class ProfilePage(Page):
             "QPushButton#github { background:#24292f; color:#ffffff; font-weight:700; border:1px solid #3a3f47; }"
             "QPushButton#orcid { background:#a6ce39; color:#1d2b0a; font-weight:700; }"
             "QPushButton#orcid:disabled { background:#d9e8b0; color:#6b7a4a; }"
+            "QPushButton#papers { background:#4a92dd; color:#ffffff; font-weight:700; }"
+            "QPushButton#doc { background:#8b6cff; color:#ffffff; font-weight:700; }"
             "QPushButton#guest { background:#ff6fd8; color:#3a0a2e; font-weight:700; }"
             "QPushButton#more { background:transparent; color:#9c8aff; font-weight:700; text-align:left; padding:2px 0; }")
         self.orcid_note = self.add(_label("", "muted"))
         self.add(_label(self.GUEST_NOTE, "muted"))
         self.chosen = self.add(_label("", "ok"))
+
+        # "Is this you?": name and institution -> the researchers OpenAlex knows -> you pick one
+        self.papers_box = QWidget()
+        pb = QVBoxLayout(self.papers_box)
+        pb.setContentsMargins(0, 4, 0, 0)
+        pb.addWidget(_label("Find your papers", "stepTitle"))
+        pb.addWidget(_label("Your name as it appears on your papers, and your institution (or your institutional "
+                            "email, or a co-author's name).", "muted"))
+        form = QFormLayout()
+        self.who_name = QLineEdit()
+        self.who_name.setPlaceholderText("e.g. Ada Lovelace")
+        self.who_hint = QLineEdit()
+        self.who_hint.setPlaceholderText("e.g. Lund University, or you@lu.se")
+        form.addRow("Your name", self.who_name)
+        form.addRow("Institution", self.who_hint)
+        pb.addLayout(form)
+        self.who_btn = QPushButton("\U0001f50e  Search OpenAlex")
+        self.who_btn.setCursor(Qt.PointingHandCursor)
+        self.who_btn.clicked.connect(self._whois_search)
+        pb.addWidget(self.who_btn, 0, Qt.AlignLeft)
+        self.who_note = _label("", "muted")
+        pb.addWidget(self.who_note)
+        self.who_list = QVBoxLayout()
+        pb.addLayout(self.who_list)
+        self.papers_box.setVisible(False)
+        self.add(self.papers_box)
+
+        # Drop a CV, thesis or abstract: a file (dropped, or chosen) or pasted text -> what's in it -> keep
+        self.doc_box = QWidget()
+        db = QVBoxLayout(self.doc_box)
+        db.setContentsMargins(0, 4, 0, 0)
+        db.addWidget(_label("Your CV, thesis or abstract", "stepTitle"))
+        db.addWidget(_label("myGeeKy picks out your field, your methods and the people you've written with, and you "
+                            "choose what to keep. It's read on this computer: the file isn't sent anywhere or kept.",
+                            "muted"))
+        self.drop = DropBox()
+        drop_lay = QVBoxLayout(self.drop)
+        self.drop.setMinimumHeight(96)
+        drop_lay.addWidget(_label("Drop a PDF, Word (.docx) or text file here", "muted", wrap=False), 0, Qt.AlignCenter)
+        choose = QPushButton("\U0001f4c4  Choose a file\u2026")
+        choose.setCursor(Qt.PointingHandCursor)
+        choose.clicked.connect(self._doc_choose)
+        drop_lay.addWidget(choose, 0, Qt.AlignCenter)
+        self.drop.dropped.connect(lambda path: self._doc_read({"path": path}))
+        db.addWidget(self.drop)
+        self.doc_paste = QPlainTextEdit()
+        self.doc_paste.setPlaceholderText("Or paste your abstract, proposal or CV here")
+        self.doc_paste.setFixedHeight(90)
+        db.addWidget(self.doc_paste)
+        self.doc_read_btn = QPushButton("Read the pasted text")
+        self.doc_read_btn.setCursor(Qt.PointingHandCursor)
+        self.doc_read_btn.clicked.connect(lambda: self._doc_read({"text": self.doc_paste.toPlainText()}))
+        db.addWidget(self.doc_read_btn, 0, Qt.AlignLeft)
+        self.doc_note = _label("", "muted")
+        self.doc_note.setTextFormat(Qt.PlainText)
+        db.addWidget(self.doc_note)
+        self.doc_found = QVBoxLayout()
+        db.addLayout(self.doc_found)
+        self.doc_box.setVisible(False)
+        self.add(self.doc_box)
 
         # your field: shown once a way in is chosen
         self.field_box = QWidget()
@@ -862,6 +964,146 @@ class ProfilePage(Page):
         self.finish_layout()
         self.registerField("username", self.username)
 
+    # ---- "Is this you?"
+    def _whois_search(self) -> None:
+        name, hint = self.who_name.text().strip(), self.who_hint.text().strip()
+        if len(name.split()) < 2:
+            self.who_note.setText("Type your first and last name, as on your papers.")
+            return
+        self.who_btn.setEnabled(False)
+        self.who_note.setText("Looking on OpenAlex\u2026")
+        python = self.w.python
+        self._who_worker = Worker(lambda wk: api(python, "whois_search", {"name": name, "hint": hint}, timeout=60))
+        self._who_worker.done.connect(lambda r: self._whois_done(r, name, hint))
+        self._who_worker.start()
+
+    def _whois_done(self, result: Any, name: str, hint: str) -> None:
+        result = result if isinstance(result, dict) else {}
+        self.who_btn.setEnabled(True)
+        while self.who_list.count():
+            w = self.who_list.takeAt(0).widget()
+            if w:
+                w.hide()                         # gone at once, not when Qt gets round to deleting it
+                w.deleteLater()
+        status = result.get("status")
+        if status == "busy" or not result.get("ok"):
+            # carry on the regular way; the search is kept and tried again later, then "Is this you?"
+            self.whois_pending = {"name": name, "hint": hint, "retry_after": result.get("retry_after", 0)}
+            self.who_note.setText("OpenAlex is busy right now. Carry on with a few keywords below: myGeeKy will look "
+                                  "again later by itself and ask \"Is this you?\" in the panel (\u2699).")
+            self.field_hint.setText("A few words is enough: myGeeKy uses them until it finds your papers.")
+            self.field_box.setVisible(True)
+            self.completeChanged.emit()
+            return
+        cands = result.get("candidates") or []
+        if not cands:
+            self.who_note.setText(result.get("why") or "No researcher by that name on OpenAlex. Check the spelling, "
+                                  "add your institution, or carry on with keywords below.")
+            self.field_box.setVisible(True)
+            return
+        self.who_note.setText("Is this you? Pick yourself (only you know):")
+        for c in cands:
+            bits = [c.get("institution") or "", c.get("country") or "", f"{c.get('works', 0)} works"]
+            text = f"{c['name']}  \u00b7  " + " \u00b7 ".join(b for b in bits if b)
+            if c.get("topics"):
+                text += "\nTopics: " + ", ".join(c["topics"])
+            for t in c.get("titles") or []:
+                text += f"\n\u2022 {t}"
+            b = QPushButton(text)
+            b.setObjectName("cand")
+            b.setCursor(Qt.PointingHandCursor)
+            b.setStyleSheet("QPushButton#cand { text-align:left; padding:8px 10px; border:1px solid #c9c2e8; "
+                            "border-radius:10px; background:#faf8ff; color:#1d1a2e; }"
+                            "QPushButton#cand:hover { border-color:#7a5cff; }")
+            b.clicked.connect(lambda _=False, c=c: self._whois_pick(c))
+            self.who_list.addWidget(b)
+        none = QPushButton("None of these: carry on with keywords")
+        none.setObjectName("more")
+        none.setCursor(Qt.PointingHandCursor)
+        none.clicked.connect(lambda: (self._whois_pick(None)))
+        self.who_list.addWidget(none)
+
+    def _whois_pick(self, c: dict[str, Any] | None) -> None:
+        self.whois_id = c["id"] if c else ""
+        self.whois_pending = None
+        while self.who_list.count():
+            w = self.who_list.takeAt(0).widget()
+            if w:
+                w.hide()                         # gone at once, not when Qt gets round to deleting it
+                w.deleteLater()
+        self.who_note.setText(f"\u2713 That's you: {c['name']} ({c.get('works', 0)} works). Your papers will shape "
+                              "your profile." if c else "No match: carry on with a few keywords below.")
+        self.field_box.setVisible(True)
+        self.completeChanged.emit()
+
+    # ---- Drop a CV, thesis or abstract
+    def _doc_choose(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "Your CV, thesis or abstract", str(Path.home()),
+                                              "Documents (*.pdf *.docx *.txt *.md *.tex)")
+        if path:
+            self._doc_read({"path": path})
+
+    def _doc_read(self, payload: dict[str, Any]) -> None:
+        if not payload.get("path") and len(str(payload.get("text") or "").strip()) < 40:
+            self.doc_note.setText("Paste a little more: an abstract or a few lines of your CV.")
+            return
+        payload["own_name"] = self._orcid_name if " " in self._orcid_name else ""
+        self.doc_note.setText("Reading it\u2026")
+        python = self.w.python
+        self._doc_worker = Worker(lambda wk: api(python, "read_document", payload, timeout=120))
+        self._doc_worker.done.connect(self._doc_found)
+        self._doc_worker.start()
+
+    def _doc_clear(self) -> None:
+        while self.doc_found.count():
+            w = self.doc_found.takeAt(0).widget()
+            if w:
+                w.hide()                         # gone at once, not when Qt gets round to deleting it
+                w.deleteLater()
+        self.doc_checks = []
+
+    def _doc_found(self, result: Any) -> None:
+        result = result if isinstance(result, dict) else {}
+        self._doc_clear()
+        if not result.get("ok"):
+            self.doc_note.setText(result.get("error") or "This file couldn't be read. Try a PDF or .docx, or paste "
+                                                          "the text.")
+            return
+        found = result["found"]
+        self.doc_note.setText("Here's what I found. Untick anything that isn't you:")
+        for title, kind in (("\U0001f52c Your field", "keywords"), ("\U0001f6e0 Methods and tools", "methods"),
+                            ("\U0001f465 People you've written with", "coauthors")):
+            if not found.get(kind):
+                continue
+            self.doc_found.addWidget(_label(title, "muted"))
+            for word in found[kind]:
+                box = QCheckBox(word)            # plain text: what a document says is never shown as HTML
+                box.setChecked(True)
+                self.doc_found.addWidget(box)
+                self.doc_checks.append((kind, box))
+        keep = QPushButton("Keep these and go on")
+        keep.setObjectName("doc")
+        keep.setCursor(Qt.PointingHandCursor)
+        keep.clicked.connect(self._doc_keep)
+        self.doc_found.addWidget(keep, 0, Qt.AlignLeft)
+
+    def _doc_keep(self) -> None:
+        kept = {"keywords": [], "methods": [], "coauthors": []}
+        for kind, box in self.doc_checks:
+            if box.isChecked():
+                kept[kind].append(box.text())
+        words = kept["keywords"] + kept["methods"]
+        from ..docread import merge_words
+        self.topics.setText(", ".join(merge_words(keywords_split(self.topics.text()), words)) + ", ")
+        self.doc_coauthors = kept["coauthors"]
+        self._doc_clear()
+        self.doc_note.setText(f"\u2713 From your document: {len(words)} words"
+                              + (f" and {len(kept['coauthors'])} co-authors" if kept["coauthors"] else "")
+                              + ". Add or remove any below.")
+        self.field_hint.setText("These come from your document. Add or remove any.")
+        self.field_box.setVisible(True)
+        self.completeChanged.emit()
+
     def _toggle_more(self) -> None:
         shown = not self.more_box.isVisible()
         self.more_box.setVisible(shown)
@@ -869,14 +1111,19 @@ class ProfilePage(Page):
 
     def _choose(self, mode: str) -> None:
         self.mode = mode
-        self.field_box.setVisible(True)
+        self.papers_box.setVisible(mode == "papers")
+        self.doc_box.setVisible(mode == "doc")
+        self.field_box.setVisible(mode not in ("papers", "doc") or bool(self.whois_id or self.whois_pending)
+                                  or (mode == "doc" and bool(keywords_split(self.topics.text()))))
         self.chosen.setText({
             "github": "\u2713 GitHub: you sign in on the next page.",
             "orcid": f"\u2713 ORCID{': ' + self._orcid_name if self._orcid_name else ''}. Next, your field, then Finish.",
             "guest": "\u2713 As a guest: no account and nothing to connect. Next, your field, then Finish.",
+            "papers": "\u2713 Your papers: search, then pick yourself. Then your field (optional), then Finish.",
+            "doc": "\u2713 Your document: drop it, keep what's right, then Finish.",
         }[mode])
         self.field_hint.setText("A few words is enough: myGeeKy uses them to pick research, news and models for you."
-                                if mode == "guest" else
+                                if mode in ("guest", "doc") else
                                 "Optional: myGeeKy reads your field from your sign-in. A few keywords make it sharper.")
         self.say("")
         self.completeChanged.emit()
@@ -886,7 +1133,7 @@ class ProfilePage(Page):
         return bool(self.mode)
 
     def nextId(self) -> int:  # noqa: N802
-        if self.mode in ("guest", "orcid"):
+        if self.mode in ("guest", "orcid", "papers", "doc"):
             return self.w.finish_id             # GitHub's token, the data repo and Signals are for GitHub accounts
         return super().nextId()
 
@@ -939,13 +1186,20 @@ class ProfilePage(Page):
                 self._choose("guest")
 
     def job(self):
-        if self.mode == "guest" and not keywords_split(self.topics.text()):
+        needs_words = self.mode in ("guest", "doc") or (self.mode == "papers" and not self.whois_id)
+        if needs_words and not keywords_split(self.topics.text()):
             return lambda wk: {"ok": False, "error": "Give a few keywords for your field, for example GWAS, single "
                                                      "cell, AI."}
         payload = {"github_username": self.username.text().strip(), "cv_path": self.cv.text().strip(),
                    "orcid_id": self.orcid.text().strip(), "scholar_id": self.scholar.text().strip(),
                    "languages": self.languages.text(), "topics": self.topics.text(),
                    "work_style": self.work_style.currentData()}
+        if self.doc_coauthors:
+            payload["coauthors"] = self.doc_coauthors
+        if self.mode == "papers":
+            payload["openalex_id"] = self.whois_id
+            if self.whois_pending:
+                payload["whois_pending"] = self.whois_pending
         python = self.w.python
         return lambda wk: api(python, "save_profile", payload)
 

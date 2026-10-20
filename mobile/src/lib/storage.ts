@@ -9,7 +9,9 @@ import { type Grant, renewGrant } from './github-login';
 export type Settings = {
   username: string;
   orcid: string;
+  openalex?: string;          // "Is this you?" (whois.ts): your OpenAlex author id (A...), used without an ORCID
   keywords: string[];
+  coauthors?: string[];       // people you've written with, found in a CV you dropped in (doc-read.ts)
   topics: string[];
   exploreShare: number;
   // what your computer learned about you (from "Connect your phone")

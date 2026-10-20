@@ -41,6 +41,7 @@ export function parsePairing(data: string): Pairing | { error: string } {
   const u = typeof raw.u === 'string' ? raw.u : '';
   if (!LOGIN.test(u)) return { error: "That code doesn't contain a GitHub username." };
   const o = typeof raw.o === 'string' && ORCID.test(raw.o) ? raw.o : '';
+  const a = typeof raw.a === 'string' && /^A\d{2,12}$/.test(raw.a) ? raw.a : '';    // "Is this you?" author id
   const tok = typeof raw.tok === 'string' && TOKEN.test(raw.tok) ? raw.tok : null;
   const interests: Record<string, number> = {};
   if (raw.w && typeof raw.w === 'object' && !Array.isArray(raw.w)) {
@@ -52,7 +53,7 @@ export function parsePairing(data: string): Pairing | { error: string } {
   const badges = words(raw.b, 30).filter((b) => /^[a-z]{2,20}:(bronze|silver|gold)$/.test(b));
   return {
     settings: {
-      exploreShare: 0.2, username: u, orcid: o, keywords: words(raw.k), topics: words(raw.t),
+      exploreShare: 0.2, username: u, orcid: o, openalex: a, keywords: words(raw.k), topics: words(raw.t),
       interests, field: words(raw.f, 8).map((x) => x.slice(0, 80)), desktopBadges: badges,
     },
     token: tok,

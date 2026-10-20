@@ -44,6 +44,7 @@ NEWS_FILE = DATA_DIR / "news.json"
 TRENDS_FILE = DATA_DIR / "trends.json"                 # research trends from OpenAlex
 PAPERS_CACHE_FILE = DATA_DIR / "papers_cache.json"     # repo -> its published paper (the [P] badge)
 USAGE_FILE = DATA_DIR / "usage.jsonl"                 # what kinds of things you open (badges); synced
+WHOIS_FILE = DATA_DIR / "whois.json"                   # "Is this you?": a pending search and what it found; never synced
 NOTIFY_STATE_FILE = DATA_DIR / "notify_state.json"     # when you were last notified, and what was told; never synced
 RANK_SEEN_FILE = DATA_DIR / "rank_seen.json"           # the last rank you were told about (My month); never synced
 MY_GITHUB_EVENTS_FILE = DATA_DIR / "my_github_events.json"   # your own GitHub events, slimmed (My month); never synced
@@ -82,12 +83,14 @@ class MyGeekyConfig:
     # `mygeeky profile refresh` re-reads these (CV pdf -> text, ORCID + OpenAlex, Google Scholar).
     cv_path: str = ""                     # remembered so the CV can be re-extracted when it changes
     orcid_id: str = ""                    # e.g. "0000-0002-1825-0097"; enables ORCID + OpenAlex enrichment
+    openalex_id: str = ""                 # "Is this you?" (whois.py): your OpenAlex author id (A...), used without an ORCID
     scholar_id: str = ""                  # Google Scholar user id, the `user=` part of your profile URL
 
     # What "geeks like him/her" means -- all optional, all adjustable.
     languages: list[str] = field(default_factory=list)      # e.g. ["Python", "Rust"]
     topics: list[str] = field(default_factory=list)         # e.g. ["bioinformatics", "llm"]
     keywords: list[str] = field(default_factory=list)       # extra free-text interests
+    coauthors: list[str] = field(default_factory=list)      # people you've written with, from a CV you dropped in (docread.py)
     locations: list[str] = field(default_factory=list)      # optional, e.g. ["Cairo", "Remote"]
     # Starting from keywords alone, with no ORCID and no GitHub (see fieldstart.py). The date is when that
     # start happened, and the counters are how often myGeeKy has brought up making a real account: four
@@ -300,7 +303,7 @@ def profile_ready(cfg: MyGeekyConfig) -> bool:
     the field half of People all match a field against public pages and never look you up. What needs an
     account is only what reads your account -- who would follow you back, Activity, Signals, Collab -- and
     carrying your data to a second device."""
-    return bool(cfg.github_username or cfg.orcid_id or cfg.topics or cfg.keywords or cfg.cv_path)
+    return bool(cfg.github_username or cfg.orcid_id or cfg.openalex_id or cfg.topics or cfg.keywords or cfg.cv_path)
 
 
 def ensure_dirs() -> None:
@@ -376,8 +379,8 @@ def _migrate(values: dict[str, Any], version: int) -> dict[str, Any]:
 
 
 # settings that are painful to lose: a save that drops any of them keeps a backup first
-_PRECIOUS = ("beacon_enabled", "sync_repo", "orcid_id", "scholar_id", "cv_path", "keywords",
-             "field_started_at")
+_PRECIOUS = ("beacon_enabled", "sync_repo", "orcid_id", "openalex_id", "scholar_id", "cv_path", "keywords",
+             "coauthors", "field_started_at")
 
 
 def save_config(cfg: MyGeekyConfig) -> None:

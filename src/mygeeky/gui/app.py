@@ -640,6 +640,97 @@ def get_month_stats(cfg: MyGeekyConfig, year: int, month: int) -> dict[str, Any]
     return monthviz.stats(inputs, year, month, int(offset.total_seconds() // 60) if offset else 0)
 
 
+# ---- "Is this you?" (whois.py): your OpenAlex author record from your name, with no ORCID
+def whois_state() -> dict[str, Any]:
+    from ..config import WHOIS_FILE
+    from ..files import read_json
+    data = read_json(WHOIS_FILE, {})
+    return data if isinstance(data, dict) else {}
+
+
+def _whois_save(state: dict[str, Any]) -> None:
+    from ..config import WHOIS_FILE
+    from ..files import write_json
+    write_json(WHOIS_FILE, state)
+
+
+def whois_search(cfg: MyGeekyConfig, name: str, hint: str = "") -> dict[str, Any]:
+    """Search now (from ⚙). Busy: kept as pending, tried again later by itself."""
+    import time
+    from .. import whois
+    out = whois.search(name, hint)
+    if out["status"] == "busy":
+        _whois_save({"pending": {"name": name, "hint": hint, "next_try": whois.next_try(time.time(), out.get("retry_after", 0))}})
+    elif out["status"] == "found":
+        _whois_save({"found": out["candidates"], "query": {"name": name, "hint": hint}})
+    return out
+
+
+def whois_retry(cfg: MyGeekyConfig) -> list[dict[str, Any]]:
+    """A pending search whose time has come: try it again. The candidates if OpenAlex answered (to ask "Is this
+    you?"), else [] (still pending, or nothing found, or you already have an ORCID or a confirmed author)."""
+    import time
+    from .. import whois
+    state = whois_state()
+    p = state.get("pending")
+    if not isinstance(p, dict) or cfg.orcid_id or cfg.openalex_id or time.time() < float(p.get("next_try") or 0):
+        return []
+    out = whois.search(str(p.get("name", "")), str(p.get("hint", "")))
+    if out["status"] == "busy":
+        p["next_try"] = whois.next_try(time.time(), out.get("retry_after", 0))
+        _whois_save({"pending": p})
+        return []
+    if out["status"] == "none":
+        _whois_save({"none": {"name": p.get("name", "")}})
+        return []
+    _whois_save({"found": out["candidates"], "query": {"name": p.get("name", ""), "hint": p.get("hint", "")}})
+    return out["candidates"]
+
+
+def whois_confirm(cfg: MyGeekyConfig, author_id: str) -> bool:
+    """"That's me": keep the author id (your profile, Wins and papers use it from now on) and fetch your works."""
+    import re
+    if not re.match(r"^A\d{2,12}$", author_id or ""):
+        return False
+    cfg.openalex_id = author_id
+    save_config(cfg)
+    _whois_save({"confirmed": author_id})
+    try:
+        from .. import scholar
+        scholar.refresh_scholar_profile(cfg.orcid_id, cfg.scholar_id, cfg.openalex_id)
+    except Exception:
+        pass                                   # fetched next time; the id is kept
+    return True
+
+
+def whois_reject() -> None:
+    """"None of these": forget what was found, ask nothing more."""
+    _whois_save({"none": True})
+
+
+def whois_forget(cfg: MyGeekyConfig) -> None:
+    """Not me after all: forget the confirmed author."""
+    cfg.openalex_id = ""
+    save_config(cfg)
+    _whois_save({})
+
+
+def doc_read(path: str = "", text: str = "", own_name: str = "") -> dict[str, Any]:
+    """Drop a CV, thesis or abstract (docread.py): what's in it, read on this computer. {"ok", "found"|"error"}."""
+    from .. import docread
+    return docread.read_from(path, text, own_name)
+
+
+def doc_keep(cfg: MyGeekyConfig, keywords: list[str], methods: list[str], coauthors: list[str]) -> int:
+    """Add the words you kept to your keywords, and the people to your co-authors. Returns how many words were new."""
+    from .. import docread
+    before = len(cfg.keywords)
+    cfg.keywords = docread.merge_words(cfg.keywords, [*keywords, *methods])
+    cfg.coauthors = docread.merge_words(cfg.coauthors, coauthors)
+    save_config(cfg)
+    return len(cfg.keywords) - before
+
+
 def notify_settings(cfg: MyGeekyConfig) -> dict[str, Any]:
     """What you agreed to be told about (notify.py): all off until you switch a kind on."""
     from .. import notify

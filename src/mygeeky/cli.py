@@ -490,8 +490,8 @@ def _import_cv(cv_path: str) -> str:
 
 def _refresh_scholar(cfg: MyGeekyConfig) -> None:
     click.echo("Fetching your publications...")
-    prof = scholar.refresh_scholar_profile(cfg.orcid_id, cfg.scholar_id)
-    if cfg.orcid_id:
+    prof = scholar.refresh_scholar_profile(cfg.orcid_id, cfg.scholar_id, cfg.openalex_id)
+    if cfg.orcid_id or cfg.openalex_id:
         oa = prof["openalex"]
         click.echo(f"  ORCID: {len(prof['orcid_record']['titles'])} works, "
                    f"{len(prof['orcid_record']['keywords'])} keywords")

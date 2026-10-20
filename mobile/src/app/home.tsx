@@ -39,6 +39,7 @@ import { INNER, ordered, OUTER, RING_NAME, Row, rowsFor, SECTIONS, SectionId } f
 import { C, ink, tint } from '../lib/theme';
 import { GeekLoader, useHold } from '../components/geek-loader';
 import { checkNow } from '../lib/notify-store';
+import { retryWhois } from '../lib/whois-store';
 
 
 
@@ -215,6 +216,11 @@ export default function Home() {
   }, [params.sel]);
   // each time myGeeKy opens: a look for something worth notifying (only if you switched a kind on)
   useEffect(() => { checkNow().catch(() => undefined); }, []);
+  // a pending "Is this you?" search (OpenAlex was busy): tried again quietly; when it works, say so
+  useEffect(() => {
+    retryWhois().then((found) => found.length && toast('📄 We found your papers on OpenAlex: is this you? See You → Settings.'))
+      .catch(() => undefined);
+  }, [toast]);
   const [collapsed, setCollapsed] = useState(params.fold === '1');
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
   const [tokenWarn, setTokenWarn] = useState<TokenState | null>(null);   // a token about to stop working

@@ -53,7 +53,7 @@ Signals (optional): private thank-yous between myGeeKy users. Each one is encryp
 the person it is for can read it, and no reply is ever expected.
 
 PRIVATE BY DESIGN
-• No myGeeKy account and no myGeeKy server: you sign in with GitHub or ORCID
+• No myGeeKy account and no myGeeKy server: sign in with GitHub or ORCID, drop in your CV, or just give a few keywords
 • No analytics, no ads, no tracking
 • What it learns about you stays on your phone
 • Your GitHub token is kept in the phone's secure storage and only ever sent to GitHub
@@ -113,10 +113,12 @@ No account, no adverts, no tracking. Free and open source.
 
 | Type | Collected | Shared | Required? | Purpose |
 |---|---|---|---|---|
-| Personal info → User IDs (GitHub username, ORCID iD) | Yes | No | Username required, ORCID optional | App functionality, Personalization |
+| Personal info → User IDs (GitHub username, ORCID iD) | Yes | No | Optional (a guest needs neither) | App functionality, Personalization |
+| Personal info → Name (only with *Find my papers*: the name and institution typed, sent to OpenAlex as a search) | Yes | No | Optional | App functionality |
 | App activity → Other user-generated content (Signals, calls for contributors) | Yes | No | Optional | App functionality |
 | App activity → App interactions | **No**: what you open is kept on the phone only | | | |
-| Location, contacts, photos, files, health, financial | No | | | |
+| Location, contacts, photos, health, financial | No | | | |
+| Files and docs (*Drop a CV, thesis or abstract*) | **No**: the file is read on the phone and not kept or sent; only the words the user keeps are saved, on the phone | | | |
 
 Camera: used only to scan the QR code from the desktop app; no picture is saved or sent. That's a permission, not data collection.
 

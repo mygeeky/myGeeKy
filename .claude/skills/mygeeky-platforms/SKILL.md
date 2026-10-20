@@ -50,7 +50,9 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `month-viz.ts` | `monthviz.py` (My month's eight drawings) |
 | `highlight-shape.ts` (+ `components/highlights-view.tsx`) | `highlight_shape.py` (+ `gui/highlights_ui.py`); the maker side is desktop-only (`highlights.py`, skill `mygeeky-article`) |
 | `my-github.ts` | `gui/app.py` (`refresh_my_github`, `slim_github_event`) |
+| `whois.ts` (+ `whois-store.ts`, `components/whois-find.tsx`) | `whois.py` (+ `gui/whois_ui.py`, `gui/app.py` `whois_*`) |
 | `notify.ts` (+ `notify-store.ts`, `components/notify-settings.tsx`) | `notify.py` (+ `gui/notify_ui.py`, `gui/app.py` `notify_check`) |
+| `doc-read.ts` (+ `doc-text.ts`, `components/doc-drop.tsx`) | `docread.py` (+ `text_utils.py`, `gui/docread_ui.py`, `gui/app.py` `doc_*`, `gui/setup_wizard.py` `DropBox`) |
 | `news.ts` | `news.py` |
 | `orcid-login.ts` | `orcid_login.py` |
 | `pairing.ts` | `pairing.py` (the QR code: both sides read the same format) |
@@ -96,6 +98,7 @@ The desktop file is the source; the phone copy must be identical or generated fr
 | `src/mygeeky/data/token_guides.json` | `mobile/src/data/token-guides.json` (identical) | `tools/token_guides.py` writes both; `test_token_guides.py` |
 | `src/mygeeky/data/ranks.json` | `mobile/src/data/ranks.json` (identical) | `test_phone_month_match_desktop.py` |
 | `src/mygeeky/data/geekoc.json` | `mobile/src/data/geekoc.json` (identical) | `tools/geekoc_poses.py` writes both; `test_phone_month_match_desktop.py` |
+| `src/mygeeky/data/docread.json` | `mobile/src/data/docread.json` (identical) | `test_docread.py` |
 
 After editing a desktop data file, update the phone copy in the same change (`cmp` them).
 
@@ -113,7 +116,7 @@ file in Node (phone-only packages swapped for stand-ins), so a new matching test
 ```
 
 `test_phone_seasons_match_desktop.py`, `test_phone_signals_match_desktop.py` and
-`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py`, `test_phone_month_match_desktop.py`, `test_highlights.py`, `test_notify.py`, `test_learn_locally.py`, `test_tab_order.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
+`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py`, `test_phone_month_match_desktop.py`, `test_highlights.py`, `test_notify.py`, `test_whois.py`, `test_docread.py`, `test_learn_locally.py`, `test_tab_order.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
 imports given their `.ts` ending) on the same inputs as the Python and compare the answers. They need **Node 22.6+**
 (`node --experimental-strip-types`) and skip without it: if pytest reports them as *skipped*, the phone was not
 checked, so say so instead of calling the change verified. When you change a shared

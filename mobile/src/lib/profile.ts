@@ -28,9 +28,11 @@ export async function profileFromSources(s: Settings, token: string | null, dict
   for (const t of [...s.keywords, ...s.topics]) weights[t.toLowerCase()] = 1;
   const field: string[] = [];
   const topicIds: { id: string; name: string }[] = [];
-  if (/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(s.orcid)) {          // your research topics, from OpenAlex
+  const who = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(s.orcid) ? `orcid:${s.orcid}`
+    : /^A\d{2,12}$/.test(s.openalex ?? '') ? s.openalex : '';       // your ORCID, or the author you confirmed
+  if (who) {                                                          // your research topics, from OpenAlex
     try {
-      const r = await fetchT(`https://api.openalex.org/authors/orcid:${s.orcid}?select=id,topics`);
+      const r = await fetchT(`https://api.openalex.org/authors/${who}?select=id,topics`);
       if (r.ok) {
         for (const t of ((await r.json()).topics ?? []).slice(0, 6)) {
           const id = String(t.id ?? '').split('/').pop() ?? '';
@@ -68,7 +70,7 @@ export async function profileFromSources(s: Settings, token: string | null, dict
 }
 
 export async function buildProfile(s: Settings, token: string | null, force = false): Promise<Profile> {
-  const key = JSON.stringify([s.username, s.orcid, s.keywords, s.topics, s.interests ?? {}]);
+  const key = JSON.stringify([s.username, s.orcid, s.openalex ?? '', s.keywords, s.topics, s.interests ?? {}]);
   const cached = await readCache<Profile & { key: string }>('profile');
   if (!force && cached && !isStale(cached.at, 24) && cached.data.key === key) return cached.data;
   const profile = await profileFromSources(s, token, await loadDictionary());

@@ -382,6 +382,31 @@ def _norm_word(w: str) -> str:
     return " ".join(re.split(r"[\s_-]+", str(w).lower())).strip()   # "single cell rna seq" = "Single-cell RNA-seq"
 
 
+def _stem(w: str) -> str:
+    """"python 3", "python3" and "Python27" are one word to suggest: no spaces, no version number at the end."""
+    n = _norm_word(w)
+    return re.sub(r"\d+$", "", n.replace(" ", "")) or n
+
+
+def _distinct(words: list[str], skip: set[str]) -> list[str]:
+    """The words in order, one per stem (the most readable: with spaces, without a version number), none whose stem
+    is in `skip`."""
+    def nicer(w: str) -> int:
+        return (0 if " " in _norm_word(w) else 2) + (1 if w[-1:].isdigit() else 0)
+    best: dict[str, str] = {}
+    for w in words:
+        s = _stem(w)
+        if s not in best or nicer(w) < nicer(best[s]):
+            best[s] = w
+    seen, out = set(skip), []
+    for w in words:
+        s = _stem(w)
+        if s not in seen:
+            seen.add(s)
+            out.append(best[s])
+    return out
+
+
 def _words_and_related() -> tuple[list[str], dict[str, list[str]]]:
     """Every word to suggest and each one's closest few, worked out once per dictionary (a newer one redoes it)."""
     global _suggest_words
@@ -413,7 +438,7 @@ def suggest(text: str, limit: int = 6) -> list[str]:
     q = typing.lower()
     if not q:
         near = [w for d in done for w in related.get(_norm_word(d), [])]
-        return [w for w in dict.fromkeys(near) if _norm_word(w) not in taken][:limit]
+        return _distinct([w for w in dict.fromkeys(near) if _norm_word(w) not in taken], {_stem(d) for d in done})[:limit]
     if len(q) < 2:
         return []
     starts, within = [], []
@@ -426,7 +451,7 @@ def suggest(text: str, limit: int = 6) -> list[str]:
         elif len(q) >= 3 and q in low:
             within.append(w)
     order = lambda w: (len(w), w)  # noqa: E731 -- shorter first, then plain character order (as the phone)
-    return (sorted(starts, key=order) + sorted(within, key=order))[:limit]
+    return _distinct(sorted(starts, key=order) + sorted(within, key=order), {_stem(d) for d in done} | {_stem(q)})[:limit]
 
 
 def pick(text: str, word: str) -> str:

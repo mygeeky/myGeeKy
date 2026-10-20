@@ -20,6 +20,8 @@ import { clearAll } from '../lib/storage';
 import { C, setTheme, THEME, THEME_LABELS, type ThemeName } from '../lib/theme';
 import { DOCK_IDLE_CHOICES, DOCK_IDLE_DEFAULT, dockIdleMs, setDockIdleMs } from '../lib/prefs';
 import { NotifySettings } from './notify-settings';
+import { WhoisSettings } from './whois-find';
+import { DocSettings } from './doc-drop';
 
 
 export function ModelPart() {
@@ -354,6 +356,10 @@ export function MorePart() {
           interests and your badges (do it again any time to refresh them).</Text>
       </Pressable>
 
+      <Section>📄 YOUR PAPERS (OPENALEX)</Section>
+      <View style={{ marginBottom: 6 }}><WhoisSettings /></View>
+      <Section>📝 FROM A CV, THESIS OR ABSTRACT</Section>
+      <View style={{ marginBottom: 6 }}><DocSettings /></View>
       <Section>🔔 NOTIFICATIONS</Section>
       <View style={{ marginBottom: 6 }}><NotifySettings full /></View>
       <Section>🎨 LOOK</Section>

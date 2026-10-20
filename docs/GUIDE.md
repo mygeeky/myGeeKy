@@ -319,7 +319,16 @@ mygeeky profile refresh     # after updating your CV: re-extract the PDF, re-fet
 mygeeky profile show        # what myGeeKy knows about you (no network)
 ```
 
-- **CV**: PDF/txt/md, converted to text.
+- **CV**: PDF, Word (.docx), txt or md, converted to text.
+- **Drop a CV, thesis or abstract** (setup, or ⚙ on the computer and You → Settings on the phone): myGeeKy picks
+  out your field's keywords (from the keyword dictionary), your methods and tools, and the people you've written
+  with, and you untick anything that isn't you. A first-year student with only a thesis proposal still gets a full
+  profile. The file is read on the device and not kept: only the words you keep are saved, in your keywords and
+  co-authors. Scanned PDFs have no text to read; paste the text instead.
+- **No ORCID? "Find my papers"** (setup, ⚙ → Your papers, You → Settings): type your name and institution (or
+  institutional email, or a co-author's name) and pick yourself among the researchers OpenAlex knows; your papers
+  then shape your profile as an ORCID would. If OpenAlex is busy, setup carries on with keywords and the search is
+  tried again later by itself, asking "Is this you?" when it works.
 - **ORCID** (public API) and **OpenAlex** (looked up by your ORCID): your
   publication titles, abstracts, keywords and research topics. They're free and
   need no key. They feed both people matching and repo suggestions.

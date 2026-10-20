@@ -11,6 +11,9 @@ import { pick, suggest } from '../lib/word-suggest';
 import { DEFAULT_SETTINGS } from '../lib/storage';
 import { C } from '../lib/theme';
 import { NotifySettings } from '../components/notify-settings';
+import { WhoisFind } from '../components/whois-find';
+import { DocDrop } from '../components/doc-drop';
+import { mergeWords } from '../lib/doc-read';
 
 const split = (v: string) => v.split(',').map((x) => x.trim()).filter(Boolean);
 
@@ -29,7 +32,10 @@ export default function Setup() {
   const [busy, setBusy] = useState(false);
   const [signedIn, setSignedIn] = useState('');
   const [orcidName, setOrcidName] = useState('');
-  const [step, setStep] = useState<'choose' | 'data' | 'signals' | 'keywords'>('choose');
+  const [step, setStep] = useState<'choose' | 'data' | 'signals' | 'papers' | 'doc' | 'keywords'>('choose');
+  const [openalex, setOpenalex] = useState(settings?.openalex ?? '');    // "Is this you?": the author you picked
+  const [papersNote, setPapersNote] = useState('');
+  const [coauthors, setCoauthors] = useState<string[]>(settings?.coauthors ?? []);   // from a dropped CV
   const [more, setMore] = useState(false);
 
   const submit = async () => {
@@ -38,12 +44,13 @@ export default function Setup() {
     const o = orcid.trim().replace(/^https?:\/\/orcid\.org\//, '');
     if (o && !/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(o)) return setError('An ORCID looks like 0000-0002-1825-0097.');
     if (o && !orcidChecksumOk(o)) return setError(`${o} isn't a valid ORCID iD: a digit is probably mistyped.`);
-    if (!u && !o && !split(keywords).length) {
+    if (!u && !o && !openalex && !split(keywords).length) {
       return setError('Give a few keywords for your field, for example GWAS, single cell, AI.');
     }
     setBusy(true);
     setError('');
-    await save({ ...(settings ?? DEFAULT_SETTINGS), username: u, orcid: o, keywords: split(keywords) }, token.trim() || undefined);
+    await save({ ...(settings ?? DEFAULT_SETTINGS), username: u, orcid: o, openalex, keywords: split(keywords), coauthors },
+      token.trim() || undefined);
     setBusy(false);
     router.replace('/home');
   };
@@ -74,6 +81,14 @@ export default function Setup() {
               setOrcidName(me.name || me.orcid);
               setStep('keywords');
             }} />
+            <Pressable style={({ pressed }) => [st.papers, pressed && { opacity: 0.85 }]} onPress={() => setStep('papers')}
+                       accessibilityLabel="Find my papers, with no ORCID">
+              <Text style={st.papersText}>📄  Find my papers</Text>
+            </Pressable>
+            <Pressable style={({ pressed }) => [st.doc, pressed && { opacity: 0.85 }]} onPress={() => setStep('doc')}
+                       accessibilityLabel="Drop a CV, thesis or abstract">
+              <Text style={st.papersText}>📝  Drop a CV, thesis or abstract</Text>
+            </Pressable>
             <Pressable style={({ pressed }) => [st.just, pressed && { opacity: 0.85 }]} onPress={() => setStep('keywords')}
                        accessibilityLabel="Continue as a guest, with no account">
               <Text style={st.justText}>👤  Continue as guest</Text>
@@ -84,6 +99,28 @@ export default function Setup() {
             <DataStep login={signedIn} onNext={() => setStep('signals')} />
           ) : step === 'signals' ? (
             <SignalsStep onNext={() => setStep('keywords')} />
+          ) : step === 'papers' ? (
+            <View>
+              <Text style={st.label}>📄 Find your papers</Text>
+              <WhoisFind
+                onPick={(c) => { setOpenalex(c.id); setPapersNote(`✓ That's you: ${c.name} (${c.works} works). Your papers will shape your profile.`); setStep('keywords'); }}
+                onNone={() => { setPapersNote('No match: carry on with a few keywords.'); setStep('keywords'); }}
+                onBusy={() => { setPapersNote('OpenAlex is busy right now. Carry on with a few keywords: myGeeKy will look again later by itself and ask "Is this you?" (You → Settings).'); setStep('keywords'); }} />
+              <Pressable onPress={() => setStep('choose')} hitSlop={8}><Text style={st.back}>← Other ways to start</Text></Pressable>
+            </View>
+          ) : step === 'doc' ? (
+            <View>
+              <Text style={st.label}>📝 Your CV, thesis or abstract</Text>
+              <DocDrop ownName={orcidName} keepLabel="Keep these and go on" onKeep={(k) => {
+                const words = [...k.keywords, ...k.methods];
+                setKeywords(`${mergeWords(split(keywords), words).join(', ')}, `);   // ready for the next word
+                setCoauthors(mergeWords(coauthors, k.coauthors));
+                setPapersNote(`✓ From your document: ${words.length} words${k.coauthors.length ? ` and ${k.coauthors.length} co-authors`
+                  : ''}. Add or remove any above.`);
+                setStep('keywords');
+              }} />
+              <Pressable onPress={() => setStep('choose')} hitSlop={8}><Text style={st.back}>← Other ways to start</Text></Pressable>
+            </View>
           ) : <>
             {signedIn || orcidName ? (
               <Text style={st.done}>{[signedIn && `✓ GitHub: ${signedIn}`, orcidName && `✓ ORCID: ${orcidName}`].filter(Boolean).join('   ')}</Text>
@@ -93,8 +130,8 @@ export default function Setup() {
               ? 'Optional: myGeeKy already reads your field from your sign-in. A few keywords make it sharper.'
               : 'A few words is enough. myGeeKy uses them to pick research, news and models for you.'}</Text>
             <TextInput style={[st.input, { marginTop: 12 }]} value={keywords} onChangeText={setKeywords} autoFocus
-                       placeholder="GWAS, single cell, AI" placeholderTextColor={C.muted}
-                       returnKeyType="done" onSubmitEditing={submit} />
+                       placeholder="GWAS, single cell, AI" placeholderTextColor={C.muted} multiline
+                       submitBehavior="blurAndSubmit" returnKeyType="done" onSubmitEditing={submit} />
             {suggest(keywords).length ? (
               <View style={st.chips}>
                 {suggest(keywords).map((w) => (
@@ -132,6 +169,7 @@ export default function Setup() {
           </>}
 
           {error ? <Text style={st.error}>{error}</Text> : null}
+          {step === 'keywords' && papersNote ? <Text style={st.hint}>{papersNote}</Text> : null}
           {step === 'keywords' ? <>
             <Text style={st.label}>🔔 Notifications <Text style={st.opt}>(optional)</Text></Text>
             <NotifySettings />
@@ -165,6 +203,9 @@ const st = StyleSheet.create({
           borderRadius: 16, padding: 16 },
   scanTitle: { color: C.text, fontSize: 17, fontWeight: '800' },
   scanSub: { color: C.muted, fontSize: 13, marginTop: 6, lineHeight: 18 },
+  papers: { backgroundColor: '#4a92dd', borderRadius: 14, paddingVertical: 15, marginTop: 12, alignItems: 'center' },
+  papersText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+  doc: { backgroundColor: '#8b6cff', borderRadius: 14, paddingVertical: 15, marginTop: 10, alignItems: 'center' },
   just: { backgroundColor: '#ff6fd8', borderRadius: 14, paddingVertical: 14, marginTop: 10, alignItems: 'center' },
   justText: { color: '#3a0a2e', fontSize: 16, fontWeight: '800' },
   done: { color: C.green, fontSize: 14, fontWeight: '700', textAlign: 'center', marginBottom: 14 },

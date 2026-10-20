@@ -23,7 +23,7 @@ def test_each_keyword_brings_its_closest_related_words_written_as_words():
     assert "anndata" in words["words"] and "single cell" in words["words"]
 
 
-INPUTS = ["sing", "gwas, stat", "single cell, ", "py", "r", "", "GWAS, gwas", "rna-seq", "Single-cell", "micro",
+INPUTS = ["sing", "pyth", "digital", "covid", "climate change, Python", "climate change, Python, ", "gwas, stat", "single cell, ", "py", "r", "", "GWAS, gwas", "rna-seq", "Single-cell", "micro",
           "stats, machine lear", "phylo", "x", "bio, bio"]
 SUGGEST_SCRIPT = """
 import { pick, suggest } from './word-suggest.ts';

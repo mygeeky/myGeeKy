@@ -1504,6 +1504,7 @@ class ExploreDonut(QWidget):
         painter.end()
 
 
+WHOIS_MINUTES = 30         # how often a pending "Is this you?" search is tried again (OpenAlex was busy)
 NOTIFY_MINUTES = 20        # how often the panel looks for something worth notifying (only if a kind is on)
 
 # The dock's planets: each tab's colour and line icon (24x24 SVG path data).
@@ -6392,6 +6393,16 @@ class MyGeekyPanel(QWidget):
                                               lambda s: logic.set_notify(self.cfg, s), lambda: THEMES[self._theme_name()])
         layout.addWidget(self.notify_settings)
 
+        # 📄 "Is this you?": your OpenAlex author record, with no ORCID (whois.py)
+        from .whois_ui import WhoisSection
+        self.whois_section = WhoisSection(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, self._toast)
+        layout.addWidget(self.whois_section)
+
+        # 📝 Drop a CV, thesis or abstract: your field, methods and co-authors from it (docread.py)
+        from .docread_ui import DocSection
+        self.doc_section = DocSection(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, self._toast)
+        layout.addWidget(self.doc_section)
+
         # Your setup: what decides how myGeeKy works for you, at a glance
         self.setup_label = QLabel("")
         self.setup_label.setTextFormat(Qt.RichText)
@@ -7679,7 +7690,22 @@ class MyGeekyPanel(QWidget):
         self._notify_timer.setInterval(NOTIFY_MINUTES * 60_000)
         self._notify_timer.timeout.connect(self._notify_tick)
         self._notify_timer.start()
+        # a pending "Is this you?" search (OpenAlex was busy): tried again now and then, quietly
+        self._whois_timer = QTimer(self)
+        self._whois_timer.setInterval(WHOIS_MINUTES * 60_000)
+        self._whois_timer.timeout.connect(self._whois_tick)
+        self._whois_timer.start()
+        QTimer.singleShot(90_000, self._whois_tick)
         return scroll
+
+    def _whois_tick(self) -> None:
+        if not (self.cfg.orcid_id or self.cfg.openalex_id) and isinstance(logic.whois_state().get("pending"), dict):
+            self._run_async(lambda: logic.whois_retry(self.cfg), self._whois_found)
+
+    def _whois_found(self, cands: Any) -> None:
+        if cands:
+            self._toast("📄 We found your papers on OpenAlex: is this you? See ⚙ → Your papers.")
+            self.whois_section.render()
 
     def _notify_tick(self) -> None:
         if self.cfg.notify_kinds:                      # nothing switched on: nothing to look at, ever

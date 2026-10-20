@@ -7,6 +7,25 @@ import vocab from '../data/skills.json';
 const RELATED: Record<string, string[]> = (fieldWords as any).related ?? {};
 let WORDS: string[] | null = null;
 const norm = (w: string) => w.toLowerCase().replace(/[\s_-]+/g, ' ').trim();
+// "python 3", "python3" and "Python27" are one word to suggest: no spaces, no version number at the end
+const stem = (w: string) => norm(w).replace(/ /g, '').replace(/\d+$/, '') || norm(w);
+/** The words in order, one per stem (the most readable: with spaces, without a version number), none whose stem is
+ * in `skip`. */
+function distinct(ws: string[], skip: Set<string>): string[] {
+  const nicer = (w: string) => (norm(w).includes(' ') ? 0 : 2) + (/\d$/.test(w) ? 1 : 0);
+  const best = new Map<string, string>();
+  for (const w of ws) {
+    const s = stem(w), b = best.get(s);
+    if (b === undefined || nicer(w) < nicer(b)) best.set(s, w);
+  }
+  const seen = new Set(skip);
+  const out: string[] = [];
+  for (const w of ws) {
+    const s = stem(w);
+    if (!seen.has(s)) { seen.add(s); out.push(best.get(s)!); }
+  }
+  return out;
+}
 
 function words(): string[] {
   if (!WORDS) {
@@ -29,10 +48,11 @@ export function splitTyping(text: string): { done: string[]; typing: string } {
 export function suggest(text: string, max = 6): string[] {
   const { done, typing } = splitTyping(text);
   const taken = new Set(done.map(norm));
+  const takenStems = new Set(done.map(stem));
   const q = typing.toLowerCase();
   if (!q) {
     const near = done.flatMap((d) => RELATED[norm(d)] ?? []);
-    return [...new Set(near)].filter((w) => !taken.has(norm(w))).slice(0, max);
+    return distinct([...new Set(near)].filter((w) => !taken.has(norm(w))), takenStems).slice(0, max);
   }
   if (q.length < 2) return [];
   const starts: string[] = [];
@@ -45,7 +65,7 @@ export function suggest(text: string, max = 6): string[] {
   }
   // shorter first, then plain character order (not localeCompare), exactly as keywords.suggest on the desktop
   const byLength = (a: string, b: string) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
-  return [...starts.sort(byLength), ...within.sort(byLength)].slice(0, max);
+  return distinct([...starts.sort(byLength), ...within.sort(byLength)], new Set([...takenStems, stem(q)])).slice(0, max);
 }
 
 /** The text with the word being typed replaced by `word`, ready for the next one. */

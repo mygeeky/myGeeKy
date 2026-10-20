@@ -3,6 +3,23 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **📝 Drop a CV, thesis or abstract**, on the computer and the phone: a new way to start in setup, and in ⚙ /
+  You → Settings any time later. Drop or pick a PDF, Word (.docx) or text file, or paste the text; myGeeKy picks
+  out your field's keywords (from the 1,200-word dictionary), your methods and tools (RNA-seq to thematic analysis,
+  R to NVivo) and the people you've written with, and you untick what isn't you. A first-year student with only a
+  thesis proposal gets a full profile. Read on the device and not kept: only the words you keep are saved.
+  `docread.py` and `lib/doc-read.ts` find the same things in the same text (`tests/test_docread.py`); the phone
+  reads PDFs and Word files itself (`lib/doc-text.ts`, new add-ons, so a new APK).
+- **📄 "Is this you?" from OpenAlex**, on the computer and the phone: no ORCID? Type your name and institution in
+  setup (**Find my papers**) or in ⚙ / You → Settings, and pick yourself among the researchers OpenAlex knows (their
+  institution, topics and recent titles shown). Your papers then shape your profile as an ORCID would. If OpenAlex
+  is busy, setup carries on with keywords and the search is tried again later by itself, asking "Is this you?"
+  when it works. `whois.py` and `lib/whois.ts` rank alike (`tests/test_whois.py`).
+- **Suggestions without near-copies**: typing "pyth" no longer offers python2, python3, python 2 and python27 one
+  after another (the most readable one stays), on both apps.
+
 ## 0.28.0 (2026-10-19): careful notifications, and words for every field
 
 - **A dictionary for every field**: myGeeKy's keyword dictionary grew from 300 words to 1,200, built from 197
