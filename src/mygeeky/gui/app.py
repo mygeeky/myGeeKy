@@ -765,7 +765,9 @@ def notify_candidates(cfg: MyGeekyConfig, today: str) -> list[dict[str, Any]]:
         ss = []
     rising = (papers.load_trends() or {}).get("rising") or []
     from .. import citedby
-    return notify.candidates(today, ss, ranked, rising, data.get("highlights") or [], citedby.load().get("citing") or [])
+    from .. import datasets
+    return notify.candidates(today, ss, ranked, rising, data.get("highlights") or [], citedby.load().get("citing") or [],
+                             datasets.radar_load().get("items") or [])
 
 
 def notify_check(cfg: MyGeekyConfig, now: Any = None) -> dict[str, Any] | None:
@@ -1383,7 +1385,7 @@ def get_growth(cfg: MyGeekyConfig, save: bool = True) -> dict[str, Any]:
     wanted_data = [s["name"] for s in rising["skills"][:8]] + [d["name"] for d in rising.get("directions") or []]
     return {"rising": rising, "paths": protocols.views(cfg, data), "resources": resources,
             "datasets": {"items": datasets.load()["datasets"], "weights": interests.profile_terms(cfg),
-                         "wanted": wanted_data},
+                         "wanted": wanted_data, "radar": datasets.radar_load()},
             "reviewed": [{"id": p["id"], "skill": p["skill"], "goal": p.get("goal", ""), "title": p["title"],
                           "summary": p.get("summary", "")}
                          for p in protocols.by_fit(protocols.reviewed(data), interests.profile_terms(cfg))],
@@ -1409,6 +1411,8 @@ def refresh_growth(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
     try:
         from .. import datasets
         datasets.refresh_if_due(force=force)           # Grow → Data's list
+        from .. import interests
+        datasets.radar_refresh(cfg.keywords + cfg.topics, interests.profile_terms(cfg), force=force)   # 🆕 New
     except Exception:
         pass
     try:

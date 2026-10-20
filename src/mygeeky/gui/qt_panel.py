@@ -4470,7 +4470,7 @@ class MyGeekyPanel(QWidget):
             self.grow_area.addWidget(DatasetsSection(
                 d.get("items") or [], d.get("weights") or {}, d.get("wanted") or [], theme,
                 lambda ds, up: logic.vote("dataset", ds["id"], up, ds["title"], ds["skills"]), open_,
-                datasets.field_for_part(mode)))
+                datasets.field_for_part(mode), d.get("radar")))
         elif mode == "wins":
             self.grow_hint.setText("New stars and forks on your repos, and new citations of your papers "
                                    "(with the newest paper citing you). Checked once a day.")

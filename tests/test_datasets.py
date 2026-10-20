@@ -189,3 +189,74 @@ out({ items, raw: INPUT.raw.map(cleanItem), lic: INPUT.lic.map(licenceOk), sizes
     for f, got in zip(["", "for you", "Earth & climate"], said["ranks"]):
         want = datasets.rank(items, weights, ["Scanpy", "Machine learning"], f, {shipped["datasets"][0]["id"]: -1})
         assert json.loads(json.dumps(want)) == got, f
+
+
+# --------------------------------------------------------------------------- 🆕 the radar
+ZEN_NEW = {"hits": {"hits": [
+    {"id": 11, "created": "2026-10-19T10:00:00", "links": {"self_html": "https://zenodo.org/records/11"},
+     "metadata": {"title": "Single-cell RNA-seq of mouse liver", "publication_date": "2026-10-19",
+                  "license": {"id": "cc-by-4.0"}, "description": "<p>Counts from single-cell RNA-seq of 9 livers by G&uuml;rhan &amp; Ng &#8211; v2.</p>"},
+     "files": [{"key": "counts.h5ad", "size": 3e8}]},
+    {"id": 12, "links": {"self_html": "https://zenodo.org/records/12"},
+     "metadata": {"title": "Regulation of artificial intelligence", "publication_date": "2026-10-19",
+                  "license": {"id": "cc-by-4.0"}, "description": "A law paper."}, "files": []}]}}
+GEO_NEW = {"1": {"accession": "GSE300001", "title": "Single-cell RNA-seq of human PBMC after vaccination",
+                 "summary": "We profiled 50,000 cells.", "taxon": "Homo sapiens", "n_samples": "12",
+                 "gdstype": "Expression profiling by high throughput sequencing", "pdat": "2026/10/18"},
+           "2": {"accession": "GSE300002", "title": "Single-cell RNA-seq of human PBMC after vaccination",
+                 "summary": "SubSeries.", "taxon": "Homo sapiens", "n_samples": "6", "pdat": "2026/10/18"},
+           "3": {"accession": "GDS1", "title": "not a series"}}
+FIG_NEW = {"id": 77, "title": "VasQ matrix for single-cell RNA-seq", "url_public_html": "https://figshare.com/articles/dataset/x/77",
+           "published_date": "2026-10-20T16:23:19Z", "license": {"name": "CC BY 4.0"},
+           "description": "<p>single-cell rna seq matrix and metadata</p>", "files": [{"name": "m.npz", "size": 9.46e8}]}
+
+
+def test_the_radar_searches_your_words_and_keeps_only_new_open_on_topic_data():
+    assert datasets.radar_terms(["Single-cell  RNA-seq", "gw"], {"gwas": 1.0, "jake": 3.0, "nextflow": 0.5, "a": 2}) == \
+        ["single-cell rna-seq", "gwas", "nextflow"]                            # "jake" is a name, not a topic
+    found = (datasets.parse_zenodo_new(ZEN_NEW, "single-cell rna-seq")
+             + datasets.parse_geo_new(GEO_NEW, ["1", "2", "3"], "single-cell rna-seq")
+             + [datasets.parse_figshare_new(FIG_NEW, "single-cell rna-seq")])
+    assert "<p>" not in found[0]["about"] and found[0]["formats"] == ["h5ad"] and found[0]["size_mb"] == 300.0
+    st = datasets.radar_merge({}, found, "2026-10-20")
+    ids = [i["id"] for i in st["items"]]
+    assert "zenodo-12" not in ids                                          # off topic: the words aren't in it
+    assert "geo-gse300001" in ids and "geo-gse300002" not in ids           # a SuperSeries and its part: once
+    assert "figshare-77" in ids and all(i["found"] == "2026-10-20" for i in st["items"])
+    r = datasets.radar_rank(st, {"pbmc": 1.0}, {}, "2026-10-20")
+    assert r["items"][0]["id"] == "geo-gse300001" and r["new"] == 3 and all(i["new"] for i in r["items"])
+    seen = {**st, "seen": ["geo-gse300001"]}
+    assert datasets.radar_rank(seen, {}, {"zenodo-11": -1}, "2026-10-20")["hidden"] == 1
+    assert [i["new"] for i in datasets.radar_rank(seen, {}, {}, "2026-10-20")["items"] if i["id"] == "geo-gse300001"] == [False]
+    later = datasets.radar_merge(st, [], "2027-01-30")                     # past RADAR_KEEP_DAYS: gone
+    assert later["items"] == []
+
+
+def test_a_new_dataset_can_be_a_notification():
+    from mygeeky import notify
+    assert "datasets" in notify.ORDER and notify.TAB["datasets"] == "grow"
+    c = notify.candidates("2026-10-20", datasets=[{"id": "geo-1", "title": "New PBMC data", "found": "2026-10-18"},
+                                                  {"id": "old", "title": "Old", "found": "2026-09-01"}])
+    assert [x["id"] for x in c] == ["dataset:geo-1"]
+    assert "🗂 1 new dataset on your topics" in notify.summary(c)["body"]
+
+
+@pytest.mark.skipif(not phone.node_ok(), reason="needs Node 22.6+ and the phone's packages")
+def test_the_phone_radar_reads_merges_and_ranks_the_same():
+    said = phone.run("""
+import { parseZenodoNew, parseGeoNew, parseFigshareNew, radarMerge, radarRank, radarTerms } from './lib/datasets.ts';
+const found = [...parseZenodoNew(INPUT.zen, 'single-cell rna-seq'), ...parseGeoNew(INPUT.geo, ['1', '2', '3'], 'single-cell rna-seq'),
+               parseFigshareNew(INPUT.fig, 'single-cell rna-seq')!];
+const st = radarMerge({}, found, '2026-10-20');
+out({ found, st, rank: radarRank({ ...st, seen: ['geo-gse300001'] }, { pbmc: 1.0 }, { 'zenodo-11': -1 }, '2026-10-20'),
+      terms: radarTerms(['Single-cell  RNA-seq', 'gw'], { gwas: 1.0, jake: 3.0, nextflow: 0.5, a: 2 }) });
+""", {"zen": ZEN_NEW, "geo": GEO_NEW, "fig": FIG_NEW})
+    found = (datasets.parse_zenodo_new(ZEN_NEW, "single-cell rna-seq")
+             + datasets.parse_geo_new(GEO_NEW, ["1", "2", "3"], "single-cell rna-seq")
+             + [datasets.parse_figshare_new(FIG_NEW, "single-cell rna-seq")])
+    st = datasets.radar_merge({}, found, "2026-10-20")
+    assert said["found"] == json.loads(json.dumps(found))
+    assert said["st"] == json.loads(json.dumps(st))
+    assert said["rank"] == json.loads(json.dumps(datasets.radar_rank({**st, "seen": ["geo-gse300001"]}, {"pbmc": 1.0},
+                                                                     {"zenodo-11": -1}, "2026-10-20")))
+    assert said["terms"] == datasets.radar_terms(["Single-cell  RNA-seq", "gw"], {"gwas": 1.0, "jake": 3.0, "nextflow": 0.5, "a": 2})

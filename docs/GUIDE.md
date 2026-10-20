@@ -93,7 +93,11 @@ experiments* and *images into numbers with Fiji* are for.
   Training Network's tutorial data and well-used datasets on Zenodo, NCBI's curated GEO DataSets and OpenML's vetted
   CC18 suite, re-checked every week. ✨ For you puts first what matches your field and teaches the skills rising
   for you; pick a field to browse the rest. Each card says what to practise, its size, format and licence, with
-  ⬇ Download, the page and a tutorial when there is one.
+  ⬇ Download, the page and a tutorial when there is one. **🆕 New** is the radar: once a day myGeeKy searches, on
+  your device, for public datasets that have just come out on your own keywords (or, without any, your strongest
+  topics) on Zenodo, NCBI GEO's new series and Figshare. It keeps what is open, needs no login, is on topic and in
+  English, marks what you haven't seen with 🆕, and can tell you in a notification (🗂 New data on your topics).
+  Only the search words leave your device.
 - **📈 Skills**: Rising Skills, the skills growing in your field that you don't show yet. What myGeeKy reads
   for you is picked by your interests, so on its own it would call anything you started reading about "rising".
   Growth is therefore measured where no one picked for you: the explore share of your feeds, plus one shared file

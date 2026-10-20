@@ -17,14 +17,15 @@ export const KINDS: [string, string, string, string, string][] = [
   ['papers', '📄', 'An important new paper in your field', 'One of the papers rising fastest, just out', 'papers'],
   ['highlights', '✨', 'A new Highlight', 'A research article retold in plain words', 'Highlights'],
   ['cited', '📑', 'Someone cited your work', 'A new paper citing one of yours', 'citations'],
+  ['datasets', '🗂', 'New data on your topics', 'Public datasets just out, matching your keywords', 'datasets'],
 ];
 const ORDER = KINDS.map((k) => k[0]);
 export const TAB: Record<string, string> = { seasons: 'chances', jobs: 'chances', funding: 'chances', conferences: 'chances',
-  papers: 'papers', highlights: 'grow', cited: 'you' };
+  papers: 'papers', highlights: 'grow', cited: 'you', datasets: 'grow' };
 const EVERY: Record<string, number> = { daily: 1, weekly: 7 };
 export const FIT_MIN = 0.7;
 export const SEASON_DAYS = 21;
-const NEW_DAYS = { papers: 45, highlights: 14, cited: 14 };
+const NEW_DAYS = { papers: 45, highlights: 14, cited: 14, datasets: 7 };
 const TOP_PAPERS = 3;
 const MAX_TOLD = 600;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -68,7 +69,7 @@ const age = (today: string, d: unknown): number | null => {
 };
 
 export function candidates(today: string, seasons: any[] = [], ranked: Record<string, any[]> = {}, papers: any[] = [],
-  highlights: any[] = [], cited: any[] = []): Candidate[] {
+  highlights: any[] = [], cited: any[] = [], datasets: any[] = []): Candidate[] {
   const out: Candidate[] = [];
   for (const s of seasons) {
     const w = s?.when ?? {};
@@ -102,6 +103,10 @@ export function candidates(today: string, seasons: any[] = [], ranked: Record<st
     const a = age(today, String(c?.seen ?? '').slice(0, 10));
     if (!c?.self && a !== null && a >= 0 && a <= NEW_DAYS.cited) out.push({ id: `cited:${c.id ?? ''}`, kind: 'cited', title: String(c.title ?? ''), days: null });
   }
+  for (const d of datasets) {               // a dataset on your topics, found lately (datasets.ts radar)
+    const a = age(today, String(d?.found ?? '').slice(0, 10));
+    if (a !== null && a >= 0 && a <= NEW_DAYS.datasets) out.push({ id: `dataset:${d.id ?? ''}`, kind: 'datasets', title: String(d.title ?? ''), days: null });
+  }
   return out;
 }
 
@@ -132,6 +137,7 @@ export function summary(chosen: Candidate[]): Summary | null {
     else if (kind === 'conferences') pieces.push(`🎤 ${n(k, 'conference fits', 'conferences fit')} you`);
     else if (kind === 'papers') pieces.push(`📄 ${n(k, 'new paper', 'new papers')} rising in your field`);
     else if (kind === 'cited') pieces.push(`📑 ${n(k, 'new paper cites', 'new papers cite')} your work`);
+    else if (kind === 'datasets') pieces.push(`🗂 ${n(k, 'new dataset', 'new datasets')} on your topics`);
     else pieces.push(`✨ ${n(k, 'new Highlight', 'new Highlights')}`);
   }
   const body = pieces.slice(0, 3).join(' · ') + (pieces.length > 3 ? ' · and more' : '');

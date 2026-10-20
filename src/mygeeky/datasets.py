@@ -40,7 +40,8 @@ FIELDS = ["Biology & genomics", "Plants & agriculture", "Medicine & health", "Ne
 LEVELS = ("beginner", "intermediate", "advanced")
 # Grow → Data's parts in the navigation (the orbit and the dock): (part id, planet label, emoji, the field it shows);
 # the phone has the same list with Ionicons names (lib/datasets.ts FIELD_PARTS)
-FIELD_PARTS = [("for-you", "For you", "✨", "for you"), ("biology", "Biology", "🧬", "Biology & genomics"),
+FIELD_PARTS = [("for-you", "For you", "✨", "for you"), ("new", "New", "🆕", "new"),
+               ("biology", "Biology", "🧬", "Biology & genomics"),
                ("plants", "Plants", "🌱", "Plants & agriculture"), ("medicine", "Medicine", "🩺", "Medicine & health"),
                ("neuro", "Neuro", "🧠", "Neuroscience"), ("ecology", "Ecology", "🦋", "Ecology & environment"),
                ("climate", "Climate", "🌍", "Earth & climate"),
@@ -497,6 +498,201 @@ def size_text(mb: float) -> str:
     if mb >= 1000:
         return f"{math.floor(mb / 100 + 0.5) / 10:g} GB"
     return f"{math.floor(mb + 0.5)} MB"
+
+
+# --------------------------------------------------------------------------- 🆕 the radar: new data on your topics
+# Grow → Data → 🆕 New on your topics: once a day, on your device, a search with your own keywords for public datasets
+# that have just come out -- Zenodo (newest first), NCBI GEO's new series (GSE: new expression and sequencing studies)
+# and Figshare. The same rules as the list where they apply (an open licence, no login, laptop-sized when the size is
+# known); nothing about you is sent beyond the search words. The phone does the same (lib/datasets.ts).
+RADAR_FILE = DATA_DIR / "dataset_radar.json"
+RADAR_TERMS = 3              # your keywords searched each day
+RADAR_PER_TERM = 8           # newest records read per keyword and source
+RADAR_DAYS = 30              # how far back a search looks
+RADAR_KEEP_DAYS = 60         # how long a find stays on the list
+RADAR_TOP = 10
+RADAR_MAX = 200
+
+
+def radar_terms(keywords: Iterable[str], weights: dict[str, float]) -> list[str]:
+    """What to search for: your own keywords first, then your strongest interest words that are real topics (in
+    the skills dictionary: interest words can be names, which find nothing worth showing)."""
+    from . import skills
+    out: list[str] = []
+    mine = [" ".join(str(t).lower().split()) for t in keywords]
+    for t in mine + [w for w, _ in sorted(weights.items(), key=lambda kv: (-kv[1], kv[0])) if skills.find(w)]:
+        t = " ".join(str(t).lower().split())
+        if len(t) >= 3 and t not in out:
+            out.append(t)
+        if len(out) == RADAR_TERMS:
+            break
+    return out
+
+
+def _radar_item(rid: str, title: Any, source: str, url: Any, day: Any, size_mb: float, licence: str, about: Any,
+                term: str, formats: list[str]) -> dict[str, Any]:
+    return {"id": rid, "title": _plain(title, 160), "source": source, "url": _https(url), "date": str(day or "")[:10],
+            "size_mb": round(size_mb, 1), "license": _text(licence, 40), "nc": licence_ok(licence)[1],
+            "about": _plain(about, 300), "term": term, "formats": formats[:4]}
+
+
+def parse_zenodo_new(data: Any, term: str) -> list[dict[str, Any]]:
+    hits = ((data or {}).get("hits") or {}).get("hits") or [] if isinstance(data, dict) else []
+    out = []
+    for h in hits[:RADAR_PER_TERM]:
+        if not isinstance(h, dict):
+            continue
+        m = h.get("metadata") or {}
+        files = h.get("files") or []
+        out.append(_radar_item(f"zenodo-{h.get('id')}", m.get("title"), "Zenodo", (h.get("links") or {}).get("self_html"),
+                               m.get("publication_date") or h.get("created"), sum(f.get("size", 0) for f in files) / 1e6,
+                               str((m.get("license") or {}).get("id") or ""), m.get("description"), term,
+                               _formats(f.get("key", "") for f in files)))
+    return out
+
+
+def parse_geo_new(result: Any, ids: list[str], term: str) -> list[dict[str, Any]]:
+    out = []
+    for i in ids[:RADAR_PER_TERM]:
+        s = (result or {}).get(i) if isinstance(result, dict) else None
+        if not isinstance(s, dict) or not re.fullmatch(r"GSE\d+", str(s.get("accession") or "")):
+            continue
+        acc, day = s["accession"], str(s.get("pdat") or "").replace("/", "-")
+        about = f"{s.get('n_samples', '?')} {s.get('taxon', '')} samples · {s.get('gdstype', '')}. {s.get('summary', '')}"
+        out.append(_radar_item(f"geo-{acc.lower()}", s.get("title"), "GEO (NCBI)",
+                               f"https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={acc}", day, 0.0, "Public domain",
+                               about, term, ["soft"]))
+    return out
+
+
+def parse_figshare_new(detail: Any, term: str) -> dict[str, Any] | None:
+    if not isinstance(detail, dict) or not detail.get("id"):
+        return None
+    files = detail.get("files") or []
+    return _radar_item(f"figshare-{detail['id']}", detail.get("title"), "Figshare", detail.get("url_public_html"),
+                       detail.get("published_date"), sum(f.get("size", 0) for f in files) / 1e6,
+                       str((detail.get("license") or {}).get("name") or ""), detail.get("description"), term,
+                       _formats(f.get("name", "") for f in files))
+
+
+def on_topic(it: dict[str, Any]) -> bool:
+    """Every word of the keyword it was found for is in its title or description (searches are loose)."""
+    text = re.sub(r"[\s_-]+", " ", f"{it['title']} {it['about']}".lower())
+    return all(w in text for w in re.sub(r"[\s_-]+", " ", it["term"].lower()).split() if len(w) >= 3)
+
+
+def radar_ok(it: dict[str, Any]) -> bool:
+    """The list's rules, where they can be told from a new record: open, no gate, not too big, has a page; and
+    on the topic it was searched for, in English (the Data list's language)."""
+    from .curated import english_enough
+    text = f"{it['title']} {it['about']}"
+    return (bool(it["title"]) and bool(it["url"]) and licence_ok(it["license"])[0] and not GATED.search(text)
+            and it["size_mb"] <= MAX_TOTAL_MB and on_topic(it) and english_enough(it["title"], it["about"]))
+
+
+def _age(today: str, day: str) -> int | None:
+    try:
+        return (date.fromisoformat(today[:10]) - date.fromisoformat(day[:10])).days
+    except ValueError:
+        return None
+
+
+def radar_merge(state: dict[str, Any], found: list[dict[str, Any]], today: str) -> dict[str, Any]:
+    """The radar's list with today's finds added (each kept with the day it was first seen), old ones dropped."""
+    items = {i["id"]: i for i in (state.get("items") or []) if isinstance(i, dict) and i.get("id") and radar_ok(i)}
+    titles = {re.sub(r"[^a-z0-9]", "", i["title"].lower())[:80] for i in items.values()}
+    for it in found:
+        key = re.sub(r"[^a-z0-9]", "", it["title"].lower())[:80]
+        if radar_ok(it) and it["id"] not in items and key not in titles:   # a GEO SuperSeries and its parts: once
+            items[it["id"]] = {**it, "found": today[:10]}
+            titles.add(key)
+    keep = [i for i in items.values() if (_age(today, i.get("found", "")) or 0) <= RADAR_KEEP_DAYS]
+    keep.sort(key=lambda i: (i.get("found", ""), i.get("date", ""), i["id"]), reverse=True)
+    return {**state, "items": keep[:RADAR_MAX], "seen": [s for s in (state.get("seen") or []) if s in items][-RADAR_MAX * 2:]}
+
+
+def radar_rank(state: dict[str, Any], weights: dict[str, float], votes: dict[str, int] | None = None,
+               today: str = "", top: int = RADAR_TOP) -> dict[str, Any]:
+    """{"items": [...best first, each with `new` (not seen before) and score], "hidden": n, "new": n}."""
+    from .interests import match
+    votes, seen = votes or {}, set(state.get("seen") or [])
+    out, hidden = [], 0
+    for i in state.get("items") or []:
+        v = votes.get(i["id"], 0)
+        if v < 0:
+            hidden += 1
+            continue
+        age = _age(today, i.get("date") or i.get("found", "")) if today else None
+        fresh = max(0.0, 1 - (age if age is not None and age >= 0 else RADAR_DAYS) / RADAR_DAYS)
+        fit = match(f"{i['title']} ; {i['about']}", weights)[0] if weights else 0.0
+        score = (1 + 2 * fit + fresh) * (1.3 if v > 0 else 1.0)
+        out.append({**i, "score": math.floor(score * 10000 + 0.5) / 10000, "new": i["id"] not in seen, "vote": v})
+    out.sort(key=lambda i: (-i["score"], i["id"]))
+    return {"items": out[:top], "hidden": hidden, "new": sum(1 for i in out if i["new"])}
+
+
+def radar_load() -> dict[str, Any]:
+    data = read_json(RADAR_FILE, {}) or {}
+    return data if isinstance(data, dict) else {}
+
+
+def radar_seen(ids: Iterable[str]) -> None:
+    """Shown on the screen: no longer 🆕."""
+    state = radar_load()
+    seen = list(state.get("seen") or [])
+    seen += [i for i in ids if i not in seen]
+    ensure_dirs()
+    write_json(RADAR_FILE, {**state, "seen": seen[-RADAR_MAX * 2:]})
+
+
+def radar_refresh(keywords: Iterable[str], weights: dict[str, float], session=None, force: bool = False,
+                  now: datetime | None = None) -> dict[str, Any]:
+    """Search for new datasets on your keywords, at most once a day. Returns the radar's state."""
+    import requests
+    now = now or datetime.now(timezone.utc)
+    state = radar_load()
+    try:
+        if not force and (now - datetime.fromisoformat(state.get("checked_at", ""))).total_seconds() < CHECK_EVERY_HOURS * 3600:
+            return state
+    except (TypeError, ValueError):
+        pass
+    terms = radar_terms(keywords, weights)
+    session = session or requests.Session()
+    found: list[dict[str, Any]] = []
+    for term in terms:
+        try:
+            r = session.get("https://zenodo.org/api/records", headers=UA, timeout=30,
+                            params={"q": term, "type": "dataset", "sort": "mostrecent", "size": RADAR_PER_TERM})
+            found += parse_zenodo_new(r.json(), term)
+        except Exception:
+            pass
+        try:
+            eu = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+            ids = (session.get(f"{eu}/esearch.fcgi", headers=UA, timeout=30, params={
+                "db": "gds", "term": f"{term} AND gse[ETYP]", "reldate": RADAR_DAYS, "datetype": "pdat",
+                "retmax": RADAR_PER_TERM, "retmode": "json"}).json().get("esearchresult") or {}).get("idlist") or []
+            if ids:
+                res = session.get(f"{eu}/esummary.fcgi", headers=UA, timeout=30,
+                                  params={"db": "gds", "id": ",".join(ids), "retmode": "json"}).json().get("result") or {}
+                found += parse_geo_new(res, ids, term)
+        except Exception:
+            pass
+        try:
+            hits = session.post("https://api.figshare.com/v2/articles/search", headers=UA, timeout=30, json={
+                "search_for": term, "item_type": 3, "order": "published_date", "order_direction": "desc",
+                "page_size": RADAR_PER_TERM // 2}).json()
+            for h in hits if isinstance(hits, list) else []:
+                d = session.get(f"https://api.figshare.com/v2/articles/{int(h['id'])}", headers=UA, timeout=30).json()
+                it = parse_figshare_new(d, term)
+                if it:
+                    found.append(it)
+        except Exception:
+            pass
+    state = radar_merge(state, found, now.date().isoformat())
+    state["checked_at"], state["terms"] = now.isoformat(timespec="seconds"), terms
+    ensure_dirs()
+    write_json(RADAR_FILE, state)
+    return state
 
 
 if __name__ == "__main__":

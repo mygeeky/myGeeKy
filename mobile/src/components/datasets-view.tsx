@@ -4,7 +4,8 @@
 // lib/datasets.ts reads and ranks the list; 👍/👎 teach your model like everywhere else.
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { loadDatasets, rank, type Dataset, type Ranked, sizeText } from '../lib/datasets';
+import { loadDatasets, loadRadar, radarRank, type RadarRanked, type RadarState, radarSeen, rank, refreshRadar, type Dataset, type Ranked,
+  sizeText } from '../lib/datasets';
 import type { Weights } from '../lib/interests';
 import * as taste from '../lib/taste';
 import { C } from '../lib/theme';
@@ -12,7 +13,59 @@ import { GeekLoader, useHold } from './geek-loader';
 import { GCard, Hidden, s, Thumbs } from './growth-parts';
 import { Empty, open } from './ui';
 
-const label = (f: string) => (f === 'for you' ? '✨ For you' : f === '' ? 'All' : f);
+const label = (f: string) => (f === 'for you' ? '✨ For you' : f === 'new' ? '🆕 New on your topics' : f === '' ? 'All' : f);
+
+function RadarCard({ d, onVote }: { d: RadarRanked; onVote: (up: boolean) => Promise<number> }) {
+  const meta = [d.source, d.date, sizeText(d.size_mb), d.license + (d.nc ? ' (non-commercial)' : '')].filter(Boolean).join(' · ');
+  return (
+    <GCard>
+      <View style={s.head}>
+        <Pressable style={{ flex: 1 }} onPress={() => open(d.url)}><Text style={s.title}>{d.new ? '🆕 ' : ''}{d.title}</Text></Pressable>
+        <Thumbs vote={d.vote} onVote={onVote} />
+      </View>
+      {d.about ? <Text style={s.body} numberOfLines={4}>{d.about}</Text> : null}
+      <Text style={s.muted}>{meta}</Text>
+      <Text style={[s.muted, { color: C.green }]}>matches “{d.term}”</Text>
+      <View style={st.row}><Pressable onPress={() => open(d.url)} style={st.btn}><Text style={st.btnText}>Open</Text></Pressable></View>
+    </GCard>
+  );
+}
+
+/** 🆕 New on your topics: what the radar found on your keywords lately (lib/datasets.ts refreshRadar). */
+function RadarList({ keywords, weights }: { keywords: string[]; weights: Weights }) {
+  const [st, setSt] = useState<RadarState | null>(null);
+  const [shown, setShown] = useState<{ items: RadarRanked[]; hidden: number }>({ items: [], hidden: 0 });
+  useEffect(() => {
+    let live = true;
+    loadRadar().then((x) => live && setSt(x)).catch(() => undefined);
+    refreshRadar(keywords, weights).then((x) => live && setSt(x)).catch(() => undefined);
+    return () => { live = false; };
+  }, [keywords, weights]);
+  const again = useCallback(async () => {
+    if (!st) return;
+    const votes = await taste.load();
+    const v = Object.fromEntries((st.items ?? []).map((i) => [i.id, taste.voteOf(votes, 'dataset', i.id)]));
+    const r = radarRank(st, weights, v, new Date().toISOString().slice(0, 10));
+    setShown(r);
+    radarSeen(r.items.map((i) => i.id)).catch(() => undefined);      // shown: no longer 🆕 next time
+  }, [st, weights]);
+  useEffect(() => { Promise.resolve().then(again); }, [again]);
+  if (!st) return <GeekLoader text="Looking for new data on your topics…" />;
+  return (
+    <View>
+      <Text style={[s.muted, { marginTop: 4 }]}>Public datasets just out on your keywords ({(st.terms ?? []).map((x) => `“${x}”`).join(', ') || 'your keywords'}), from Zenodo, NCBI GEO and Figshare, checked once a day: open, no login, on topic.</Text>
+      {shown.items.map((d) => (
+        <RadarCard key={d.id} d={d} onVote={async (up) => {
+          const v = await taste.vote('dataset', d.id, up, d.title, [d.term]);
+          if (v < 0) again();
+          return v;
+        }} />
+      ))}
+      {!shown.items.length ? <Empty>Nothing new on your keywords yet. myGeeKy looks once a day.</Empty> : null}
+      <Hidden n={shown.hidden} onShow={async () => { await taste.unhide('dataset'); again(); }} />
+    </View>
+  );
+}
 
 function DatasetCard({ d, onVote }: { d: Ranked; onVote: (up: boolean) => Promise<number> }) {
   const meta = [d.field, d.level, sizeText(d.size_mb), d.formats.slice(0, 3).join(', ').toUpperCase(),
@@ -37,7 +90,12 @@ function DatasetCard({ d, onVote }: { d: Ranked; onVote: (up: boolean) => Promis
   );
 }
 
-export function DatasetsView({ field, weights, wanted }: { field: string; weights: Weights; wanted: string[] }) {
+export function DatasetsView({ field, weights, wanted, keywords }: { field: string; weights: Weights; wanted: string[]; keywords: string[] }) {
+  if (field === 'new') return <RadarList keywords={keywords} weights={weights} />;
+  return <DatasetList field={field} weights={weights} wanted={wanted} />;
+}
+
+function DatasetList({ field, weights, wanted }: { field: string; weights: Weights; wanted: string[] }) {
   const [all, setAll] = useState<Dataset[] | null>(null);
   const [shown, setShown] = useState<{ items: Ranked[]; hidden: number }>({ items: [], hidden: 0 });
   const hold = useHold(all === null);

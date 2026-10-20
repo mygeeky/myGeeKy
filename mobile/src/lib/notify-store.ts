@@ -3,6 +3,7 @@
 // telling is decided by lib/notify.ts (the same rule as the desktop's notify.py). With no myGeeKy server, the phone
 // can only look when Android lets it run in the background (BackgroundTask, at most every CHECK_MINUTES), and each
 // time myGeeKy opens; nothing is ever pushed to it from outside.
+import { loadRadar } from './datasets';
 import { loadCitedBy } from './cited-by';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as BackgroundTask from 'expo-background-task';
@@ -89,7 +90,7 @@ export async function checkNow(now = new Date()): Promise<N.Summary | null> {
   }
   const research = await readCache<{ rising: unknown[] }>('research');
   const cands = N.candidates(local.slice(0, 10), seasons.ranked(seasons.seasonsOf(lists), local.slice(0, 10)), byKind as Record<string, any[]>,
-    research?.data?.rising ?? [], lists.highlights ?? [], (await loadCitedBy()).citing ?? []);
+    research?.data?.rising ?? [], lists.highlights ?? [], (await loadCitedBy()).citing ?? [], (await loadRadar()).items ?? []);
   const told: string[] = Array.isArray(raw.told) ? raw.told : [];
   const chosen = N.pick(cands, told, s);
   const out = N.summary(chosen);

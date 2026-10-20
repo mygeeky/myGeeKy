@@ -220,7 +220,7 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
       ) : null}
 
       {base === 'data' ? (
-        <DatasetsView field={fieldForPart(mode)} weights={weights} wanted={[...(skills?.skills ?? []).slice(0, 8).map((x) => x.name), ...(skills?.directions ?? []).map((x) => x.name)]} />
+        <DatasetsView field={fieldForPart(mode)} keywords={keywords} weights={weights} wanted={[...(skills?.skills ?? []).slice(0, 8).map((x) => x.name), ...(skills?.directions ?? []).map((x) => x.name)]} />
       ) : null}
 
       {mode === 'wins' ? (
