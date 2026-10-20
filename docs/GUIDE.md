@@ -97,10 +97,14 @@ experiments* and *images into numbers with Fiji* are for.
   a year ago), as long as preprints tie it to a skill you have, directly or through one skill between. The
   dictionary has direction-sized entries for this, such as genomic language models, AI agents, virtual cell, AI
   protein design and self-driving labs: "×7.7 in new preprints since a year ago; appears with your Genomics in 9 of
-  them". Then 🧭 next steps
+  them". A jump over the last weeks that is still below last year's level doesn't count. Directions are drawn
+  three ways: a launch pad (each direction a rocket rising from the skill of yours it's most tied to: higher grows
+  faster, bigger has more preprints), bridges (bands from your skills to directions) and a horizon (how far each is
+  from you). Then 🧭 next steps
   (what to learn, and the skill of yours that leads there), 🌉 bridges (bands from your skills to rising ones),
   🪜 rising with you (your rising strengths and the new skills they appear with) and 🔍 your lens (how often a skill
-  shows in your feed against the world).
+  shows in your feed against the world). After all the plots, **🧭 Start a protocol** lists every direction and
+  next step with a button that turns it into stages.
   - Each one says why it's suggested.
   - 👍 means "yes, I want to learn this"; 👎 hides it ("Show them again" brings hidden ones back).
   - **🧭 Make it a protocol** turns a skill into stages.

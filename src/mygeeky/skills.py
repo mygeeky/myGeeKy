@@ -331,6 +331,8 @@ def directions(world: dict[str, dict[str, Any]], trends: dict[str, Any], have: s
                 year = (_round(math.exp(lg), 2), _round(math.exp(lg - SURE_Z * se), 2), _round(math.exp(lg + SURE_Z * se), 2))
         if not mentions or not (year or c.get("sure")):
             continue
+        if not year and docs[2] and r / max(docs[1], 1) < y / docs[2]:
+            continue                                  # a jump lately that's still below last year's level isn't a rise
         growth, lo, hi = year or (c["growth"], c["lo"], c["hi"])
         mine = sorted(((h, k) for h, k in near[s].items() if h in have), key=lambda x: (-x[1], x[0]))
         together, via = sum(k for _, k in mine), ""
@@ -352,6 +354,7 @@ def directions(world: dict[str, dict[str, Any]], trends: dict[str, Any], have: s
             (DIRECTION_BONUS if kinds.get(s) == "direction" else 1.0)
         rows.append({"name": s, "kind": kinds.get(s, ""), "growth": growth, "lo": lo, "hi": hi, "since": "year" if year else "weeks",
                      "mentions": mentions, "with": [h for h, _ in mine[:2]], "together": together, "via": via,
+                     "ties": [[h, k] for h, k in mine[:5]],
                      "score": _round(score)})
     rows.sort(key=lambda r: (-r["score"], r["name"]))
     return rows[:top]
@@ -372,16 +375,38 @@ def _ratio(r: dict[str, Any]) -> float:
 
 def shapes(result: dict[str, Any]) -> dict[str, Any]:
     """The views of Rising skills, from `rising()`'s answer:
-    directions -- where the field is going (directions()), each with its why-line;
-    next   -- for each suggestion, the skill of yours that leads there (and how many more of yours do);
+    directions -- where the field is going (directions()), each with its why-line, its launch pad (the strongest
+                  of `aim`'s pads it's tied to) and how close it is to that pad (0..1: half its preprints or more = 1);
+    aim    -- the launch pads (your four skills most tied to directions) and bands from your skills to directions;
+    next   -- for each suggestion not already a direction, the skill of yours that leads there (and how many more);
     flow   -- bands from your skills to suggestions, as wide as the documents they share;
     ladder -- your rising strengths joined to the suggestions they appear with;
     lens   -- skills you see more than the world does, and the other way round."""
     sug, strong = result.get("skills") or [], result.get("strengths") or []
     names = [s["name"] for s in sug]
     links = result.get("links") or []
+    dirs = result.get("directions") or []
+    use: dict[str, int] = defaultdict(int)
+    for d in dirs:
+        for h, k in d["ties"]:
+            use[h] += k
+    pads = [h for h, _ in sorted(use.items(), key=lambda kv: (-kv[1], kv[0]))[:4]]
+    aimed = []
+    for d in dirs:
+        best = next(([h, k] for h, k in d["ties"] if h in pads), None)
+        aimed.append(dict(d, line=direction_line(d), pad=best[0] if best else "",
+                          closeness=_round(min(1.0, best[1] / d["mentions"] / 0.5), 3) if best else 0.0))
+    bands = [[h, d["name"], k] for d in dirs[:7] for h, k in d["ties"][:3]]
+    tot: dict[str, int] = defaultdict(int)
+    for h, _, k in bands:
+        tot[h] += k
+    b_left = [h for h, _ in sorted(tot.items(), key=lambda kv: (-kv[1], kv[0]))[:7]]
+    bands = [b for b in bands if b[0] in b_left]
+    aim = {"pads": pads, "left": b_left, "right": [d["name"] for d in dirs[:7] if any(b[1] == d["name"] for b in bands)],
+           "bands": bands}
+    ahead = {d["name"] for d in dirs}
     nxt = []
-    for s in sug[:6]:
+    for s in [s for s in sug if s["name"] not in ahead][:6]:
         ls = [lk for lk in links if lk[1] == s["name"]]
         nxt.append({"name": s["name"], "via": ls[0][0] if ls else "", "more": max(0, len(ls) - 1),
                     "weight": sum(lk[2] for lk in ls), "sure": bool(s.get("rising")), "beyond": bool(s.get("beyond"))})
@@ -398,8 +423,7 @@ def shapes(result: dict[str, Any]) -> dict[str, Any]:
             for i, s in enumerate(strong + sug) if s.get("mine", 0.0) + s.get("world", 0.0) > 0]
     more_mine = sorted((r for r in rows if r["mine"] > r["world"]), key=lambda r: (-_ratio(r), r["name"]))[:5]
     more_world = sorted((r for r in rows if r["world"] > r["mine"]), key=lambda r: (_ratio(r), r["name"]))[:5]
-    return {"directions": [dict(d, line=direction_line(d)) for d in result.get("directions") or []],
-            "next": nxt, "flow": flow, "ladder": ladder, "lens": {"mine": more_mine, "world": more_world}}
+    return {"directions": aimed, "aim": aim, "next": nxt, "flow": flow, "ladder": ladder, "lens": {"mine": more_mine, "world": more_world}}
 
 
 # --------------------------------------------------------------------------- rising
@@ -523,8 +547,7 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
     strengths.sort(key=lambda r: r["score"], reverse=True)
     shown = {r["name"] for r in out[:top]}
     hidden_names = {s["name"] for s in vocabulary() if int(votes.get(taste.key_of("skill", s["name"]), {}).get("vote", 0)) < 0}
-    ahead = directions(world, trends, have,
-                       {r["name"] for r in out[:6]} | hidden_names, {s["name"]: s["kind"] for s in vocabulary()})
+    ahead = directions(world, trends, have, hidden_names, {s["name"]: s["kind"] for s in vocabulary()})
     links = sorted(([h, s, k] for (h, s), k in pairs.items() if s in shown), key=lambda x: (-x[2], x[0], x[1]))[:80]
     return {"skills": out[:top], "strengths": strengths[:8], "hidden": hidden, "documents": len(docs), "links": links,
             "directions": ahead,

@@ -1,4 +1,4 @@
-"""Grow → Skills, drawn: directions (where the field is going, and how it touches you), next steps, bridges (a flow from your skills to rising ones), the ladder (your rising
+"""Grow → Skills, drawn: directions (where the field is going: a launch pad, bridges and a horizon), next steps, bridges (a flow from your skills to rising ones), the ladder (your rising
 strengths joined to new rising skills) and your lens (what your feed sees against the world). skills.shapes() works
 out every number; the phone draws the same four (components/skill-views.tsx). Skill names come from myGeeKy's own
 dictionary, but they're still drawn as plain text.
@@ -6,6 +6,7 @@ dictionary, but they're still drawn as plain text.
 
 from __future__ import annotations
 
+import math
 from typing import Any, Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
@@ -197,6 +198,140 @@ class LensView(_Drawing):
                               f"{name}: in {r['mine'] * 100:.1f}% of your feed, {r['world'] * 100:.1f}% of the world's documents"))
 
 
+class LaunchPadView(_Drawing):
+    """Your skills on the ground (`aim` pads); each direction a rocket launched from the one it's most tied to:
+    higher = faster growth, bigger = more preprints."""
+    GROUND = 250
+
+    def __init__(self, dirs: list[dict[str, Any]], pads: list[str], theme: dict[str, Any]) -> None:
+        super().__init__(theme, self.GROUND + 26)
+        self.dirs, self.pads = [d for d in dirs if d["pad"]], pads
+
+    def paintEvent(self, _e) -> None:  # noqa: N802
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        W, ground = self.width(), self.GROUND
+        top_g = max([d["growth"] for d in self.dirs] or [2]) * 1.1
+        top_m = max([d["mentions"] for d in self.dirs] or [1])
+        alt = lambda g: ground - 20 - math.log(max(g, 1)) / math.log(max(top_g, 1.5)) * (ground - 50)  # noqa: E731
+        px = lambda i: 24 + (i + 0.5) * (W - 48) / max(len(self.pads), 1)  # noqa: E731
+        sky = QColor(qcolor(self.theme["text"]))
+        sky.setAlphaF(0.04)
+        p.setPen(Qt.NoPen)
+        p.setBrush(sky)
+        p.drawRoundedRect(QRectF(0, 0, W, ground), 8, 8)
+        p.setFont(self.font_of(7))
+        for g in (2, 4, 8):
+            if g < top_g:
+                y = alt(g)
+                p.setPen(QPen(qcolor(self.theme["muted"]), 1, Qt.DotLine))
+                p.drawLine(QPointF(0, y), QPointF(W, y))
+                self.text(p, W - 3, y - 6, f"×{g}", right=True, color=self.theme["muted"])
+        p.setPen(QPen(qcolor(self.theme["muted"]), 1.5))
+        p.drawLine(QPointF(0, ground), QPointF(W, ground))
+        p.setFont(self.font_of(8, True))
+        for i, name in enumerate(self.pads):
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(YOURS[self.dark]))
+            p.drawRoundedRect(QRectF(px(i) - 13, ground, 26, 5), 2, 2)
+            w = p.fontMetrics().horizontalAdvance(_short(name, 12))
+            self.text(p, px(i) - w / 2, ground + 15, _short(name, 12))
+        self.hits, placed, seen = [], [], {}
+        rocket, flame = QColor(RISING[self.dark]), QColor("#f6b54a")
+        for d in self.dirs:
+            i = self.pads.index(d["pad"])
+            k = seen[d["pad"]] = seen.get(d["pad"], -1) + 1
+            x = max(14.0, min(W - 14.0, px(i) + (1 if k % 2 else -1) * math.ceil(k / 2) * 22))
+            y, r = alt(d["growth"]), 5 + 6 * math.sqrt(d["mentions"] / top_m)
+            trail = QColor(rocket)
+            trail.setAlphaF(0.35)
+            path = QPainterPath(QPointF(px(i), ground))
+            path.cubicTo(px(i), (ground + y) / 2, x, (ground + y) / 2 + 20, x, y + r)
+            p.setPen(QPen(trail, 2, Qt.DashLine))
+            p.setBrush(Qt.NoBrush)
+            p.drawPath(path)
+            body = QPainterPath(QPointF(x, y - r * 1.5))
+            body.cubicTo(x + r * .9, y - r * .6, x + r * .8, y + r * .6, x + r * .55, y + r)
+            body.lineTo(x - r * .55, y + r)
+            body.cubicTo(x - r * .8, y + r * .6, x - r * .9, y - r * .6, x, y - r * 1.5)
+            p.setPen(Qt.NoPen)
+            p.fillPath(body, rocket)
+            fire = QPainterPath(QPointF(x - r * .35, y + r))
+            fire.lineTo(x, y + r * 1.9)
+            fire.lineTo(x + r * .35, y + r)
+            p.fillPath(fire, flame)
+            p.setBrush(QColor("#191824" if self.dark else "#ffffff"))
+            p.drawEllipse(QPointF(x, y - r * .3), r * .28, r * .28)
+            self.hits.append((QRectF(x - r, y - r * 1.6, 2 * r, 3.4 * r), f"{d['name']}: {d['line']}"))
+            ly = y - r * 1.5 - 7
+            if not any(abs(a - x) < 76 and abs(b - ly) < 12 for a, b in placed):
+                placed.append((x, ly))
+                p.setFont(self.font_of(7.5, True))
+                label = _short(d["name"], 18)
+                w = p.fontMetrics().horizontalAdvance(label)
+                self.text(p, max(0.0, min(W - w, x - w / 2)), ly, label)
+
+
+class HorizonView(_Drawing):
+    """You at the bottom, your skills (`aim` pads) as spokes; the closer a direction sits, the more of its preprints
+    also mention that skill; bigger dots grow faster."""
+
+    def __init__(self, dirs: list[dict[str, Any]], pads: list[str], theme: dict[str, Any]) -> None:
+        super().__init__(theme, 256)
+        self.dirs, self.pads = [d for d in dirs if d["pad"]], pads
+
+    def paintEvent(self, _e) -> None:  # noqa: N802
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        W, cy = self.width(), self.height() - 18
+        cx, R = W / 2, min(W / 2 - 24, self.height() - 44)
+        ang = lambda i: math.pi * (0.24 + 0.52 * (0.5 if len(self.pads) == 1 else i / (len(self.pads) - 1)))  # noqa: E731
+        p.setFont(self.font_of(7))
+        for f, words in ((0.33, "a short step"), (0.66, "a stretch"), (1.0, "a leap")):
+            p.setPen(QPen(qcolor(self.theme["muted"]), 1, Qt.DotLine if f < 1 else Qt.SolidLine))
+            p.setBrush(Qt.NoBrush)
+            p.drawArc(QRectF(cx - R * f, cy - R * f, 2 * R * f, 2 * R * f), 0, 180 * 16)
+            self.text(p, cx + R * f - p.fontMetrics().horizontalAdvance(words) / 2, cy + 9, words, color=self.theme["muted"])
+        spoke = QColor(YOURS[self.dark])
+        p.setFont(self.font_of(8, True))
+        for i, name in enumerate(self.pads):
+            a = ang(i)
+            spoke.setAlphaF(0.3)
+            p.setPen(QPen(spoke, 1))
+            p.drawLine(QPointF(cx, cy), QPointF(cx - math.cos(a) * R, cy - math.sin(a) * R))
+            label = _short(name, 13)
+            w = p.fontMetrics().horizontalAdvance(label)
+            x = max(w / 2 + 2, min(W - w / 2 - 2, cx - math.cos(a) * (R + 10)))
+            self.text(p, x - w / 2, cy - math.sin(a) * (R + 10) - 2, label, color=YOURS[self.dark])
+        p.setPen(QPen(QColor(BOTH[self.dark]), 1.5))
+        you = QColor(BOTH[self.dark])
+        you.setAlphaF(0.2)
+        p.setBrush(you)
+        p.drawEllipse(QPointF(cx, cy), 13, 13)
+        p.setFont(self.font_of(7.5, True))
+        self.text(p, cx - p.fontMetrics().horizontalAdvance("you") / 2, cy, "you")
+        top_g = max([d["growth"] for d in self.dirs] or [2])
+        self.hits, placed, seen = [], [], {}
+        for d in self.dirs:
+            i = self.pads.index(d["pad"])
+            k = seen[d["pad"]] = seen.get(d["pad"], -1) + 1
+            a = ang(i) + (1 if k % 2 else -1) * math.ceil(k / 2) * 0.13
+            dist = 0.22 + 0.78 * (1 - d["closeness"])
+            x, y = cx - math.cos(a) * R * dist, cy - math.sin(a) * R * dist
+            r = 4 + 6 * math.log(max(d["growth"], 1)) / math.log(max(top_g, 1.5))
+            p.setPen(QPen(QColor("#191824" if self.dark else "#ffffff"), 1.5))
+            p.setBrush(QColor(RISING[self.dark]))
+            p.drawEllipse(QPointF(x, y), r, r)
+            self.hits.append((QRectF(x - r, y - r, 2 * r, 2 * r), f"{d['name']}: {d['line']}"))
+            ly = y - r - 7
+            if not any(abs(a2 - x) < 74 and abs(b - ly) < 11 for a2, b in placed):
+                placed.append((x, ly))
+                p.setFont(self.font_of(7.5))
+                label = _short(d["name"], 16)
+                w = p.fontMetrics().horizontalAdvance(label)
+                self.text(p, max(0.0, min(W - w, x - w / 2)), ly, label)
+
+
 def _legend(items: list[tuple[str, str]], theme: dict[str, Any]) -> QWidget:
     w = QWidget()
     w.setStyleSheet("background:transparent;")
@@ -211,7 +346,7 @@ def _legend(items: list[tuple[str, str]], theme: dict[str, Any]) -> QWidget:
 
 
 class SkillViews(QWidget):
-    """The four views, one under the other, each with a line saying what it shows."""
+    """The views, one under the other, each with a line saying what it shows; the protocol suggestions come last."""
 
     def __init__(self, shapes: dict[str, Any], theme: dict[str, Any], on_path: Callable[[str], None] | None = None,
                  started: set[str] | None = None) -> None:
@@ -223,12 +358,21 @@ class SkillViews(QWidget):
         lay.setSpacing(4)
         head = f"color:{theme['text']}; font-size:11px; font-weight:800; letter-spacing:0.5px; margin-top:8px;"
         hint = f"color:{theme['muted']}; font-size:10.5px;"
-        if shapes.get("directions"):
+        dirs, aim = shapes.get("directions") or [], shapes.get("aim") or {"pads": [], "bands": []}
+        if dirs and aim["pads"]:
             lay.addWidget(_label("🚀 DIRECTIONS", head))
             lay.addWidget(_label("Where your field is heading: rising for sure across new preprints, and tied to "
-                                 "what you know, even if your feed hasn't shown them yet.", hint))
-            for d in shapes["directions"]:
-                lay.addWidget(self._direction(d, theme, dark, on_path, d["name"] in (started or set())))
+                                 "what you know, even if your feed hasn't shown them yet. Each rocket launches from "
+                                 "the skill of yours it's most tied to: higher grows faster, bigger has more preprints.",
+                                 hint))
+            lay.addWidget(LaunchPadView(dirs, aim["pads"], theme))
+            if aim["bands"]:
+                lay.addWidget(_label("Which of your skills lead where: bands as wide as the preprints that mention both.",
+                                     hint))
+                lay.addWidget(FlowView(aim, theme))
+            lay.addWidget(_label("How far each is from you: the closer, the more of its preprints mention that "
+                                 "skill of yours.", hint))
+            lay.addWidget(HorizonView(dirs, aim["pads"], theme))
         if shapes["next"]:
             lay.addWidget(_label("🧭 NEXT STEPS", head))
             lay.addWidget(_label("What to learn, and the skill of yours that leads there.", hint))
@@ -251,10 +395,18 @@ class SkillViews(QWidget):
             lay.addWidget(_legend([(YOURS[dark], "your feed"), (RISING[dark], "the world"),
                                    (BOTH[dark], "names in green are yours")], theme))
             lay.addWidget(LensView(shapes["lens"], theme))
+        picks = [(d["name"], d["line"], f"×{d['growth']:g}") for d in dirs] + \
+                [(n["name"], (f"via {n['via']}" + (f" and {n['more']} more of yours" if n["more"] else "")) if n["via"]
+                  else "nothing of yours leads here yet", "") for n in shapes["next"]]
+        if picks and on_path:
+            lay.addWidget(_label("🧭 START A PROTOCOL", head))
+            lay.addWidget(_label("Turn a direction or a next step into stages you can follow.", hint))
+            for name, why, chip in picks:
+                lay.addWidget(self._protocol_row(name, why, chip, theme, dark, on_path, name in (started or set())))
 
     @staticmethod
-    def _direction(d: dict[str, Any], theme: dict[str, Any], dark: bool, on_path: Callable[[str], None] | None,
-                   started: bool) -> QWidget:
+    def _protocol_row(name: str, why: str, chip: str, theme: dict[str, Any], dark: bool,
+                      on_path: Callable[[str], None], started: bool) -> QWidget:
         w = QWidget()
         w.setObjectName("direction")
         w.setStyleSheet(f"#direction {{ background:rgba(128,128,128,22); border-left:3px solid {RISING[dark]}; "
@@ -263,17 +415,18 @@ class SkillViews(QWidget):
         col.setContentsMargins(10, 6, 8, 6)
         col.setSpacing(2)
         top = QHBoxLayout()
-        top.addWidget(_label(d["name"], f"color:{theme['text']}; font-size:12.5px; font-weight:800;"), 1)
-        top.addWidget(_label(f"×{d['growth']:g}", f"color:{RISING[dark]}; font-size:11px; font-weight:800;"))
+        top.addWidget(_label(name, f"color:{theme['text']}; font-size:12.5px; font-weight:800;"), 1)
+        if chip:
+            top.addWidget(_label(chip, f"color:{RISING[dark]}; font-size:11px; font-weight:800;"))
         col.addLayout(top)
-        col.addWidget(_label(d["line"], f"color:{theme['muted']}; font-size:10.5px;"))
+        col.addWidget(_label(why, f"color:{theme['muted']}; font-size:10.5px;"))
         if on_path:
             btn = QPushButton("✓ In your protocols" if started else "🧭 Make it a protocol")
             btn.setEnabled(not started)
             btn.setCursor(Qt.PointingHandCursor)
             btn.setStyleSheet(f"QPushButton {{ color:{theme['text']}; background:rgba(128,128,128,40); border:none; "
                               "border-radius:8px; padding:3px 9px; font-size:10.5px; }")
-            btn.clicked.connect(lambda: on_path(d["name"]))
+            btn.clicked.connect(lambda: on_path(name))
             row = QHBoxLayout()
             row.addWidget(btn)
             row.addStretch(1)

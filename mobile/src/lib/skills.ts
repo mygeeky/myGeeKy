@@ -189,6 +189,7 @@ const DIRECTIONS = 5;
 const DIRECTION_BONUS = 1.3;
 const GROWTH_CAP = 5;
 export type Direction = { name: string; kind: string; growth: number; lo: number; hi: number; since: 'year' | 'weeks'; mentions: number; with: string[];
+  ties: [string, number][];
   together: number; via: string; score: number };
 
 /** Where the field is going and how it touches you: skills rising for sure across new preprints that you don't have,
@@ -214,6 +215,7 @@ export function directions(world: Record<string, Corrected>, trends: Trends, hav
       if (lg - SURE_Z * se > Math.log(SURE_ABOVE)) year = [round(Math.exp(lg), 2), round(Math.exp(lg - SURE_Z * se), 2), round(Math.exp(lg + SURE_Z * se), 2)];
     }
     if (!mentions || !(year || (c.sure && c.growth != null))) continue;
+    if (!year && docs[2] && r / Math.max(docs[1], 1) < y / docs[2]) continue;   // a jump lately still below last year's level
     const [growth, lo, hi] = year ?? [c.growth as number, c.lo, c.hi];
     let mine = yoursOf(s), via = '';
     let together = mine.reduce((a, [, k]) => a + k, 0), tie = together / mentions;
@@ -232,6 +234,7 @@ export function directions(world: Record<string, Corrected>, trends: Trends, hav
     const score = Math.log1p(mentions) * Math.min(growth, GROWTH_CAP) * (0.25 + 0.75 * Math.sqrt(Math.min(tie, 1)))
       * (kinds[s] === 'direction' ? DIRECTION_BONUS : 1);
     rows.push({ name: s, kind: kinds[s] ?? '', growth, lo, hi, since: year ? 'year' : 'weeks', mentions, with: mine.slice(0, 2).map(([h]) => h),
+      ties: mine.slice(0, 5).map(([h, k]) => [h, k] as [string, number]),
       together, via, score: round(score) });
   }
   return rows.sort((a, b) => b.score - a.score || cmp(a.name, b.name)).slice(0, top);
@@ -256,7 +259,8 @@ export function note(s: Rising): string {
 
 export type LensRow = { name: string; mine: number; world: number; yours: boolean };
 export type Shapes = {
-  directions: (Direction & { line: string })[];
+  directions: (Direction & { line: string; pad: string; closeness: number })[];
+  aim: { pads: string[]; left: string[]; right: string[]; bands: Link[] };
   next: { name: string; via: string; more: number; weight: number; sure: boolean; beyond: boolean }[];
   flow: { left: string[]; right: string[]; bands: Link[] };
   ladder: { left: string[]; right: string[]; links: Link[] };
@@ -269,7 +273,22 @@ const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 export function shapes(result: { skills: Rising[]; strengths: Rising[]; links: Link[]; directions?: Direction[] }): Shapes {
   const sug = result.skills, strong = result.strengths, links = result.links;
   const names = sug.map((s) => s.name);
-  const next = sug.slice(0, 6).map((s) => {
+  const dirs = result.directions ?? [];
+  const use: Record<string, number> = {};
+  for (const d of dirs) for (const [h, k] of d.ties) use[h] = (use[h] ?? 0) + k;
+  const pads = Object.entries(use).sort((a, b) => b[1] - a[1] || cmp(a[0], b[0])).slice(0, 4).map(([h]) => h);
+  const aimed = dirs.map((d) => {
+    const best = d.ties.find(([h]) => pads.includes(h));
+    return { ...d, line: directionLine(d), pad: best?.[0] ?? '', closeness: best ? round(Math.min(1, best[1] / d.mentions / 0.5), 3) : 0 };
+  });
+  let bands: Link[] = dirs.slice(0, 7).flatMap((d) => d.ties.slice(0, 3).map(([h, k]) => [h, d.name, k] as Link));
+  const tot: Record<string, number> = {};
+  for (const [h, , k] of bands) tot[h] = (tot[h] ?? 0) + k;
+  const bLeft = Object.entries(tot).sort((a, b) => b[1] - a[1] || cmp(a[0], b[0])).slice(0, 7).map(([h]) => h);
+  bands = bands.filter((b) => bLeft.includes(b[0]));
+  const aim = { pads, left: bLeft, right: dirs.slice(0, 7).map((d) => d.name).filter((n) => bands.some((b) => b[1] === n)), bands };
+  const ahead = new Set(dirs.map((d) => d.name));
+  const next = sug.filter((s) => !ahead.has(s.name)).slice(0, 6).map((s) => {
     const ls = links.filter((l) => l[1] === s.name);
     return { name: s.name, via: ls[0]?.[0] ?? '', more: Math.max(0, ls.length - 1), weight: ls.reduce((a, l) => a + l[2], 0),
       sure: !!s.rising, beyond: !!s.beyond };
@@ -282,7 +301,8 @@ export function shapes(result: { skills: Rising[]; strengths: Rising[]; links: L
   const rows: LensRow[] = [...strong, ...sug].map((s, i) => ({ name: s.name, mine: s.mine ?? 0, world: s.world ?? 0, yours: i < strong.length }))
     .filter((r) => r.mine + r.world > 0);
   return {
-    directions: (result.directions ?? []).map((d) => ({ ...d, line: directionLine(d) })),
+    directions: aimed,
+    aim,
     next,
     flow: { left, right, bands: links.filter((l) => left.includes(l[0]) && right.includes(l[1])) },
     ladder: { left: lLeft, right: lRight, links: links.filter((l) => lLeft.includes(l[0]) && lRight.includes(l[1])) },
@@ -395,7 +415,7 @@ export async function rising(opts: { docs: Doc[]; mine: string; weights: Weights
   const links = [...pairs].map(([k, c]) => [...k.split('\n'), c] as Link).filter((l) => shown.has(l[1]))
     .sort((a, b) => b[2] - a[2] || cmp(a[0], b[0]) || cmp(a[1], b[1])).slice(0, 80);
   const hiddenNames = vocabulary().filter((s) => taste.voteOf(votes, 'skill', s.name) < 0).map((s) => s.name);
-  const ahead = directions(world, trends, have, new Set([...out.slice(0, 6).map((x) => x.name), ...hiddenNames]),
+  const ahead = directions(world, trends, have, new Set(hiddenNames),
     Object.fromEntries(vocabulary().map((s) => [s.name, s.kind])));
   return { skills: top, strengths: strengths.slice(0, 8), hidden, links, directions: ahead };
 }

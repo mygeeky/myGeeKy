@@ -389,7 +389,10 @@ def test_the_phone_corrects_rising_skills_the_same_way():
     docs = [_doc("GWAS with Nextflow"), _doc("GWAS and nextflow again"), _doc("python and docker"),
             _doc("docker images in python"), _doc("GWAS on Docker"), dict(_doc("polars in python"), pick="wide"),
             _doc("polars dataframes")]
-    world = {"docs": [1000, 1000], "skills": {"Nextflow": [5, 40], "Docker": [30, 30], "GWAS": [20, 60]}}
+    world = {"docs": [1000, 1000, 1000], "skills": {"Nextflow": [5, 40, 3], "Docker": [30, 30, 30], "GWAS": [20, 60, 10],
+                                                    "AI agents": [20, 30, 2], "Virtual cell": [2, 30, 1], "Polars": [1, 9, 0]},
+             "pairs": {"AI agents|Python": 7, "AI agents|GWAS": 3, "GWAS|Virtual cell": 5, "Nextflow|Virtual cell": 4,
+                       "Polars|Python": 2}}
     result = skills.rising(cfg, docs=docs, mine="I do GWAS in Python", weights={}, today=TODAY, save=False, trends=world)
     ahead = {"docs": [2000, 2000, 1800], "skills": {"AI agents": [50, 60, 9], "Genomic language models": [5, 50, 4],
                                               "Quantum computing": [10, 60], "Docker": [30, 30], "Deep learning": [40, 40]},
@@ -412,6 +415,7 @@ out({ corrected: INPUT.cases.map((c: any) => corrected(c.docs, cleanTrends(c.tre
         assert json.loads(json.dumps(skills.corrected(c["docs"], skilltrends.clean(c["trends"]), c["feed"]))) == got
     assert json.loads(json.dumps(skills.shapes(result))) == said["shapes"]
     assert [skills.note(s) for s in result["skills"] + result["strengths"]] == said["notes"]
+    assert len(said["shapes"]["directions"]) >= 2 and said["shapes"]["aim"]["bands"]
     for c, (got, lines) in zip(cases, said["directions"]):
         tr = skilltrends.clean(c["trends"])
         d = skills.directions(skills.corrected(c["docs"], tr, c["feed"]), tr, {"GWAS", "Python"}, {"Docker"},
@@ -447,3 +451,25 @@ def test_directions_look_past_your_feed_and_say_how_they_touch_you():
     assert "since a year ago; appears with your Python in 20 of them" in skills.direction_line(d[0])
     lone = {"docs": [2000, 2000], "skills": {"AI agents": [10, 60]}, "pairs": {}}       # rising, but nothing ties it to you
     assert skills.rising(cfg, docs=docs, mine="GWAS", weights={}, today=TODAY, save=False, trends=lone)["directions"] == []
+
+
+def test_directions_skip_jumps_below_last_year_and_feed_the_three_plots():
+    cfg = MyGeekyConfig()
+    docs = [_doc("GWAS study"), _doc("GWAS again"), _doc("python code"), _doc("python more"),
+            _doc("AI agents for GWAS"), _doc("agentic python")]
+    world = {"docs": [2000, 2000, 2000],
+             "skills": {"Computer vision": [0, 10, 20],           # up lately, but half of last year: not a rise
+                        "AI agents": [50, 60, 8], "Genomic language models": [5, 50, 4]},
+             "pairs": {"Computer vision|Python": 9, "AI agents|Python": 12, "AI agents|GWAS": 4,
+                       "GWAS|Genomic language models": 9}}
+    out = skills.rising(cfg, docs=docs, mine="I do GWAS in Python", weights={}, today=TODAY, save=False, trends=world)
+    names = [d["name"] for d in out["directions"]]
+    assert "Computer vision" not in names and "AI agents" in names
+    assert "AI agents" in [s["name"] for s in out["skills"]]                 # in your feed too ...
+    v = skills.shapes(out)
+    assert "AI agents" not in [n["name"] for n in v["next"]]                 # ... so it's a direction, not a next step
+    assert v["aim"]["pads"] == ["GWAS", "Python"]            # 4 + 9 preprints with GWAS, 12 with Python
+    by = {d["name"]: d for d in v["directions"]}
+    assert by["AI agents"]["pad"] == "Python" and by["AI agents"]["ties"] == [["Python", 12], ["GWAS", 4]]
+    assert 0 < by["AI agents"]["closeness"] <= 1 and by["Genomic language models"]["pad"] == "GWAS"
+    assert ["Python", "AI agents", 12] in v["aim"]["bands"] and set(v["aim"]["right"]) == set(names)
