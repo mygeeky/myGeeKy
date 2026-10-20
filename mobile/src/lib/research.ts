@@ -7,6 +7,7 @@ import { match, Profile } from './interests';
 export type Paper = {
   id: string; title: string; url: string; date: string; venue: string; cited: number;
   authors: string[]; repos: string[]; velocity: number; match: string[]; score: number; kind: 'P'; summary?: string;
+  leads?: { name: string; openalex: string }[];     // first and last authors with their OpenAlex ids (Researchers' suggestions)
 };
 
 const SELECT = 'id,doi,title,publication_date,cited_by_count,authorships,primary_location,abstract_inverted_index';
@@ -37,6 +38,8 @@ export function toPaper(w: any): Paper | null {
     url: /^10\.\d{4,9}\//.test(doi) ? `https://doi.org/${doi}` : `https://openalex.org/${id}`,
     venue: String(w.primary_location?.source?.display_name ?? '').slice(0, 80),
     authors: lead.map((a) => String(a?.author?.display_name ?? '')).filter(Boolean).slice(0, 4),
+    leads: (ships.length > 1 ? [ships[0], ships[ships.length - 1]] : ships).map((a) => ({ name: String(a?.author?.display_name ?? ''),
+      openalex: String(a?.author?.id ?? '').split('/').pop() ?? '' })).filter((a) => a.name),
     velocity: Math.round((cited / months) * 100) / 100, match: [], score: 0,
     ...({ abstract: text.slice(0, 600) } as object),
   } as Paper;

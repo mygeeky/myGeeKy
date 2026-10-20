@@ -765,9 +765,10 @@ def notify_candidates(cfg: MyGeekyConfig, today: str) -> list[dict[str, Any]]:
         ss = []
     rising = (papers.load_trends() or {}).get("rising") or []
     from .. import citedby
-    from .. import datasets
+    from .. import datasets, researchers
     return notify.candidates(today, ss, ranked, rising, data.get("highlights") or [], citedby.load().get("citing") or [],
-                             datasets.radar_load().get("items") or [])
+                             datasets.radar_load().get("items") or [],
+                             list((researchers.load().get("works") or {}).values()))
 
 
 def notify_check(cfg: MyGeekyConfig, now: Any = None) -> dict[str, Any] | None:
@@ -1776,6 +1777,16 @@ def quizwriter_state() -> dict[str, Any]:
             "batches": state["batches"], "want": quizwriter.PER_PROTOCOL, "ready": quizwriter.READY,
             "good": quizwriter.GOOD, "protocols": len(reviewed), "with_quiz": len(ready),
             "missing": [pid for pid in reviewed if pid not in ready]}
+
+
+def researcher_suggestions(cfg: MyGeekyConfig) -> list[dict[str, Any]]:
+    """People worth following (researchers.suggestions), from what's already read: no request."""
+    from datetime import date as _date
+    from .. import citedby, papers, researchers, scholar
+    me = cfg.openalex_id or ((scholar.load_scholar_profile() or {}).get("openalex") or {}).get("author_id", "")
+    cited = citedby.summary(citedby.load(), _date.today().isoformat()).get("people") or []
+    field = (papers.load_trends() or {}).get("people") or []
+    return researchers.suggestions(cited, field, [p["id"] for p in researchers.load()["following"]], me)
 
 
 def reviewed_protocols() -> list[tuple[str, str]]:

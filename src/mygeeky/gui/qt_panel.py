@@ -3311,6 +3311,7 @@ TABS = {
     "market": ("\U0001f4c8", "Market"),
     "news": ("\U0001f4f0", "News"),
     "activity": ("\U0001f552", "Activity"),
+    "researchers": ("\U0001f4c4", "Researchers"),
     "signals": ("\U0001f4e1", "Signals"),
     "grow": ("\U0001f331", "Grow: rising skills, protocols and your wins"),
     "chances": ("\U0001f3af", "Chances: verified jobs, funding and conferences"),
@@ -3356,7 +3357,10 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
         data = n("grow:data", "Data", icon="\U0001f5c2", tab="grow", part="data", children=[
             n(f"grow:data:{p}", label, icon=emoji, tab="grow", part=f"data:{p}") for p, label, emoji, _ in datasets.FIELD_PARTS])
         return [data if c["id"] == "grow:data" else c for c in modes("grow", MyGeekyPanel.GROW_MODES)]
+    from .researchers_ui import PARTS as RESEARCHER_PARTS
     circle = {"live": n("live", "Live", tab="live"), "suggestions": n("suggestions", "People", tab="suggestions"),
+              "researchers": n("researchers", "Researchers", icon="\U0001f4c4", tab="researchers", children=[
+                  n(f"researchers:{p}", label, icon=emoji, tab="researchers", part=p) for p, label, emoji in RESEARCHER_PARTS]),
               "activity": n("activity", "Activity", tab="activity"), "signals": n("signals", "Signals", tab="signals")}
     return navtree.finish(n("home", "Home", children=[
         group("you", [n("model:month", "My month", icon="\U0001f396", tab="model", part="month"),
@@ -3657,6 +3661,7 @@ class MyGeekyPanel(QWidget):
         pages = {"live": self._build_live_tab(), "suggestions": self._build_suggestions_tab(),
                  "repos": self._build_repos_tab(), "market": self._build_market_tab(),
                  "news": self._build_news_tab(), "activity": self._build_activity_tab(),
+                 "researchers": self._build_researchers_tab(),
                  "signals": self._build_signals_tab(), "grow": self._build_grow_tab(),
                  "chances": self._build_chances_tab(), "model": self._build_you_tab(),
                  "badges": self._build_badges_tab()}
@@ -3669,6 +3674,13 @@ class MyGeekyPanel(QWidget):
 
         outer.addWidget(self.panel_frame)
         self.folded_widget.hide()
+
+    def _build_researchers_tab(self) -> QWidget:
+        """Circle → 📄 Researchers (researchers_ui.py): new work from the people you follow, following, suggestions."""
+        from .researchers_ui import ResearchersPage
+        self.researchers_page = ResearchersPage(lambda: THEMES[self._theme_name()], self._run_async, logic.open_link,
+                                                lambda: logic.researcher_suggestions(self.cfg))
+        return self.researchers_page
 
     def _build_live_tab(self) -> QWidget:
         page = QWidget()
@@ -7183,7 +7195,8 @@ class MyGeekyPanel(QWidget):
         """The part open in a tab, as the tree names it."""
         return {"news": getattr(self, "_news_mode", ""), "market": getattr(self, "_market_mode", ""),
                 "grow": getattr(self, "_grow_mode", ""), "chances": getattr(self, "_chance_mode", ""),
-                "model": getattr(self, "you_part", ""), "admin": getattr(self, "_admin_part", "")}.get(tab, "")
+                "model": getattr(self, "you_part", ""), "admin": getattr(self, "_admin_part", ""),
+                "researchers": getattr(getattr(self, "researchers_page", None), "part", "")}.get(tab, "")
 
     def _nav_leaf(self) -> dict[str, Any] | None:
         tab = getattr(self, "active_tab", "")
@@ -7205,7 +7218,7 @@ class MyGeekyPanel(QWidget):
         if part:
             setter = {"news": self._set_news_mode, "market": self._set_market_mode, "grow": self._set_grow_mode,
                       "chances": self._set_chance_mode, "model": self._show_you_part,
-                      "admin": self._set_admin_part}.get(tab)
+                      "admin": self._set_admin_part, "researchers": self.researchers_page.set_part}.get(tab)
             if setter:
                 self._nav_opening = True          # the part changes before the tab: don't move the row meanwhile
                 try:
@@ -9043,6 +9056,8 @@ class MyGeekyPanel(QWidget):
             self._update_badge_tab_label()
         if name == "model":
             self._show_you_part(self.you_part)
+        if name == "researchers":
+            self.researchers_page.shown()
         if name in getattr(self, "_notify_dots", set()):     # the notification's dot: seen now
             self._notify_dots.discard(name)
             self.tab_buttons[name].set_dot(False)

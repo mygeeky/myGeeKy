@@ -2,6 +2,7 @@
 // your thumb, clear of the phone's own buttons). The orbit zooms: six groups, a group's pages, a page's parts
 // (lib/nav-tree.ts, components/orbit-zoom.tsx). Reading folds it into a dock of planets that moves the same way,
 // with a back planet first; "Orbit" brings the orbit back (scrolling never does: it surprised people).
+import { ResearchersView } from '../components/researchers-view';
 import { opened, topUp } from '../lib/wisep';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -200,6 +201,7 @@ export default function Home() {
   const feedsOf: Record<SectionId, { loading: boolean; error: string | null; at: string | null; refresh: () => Promise<void> }[]> = {
     live: [live, people], activity: [live], people: [people], signals: [], news: [headlines, discuss], papers: [research],
     repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market], discuss: [discuss],
+    researchers: [],                                  // its own refresh (lib/researchers.ts, through WISEP)
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
@@ -225,6 +227,7 @@ export default function Home() {
   const [tokenWarn, setTokenWarn] = useState<TokenState | null>(null);   // a token about to stop working
   useEffect(() => { checkTokens().then((t) => setTokenWarn(t.find((x) => x.warn) ?? null)).catch(() => undefined); }, []);
   const [newsPart, setNewsPart] = useState<NewsPart>('airace');
+  const [researcherPart, setResearcherPart] = useState('new');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' || params.part === 'model' ? params.part : 'month');
   const [growMode, setGrowMode] = useState<GrowMode>('highlights');
@@ -239,7 +242,7 @@ export default function Home() {
 
   // where you are: six groups, a group's pages, a page's parts (lib/nav-tree.ts); without GitHub its pages go last
   const tree = useMemo(() => phoneTree(!!user, !!admin), [user, admin]);
-  const partOf = (s: SectionId) => ({ you: youPart, news: newsPart, repos: repoPart, grow: growMode, chances: chanceMode } as Record<string, string>)[s] ?? '';
+  const partOf = (s: SectionId) => ({ you: youPart, news: newsPart, repos: repoPart, grow: growMode, chances: chanceMode, researchers: researcherPart } as Record<string, string>)[s] ?? '';
   const leaf = leafFor(tree, sel, partOf(sel));
   const leafId = leaf?.id ?? '';
   useEffect(() => { if (leafId) opened(leafId).catch(() => undefined); }, [leafId]);   // WISEP learns your day from what you open
@@ -258,6 +261,7 @@ export default function Home() {
     const part = n.part;
     if (n.tab === 'you' && part) setYouPart(part as YouPart);
     if (n.tab === 'news' && part) setNewsPart(part as NewsPart);
+    if (n.tab === 'researchers' && part) setResearcherPart(part);
     if (n.tab === 'repos' && part) setRepoPart(part as RepoPart);
     if (n.tab === 'grow' && part) setGrowMode(part as GrowMode);
     if (n.tab === 'chances' && part) setChanceMode(part as ChanceMode);
@@ -433,6 +437,8 @@ export default function Home() {
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />
           ) : sel === 'news' && newsPart === 'airace' ? (
             <AiRaceView />
+          ) : sel === 'researchers' ? (
+            <ResearchersView part={researcherPart} />
           ) : sel === 'signals' ? (
             <SignalsView />
           ) : sel === 'grow' ? (

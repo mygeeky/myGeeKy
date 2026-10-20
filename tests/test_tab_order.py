@@ -77,9 +77,9 @@ def test_the_panel_shows_its_tabs_in_that_order_and_still_opens_on_live(monkeypa
         assert row() == [panel.nav_buttons[g["id"]] for g in navtree.GROUPS]   # the dock: the six groups
         assert panel.nav_back_text.isHidden() and panel.nav_trail.text() == "Circle \u203a Live"   # where you are
         panel.nav_buttons["circle"].click()                                    # a group: back planet, then its pages
-        circle = [panel.nav_buttons[i] for i in ("live", "suggestions", "activity", "signals")]
+        circle = [panel.nav_buttons[i] for i in ("live", "suggestions", "researchers", "activity", "signals")]
         if not username:                                                       # what needs GitHub goes last
-            assert [b.accessibleName() for b in row()[1:]] == ["Live", "People", "Activity", "Signals"]
+            assert [b.accessibleName() for b in row()[1:]] == ["Live", "People", "Researchers", "Activity", "Signals"]
         assert row()[0] is panel.nav_back and set(row()[1:]) == set(circle)
         assert panel.nav_back_text.text().endswith("Back to All") and panel.nav_trail.text() == "Circle \u203a Live"
         panel.nav_back.click()

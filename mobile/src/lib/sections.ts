@@ -15,7 +15,7 @@ import { Paper } from './research';
 import { C, BADGES, tint } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
-export type SectionId = 'live' | 'people' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
+export type SectionId = 'live' | 'people' | 'researchers' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
   | 'chances' | 'you' | 'market' | 'discuss';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
 
 export type Section = { id: SectionId; label: string; color: string; icon: IconName; about: string };
@@ -23,6 +23,7 @@ export type Section = { id: SectionId; label: string; color: string; icon: IconN
 export const SECTIONS: Record<SectionId, Section> = {
   live: { id: 'live', label: 'Live', color: '#ff6fd8', icon: 'flash-outline', about: 'New faces and the latest moves around you.' },
   people: { id: 'people', label: 'People', color: '#7fd8ff', icon: 'people-outline', about: 'People building the tools of your field, and who follows you.' },
+  researchers: { id: 'researchers', label: 'Researchers', color: '#c4b5fd', icon: 'school-outline', about: 'People who publish: new preprints and papers from the people you follow.' },
   activity: { id: 'activity', label: 'Activity', color: '#34d399', icon: 'pulse-outline', about: 'What the people you follow are doing on GitHub.' },
   signals: { id: 'signals', label: 'Signals', color: '#a78bfa', icon: 'radio-outline', about: 'Private thank-yous and collab invites between myGeeKy users.' },
   grow: { id: 'grow', label: 'Grow', color: '#4ade80', icon: 'leaf-outline', about: 'Rising skills to learn, protocols to learn them, your wins and collaborators.' },

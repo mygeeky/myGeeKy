@@ -30,14 +30,15 @@ KINDS: list[tuple[str, str, str, str, str]] = [
     ("highlights", "✨", "A new Highlight", "A research article retold in plain words", "Highlights"),
     ("cited", "📑", "Someone cited your work", "A new paper citing one of yours", "citations"),
     ("datasets", "🗂", "New data on your topics", "Public datasets just out, matching your keywords", "datasets"),
+    ("researchers", "📄", "New work from people you follow", "Their new preprints and papers", "new work"),
 ]
 ORDER = [k[0] for k in KINDS]
 TAB = {"seasons": "chances", "jobs": "chances", "funding": "chances", "conferences": "chances",
-       "papers": "papers", "highlights": "grow", "cited": "you", "datasets": "grow"}
+       "papers": "papers", "highlights": "grow", "cited": "you", "datasets": "grow", "researchers": "researchers"}
 EVERY = {"daily": 1, "weekly": 7}
 FIT_MIN = 0.7
 SEASON_DAYS = 21
-NEW_DAYS = {"papers": 45, "highlights": 14, "cited": 14, "datasets": 7}
+NEW_DAYS = {"papers": 45, "highlights": 14, "cited": 14, "datasets": 7, "researchers": 7}
 TOP_PAPERS = 3
 MAX_TOLD = 600
 
@@ -85,7 +86,8 @@ def _age(today: str, day: str) -> int | None:
 
 def candidates(today: str, seasons: Iterable[dict[str, Any]] = (), ranked: dict[str, list[dict[str, Any]]] | None = None,
                papers: Iterable[dict[str, Any]] = (), highlights: Iterable[dict[str, Any]] = (),
-               cited: Iterable[dict[str, Any]] = (), datasets: Iterable[dict[str, Any]] = ()) -> list[dict[str, Any]]:
+               cited: Iterable[dict[str, Any]] = (), datasets: Iterable[dict[str, Any]] = (),
+               works: Iterable[dict[str, Any]] = ()) -> list[dict[str, Any]]:
     """Everything worth telling today, as {id, kind, title, days} (days: until it opens or closes, if known)."""
     out: list[dict[str, Any]] = []
     for s in seasons:
@@ -122,6 +124,11 @@ def candidates(today: str, seasons: Iterable[dict[str, Any]] = (), ranked: dict[
         age = _age(today, str(d.get("found", ""))[:10])
         if age is not None and 0 <= age <= NEW_DAYS["datasets"]:
             out.append({"id": f"dataset:{d.get('id', '')}", "kind": "datasets", "title": str(d.get("title", "")),
+                        "days": None})
+    for w in works:                           # new work from someone you follow, first seen lately (researchers.py)
+        age = _age(today, str(w.get("seen", ""))[:10])
+        if age is not None and 0 <= age <= NEW_DAYS["researchers"] and not w.get("published_as"):
+            out.append({"id": f"work:{w.get('id', '')}", "kind": "researchers", "title": str(w.get("title", "")),
                         "days": None})
     return out
 
@@ -167,6 +174,8 @@ def summary(chosen: list[dict[str, Any]]) -> dict[str, str] | None:
             pieces.append(f"📑 {_n(n, 'new paper cites', 'new papers cite')} your work")
         elif kind == "datasets":
             pieces.append(f"🗂 {_n(n, 'new dataset', 'new datasets')} on your topics")
+        elif kind == "researchers":
+            pieces.append(f"📄 {_n(n, 'new paper', 'new papers')} from people you follow")
         else:
             pieces.append(f"✨ {_n(n, 'new Highlight', 'new Highlights')}")
     body = " · ".join(pieces[:3]) + (" · and more" if len(pieces) > 3 else "")

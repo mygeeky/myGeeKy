@@ -409,7 +409,9 @@ def _day_frac(now: float) -> float:
 PAGES = {"model:cited": "you:cited", "you:cited": "you:cited", "model:model": "you:model", "you:model": "you:model",
          "market:research": "world:papers", "papers": "world:papers", "market:repos": "repos:rising",
          "repos:rising": "repos:rising", "grow:wins": "grow:wins", "grow:paths": "grow:paths",
-         "grow:data:new": "grow:data:new", "you:month": "you:model", "model:month": "you:model"}
+         "grow:data:new": "grow:data:new", "you:month": "you:model", "model:month": "you:model",
+         "researchers:new": "circle:researchers", "researchers:following": "circle:researchers",
+         "researchers:suggested": "circle:researchers"}
 
 
 def canonical(page: str) -> str:

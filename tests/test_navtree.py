@@ -90,9 +90,9 @@ out({ groups: N.GROUPS, root: N.ROOT_LABEL, levels: ids.map((id: string) => N.le
     assert said["rows"] == [nt.rows(n) for n in (2, 6, 7, 8)]
     assert said["leaf"] == ["repos:rising", "news:airace", None]
     assert said["phoneGroups"] == [g["id"] for g in nt.GROUPS]
-    assert said["phoneCircle"] == ["live", "people", "activity", "signals"]
+    assert said["phoneCircle"] == ["researchers", "live", "people", "activity", "signals"]   # no GitHub: what works first
     assert said["phoneTabs"] == sorted(["you", "grow", "news", "papers", "models", "launches", "live", "people", "activity",
-                                        "signals", "repos", "chances"])
+                                        "signals", "repos", "chances", "researchers"])
 
 
 def test_the_panel_row_goes_in_and_out(monkeypatch):

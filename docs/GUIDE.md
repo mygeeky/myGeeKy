@@ -276,6 +276,24 @@ mygeeky contribute --json   # for scripts / AI agents
 As with people, this only ever *suggests*: there is no fork, PR, or comment
 code anywhere. You open the repo, fork it, and send the PR yourself.
 
+## 📄 Researchers: people who publish, not only people on GitHub
+
+Circle → **📄 Researchers** (the computer and the phone) is for people who publish, whether or not they use GitHub.
+
+- **🆕 New work:** new preprints and papers from the people you follow, as they appear. Preprints (arXiv,
+  bioRxiv, medRxiv…) show months before the journal version; when the published version arrives (same title, by the
+  same people), the two show as one: "now published · first as a preprint on bioRxiv, 2 Mar 2026".
+- **👥 Following:** follow anyone by name. You pick the right person from OpenAlex's author search, with their
+  institution, topics and recent titles (the same "is this the right one?" check as finding your own papers). The list
+  stays on your device: nobody is told, and myGeeKy never contacts anyone.
+- **✨ Suggested:** who cites your work (from You → Cited by) and who leads the papers rising in your field (from
+  World → Papers). Both were already read, so suggesting costs nothing.
+
+Careful with OpenAlex's shared budget: everyone you follow is looked up in **one** search (up to 50 people at a
+time), each person about as often as they publish (daily for the prolific, every three days, or weekly for the
+quiet), through WISEP. An optional notification (🔔 → "New work from people you follow") tells you when something new
+appears.
+
 ## Your field's repos as a market board (`mygeeky market`)
 
 <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/market.png" width="300" align="right" alt="Market tab">

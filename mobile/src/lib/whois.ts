@@ -106,16 +106,16 @@ export const worksUrl = (ids: string[]) => `${OPENALEX}/works?filter=author.id:$
   + '&select=title,publication_year,authorships';
 export const busy = (status: number) => status === 429 || status >= 500;
 
-export async function search(name: string, hint = ''): Promise<Found> {
+export async function search(name: string, hint = '', page = 'you:whois'): Promise<Found> {
   const h = hint.includes('@') ? domainHint(hint) : hint;
   if (norm(name).split(' ').filter(Boolean).length < 2) return { status: 'none', candidates: [], why: 'Type your first and last name.' };
   try {
-    const r = await wiseFetch(authorsUrl(name), { page: 'you:whois' });
+    const r = await wiseFetch(authorsUrl(name), { page, force: true });   // a search you typed: asked now, counted
     if (busy(r.status)) return { status: 'busy', candidates: [], retry_after: Number(r.headers.get('retry-after')) || 0 };
     if (!r.ok) return { status: 'busy', candidates: [], retry_after: 0 };
     let cands = rank(parseAuthors(await r.json()), name, h);
     if (!cands.length) return { status: 'none', candidates: [] };
-    const w = await wiseFetch(worksUrl(cands.map((c) => c.id)), { page: 'you:whois' });
+    const w = await wiseFetch(worksUrl(cands.map((c) => c.id)), { page, force: true });
     if (w.status === 200) cands = addTitles(cands, await w.json());
     return { status: 'found', candidates: cands };
   } catch {

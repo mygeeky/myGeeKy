@@ -5,6 +5,7 @@
 // time myGeeKy opens; nothing is ever pushed to it from outside.
 import { loadRadar } from './datasets';
 import { topUp } from './wisep';
+import { load as loadResearchers } from './researchers';
 import { loadCitedBy } from './cited-by';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as BackgroundTask from 'expo-background-task';
@@ -91,7 +92,8 @@ export async function checkNow(now = new Date()): Promise<N.Summary | null> {
   }
   const research = await readCache<{ rising: unknown[] }>('research');
   const cands = N.candidates(local.slice(0, 10), seasons.ranked(seasons.seasonsOf(lists), local.slice(0, 10)), byKind as Record<string, any[]>,
-    research?.data?.rising ?? [], lists.highlights ?? [], (await loadCitedBy()).citing ?? [], (await loadRadar()).items ?? []);
+    research?.data?.rising ?? [], lists.highlights ?? [], (await loadCitedBy()).citing ?? [], (await loadRadar()).items ?? [],
+    Object.values((await loadResearchers()).works));
   const told: string[] = Array.isArray(raw.told) ? raw.told : [];
   const chosen = N.pick(cands, told, s);
   const out = N.summary(chosen);
