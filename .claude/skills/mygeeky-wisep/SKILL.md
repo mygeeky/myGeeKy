@@ -40,6 +40,17 @@ page, and whether its opens fall in the next three hours (opens fade with a two-
 Hard limits: never sooner than a kind's minimum age, always once it's older than its maximum (budget allowing), never
 when the source asked us to wait (429/503, Retry-After), a kept answer served when the source is down.
 
+## It tunes itself, and takes over from old timers
+
+- `tune()` (daily, from the hourly look) turns each kind's prior into what this device watched (`tuned_prior`: at
+  least 5 answers and 14 days, kept within the kind's limits). Don't hand-tune priors per user; change `KINDS` only
+  for a better starting point.
+- A module's own "is it time?" check goes through `wisep.timer_due(own_due, age_hours)` (phone: `timerDue`). Until
+  `proven_by` says so (14 days, 100 answers, 40% from the cache, failures under 15%) the module's timer leads; after,
+  a refresh may run every half hour and WISEP decides. Admin → Settings: Auto / Always / Never (`set_mode`). A new
+  module that refreshes on a timer from a WISEP source should use `timer_due` too.
+- GitHub isn't gated by WISEP (its own cache and per-person limit) but is counted beside it in Admin.
+
 ## Checking it
 
 `docs/WISEP.md` is the evaluation plan. In short:

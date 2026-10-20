@@ -8,7 +8,7 @@ import { englishEnough } from './curated';
 import { match, type Weights } from './interests';
 import { find as findSkill } from './skills';
 import { fetchT } from './net';
-import { wiseFetch } from './wisep';
+import { timerDue, wiseFetch } from './wisep';
 import { isStale, readCache, writeCache } from './storage';
 
 export const REMOTE_URL = 'https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/data/datasets.json';
@@ -283,7 +283,8 @@ export async function radarSeen(ids: string[]): Promise<void> {
 /** Search for new datasets on your keywords, at most once a day (datasets.radar_refresh). */
 export async function refreshRadar(keywords: string[], weights: Weights, force = false): Promise<RadarState> {
   let st = await loadRadar();
-  if (!force && st.checked_at && Date.now() - Date.parse(st.checked_at) < 24 * 3600000) return st;
+  const age = st.checked_at ? Date.now() - Date.parse(st.checked_at) : Infinity;   // WISEP decides instead once proven
+  if (!force && !(await timerDue(age >= 24 * 3600000, age / 3600000))) return st;
   const terms = radarTerms(keywords, weights);
   const found: RadarItem[] = [];
   const q = (o: Record<string, string | number>) => Object.entries(o).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');

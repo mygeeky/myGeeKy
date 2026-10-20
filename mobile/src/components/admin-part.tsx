@@ -3,7 +3,7 @@
 // every time it opens, and again whenever the app goes to the background. What you do here is sent as one
 // line each to admin_actions.jsonl and applied by your computers at their next sync; why, and what never
 // comes to the phone: lib/admin.ts.
-import { stats as wisepStats } from '../lib/wisep';
+import { type Mode, PROVEN_DAYS, PROVEN_LOOKS, PROVEN_SAVED, setMode as setWisepMode, stats as wisepStats } from '../lib/wisep';
 import * as Clipboard from 'expo-clipboard';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useCallback, useEffect, useState } from 'react';
@@ -194,15 +194,34 @@ export function AdminPart({ me, section = 'overview' }: { me: string; section?: 
 /** WISEP on this phone today (lib/wisep.ts stats): per source asked of its budget and saved by the cache. */
 function WisepLine() {
   const [line, setLine] = useState('');
+  const [mode, setMode] = useState<Mode>('auto');
+  const [round, setRound] = useState(0);
   useEffect(() => {
     wisepStats().then((st) => {
       const parts = Object.entries(st.today).sort(([a], [b]) => (a < b ? -1 : 1))
         .map(([src, c]) => `${src}: ${c.asked} asked of ${c.budget} · ${c.saved} from the cache${c.topup ? ` · ${c.topup} in the evening top-up` : ''}`);
       const learned = st.pages.slice(0, 4).map((p) => p.page).join(', ');
-      setLine(parts.length ? `WISEP on this phone today: ${parts.join('; ')}.${learned ? ` You open most: ${learned}.` : ''}` : 'WISEP on this phone today: nothing asked yet.');
+      const p = st.proven;
+      const alone = p.alone ? `WISEP decides alone${p.mode === 'on' ? ' (you said Always)' : ' (proven)'}`
+        : p.mode === 'off' ? 'The modules\' own timers still lead (you said Never)'
+          : `WISEP takes over from the modules' timers once proven: ${p.days} of ${PROVEN_DAYS} days, ${p.looks} of ${PROVEN_LOOKS} answers, ${Math.round(p.saved * 100)}% from the cache (needs ${Math.round(PROVEN_SAVED * 100)}%)`;
+      const tuned = Object.entries(st.priors).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, v]) => `${k} every ~${v} h`).join(', ');
+      setLine(`${parts.length ? `WISEP on this phone today: ${parts.join('; ')}.` : 'WISEP on this phone today: nothing asked yet.'}`
+        + ` GitHub (its own cache): ${st.github.asked} asked, ${st.github.saved} free.${learned ? ` You open most: ${learned}.` : ''} ${alone}.`
+        + (tuned ? ` Learned how often answers change: ${tuned}.` : ''));
+      setMode(p.mode);
     }).catch(() => undefined);
-  }, []);
-  return line ? <Text style={[s.small, { marginTop: 6 }]}>{line}</Text> : null;
+  }, [round]);
+  if (!line) return null;
+  const next: Record<Mode, Mode> = { auto: 'on', on: 'off', off: 'auto' };
+  return (
+    <>
+      <Text style={[s.small, { marginTop: 6 }]}>{line}</Text>
+      <Text style={[a.link, { marginTop: 4 }]} onPress={() => setWisepMode(next[mode]).then(() => setRound((r) => r + 1))}>
+        🧠 WISEP decides alone: {mode === 'auto' ? 'Auto' : mode === 'on' ? 'Always' : 'Never'} (tap to change)
+      </Text>
+    </>
+  );
 }
 
 function Listings({ listings, onStatus }: {

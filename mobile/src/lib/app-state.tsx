@@ -1,5 +1,6 @@
 // Settings, the read token and your profile, shared by every screen; plus a
 // small hook that shows cached data at once and refreshes it when it's stale.
+import { timerDue } from './wisep';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { logOpenToday } from './badges';
 import { Profile } from './interests';
@@ -116,6 +117,8 @@ export function useApp(): AppState {
 const profileSig = (p: Profile) => JSON.stringify([Object.entries(p.weights).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([t]) => t),
   p.topicIds.map((t) => t.id)]);
 
+const WISE_FEEDS = new Set(['research']);        // Papers: OpenAlex, through WISEP
+
 export function useFeed<T>(key: string, hours: number, load: (p: Profile) => Promise<T>) {
   const { profile } = useApp();
   const [data, setData] = useState<T | null>(null);
@@ -153,7 +156,11 @@ export function useFeed<T>(key: string, hours: number, load: (p: Profile) => Pro
         setData(cached.data);
         setAt(cached.at);
       }
-      if (profile && (!cached || isStale(cached.at, hours) || madeFor?.data !== profileSig(profile))) refresh();
+      // feeds whose answers come through WISEP hand their timer to it once it has proven itself (timerDue)
+      const stale = !cached || isStale(cached.at, hours)
+        || (WISE_FEEDS.has(key) && await timerDue(false, (Date.now() - Date.parse(cached.at)) / 3600000));
+      if (!alive) return;
+      if (profile && (stale || madeFor?.data !== profileSig(profile))) refresh();
     })();
     return () => {
       alive = false;

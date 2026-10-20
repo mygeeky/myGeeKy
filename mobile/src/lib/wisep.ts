@@ -13,6 +13,10 @@ const MAX_ANSWERS = 300;              // the phone keeps fewer than the computer
 const HALF_LIFE_DAYS = 14;
 const FORCE_ALLOWANCE = 1.2;
 const TOP_UP_HOUR = 20, TOP_UP_SHARE = 0.5, TOP_UP_MAX = 15, TOP_UP_FLOOR = 0.15;
+export const TUNE_MIN_ANSWERS = 5, TUNE_MIN_HOURS = 14 * 24;
+export const PROVEN_DAYS = 14, PROVEN_LOOKS = 100, PROVEN_SAVED = 0.4, PROVEN_FAILED = 0.15;
+const MODULE_GAP_HOURS = 0.5;
+export type Mode = 'auto' | 'on' | 'off';
 
 export const SOURCES: Record<string, [number, number, string[]]> = {
   openalex: [1500, 0.12, ['api.openalex.org']], crossref: [500, 0.2, ['api.crossref.org']], arxiv: [300, 3.1, ['export.arxiv.org']],
@@ -46,10 +50,30 @@ export function threshold(used: number, budget: number, dayFrac: number): number
 
 export type Decision = { action: 'fetch' | 'cache' | 'none'; why: string; worth: number; bar: number | null };
 
+/** A kind's prior hours between changes from what this phone watched (wisep.tuned_prior), or null while too little. */
+export function tunedPrior(changes: number, hours: number, answers: number, kind: string): number | null {
+  const [def, least, most] = KINDS[kind] ?? KINDS.entity;
+  if (answers < TUNE_MIN_ANSWERS || hours < TUNE_MIN_HOURS) return null;
+  return Math.round(Math.min(Math.max((hours + def) / (changes + 1), least), 4 * most) * 100) / 100;
+}
+
+export type Proven = { proven: boolean; days: number; looks: number; saved: number; failed: number };
+/** Has WISEP earned the right to decide alone (wisep.proven_by), from the daily tallies. */
+export function provenBy(days: { day: string; asked?: number; saved?: number; stale?: number; failed?: number }[]): Proven {
+  const used = new Set(days.filter((d) => (d.asked ?? 0) + (d.saved ?? 0)).map((d) => d.day));
+  let asked = 0, saved = 0, bad = 0;
+  for (const d of days) { asked += d.asked ?? 0; saved += d.saved ?? 0; bad += (d.failed ?? 0) + (d.stale ?? 0); }
+  const looks = asked + saved;
+  const share = looks ? Math.round((saved / looks) * 1000) / 1000 : 0, failed = asked ? Math.round((bad / asked) * 1000) / 1000 : 0;
+  return { proven: used.size >= PROVEN_DAYS && looks >= PROVEN_LOOKS && share >= PROVEN_SAVED && failed < PROVEN_FAILED,
+    days: used.size, looks, saved: share, failed };
+}
+
 /** The desktop's wisep.decide. `bar` null where the desktop's is infinite (JSON has no Infinity). */
 export function decide(ageHours: number | null, kind: string, changes: number, watchedHours: number, careNow: number, used: number,
-  budget: number, dayFrac: number, forced = false, paused = false): Decision {
-  const [prior, least, most] = KINDS[kind] ?? KINDS.entity;
+  budget: number, dayFrac: number, forced = false, paused = false, priorHours: number | null = null): Decision {
+  const [defPrior, least, most] = KINDS[kind] ?? KINDS.entity;
+  const prior = priorHours || defPrior;
   if (ageHours === null) {
     if (paused || used >= budget * FORCE_ALLOWANCE) return { action: 'none', why: 'nothing kept, and the source is resting', worth: 0, bar: 0 };
     return { action: 'fetch', why: 'nothing kept yet', worth: 1, bar: 0 };
@@ -100,7 +124,8 @@ export const canonical = (page: string) => (page.startsWith('admin:') || page.st
 type Answer = { url: string; source: string; kind: string; body: string; digest: string; fetched: number; checks: number; changes: number;
   watched: number; used: number; page: string };
 type State = { answers: Record<string, Answer>; calls: Record<string, Record<string, { asked: number; saved: number; stale: number; failed: number; topup: number }>>;
-  opens: Record<string, { n: number[]; at: number }>; paused: Record<string, number> };
+  opens: Record<string, { n: number[]; at: number }>; paused: Record<string, number>; priors?: Record<string, number>; tunedDay?: string; mode?: Mode;
+  github?: Record<string, { asked: number; saved: number }> };
 let mem: State | null = null;
 const last: Record<string, number> = {};
 
@@ -108,7 +133,8 @@ async function load(): Promise<State> {
   if (mem) return mem;
   try {
     const raw = JSON.parse((await AsyncStorage.getItem(KEY)) ?? '{}');
-    mem = { answers: raw.answers ?? {}, calls: raw.calls ?? {}, opens: raw.opens ?? {}, paused: raw.paused ?? {} };
+    mem = { answers: raw.answers ?? {}, calls: raw.calls ?? {}, opens: raw.opens ?? {}, paused: raw.paused ?? {}, priors: raw.priors ?? {},
+      tunedDay: raw.tunedDay ?? '', mode: (['auto', 'on', 'off'].includes(raw.mode) ? raw.mode : 'auto') as Mode, github: raw.github ?? {} };
   } catch {
     mem = { answers: {}, calls: {}, opens: {}, paused: {} };
   }
@@ -193,7 +219,7 @@ export async function wiseFetch(url: string, opts: { page?: string; force?: bool
   const kind = kindOf(source, key);
   const used = st.calls[dayOf(now)]?.[source]?.asked ?? 0;
   const d = decide(kept ? (now - kept.fetched) / 3600000 : null, kind, kept?.changes ?? 0, kept?.watched ?? 0, careFor(st, page, now),
-    used, SOURCES[source][0], dayFrac(now), !!opts.force, (st.paused[source] ?? 0) > now);
+    used, SOURCES[source][0], dayFrac(now), !!opts.force, (st.paused[source] ?? 0) > now, st.priors?.[kind] ?? null);
   if (d.action === 'cache' && kept) { count(st, source, 'saved', now); kept.used = now; save(); return respond(kept.body, 200, `cache:${d.why}`); }
   if (d.action === 'none') { count(st, source, 'failed', now); save(); return respond('{}', 503, 'resting'); }
   await space(source);
@@ -228,10 +254,11 @@ export async function wiseFetch(url: string, opts: { page?: string; force?: bool
 /** The evening top-up (wisep.top_up): budget left at the end of the day, spent on what you'll want fresh tomorrow. */
 export async function topUp(): Promise<Record<string, number>> {
   const st = await load(), now = Date.now();
+  tune(st, now);                                  // the same look is when the priors are retuned (daily)
   if (new Date(now).getHours() < TOP_UP_HOUR) return {};
   const tomorrow = (new Date(now).getHours() + 12) % 24;
   const ranked = Object.entries(st.answers).flatMap(([key, a]) => {
-    const [prior, least] = KINDS[a.kind] ?? KINDS.entity, age = (now - a.fetched) / 3600000;
+    const [defPrior, least] = KINDS[a.kind] ?? KINDS.entity, age = (now - a.fetched) / 3600000, prior = st.priors?.[a.kind] || defPrior;
     if (!SOURCES[a.source] || age < least || (st.paused[a.source] ?? 0) > now) return [];
     return [{ key, a, worth: pChanged(changeRate(a.changes, a.watched, prior), age + 10) * careFor(st, a.page, now, tomorrow) }];
   }).sort((x, y) => y.worth - x.worth);
@@ -257,13 +284,60 @@ export async function topUp(): Promise<Record<string, number>> {
   return spent;
 }
 
+/** Retune each kind's prior from this phone's history, at most once a day (wisep.tune). */
+function tune(st: State, now: number): void {
+  if (st.tunedDay === dayOf(now)) return;
+  const pooled: Record<string, [number, number, number]> = {};
+  for (const a of Object.values(st.answers)) {
+    if (a.checks < 3) continue;
+    const p = (pooled[a.kind] ??= [0, 0, 0]);
+    p[0] += a.changes; p[1] += a.watched; p[2] += 1;
+  }
+  st.priors = {};
+  for (const k of Object.keys(KINDS)) {
+    const v = tunedPrior(...(pooled[k] ?? [0, 0, 0]), k);
+    if (v !== null) st.priors[k] = v;
+  }
+  st.tunedDay = dayOf(now);
+  save();
+}
+
+function tallyRows(st: State) {
+  return Object.entries(st.calls).flatMap(([day, by]) => Object.values(by).map((c) => ({ day, ...c })));
+}
+
+/** Whether WISEP decides alone now: Admin's mode, else provenBy on the last month's tallies (wisep.proven). */
+export async function proven(): Promise<Proven & { mode: Mode; alone: boolean }> {
+  const st = await load(), p = provenBy(tallyRows(st)), mode = st.mode ?? 'auto';
+  return { ...p, mode, alone: mode === 'on' || (mode === 'auto' && p.proven) };
+}
+
+export async function setMode(mode: Mode): Promise<void> { const st = await load(); st.mode = mode; save(); }
+
+/** A module's own "is it time?" -- unless WISEP has taken over (then every half hour, and WISEP decides). */
+export async function timerDue(ownDue: boolean, ageHours: number | null = null): Promise<boolean> {
+  if (ownDue) return true;
+  try { return (await proven()).alone && (ageHours === null || ageHours >= MODULE_GAP_HOURS); } catch { return false; }
+}
+
+/** GitHub keeps its own cache (lib/github.ts); its asks and what the cache saved are counted here for the admin view. */
+export async function noteGitHub(field: 'asked' | 'saved'): Promise<void> {
+  const st = await load(), d = dayOf(Date.now());
+  const g = ((st.github ??= {})[d] ??= { asked: 0, saved: 0 });
+  g[field]++;
+  st.github = Object.fromEntries(Object.entries(st.github).sort(([a], [b]) => (a < b ? 1 : -1)).slice(0, 30));
+  save();
+}
+
 /** What the admin view shows: today's calls per source, saved by the cache, budgets, what was learned. */
 export async function stats(): Promise<{ today: Record<string, { asked: number; saved: number; stale: number; failed: number; topup: number; budget: number }>;
-  asked: number; saved: number; pages: { page: string; opens: number }[]; answers: number }> {
+  asked: number; saved: number; pages: { page: string; opens: number }[]; answers: number; github: { asked: number; saved: number };
+  priors: Record<string, number>; proven: Proven & { mode: Mode; alone: boolean } }> {
   const st = await load(), now = Date.now(), today = st.calls[dayOf(now)] ?? {};
   const out = Object.fromEntries(Object.entries(today).map(([s, c]) => [s, { ...c, budget: SOURCES[s]?.[0] ?? 0 }]));
   const pages = Object.entries(opensNow(st, now)).map(([page, v]) => ({ page, opens: Math.round(v.reduce((a, b) => a + b, 0) * 100) / 100 }))
     .sort((a, b) => b.opens - a.opens).slice(0, 8);
   return { today: out, asked: Object.values(today).reduce((a, c) => a + c.asked, 0), saved: Object.values(today).reduce((a, c) => a + c.saved, 0),
-    pages, answers: Object.keys(st.answers).length };
+    pages, answers: Object.keys(st.answers).length, github: st.github?.[dayOf(now)] ?? { asked: 0, saved: 0 }, priors: st.priors ?? {},
+    proven: await proven() };
 }

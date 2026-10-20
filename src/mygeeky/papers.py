@@ -185,7 +185,8 @@ def trends_due(cfg: MyGeekyConfig, state: dict[str, Any], now: datetime | None =
         age = (now or datetime.now(timezone.utc)) - datetime.fromisoformat(state["updated_at"])
     except (KeyError, ValueError, TypeError):
         return True
-    return age.total_seconds() >= cfg.trends_refresh_hours * 3600
+    from . import wisep                             # once WISEP has proven itself, it decides instead of this timer
+    return wisep.timer_due(age.total_seconds() >= cfg.trends_refresh_hours * 3600, age.total_seconds() / 3600)
 
 
 _TOPIC_ID = re.compile(r"^T\d+$")

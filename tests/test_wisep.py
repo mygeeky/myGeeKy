@@ -157,3 +157,59 @@ out({ d: INPUT.cases.map((c: any) => decide(c.age, c.kind, c.changes, c.watched,
     assert said["c"] == [wisep.care(o, h, 40) for o in opens for h in (0, 7, 19)]
     assert said["k"] == [[wisep.source_of(u), wisep.kind_of(wisep.source_of(u), u) if wisep.source_of(u) else None]
                          for u in urls]
+
+
+# --------------------------------------------------------------------------- it tunes itself, and takes over once proven
+def test_priors_are_tuned_from_what_this_device_watched():
+    assert wisep.tuned_prior(3, 100, 10, "search") is None                     # too little watched
+    assert wisep.tuned_prior(3, 400, 4, "search") is None                      # too few answers
+    assert wisep.tuned_prior(9, 400, 6, "search") == pytest.approx((400 + 24) / 10, abs=0.01)
+    assert wisep.tuned_prior(0, 5000, 6, "search") == 4 * 72                   # never changed: capped at 4x the "always by"
+    assert wisep.tuned_prior(400, 400, 6, "static") == 168                     # changed often: never below "never sooner"
+    st = wisep.store()
+    for i in range(6):
+        st.put(f"k{i}", "openalex", "search", f"u{i}", b"a", "p", NOON)
+        st.put(f"k{i}", "openalex", "search", f"u{i}", b"b", "p", NOON + 3600 * 40)
+        st.put(f"k{i}", "openalex", "search", f"u{i}", b"b", "p", NOON + 3600 * 80)
+    priors = wisep.tune(NOON + 3600 * 80, force=True)
+    assert priors["search"] == wisep.tuned_prior(6, 6 * 80, 6, "search") and "entity" not in priors
+    d = wisep.decide(10, "search", 0, 0, 1.0, 0, 100, 0.5, prior_hours=1000)
+    assert d["action"] == "cache"                                                # a slow-changing kind, learned
+
+
+def test_wisep_takes_over_from_the_old_timers_only_once_proven():
+    day = lambda i: f"2026-10-{i + 1:02d}"  # noqa: E731
+    good = [{"day": day(i), "asked": 4, "saved": 6, "stale": 0, "failed": 0} for i in range(14)]
+    assert wisep.proven_by(good)["proven"] is True
+    assert wisep.proven_by(good[:10])["proven"] is False                         # not enough days yet
+    poor = [dict(r, saved=1) for r in good]
+    assert wisep.proven_by(poor)["proven"] is False                              # the cache isn't saving enough
+    shaky = [dict(r, failed=2) for r in good]
+    assert wisep.proven_by(shaky)["proven"] is False                             # too many failures
+    assert wisep.timer_due(True) is True and wisep.timer_due(False, 5.0) is False   # not proven: the module's own timer
+    wisep.set_mode("on")
+    assert wisep.timer_due(False, 5.0) is True and wisep.timer_due(False, 0.2) is False   # at most every half hour
+    wisep.set_mode("off")
+    assert wisep.timer_due(False, 99.0) is False
+    wisep.set_mode("nonsense")
+    assert wisep.mode() == "auto"
+    s = wisep.stats(NOON)
+    assert "github" in s and s["proven"]["mode"] == "auto" and s["proven"]["alone"] is False
+
+
+@pytest.mark.skipif(not phone.node_ok(), reason="needs Node 22.6+ and the phone's packages")
+def test_the_phone_tunes_and_judges_the_same():
+    tunes = [[c, h, n, k] for c, h, n, k in [(3, 100, 10, "search"), (9, 400, 6, "search"), (0, 5000, 6, "search"),
+                                              (400, 400, 6, "static"), (7, 1200, 9, "entity"), (2, 336, 5, "citations")]]
+    day = lambda i: f"2026-10-{i + 1:02d}"  # noqa: E731
+    tallies = [[{"day": day(i), "asked": 4, "saved": s, "stale": 0, "failed": f} for i in range(n)]
+               for n, s, f in [(14, 6, 0), (10, 6, 0), (14, 1, 0), (14, 6, 2), (0, 0, 0)]]
+    said = phone.run("""
+import { decide, provenBy, tunedPrior } from './lib/wisep.ts';
+out({ t: INPUT.tunes.map((x: any) => tunedPrior(x[0], x[1], x[2], x[3])), p: INPUT.tallies.map(provenBy),
+      d: [decide(10, 'search', 0, 0, 1.0, 0, 100, 0.5, false, false, 1000), decide(10, 'search', 0, 0, 1.0, 0, 100, 0.5, false, false, 2)] });
+""", {"tunes": tunes, "tallies": tallies})
+    assert said["t"] == [wisep.tuned_prior(*x) for x in tunes]
+    assert said["p"] == [wisep.proven_by(t) for t in tallies]
+    assert said["d"] == [wisep.decide(10, "search", 0, 0, 1.0, 0, 100, 0.5, prior_hours=1000),
+                         wisep.decide(10, "search", 0, 0, 1.0, 0, 100, 0.5, prior_hours=2)]

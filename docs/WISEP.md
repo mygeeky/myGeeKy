@@ -31,6 +31,17 @@ refresh you press is honoured (up to 120% of the day's budget) and counted.
 having fresh tomorrow morning (the same measure, with care taken for the morning hours), at most half of what's left
 and 40 answers on the computer, 15 on the phone.
 
+**It tunes itself.** Each kind's prior (the hours between changes it assumes) starts from the table above. Once a
+device has watched at least 5 answers of a kind for 14 days in all, the prior becomes what was actually seen there
+(pooled changes over hours watched, `tuned_prior`), kept between the kind's "never sooner" and four times its "always
+by", and recomputed once a day. Admin shows what was learned ("search every ~42 h").
+
+**It takes over from the old timers once proven.** Cited by, Papers' rising work and the dataset radar each kept
+their own "once a day" timer. After 14 days of use, 100 answers given, at least 40% of them from the cache and failures
+under 15% of the asks (`proven_by`), those timers stop gating: a refresh may run every half hour and WISEP alone
+decides which answers are worth asking for (`timer_due`). Admin → Settings switches this between Auto (once proven),
+Always and Never; Admin shows how far it is ("6 of 14 days, 48 of 100 answers, 55% from the cache").
+
 ## Daily budgets (well under each source's published limits)
 
 | Source | Budget a day | Gap between calls |
@@ -44,8 +55,8 @@ and 40 answers on the computer, 15 on the phone.
 | Figshare | 300 | 0.3 s |
 | Hugging Face | 300 | 0.2 s |
 
-GitHub keeps its own cache (`ghcache.py`: ETags, 304s, a slow list) and its own limit per person; it is shown beside
-WISEP in Admin and may join WISEP later.
+GitHub keeps its own cache (`ghcache.py`: ETags, 304s, a slow list; the phone's `lib/github.ts`) and its own limit
+per person; its asks and what its cache saved are counted and shown beside WISEP's sources in Admin → Overview.
 
 ## The evaluation plan
 
@@ -62,6 +73,8 @@ What we measure, and the bar each must clear:
 | Do both apps decide alike? | the phone's rules on 60 random cases, `care` on 15, `kind_of`/`source_of` on 7 URLs | identical | `test_the_phone_decides_the_same` |
 | Every operating system? | all of the above on Windows, macOS and Linux | green on all three | `.github/workflows/wisep.yml` (weekly too) |
 | Android? | the phone's rules (parity test), its store capped at 300 answers, written once things settle | the parity test; a look on a phone | `lib/wisep.ts` |
+| Does tuning stay sane? | a learned prior within its kind's limits, only with enough history | the tests pass | `test_priors_are_tuned_...` |
+| Does it take over only when it should? | the old timers lead until 14 days / 100 answers / 40% saved / <15% failures; the switch works | the tests pass | `test_wisep_takes_over_...` |
 | In real use? | today's calls per source, saved by the cache, top-up, resting sources, the pages learned | seen by the maker each day | Admin → Overview, on both apps |
 
 First numbers (Linux, Python 3.12, 2026-10-20): a decision takes ~1 µs; a write 2 ms, a read 0.008 ms; 11 MB for
@@ -72,5 +85,5 @@ First numbers (Linux, Python 3.12, 2026-10-20): a decision takes ~1 µs; a write
 
 - Move the remaining sources' calls onto WISEP as they're touched (the weekly harvests in GitHub Actions stay direct:
   they run once, for everyone).
-- Once there are weeks of real tallies on a maker's machine: tune the priors per kind from the observed change rates.
-- GitHub joining WISEP's budget view (its cache already does the conditional requests).
+- Watch the first weeks of real tallies in Admin: the learned priors and the takeover progress; adjust PROVEN_* if
+  the bar turns out too strict or too loose.

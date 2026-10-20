@@ -161,7 +161,9 @@ def due(state: dict[str, Any], author: str, now: datetime | None = None) -> bool
         last = datetime.fromisoformat(state.get("updated_at", ""))
     except (TypeError, ValueError):
         return True
-    return ((now or datetime.now(timezone.utc)) - last) >= timedelta(hours=REFRESH_HOURS)
+    age = (now or datetime.now(timezone.utc)) - last
+    from . import wisep                             # once WISEP has proven itself, it decides instead of this timer
+    return wisep.timer_due(age >= timedelta(hours=REFRESH_HOURS), age.total_seconds() / 3600)
 
 
 def busy(status: int) -> bool:

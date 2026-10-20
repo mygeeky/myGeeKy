@@ -3,7 +3,7 @@
 // record, your papers' citation counts, and the newest papers citing the ones whose count went up, in one request
 // for up to 50 papers. If OpenAlex is busy, what was found before stays. Kept on this phone only.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { wiseFetch } from './wisep';
+import { timerDue, wiseFetch } from './wisep';
 
 const KEY = 'mygeeky.citedby';
 const OPENALEX = 'https://api.openalex.org';
@@ -120,15 +120,19 @@ export async function loadCitedBy(): Promise<CitedState> {
   try { const d = JSON.parse((await AsyncStorage.getItem(KEY)) ?? '{}'); return d && typeof d === 'object' ? d : {}; } catch { return {}; }
 }
 
-const due = (s: CitedState, author: string) =>
-  s.author !== author || !s.updated_at || Date.now() - Date.parse(s.updated_at) >= REFRESH_HOURS * 3600000;
+// the module's own timer -- until WISEP has proven itself, when WISEP decides instead (timerDue)
+const due = async (s: CitedState, author: string) => {
+  if (s.author !== author || !s.updated_at) return true;
+  const age = Date.now() - Date.parse(s.updated_at);
+  return timerDue(age >= REFRESH_HOURS * 3600000, age / 3600000);
+};
 const busy = (status: number) => status === 429 || status >= 500;
 
 /** Read what's new (when due) and keep it. `author`: your OpenAlex author id (A…). */
 export async function refreshCitedBy(author: string, force = false): Promise<{ ok: boolean; busy?: boolean; state: CitedState }> {
   const state = await loadCitedBy();
   if (!AUTHOR.test(author)) return { ok: false, state };
-  if (!force && !due(state, author)) return { ok: true, state };
+  if (!force && !(await due(state, author))) return { ok: true, state };
   const when = new Date().toISOString().slice(0, 19) + '+00:00';
   const freshAuthor = state.author !== author;
   try {

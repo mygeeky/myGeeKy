@@ -3339,14 +3339,22 @@ def wisep_text() -> str:
     """WISEP today, in one paragraph: per source asked of its budget and saved by the cache; what it learned."""
     from .. import wisep
     s = wisep.stats()
-    if not s["today"]:
-        return "WISEP today: nothing asked yet."
     parts = [f"{src}: {t['asked']} asked of {t['budget']} · {t['saved']} from the cache"
              + (f" · {t['topup']} in the evening top-up" if t["topup"] else "") for src, t in sorted(s["today"].items())]
     learned = ", ".join(p["page"] for p in s["pages"][:4])
-    return ("WISEP today: " + "; ".join(parts) + f" ({round(100 * s['share_saved'])}% saved)."
+    g, pr = s["github"], s["proven"]
+    alone = ("WISEP decides alone" + (" (you said Always)" if pr["mode"] == "on" else " (proven)") if pr["alone"] else
+             "The modules' own timers still lead (you said Never)" if pr["mode"] == "off" else
+             f"WISEP takes over from the modules' timers once proven: {pr['days']} of {wisep.PROVEN_DAYS} days, "
+             f"{pr['looks']} of {wisep.PROVEN_LOOKS} answers, {round(100 * pr['saved'])}% from the cache "
+             f"(needs {round(100 * wisep.PROVEN_SAVED)}%)")
+    tuned = ", ".join(f"{k} every ~{v:g} h" for k, v in sorted(s["priors"].items()))
+    return (("WISEP today: " + "; ".join(parts) + f" ({round(100 * s['share_saved'])}% saved)." if parts
+             else "WISEP today: nothing asked yet.")
+            + f" GitHub (its own cache): {g['asked']} asked, {g['saved']} free."
             + (f" Resting: {', '.join(s['resting'])}." if s["resting"] else "")
-            + (f" You open most: {learned}." if learned else ""))
+            + (f" You open most: {learned}." if learned else "")
+            + f" {alone}." + (f" Learned how often answers change: {tuned}." if tuned else ""))
 
 
 # You → Admin's sections, as planets: (part, label, emoji) -- the phone has the same (components/admin-part.tsx)
@@ -5685,7 +5693,9 @@ class MyGeekyPanel(QWidget):
                                self._on_scout_sites),
                               ("📧 Job-alert mailbox", "One folder of your mailbox, read-only", self._on_scout_alerts),
                               ("🧹 Forget GitHub's answers", "Throw away what GitHub told us. Nothing is lost: the "
-                               "next refresh asks again.", self._on_forget_cache)):
+                               "next refresh asks again.", self._on_forget_cache),
+                              ("🧠 WISEP decides alone: Auto", "Auto: once proven (14 days, the cache saving 40%+). "
+                               "Always / Never: your choice. Click to change.", self._on_wisep_mode)):
             b = QPushButton(text)
             b.setToolTip(tip)
             b.setCursor(Qt.PointingHandCursor)
@@ -5806,10 +5816,18 @@ class MyGeekyPanel(QWidget):
             ("DeepSeek key: kept in this computer's credential store. " if st["has_key"] else
              "No DeepSeek key yet: the scout and the writers need one (✍ Write → Bring your own answer doesn't). ")
             + "Sites and field decide where the scout looks.")
+        from .. import wisep
+        self.admin_settings_btns[-1].setText("🧠 WISEP decides alone: " + {"auto": "Auto", "on": "Always", "off": "Never"}[wisep.mode()])
         for b in self.admin_settings_btns:
             b.setStyleSheet(f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
                             "border-radius:8px; padding:6px 10px; font-size:11.5px; }")
         self.admin_import.apply_theme()
+
+    def _on_wisep_mode(self) -> None:
+        from .. import wisep
+        nxt = {"auto": "on", "on": "off", "off": "auto"}[wisep.mode()]
+        wisep.set_mode(nxt)
+        self._render_admin()
 
     def _set_admin_part(self, part: str) -> None:
         self._admin_part = part if part in {p for p, *_ in ADMIN_PARTS} else "overview"

@@ -652,7 +652,9 @@ def radar_refresh(keywords: Iterable[str], weights: dict[str, float], session=No
     now = now or datetime.now(timezone.utc)
     state = radar_load()
     try:
-        if not force and (now - datetime.fromisoformat(state.get("checked_at", ""))).total_seconds() < CHECK_EVERY_HOURS * 3600:
+        age = (now - datetime.fromisoformat(state.get("checked_at", ""))).total_seconds()
+        from . import wisep                         # once WISEP has proven itself, it decides instead of this timer
+        if not force and not wisep.timer_due(age >= CHECK_EVERY_HOURS * 3600, age / 3600):
             return state
     except (TypeError, ValueError):
         pass

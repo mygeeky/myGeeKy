@@ -16,7 +16,12 @@ fresh, fast screen against asking aimlessly:
 4. **Budgets and manners.** A daily budget per source well under its published limits, spaced calls, backing off on
    429/503 (honouring Retry-After), OpenAlex's polite pool (a contact address), and a stale answer served rather than
    nothing when a source is down or the budget is spent.
-5. **The evening top-up.** Budget left at the end of the day is spent wisely: the answers most worth having fresh
+5. **It tunes itself.** Each kind of answer starts from a prior (KINDS); once this device has watched enough of
+   them change (14 days, 5 answers of a kind), the prior becomes what was actually seen (`tuned_prior`), daily.
+6. **It takes over from the old timers once proven.** Modules used to keep their own "once a day" timers; after 14
+   days of use with the cache saving at least 40% and few failures (`proven_by`), those timers stop gating and
+   WISEP decides alone (`timer_due`). Admin → Settings can say Always or Never instead of Auto.
+7. **The evening top-up.** Budget left at the end of the day is spent wisely: the answers most worth having fresh
    tomorrow (by the same measure) are refreshed in the evening, using at most half of what is left.
 
 The decision rules (`change_rate`, `p_changed`, `care`, `threshold`, `decide`) are pure and the phone runs the same ones
@@ -52,6 +57,14 @@ TOP_UP_MAX = 40
 TOP_UP_FLOOR = 0.15                  # the same bar as a call on pace: a page you never open isn't topped up
 FORCE_ALLOWANCE = 1.2                # a refresh you asked for may go this far over the day's budget
 KEEP_DAYS = 30                       # the call tally kept for the admin view
+TUNE_MIN_ANSWERS = 5                 # a kind's prior is tuned from this many answers of it ...
+TUNE_MIN_HOURS = 14 * 24             # ... watched this long in all
+PROVEN_DAYS = 14                     # WISEP takes over from the modules' own timers after this many days of use ...
+PROVEN_LOOKS = 100                   # ... this many answers given ...
+PROVEN_SAVED = 0.4                   # ... this share of them from the cache ...
+PROVEN_FAILED = 0.15                 # ... and failures (or stale answers) under this share of the asks
+MODULE_GAP_HOURS = 0.5              # even when WISEP decides alone, a module refreshes at most this often
+MODES = ("auto", "on", "off")        # Admin → Settings: WISEP decides alone when proven / always / never
 
 # per source: (daily budget, seconds between calls, hosts)
 SOURCES: dict[str, tuple[int, float, tuple[str, ...]]] = {
@@ -116,10 +129,36 @@ def threshold(used: int, budget: int, day_frac: float) -> float:
     return _r(0.15 * (1.0 + 3.0 * max(0.0, pace - 0.5)))
 
 
+def tuned_prior(changes: int, hours: float, answers: int, kind: str) -> float | None:
+    """A kind's prior hours between changes, from what this device watched (`changes` over `hours`, pooled over
+    `answers` of that kind) -- or None while there's too little to go on. Kept within the kind's limits."""
+    default, least, most = KINDS.get(kind, KINDS["entity"])
+    if answers < TUNE_MIN_ANSWERS or hours < TUNE_MIN_HOURS:
+        return None
+    return _r(min(max((hours + default) / (changes + 1.0), least), 4 * most), 2)
+
+
+def proven_by(days: list[dict[str, Any]]) -> dict[str, Any]:
+    """Has WISEP earned the right to decide alone? From the daily tallies (asked, saved, stale, failed per day):
+    {"proven", "days", "looks", "saved", "failed"} -- the numbers shown in Admin either way."""
+    used = sorted({d["day"] for d in days if (d.get("asked") or 0) + (d.get("saved") or 0)})
+    asked = sum(d.get("asked") or 0 for d in days)
+    saved = sum(d.get("saved") or 0 for d in days)
+    bad = sum((d.get("failed") or 0) + (d.get("stale") or 0) for d in days)
+    looks = asked + saved
+    share = _r(saved / looks, 3) if looks else 0.0
+    failed = _r(bad / asked, 3) if asked else 0.0
+    return {"proven": len(used) >= PROVEN_DAYS and looks >= PROVEN_LOOKS and share >= PROVEN_SAVED
+            and failed < PROVEN_FAILED, "days": len(used), "looks": looks, "saved": share, "failed": failed}
+
+
 def decide(age_hours: float | None, kind: str, changes: int, watched_hours: float, care_now: float, used: int,
-           budget: int, day_frac: float, forced: bool = False, paused: bool = False) -> dict[str, Any]:
-    """{"action": "fetch" | "cache" | "none", "why": ..., "worth", "bar"}. `age_hours` None: nothing cached yet."""
+           budget: int, day_frac: float, forced: bool = False, paused: bool = False,
+           prior_hours: float | None = None) -> dict[str, Any]:
+    """{"action": "fetch" | "cache" | "none", "why": ..., "worth", "bar"}. `age_hours` None: nothing cached yet.
+    `prior_hours`: the kind's tuned prior, when this device has one."""
     prior, least, most = KINDS.get(kind, KINDS["entity"])
+    prior = prior_hours or prior
     if age_hours is None:
         if paused or used >= budget * FORCE_ALLOWANCE:
             return {"action": "none", "why": "nothing kept, and the source is resting", "worth": 0.0, "bar": 0.0}
@@ -186,6 +225,7 @@ class Store:
             CREATE TABLE IF NOT EXISTS calls (day TEXT, source TEXT, asked INTEGER, saved INTEGER, stale INTEGER,
               failed INTEGER, topup INTEGER, PRIMARY KEY (day, source));
             CREATE TABLE IF NOT EXISTS opens (page TEXT, hour INTEGER, n REAL, at REAL, PRIMARY KEY (page, hour));
+            CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
         """)
         self.db.commit()
 
@@ -252,6 +292,27 @@ class Store:
         names = ("day", "source", "asked", "saved", "stale", "failed", "topup")
         return [dict(zip(names, r)) for r in rows if r[0] in keep]
 
+    # ---- small settings and what was learned (tuned priors, the mode)
+    def meta(self, key: str, default: Any = None) -> Any:
+        with self.lock:
+            row = self.db.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
+        try:
+            return json.loads(row[0]) if row else default
+        except ValueError:
+            return default
+
+    def set_meta(self, key: str, value: Any) -> None:
+        with self.lock:
+            self.db.execute("INSERT OR REPLACE INTO meta VALUES (?,?)", (key, json.dumps(value)))
+            self.db.commit()
+
+    def pooled(self) -> dict[str, tuple[int, float, int]]:
+        """Per kind: (changes, hours watched, answers) over the answers checked at least three times."""
+        with self.lock:
+            rows = self.db.execute("SELECT kind, SUM(changes), SUM(watched), COUNT(*) FROM answers WHERE checks >= 3 "
+                                   "GROUP BY kind").fetchall()
+        return {k: (int(c or 0), float(w or 0.0), int(n)) for k, c, w, n in rows}
+
     # ---- what you open
     def opened(self, page: str, now: float, hour: int) -> None:
         with self.lock:
@@ -316,6 +377,52 @@ def canonical(page: str) -> str:
     if page.startswith("admin:") or page.startswith("you:admin"):
         return "you:admin"
     return PAGES.get(page, page)
+
+
+def tune(now: float | None = None, force: bool = False) -> dict[str, float]:
+    """Retune each kind's prior from what this device has watched, at most once a day. Returns the priors in use."""
+    now = now or time.time()
+    st = store()
+    kept = st.meta("priors", {}) or {}
+    if not force and kept.get("_day") == _day(now):
+        return {k: v for k, v in kept.items() if not k.startswith("_")}
+    pooled = st.pooled()
+    priors = {k: p for k in KINDS if (p := tuned_prior(*pooled.get(k, (0, 0.0, 0)), k)) is not None}
+    st.set_meta("priors", {**priors, "_day": _day(now)})
+    return priors
+
+
+def priors() -> dict[str, float]:
+    kept = store().meta("priors", {}) or {}
+    return {k: v for k, v in kept.items() if not k.startswith("_")}
+
+
+def mode() -> str:
+    m = store().meta("mode", "auto")
+    return m if m in MODES else "auto"
+
+
+def set_mode(m: str) -> str:
+    store().set_meta("mode", m if m in MODES else "auto")
+    return mode()
+
+
+def proven(now: float | None = None) -> dict[str, Any]:
+    """Whether WISEP decides alone now, and why: Admin's mode, else proven_by on the last month's tallies."""
+    m = mode()
+    p = proven_by(store().tally(KEEP_DAYS))
+    return {**p, "mode": m, "alone": m == "on" or (m == "auto" and p["proven"])}
+
+
+def timer_due(own_due: bool, age_hours: float | None = None) -> bool:
+    """A module's own "is it time?" -- unless WISEP has taken over: then a refresh may run every half hour (`age_hours`
+    since the module's last one) and WISEP decides which answers are worth asking for."""
+    if own_due:
+        return True
+    try:
+        return proven()["alone"] and (age_hours is None or age_hours >= MODULE_GAP_HOURS)
+    except Exception:
+        return False
 
 
 def care_for(page: str, now: float | None = None) -> float:
@@ -395,7 +502,8 @@ def get(url: str, params: dict[str, Any] | None = None, page: str = "", kind: st
     age = (now - kept["fetched"]) / 3600 if kept else None
     budget = SOURCES[source][0]
     d = decide(age, kind, kept["changes"] if kept else 0, kept["watched"] if kept else 0.0, care_for(page, now),
-               st.used(source, day), budget, _day_frac(now), force, st.paused_until.get(source, 0.0) > now)
+               st.used(source, day), budget, _day_frac(now), force, st.paused_until.get(source, 0.0) > now,
+               priors().get(kind))
     if d["action"] == "cache":
         st.count(source, "saved", day)
         st.touch(key, now)
@@ -448,6 +556,7 @@ def session(page: str = "", force: bool = False) -> Session:
 def top_up(now: float | None = None, limit: int = TOP_UP_MAX, base: requests.Session | None = None) -> dict[str, int]:
     """Budget left at the end of the day, spent on the answers most worth having fresh tomorrow."""
     now = now or time.time()
+    tune(now)                                       # the hourly look is also when the priors are retuned (daily)
     if datetime.fromtimestamp(now).hour < TOP_UP_HOUR:
         return {}
     st, day = store(), _day(now)
@@ -461,6 +570,7 @@ def top_up(now: float | None = None, limit: int = TOP_UP_MAX, base: requests.Ses
         if source not in SOURCES or st.paused_until.get(source, 0.0) > now:
             continue
         prior, least, _ = KINDS.get(kind, KINDS["entity"])
+        prior = priors().get(kind) or prior
         age = (now - fetched) / 3600
         if age < least:
             continue
@@ -500,7 +610,14 @@ def stats(now: float | None = None) -> dict[str, Any]:
         n, size = st.db.execute("SELECT COUNT(*), COALESCE(SUM(size), 0) FROM answers").fetchone()
     asked = sum(t["asked"] for t in today)
     saved = sum(t["saved"] for t in today)
-    return {"today": {t["source"]: {**t, "budget": SOURCES.get(t["source"], (0,))[0]} for t in today},
+    try:                                            # GitHub keeps its own cache (ghcache.py): shown beside WISEP's sources
+        from . import ghcache
+        g = ghcache.store().today()
+        github = {"asked": int(g.get("requests") or 0), "saved": int(g.get("not_modified") or 0) + int(g.get("from_cache") or 0)}
+    except Exception:
+        github = {"asked": 0, "saved": 0}
+    return {"today": {t["source"]: {**t, "budget": SOURCES.get(t["source"], (0,))[0]} for t in today}, "github": github,
+            "priors": priors(), "proven": proven(now),
             "asked": asked, "saved": saved, "share_saved": _r(saved / (asked + saved), 3) if asked + saved else 0.0,
             "pages": [{"page": p, "opens": _r(v, 2)} for p, v in pages], "answers": n, "bytes": size,
             "resting": {s: int(u - now) for s, u in st.paused_until.items() if u > now}, "week": tally}

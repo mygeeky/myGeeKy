@@ -1,3 +1,4 @@
+import { noteGitHub } from './wisep';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchT } from './net';
 import { freshToken } from './storage';
@@ -46,8 +47,9 @@ export async function gh<T = any>(path: string, token: string | null): Promise<T
   const slow = isSlow(path);
   if (slow) {
     const kept = await keptAnswer<T>(path);
-    if (kept !== undefined) return kept;
+    if (kept !== undefined) { noteGitHub('saved').catch(() => undefined); return kept; }
   }
+  noteGitHub('asked').catch(() => undefined);     // counted for WISEP's admin view (GitHub keeps its own cache)
   const data = await ask<T>(path, token);
   if (slow) await keepAnswer(path, data);
   return data;
