@@ -289,6 +289,12 @@ Circle → **📄 Researchers** (the computer and the phone) is for people who p
 - **✨ Suggested:** who cites your work (from You → Cited by) and who leads the papers rising in your field (from
   World → Papers). Both were already read, so suggesting costs nothing.
 
+- **🕸 Network:** you in the middle, your co-authors around you, the people one introduction away outside, and
+  the people you follow in orange, with lines where people have written together. Tap anyone to see who connects you
+  ("you → Ada → Grace") and follow them. It's built from your papers (ORCID or "Find my papers") and rebuilt weekly
+  with two searches. The topics your circle publishes on also join your Model gently (never above what you typed);
+  the Network page shows what it adds and can switch it off.
+
 Careful with OpenAlex's shared budget: everyone you follow is looked up in **one** search (up to 50 people at a
 time), each person about as often as they publish (daily for the prolific, every three days, or weekly for the
 quiet), through WISEP. An optional notification (🔔 → "New work from people you follow") tells you when something new

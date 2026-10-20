@@ -4,7 +4,9 @@
 // gui/researchers_ui.py. lib/researchers.ts does the reading.
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { loadCitedBy, summary as citedSummary } from '../lib/cited-by';
+import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
+import { useApp } from '../lib/app-state';
+import { authorFor, loadCitedBy, summary as citedSummary } from '../lib/cited-by';
 import { readCache } from '../lib/storage';
 import * as R from '../lib/researchers';
 import type { Candidate } from '../lib/whois';
@@ -17,7 +19,37 @@ const dayText = (iso: string) => (iso.length >= 10 ? `${Number(iso.slice(8, 10))
 const rateText = (r: number) => (r >= 1 ? `about ${Math.round(r)} paper${Math.round(r) !== 1 ? 's' : ''} a month` : r > 0 ? `about ${Math.round(r * 12)} a year` : 'nothing in the last year yet');
 const today = () => new Date().toISOString().slice(0, 10);
 
+const YOU = '#7a5cff', CO = '#2a78d6', FAR = '#8f8ba8', FOLLOWED = '#eb6834';
+
+/** You in the middle, co-authors inside, one introduction away outside, the people you follow in orange (researchers.ts layout). */
+function NetworkMap({ net, picked, onPick, width }: { net: R.Network; picked: string; onPick: (id: string) => void; width: number }) {
+  const pos = R.layout(net), H = Math.min(width, 380), r = Math.min(width, H) / 2 - 18;
+  const xy = (id: string) => [width / 2 + pos[id][0] * r, H / 2 + pos[id][1] * r];
+  const size = (n: R.NetNode) => (n.ring === 0 ? 10 : 4 + Math.min(5, Math.sqrt(n.n) * 1.5));
+  const route = new Set(picked ? R.pathTo(net, picked) : []);
+  return (
+    <Svg width={width} height={H}>
+      {net.edges.filter(([a, b]) => pos[a] && pos[b]).map(([a, b, w]) => {
+        const on = route.has(a) && route.has(b), [x1, y1] = xy(a), [x2, y2] = xy(b);
+        return <Line key={`${a}|${b}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={on ? FOLLOWED : C.muted} strokeOpacity={on ? 0.9 : Math.min(0.5, 0.12 + 0.06 * w)} strokeWidth={on ? 2.5 : 1} />;
+      })}
+      {net.nodes.filter((n) => pos[n.id]).map((n) => {
+        const [x, y] = xy(n.id), color = n.ring === 0 ? YOU : n.followed ? FOLLOWED : n.ring === 1 ? CO : FAR;
+        return <Circle key={n.id} cx={x} cy={y} r={size(n) + (n.id === picked ? 2 : 0)} fill={color} stroke={n.id === picked ? C.text : 'none'} strokeWidth={2} onPress={() => onPick(n.id)} />;
+      })}
+      {net.nodes.filter((n) => pos[n.id] && (n.ring <= 1 || n.followed || n.id === picked)).map((n) => {
+        const [x, y] = xy(n.id);
+        return <SvgText key={`t${n.id}`} x={x} y={y - size(n) - 3} fontSize={9} fill={C.text} textAnchor="middle">{(n.ring ? n.name : 'you').split(' ').pop()!.slice(0, 14)}</SvgText>;
+      })}
+    </Svg>
+  );
+}
+
 export function ResearchersView({ part }: { part: string }) {
+  const { settings } = useApp();
+  const [me, setMe] = useState<string | null>(null);
+  const [picked, setPicked] = useState('');
+  const [width, setWidth] = useState(0);
   const [state, setState] = useState<R.State | null>(null);
   const [note, setNote] = useState('');
   const [query, setQuery] = useState('');
@@ -41,6 +73,18 @@ export function ResearchersView({ part }: { part: string }) {
       setSugg(R.suggestions(cited, R.fieldPeople(research?.data?.rising ?? []), state.following.map((p) => p.id)));
     })().catch(() => undefined);
   }, [part, state]);
+
+  useEffect(() => {                                 // the map: your author id, then a rebuild when it's a week old
+    if (part !== 'network') return;
+    let live = true;
+    (async () => {
+      const a = await authorFor(settings?.orcid ?? '', settings?.openalex ?? '');
+      if (!live) return;
+      setMe(a ?? '');
+      if (a) { const out = await R.refreshNetwork(a); if (live) setState(out.state); }
+    })().catch(() => undefined);
+    return () => { live = false; };
+  }, [part, settings?.orcid, settings?.openalex]);
 
   const items = state && part === 'new' ? R.feed(state, today()).slice(0, 40) : [];
   useEffect(() => { if (items.length) R.markSeen(items.map((w) => w.id)).catch(() => undefined); }, [items.length]);   // eslint-disable-line react-hooks/exhaustive-deps -- once per list
@@ -110,6 +154,37 @@ export function ResearchersView({ part }: { part: string }) {
           </View>
         ))}
       </> : null}
+
+      {part === 'network' ? (() => {
+        const net = state.network;
+        const who = net?.nodes.find((n) => n.id === picked);
+        const names = Object.fromEntries((net?.nodes ?? []).map((n) => [n.id, n.name]));
+        const route = net && who ? R.pathTo(net, who.id) : [];
+        const circle = Object.keys(R.circleWeights(net?.topics ?? {})).slice(0, 5).join(', ');
+        const on = state.model_circle !== false;
+        return (
+          <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+            <Text style={st.muted}>You in the middle, your co-authors around you, the people one introduction away outside, and the people you follow in orange. Tap anyone to see who connects you. Rebuilt weekly from your papers.</Text>
+            {me === '' ? <Empty>Add your ORCID iD, or find your papers by your name (You → Settings → Your papers), to see your co-author network.</Empty>
+              : !net?.nodes.length ? <GeekLoader text="Building your network…" />
+                : <>
+                  <Text style={st.muted}><Text style={{ color: YOU }}>●</Text> you  <Text style={{ color: CO }}>●</Text> co-authors  <Text style={{ color: FAR }}>●</Text> one introduction away  <Text style={{ color: FOLLOWED }}>●</Text> you follow</Text>
+                  {width > 0 ? <NetworkMap net={net} picked={picked} onPick={setPicked} width={width} /> : null}
+                  {who && who.ring ? (
+                    <View style={st.card}>
+                      <Text style={st.title}>{who.name}</Text>
+                      <Text style={st.muted}>{[who.institution, route.length > 1 ? `you → ${route.slice(1).map((x) => names[x] ?? x).join(' → ')}` : ''].filter(Boolean).join(' · ')}</Text>
+                      {!who.followed ? <Pressable style={[st.btn, { alignSelf: 'flex-start', marginTop: 6, backgroundColor: C.violet }]} onPress={() => follow({ id: who.id, name: who.name, institution: who.institution })}><Text style={st.btnText}>Follow</Text></Pressable> : null}
+                    </View>
+                  ) : null}
+                  <Text style={st.muted}>{on ? 'Your Model learns from your circle: ' : "Your Model doesn't learn from your circle (switched off). It would add: "}{circle || 'nothing yet'}.</Text>
+                  <Pressable style={[st.btn, { alignSelf: 'flex-start', marginTop: 6 }]} onPress={() => R.setCircle(!on).then(reload)}>
+                    <Text style={st.btnText}>{on ? 'Stop learning from my circle' : 'Learn from my circle'}</Text>
+                  </Pressable>
+                </>}
+          </View>
+        );
+      })() : null}
 
       {part === 'suggested' ? <>
         <Text style={st.muted}>People worth following, from what myGeeKy already read: who cites your work, and who leads the papers rising in your field.</Text>

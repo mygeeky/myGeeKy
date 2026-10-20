@@ -411,7 +411,7 @@ PAGES = {"model:cited": "you:cited", "you:cited": "you:cited", "model:model": "y
          "repos:rising": "repos:rising", "grow:wins": "grow:wins", "grow:paths": "grow:paths",
          "grow:data:new": "grow:data:new", "you:month": "you:model", "model:month": "you:model",
          "researchers:new": "circle:researchers", "researchers:following": "circle:researchers",
-         "researchers:suggested": "circle:researchers"}
+         "researchers:suggested": "circle:researchers", "researchers:network": "circle:researchers"}
 
 
 def canonical(page: str) -> str:

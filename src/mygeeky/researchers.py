@@ -9,11 +9,20 @@
   preprint (arXiv, bioRxiv, medRxiv…) shows the day it appears; when its published version arrives (same title, by
   the same people), the two show as one: "now published in …". Linking costs nothing (it's found among what was read).
 
+- **🕸️ Network (step 2).** You in the middle, your co-authors around you, their co-authors (one introduction away)
+  outside, the people you follow marked, lines where people have written together, and who connects you to anyone.
+  Two searches a week through WISEP: your own works with their authors, then one batch for your co-authors' and the
+  people you follow's recent works. At most MAX_NODES people, so it reads on a phone.
+- **Your Model learns from your circle.** The topics your co-authors and the people you follow publish on gently join
+  your interest weights (`blend_circle`, never above 0.6, below what you typed); You → Model shows it, and it can be
+  switched off.
+
 The phone does the same (lib/researchers.ts); tests/test_researchers.py checks both agree.
 """
 
 from __future__ import annotations
 
+import math
 import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Iterable
@@ -30,6 +39,10 @@ MAX_FOLLOWING = 200
 MAX_WORKS = 400
 _AID = re.compile(r"^A\d{4,}$")
 _WID = re.compile(r"^W\d{4,}$")
+MAX_NODES = 60                  # people on the map: it has to read on a phone
+RING1 = 24                      # your co-authors shown (the most frequent)
+NETWORK_DAYS = 7                # the map is rebuilt weekly: networks change slowly
+CIRCLE_MAX = 0.6                # a topic from your circle never weighs more than this (what you typed is 1.0)
 PREPRINT_SERVERS = ("arxiv", "biorxiv", "medrxiv", "chemrxiv", "ssrn", "research square", "preprints.org", "osf",
                     "zenodo", "authorea", "psyarxiv", "socarxiv", "eartharxiv", "techrxiv", "sciety")
 
@@ -174,6 +187,220 @@ def suggestions(cited_people: list[dict[str, Any]], field_people: list[dict[str,
         else:
             out[aid] = {"id": aid, "name": str(p.get("name") or ""), "institution": "", "why": why, "score": 1.0 + n}
     return sorted(out.values(), key=lambda p: (-p["score"], p["name"]))[:20]
+
+
+# --------------------------------------------------------------------------- 🕸️ the network
+def my_works_url(me: str) -> str:
+    return (f"{OPENALEX}/works?filter=author.id:{me}&per-page=200&sort=publication_date:desc"
+            "&select=id,publication_year,authorships,primary_topic")
+
+
+def ring_url(ids: list[str], today: str) -> str:
+    """One batched search: the recent works of your co-authors and the people you follow (three years back, rounded
+    to the year so the search stays the same all year)."""
+    start = f"{int(today[:4]) - 3}-01-01"
+    return (f"{OPENALEX}/works?filter=author.id:{'|'.join(sorted(ids))},from_publication_date:{start}&per-page=200"
+            "&sort=publication_date:desc&select=id,publication_year,authorships,primary_topic")
+
+
+def _authors(work: dict[str, Any]) -> list[dict[str, str]]:
+    out = []
+    for a in work.get("authorships") or []:
+        au = (a or {}).get("author") or {}
+        aid = str(au.get("id") or "").rsplit("/", 1)[-1]
+        if _AID.match(aid) and all(x["id"] != aid for x in out):
+            inst = next((i for i in (a or {}).get("institutions") or [] if isinstance(i, dict)), {})
+            out.append({"id": aid, "name": str(au.get("display_name") or "")[:120],
+                        "institution": str(inst.get("display_name") or "")[:160]})
+    return out
+
+
+def _results(data: Any) -> list[dict[str, Any]]:
+    return [w for w in (data or {}).get("results") or [] if isinstance(w, dict)] if isinstance(data, dict) else []
+
+
+def build_network(mine: Any, ring: Any, me: str, following: Iterable[str]) -> dict[str, Any]:
+    """The map from two answers (your works; your co-authors' and followed people's works): {"nodes": [{id, name,
+    institution, ring (0 you, 1 co-author, 2 one introduction away), n (works together), followed}], "edges": [[a, b,
+    works together]], "topics": {topic: count over the circle's works}}."""
+    follow = set(following)
+    people: dict[str, dict[str, str]] = {}
+    with_me: dict[str, int] = {}
+    for w in _results(mine):
+        names = _authors(w)
+        if not any(a["id"] == me for a in names):
+            continue
+        for a in names:
+            people.setdefault(a["id"], a)
+            if a["id"] != me:
+                with_me[a["id"]] = with_me.get(a["id"], 0) + 1
+    ring1 = [a for a, _ in sorted(with_me.items(), key=lambda kv: (-kv[1], kv[0]))[:RING1]]
+    pairs: dict[tuple[str, str], int] = {}
+    reach: dict[str, int] = {}
+    topics: dict[str, int] = {}
+    for w in _results(ring):
+        names = _authors(w)
+        ids = [a["id"] for a in names]
+        inner = [i for i in ids if i in ring1 or i in follow]
+        if not inner:
+            continue
+        topic = str(((w.get("primary_topic") or {}) if isinstance(w.get("primary_topic"), dict) else {}).get("display_name") or "")
+        if topic:
+            topics[topic] = topics.get(topic, 0) + 1
+        for a in names:
+            people.setdefault(a["id"], a)
+        if len(ids) <= 30:                           # a consortium's 500-author paper says nothing about who knows whom
+            for i, a in enumerate(sorted(ids)):
+                for b in sorted(ids)[i + 1:]:
+                    if a in inner or b in inner:
+                        pairs[(a, b)] = pairs.get((a, b), 0) + 1
+            for x in ids:
+                if x != me and x not in ring1 and x not in follow:
+                    reach[x] = reach.get(x, 0) + 1
+    room = MAX_NODES - 1 - len(ring1) - len([f for f in follow if f not in ring1 and f != me])
+    ring2 = [x for x, _ in sorted(reach.items(), key=lambda kv: (-kv[1], kv[0]))[:max(0, room)]]
+    shown = [me] + ring1 + [f for f in sorted(follow) if f not in ring1 and f != me] + ring2
+    nodes = []
+    for x in shown:
+        p = people.get(x, {"id": x, "name": "", "institution": ""})
+        nodes.append({"id": x, "name": p["name"] or ("You" if x == me else x), "institution": p["institution"],
+                      "ring": 0 if x == me else 1 if x in ring1 else 2, "n": with_me.get(x, reach.get(x, 0)),
+                      "followed": x in follow})
+    keep = set(shown)
+    edges = [[a, me, n] for a, n in sorted(with_me.items()) if a in keep]
+    edges += [[a, b, n] for (a, b), n in sorted(pairs.items()) if a in keep and b in keep and me not in (a, b)]
+    return {"nodes": nodes, "edges": edges, "topics": dict(sorted(topics.items(), key=lambda kv: (-kv[1], kv[0]))[:30])}
+
+
+def path_to(net: dict[str, Any], target: str) -> list[str]:
+    """Who connects you to `target` (shortest path along written-together lines), you first; [] if nobody does."""
+    nodes = [n["id"] for n in net.get("nodes") or []]
+    if not nodes or target not in nodes:
+        return []
+    me = nodes[0]
+    nbr: dict[str, list[str]] = {n: [] for n in nodes}
+    for a, b, _ in net.get("edges") or []:
+        if a in nbr and b in nbr:
+            nbr[a].append(b)
+            nbr[b].append(a)
+    prev, queue = {me: ""}, [me]
+    while queue:
+        x = queue.pop(0)
+        if x == target:
+            break
+        for y in sorted(nbr[x]):
+            if y not in prev:
+                prev[y] = x
+                queue.append(y)
+    if target not in prev:
+        return []
+    out = [target]
+    while prev[out[-1]]:
+        out.append(prev[out[-1]])
+    return out[::-1]
+
+
+def _r4(x: float) -> float:
+    """Rounded as JavaScript's Math.round does, so both apps place everyone in the same spot."""
+    return math.floor(x * 10000 + 0.5) / 10000
+
+
+def layout(net: dict[str, Any]) -> dict[str, tuple[float, float]]:
+    """Where each person sits, in -1..1: you at the centre, co-authors on the inner ring (most frequent at the top),
+    the outer ring beside the co-author they're closest to. The same on both apps."""
+    nodes = net.get("nodes") or []
+    pos: dict[str, tuple[float, float]] = {}
+    if not nodes:
+        return pos
+    pos[nodes[0]["id"]] = (0.0, 0.0)
+    inner = [n["id"] for n in nodes if n["ring"] == 1]
+    angle: dict[str, float] = {}
+    for i, x in enumerate(inner):
+        a = -math.pi / 2 + 2 * math.pi * i / max(len(inner), 1)
+        angle[x] = a
+        pos[x] = (_r4(0.45 * math.cos(a)), _r4(0.45 * math.sin(a)))
+    strongest: dict[str, tuple[int, str]] = {}
+    for a, b, w in net.get("edges") or []:
+        for x, y in ((a, b), (b, a)):
+            if y in angle and (x not in strongest or (w, y) > strongest[x]):
+                strongest[x] = (w, y)
+    outer = [n["id"] for n in nodes if n["ring"] == 2]
+    outer.sort(key=lambda x: (angle.get(strongest.get(x, (0, ""))[1], 10.0), x))
+    for i, x in enumerate(outer):
+        a = -math.pi / 2 + 2 * math.pi * (i + 0.5) / max(len(outer), 1)
+        pos[x] = (_r4(0.9 * math.cos(a)), _r4(0.9 * math.sin(a)))
+    return pos
+
+
+def circle_weights(topics: dict[str, int]) -> dict[str, float]:
+    """Your circle's topics as interest weights: the most frequent at CIRCLE_MAX, the rest in proportion (at least 0.2)."""
+    if not topics:
+        return {}
+    top = max(topics.values())
+    return {k.lower(): math.floor((0.2 + (CIRCLE_MAX - 0.2) * v / top) * 1000 + 0.5) / 1000 for k, v in topics.items()}
+
+
+def blend_circle(weights: dict[str, float], circle: dict[str, float]) -> dict[str, float]:
+    """Your weights with your circle's topics joined in: never lowering anything you have."""
+    out = dict(weights)
+    for k, w in circle.items():
+        out[k] = max(out.get(k, 0.0), w)
+    return out
+
+
+def network_due(state: dict[str, Any], today: str) -> bool:
+    built = (state.get("network") or {}).get("built", "")
+    if not built:
+        return True
+    from . import wisep
+    age = (date.fromisoformat(today) - date.fromisoformat(built[:10])).days
+    return wisep.timer_due(age >= NETWORK_DAYS, age * 24.0)
+
+
+def refresh_network(me: str, session=None, force: bool = False, today: str | None = None) -> dict[str, Any]:
+    """Rebuild the map (weekly): your works, then one batch for your co-authors and the people you follow."""
+    from . import wisep
+    today = today or date.today().isoformat()
+    state = load()
+    if not me or not _AID.match(me):
+        return {"ok": False, "why": "no author", "state": state}
+    if not force and not network_due(state, today):
+        return {"ok": True, "state": state}
+    get = (session or wisep.session("circle:researchers", force=force)).get
+    try:
+        r = get(my_works_url(me), timeout=30)
+        if r.status_code != 200:
+            return {"ok": False, "busy": True, "state": state}
+        mine = r.json()
+        first = build_network(mine, {}, me, [p["id"] for p in state["following"]])
+        ids = [n["id"] for n in first["nodes"] if n["ring"] == 1] + [p["id"] for p in state["following"]]
+        ring: Any = {}
+        if ids:
+            r2 = get(ring_url(list(dict.fromkeys(ids))[:BATCH], today), timeout=30)
+            if r2.status_code == 200:
+                ring = r2.json()
+    except Exception:
+        return {"ok": False, "busy": True, "state": state}
+    net = build_network(mine, ring, me, [p["id"] for p in state["following"]])
+    state["network"] = {**net, "built": today, "me": me}
+    save(state)
+    return {"ok": True, "state": state}
+
+
+def circle_on(state: dict[str, Any] | None = None) -> bool:
+    return (state or load()).get("model_circle", True) is not False
+
+
+def set_circle(on: bool) -> None:
+    state = load()
+    state["model_circle"] = bool(on)
+    save(state)
+
+
+def model_weights() -> dict[str, float]:
+    """What your circle adds to your Model now (empty when switched off or not built yet)."""
+    state = load()
+    return circle_weights((state.get("network") or {}).get("topics") or {}) if circle_on(state) else {}
 
 
 # --------------------------------------------------------------------------- the state

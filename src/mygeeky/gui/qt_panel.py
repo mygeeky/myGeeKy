@@ -3679,7 +3679,7 @@ class MyGeekyPanel(QWidget):
         """Circle → 📄 Researchers (researchers_ui.py): new work from the people you follow, following, suggestions."""
         from .researchers_ui import ResearchersPage
         self.researchers_page = ResearchersPage(lambda: THEMES[self._theme_name()], self._run_async, logic.open_link,
-                                                lambda: logic.researcher_suggestions(self.cfg))
+                                                lambda: logic.researcher_suggestions(self.cfg), lambda: logic.my_author(self.cfg))
         return self.researchers_page
 
     def _build_live_tab(self) -> QWidget:

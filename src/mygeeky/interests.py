@@ -166,7 +166,13 @@ def profile_terms(cfg: MyGeekyConfig) -> dict[str, float]:
                     weights.setdefault(term.lower(), 0.8 * w)
         except Exception:
             pass
-    return blend_learned(weights, learned_terms(cfg, 15))
+    weights = blend_learned(weights, learned_terms(cfg, 15))
+    try:                                            # your research circle's topics, gently (researchers.blend_circle)
+        from . import researchers
+        weights = researchers.blend_circle(weights, researchers.model_weights())
+    except Exception:
+        pass
+    return weights
 
 
 def blend_learned(weights: dict[str, float], learned: list[tuple[str, float]]) -> dict[str, float]:

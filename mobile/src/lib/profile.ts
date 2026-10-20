@@ -67,7 +67,12 @@ export async function profileFromSources(s: Settings, token: string | null, dict
     }
   }
   if (!field.length) field.push(...(s.field ?? []));
-  return { weights, topicIds, field };
+  try {                                             // your research circle's topics, gently (researchers.ts blendCircle)
+    const { blendCircle, modelWeights } = await import('./researchers');
+    return { weights: blendCircle(weights, await modelWeights()), topicIds, field };
+  } catch {
+    return { weights, topicIds, field };
+  }
 }
 
 export async function buildProfile(s: Settings, token: string | null, force = false): Promise<Profile> {

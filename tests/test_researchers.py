@@ -141,3 +141,82 @@ out(fieldPeople(INPUT));
 """, [{"leads": [{"name": "Grace", "openalex": "A5000000009"}, {"name": "Linus", "openalex": "A5000000010"}]},
       {"leads": [{"name": "Grace", "openalex": "A5000000009"}, {"name": "No id", "openalex": ""}]}])
     assert said == [{"openalex": "A5000000009", "name": "Grace", "papers": 2}, {"openalex": "A5000000010", "name": "Linus", "papers": 1}]
+
+
+# --------------------------------------------------------------------------- 🕸️ the network
+B1, B2, C1, F1 = "A5000000101", "A5000000102", "A5000000201", "A5000000301"
+
+
+def _w(wid, authors, topic="Genomics"):
+    return {"id": f"https://openalex.org/{wid}", "publication_year": 2025, "primary_topic": {"display_name": topic},
+            "authorships": [{"author": {"id": f"https://openalex.org/{a}", "display_name": n},
+                             "institutions": [{"display_name": i}] if i else []} for a, n, i in authors]}
+
+
+MINE = {"results": [_w("W1", [(ME, "Me", "Cairo"), (B1, "Bea One", "Oxford")]),
+                    _w("W2", [(ME, "Me", ""), (B1, "Bea One", "Oxford"), (B2, "Ben Two", "MIT")]),
+                    _w("W3", [(B2, "Not me", "")])]}
+RING = {"results": [_w("W10", [(B1, "Bea One", "Oxford"), (C1, "Cara Far", "ETH")], "Population genetics"),
+                    _w("W11", [(B1, "Bea One", ""), (C1, "Cara Far", "")], "Population genetics"),
+                    _w("W12", [(F1, "Fay Follow", "UCL"), (C1, "Cara Far", "")], "Machine learning")]}
+
+
+def test_the_network_rings_lines_and_who_connects_you():
+    net = rs.build_network(MINE, RING, ME, [F1])
+    by = {n["id"]: n for n in net["nodes"]}
+    assert net["nodes"][0]["id"] == ME and by[ME]["ring"] == 0
+    assert by[B1]["ring"] == 1 and by[B1]["n"] == 2 and by[B2]["ring"] == 1 and by[B2]["n"] == 1
+    assert by[F1]["ring"] == 2 and by[F1]["followed"] and by[C1]["ring"] == 2 and by[C1]["institution"] == "ETH"
+    assert [B1, ME, 2] in net["edges"] and [B1, C1, 2] in net["edges"] and [C1, F1, 1] in net["edges"]
+    assert net["topics"] == {"Population genetics": 2, "Machine learning": 1}
+    assert rs.path_to(net, F1) == [ME, B1, C1, F1] and rs.path_to(net, "A1") == []
+    pos = rs.layout(net)
+    assert pos[ME] == (0.0, 0.0) and pos[B1] == (0.0, -0.45)                       # the closest co-author at the top
+    assert all(abs((x * x + y * y) ** 0.5 - 0.9) < 0.001 for k, (x, y) in pos.items() if by[k]["ring"] == 2)
+    w = rs.circle_weights(net["topics"])
+    assert w == {"population genetics": 0.6, "machine learning": 0.4}
+    assert rs.blend_circle({"population genetics": 1.0, "gwas": 0.9}, w) == {"population genetics": 1.0, "gwas": 0.9,
+                                                                            "machine learning": 0.4}
+
+
+def test_the_map_is_built_weekly_with_two_searches_and_your_model_learns_from_it(monkeypatch):
+    from mygeeky import interests
+    from mygeeky.config import MyGeekyConfig
+    rs.follow({"id": F1, "name": "Fay Follow"}, TODAY)
+
+    class Two:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, **kw):
+            self.calls.append(url)
+            r = requests.Response()
+            r.status_code, r._content = 200, json.dumps(MINE if f"author.id:{ME}&" in url else RING).encode()
+            return r
+
+    net = Two()
+    out = rs.refresh_network(ME, session=net, today=TODAY)
+    assert out["ok"] and len(net.calls) == 2 and f"{B1}|{B2}|{F1}" in net.calls[1]   # one batch: co-authors and followed
+    again = Two()
+    rs.refresh_network(ME, session=again, today="2026-10-22")
+    assert again.calls == []                                                          # a week before it's rebuilt
+    assert rs.model_weights() == {"population genetics": 0.6, "machine learning": 0.4}
+    assert interests.profile_terms(MyGeekyConfig(keywords=["gwas"]))["machine learning"] == 0.4   # your Model learns
+    rs.set_circle(False)
+    assert rs.model_weights() == {} and "machine learning" not in interests.profile_terms(MyGeekyConfig(keywords=["gwas"]))
+    assert rs.refresh_network("", session=Two())["ok"] is False                       # no author: nothing to build
+
+
+@pytest.mark.skipif(not phone.node_ok(), reason="needs Node 22.6+ and the phone's packages")
+def test_the_phone_draws_the_same_network():
+    said = phone.run("""
+import { blendCircle, buildNetwork, circleWeights, layout, pathTo } from './lib/researchers.ts';
+const net = buildNetwork(INPUT.mine, INPUT.ring, INPUT.me, [INPUT.f1]);
+out({ net, path: pathTo(net, INPUT.f1), pos: layout(net), w: circleWeights(net.topics),
+      blend: blendCircle({ 'population genetics': 1.0, gwas: 0.9 }, circleWeights(net.topics)) });
+""", {"mine": MINE, "ring": RING, "me": ME, "f1": F1})
+    net = rs.build_network(MINE, RING, ME, [F1])
+    assert said["net"] == json.loads(json.dumps(net)) and said["path"] == rs.path_to(net, F1)
+    assert said["pos"] == {k: list(v) for k, v in rs.layout(net).items()}
+    assert said["w"] == rs.circle_weights(net["topics"])
+    assert said["blend"] == rs.blend_circle({"population genetics": 1.0, "gwas": 0.9}, rs.circle_weights(net["topics"]))

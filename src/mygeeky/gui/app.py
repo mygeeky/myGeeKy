@@ -1779,6 +1779,12 @@ def quizwriter_state() -> dict[str, Any]:
             "missing": [pid for pid in reviewed if pid not in ready]}
 
 
+def my_author(cfg: MyGeekyConfig) -> str:
+    """Your OpenAlex author id: from ORCID setup or "Find my papers" (the same one Cited by uses)."""
+    from .. import scholar
+    return cfg.openalex_id or ((scholar.load_scholar_profile() or {}).get("openalex") or {}).get("author_id", "")
+
+
 def researcher_suggestions(cfg: MyGeekyConfig) -> list[dict[str, Any]]:
     """People worth following (researchers.suggestions), from what's already read: no request."""
     from datetime import date as _date

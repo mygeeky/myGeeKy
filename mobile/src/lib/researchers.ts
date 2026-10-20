@@ -10,6 +10,7 @@ import { wiseFetch } from './wisep';
 
 const KEY = 'mygeeky.researchers';
 const OPENALEX = 'https://api.openalex.org';
+const MAX_NODES = 60, RING1 = 24, NETWORK_DAYS = 7, CIRCLE_MAX = 0.6;
 const BATCH = 50, KEEP_DAYS = 400, LOOK_BACK_DAYS = 120, MAX_FOLLOWING = 200, MAX_WORKS = 400;
 const AID = /^A\d{4,}$/, WID = /^W\d{4,}$/;
 const PREPRINT_SERVERS = ['arxiv', 'biorxiv', 'medrxiv', 'chemrxiv', 'ssrn', 'research square', 'preprints.org', 'osf', 'zenodo', 'authorea',
@@ -18,7 +19,9 @@ const PREPRINT_SERVERS = ['arxiv', 'biorxiv', 'medrxiv', 'chemrxiv', 'ssrn', 're
 export type Person = { id: string; name: string; institution: string; country: string; topics: string[]; added: string; checked: string; rate: number };
 export type Work = { id: string; title: string; date: string; venue: string; preprint: boolean; url: string; doi: string; by: string[]; authors: number;
   seen?: string; preprint_of?: { venue: string; date: string; id: string }; published_as?: string };
-export type State = { following: Person[]; works: Record<string, Work>; seen: string[]; updated_at?: string };
+export type NetNode = { id: string; name: string; institution: string; ring: number; n: number; followed: boolean };
+export type Network = { nodes: NetNode[]; edges: [string, string, number][]; topics: Record<string, number>; built?: string; me?: string };
+export type State = { following: Person[]; works: Record<string, Work>; seen: string[]; updated_at?: string; network?: Network; model_circle?: boolean };
 
 // --------------------------------------------------------------------------- the rules (the desktop has the same)
 export const intervalDays = (perMonth: number) => (perMonth >= 2 ? 1 : perMonth >= 0.5 ? 3 : 7);
@@ -137,12 +140,155 @@ export function suggestions(citedPeople: any[], fieldPeople: any[], following: s
   return Object.values(out).sort((a, b) => b.score - a.score || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)).slice(0, 20);
 }
 
+// --------------------------------------------------------------------------- 🕸️ the network (researchers.build_network)
+export const myWorksUrl = (me: string) => `${OPENALEX}/works?filter=author.id:${me}&per-page=200&sort=publication_date:desc`
+  + '&select=id,publication_year,authorships,primary_topic';
+export const ringUrl = (ids: string[], today: string) => `${OPENALEX}/works?filter=author.id:${[...ids].sort().join('|')},`
+  + `from_publication_date:${Number(today.slice(0, 4)) - 3}-01-01&per-page=200&sort=publication_date:desc&select=id,publication_year,authorships,primary_topic`;
+
+function authorsOf(w: any): { id: string; name: string; institution: string }[] {
+  const out: { id: string; name: string; institution: string }[] = [];
+  for (const a of Array.isArray(w?.authorships) ? w.authorships : []) {
+    const aid = String(a?.author?.id ?? '').split('/').pop() ?? '';
+    if (AID.test(aid) && !out.some((x) => x.id === aid)) {
+      const inst = (Array.isArray(a?.institutions) ? a.institutions : []).find((i: any) => i && typeof i === 'object') ?? {};
+      out.push({ id: aid, name: String(a?.author?.display_name ?? '').slice(0, 120), institution: String(inst.display_name ?? '').slice(0, 160) });
+    }
+  }
+  return out;
+}
+const results = (d: any): any[] => (Array.isArray(d?.results) ? d.results.filter((w: any) => w && typeof w === 'object') : []);
+const cmpS = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+export function buildNetwork(mine: any, ring: any, me: string, following: string[]): Network {
+  const follow = new Set(following);
+  const people: Record<string, { id: string; name: string; institution: string }> = {};
+  const withMe: Record<string, number> = {};
+  for (const w of results(mine)) {
+    const names = authorsOf(w);
+    if (!names.some((a) => a.id === me)) continue;
+    for (const a of names) { people[a.id] ??= a; if (a.id !== me) withMe[a.id] = (withMe[a.id] ?? 0) + 1; }
+  }
+  const ring1 = Object.entries(withMe).sort((a, b) => b[1] - a[1] || cmpS(a[0], b[0])).slice(0, RING1).map(([a]) => a);
+  const pairs = new Map<string, number>(), reach: Record<string, number> = {}, topics: Record<string, number> = {};
+  for (const w of results(ring)) {
+    const names = authorsOf(w), ids = names.map((a) => a.id);
+    const inner = ids.filter((i) => ring1.includes(i) || follow.has(i));
+    if (!inner.length) continue;
+    const topic = String(w.primary_topic && typeof w.primary_topic === 'object' ? w.primary_topic.display_name ?? '' : '');
+    if (topic) topics[topic] = (topics[topic] ?? 0) + 1;
+    for (const a of names) people[a.id] ??= a;
+    if (ids.length <= 30) {
+      const s = [...ids].sort(cmpS);
+      for (let i = 0; i < s.length; i++) for (const b of s.slice(i + 1)) {
+        if (inner.includes(s[i]) || inner.includes(b)) pairs.set(`${s[i]}|${b}`, (pairs.get(`${s[i]}|${b}`) ?? 0) + 1);
+      }
+      for (const x of ids) if (x !== me && !ring1.includes(x) && !follow.has(x)) reach[x] = (reach[x] ?? 0) + 1;
+    }
+  }
+  const extra = [...follow].filter((f) => !ring1.includes(f) && f !== me).sort(cmpS);
+  const room = MAX_NODES - 1 - ring1.length - extra.length;
+  const ring2 = Object.entries(reach).sort((a, b) => b[1] - a[1] || cmpS(a[0], b[0])).slice(0, Math.max(0, room)).map(([x]) => x);
+  const shown = [me, ...ring1, ...extra, ...ring2];
+  const nodes: NetNode[] = shown.map((x) => {
+    const p = people[x] ?? { id: x, name: '', institution: '' };
+    return { id: x, name: p.name || (x === me ? 'You' : x), institution: p.institution, ring: x === me ? 0 : ring1.includes(x) ? 1 : 2,
+      n: withMe[x] ?? reach[x] ?? 0, followed: follow.has(x) };
+  });
+  const keep = new Set(shown);
+  const edges: [string, string, number][] = Object.entries(withMe).sort((a, b) => cmpS(a[0], b[0])).filter(([a]) => keep.has(a)).map(([a, n]) => [a, me, n]);
+  for (const [k, n] of [...pairs.entries()].sort((a, b) => cmpS(a[0], b[0]))) {
+    const [a, b] = k.split('|');
+    if (keep.has(a) && keep.has(b) && a !== me && b !== me) edges.push([a, b, n]);
+  }
+  const top = Object.fromEntries(Object.entries(topics).sort((a, b) => b[1] - a[1] || cmpS(a[0], b[0])).slice(0, 30));
+  return { nodes, edges, topics: top };
+}
+
+export function pathTo(net: Network, target: string): string[] {
+  const nodes = (net.nodes ?? []).map((n) => n.id);
+  if (!nodes.length || !nodes.includes(target)) return [];
+  const me = nodes[0], nbr: Record<string, string[]> = Object.fromEntries(nodes.map((n) => [n, [] as string[]]));
+  for (const [a, b] of net.edges ?? []) if (a in nbr && b in nbr) { nbr[a].push(b); nbr[b].push(a); }
+  const prev: Record<string, string> = { [me]: '' }, queue = [me];
+  while (queue.length) {
+    const x = queue.shift()!;
+    if (x === target) break;
+    for (const y of [...nbr[x]].sort(cmpS)) if (!(y in prev)) { prev[y] = x; queue.push(y); }
+  }
+  if (!(target in prev)) return [];
+  const out = [target];
+  while (prev[out[out.length - 1]]) out.push(prev[out[out.length - 1]]);
+  return out.reverse();
+}
+
+const r4 = (x: number) => Math.round(x * 10000) / 10000;
+/** Where each person sits, in -1..1 (researchers.layout): the same map on both apps. */
+export function layout(net: Network): Record<string, [number, number]> {
+  const nodes = net.nodes ?? [], pos: Record<string, [number, number]> = {};
+  if (!nodes.length) return pos;
+  pos[nodes[0].id] = [0, 0];
+  const inner = nodes.filter((n) => n.ring === 1).map((n) => n.id), angle: Record<string, number> = {};
+  inner.forEach((x, i) => { const a = -Math.PI / 2 + (2 * Math.PI * i) / Math.max(inner.length, 1); angle[x] = a; pos[x] = [r4(0.45 * Math.cos(a)), r4(0.45 * Math.sin(a))]; });
+  const strongest: Record<string, [number, string]> = {};
+  for (const [a, b, w] of net.edges ?? []) for (const [x, y] of [[a, b], [b, a]]) {
+    const s = strongest[x];
+    if (y in angle && (!s || w > s[0] || (w === s[0] && y > s[1]))) strongest[x] = [w, y];
+  }
+  const outer = nodes.filter((n) => n.ring === 2).map((n) => n.id);
+  const ang = (x: string) => (strongest[x] && strongest[x][1] in angle ? angle[strongest[x][1]] : 10);
+  outer.sort((a, b) => ang(a) - ang(b) || cmpS(a, b));
+  outer.forEach((x, i) => { const a = -Math.PI / 2 + (2 * Math.PI * (i + 0.5)) / Math.max(outer.length, 1); pos[x] = [r4(0.9 * Math.cos(a)), r4(0.9 * Math.sin(a))]; });
+  return pos;
+}
+
+export function circleWeights(topics: Record<string, number>): Record<string, number> {
+  const vals = Object.values(topics);
+  if (!vals.length) return {};
+  const top = Math.max(...vals);
+  return Object.fromEntries(Object.entries(topics).map(([k, v]) => [k.toLowerCase(), Math.round((0.2 + (CIRCLE_MAX - 0.2) * v / top) * 1000) / 1000]));
+}
+
+export function blendCircle(weights: Record<string, number>, circle: Record<string, number>): Record<string, number> {
+  const out = { ...weights };
+  for (const [k, w] of Object.entries(circle)) out[k] = Math.max(out[k] ?? 0, w);
+  return out;
+}
+
+export async function refreshNetwork(me: string, force = false, today = new Date().toISOString().slice(0, 10)): Promise<{ ok: boolean; busy?: boolean; state: State }> {
+  const s = await load();
+  if (!AID.test(me)) return { ok: false, state: s };
+  const built = s.network?.built ?? '';
+  if (!force && built && Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${built}T00:00:00Z`)) / 86400000) < NETWORK_DAYS) return { ok: true, state: s };
+  try {
+    const r = await wiseFetch(myWorksUrl(me), { page: 'circle:researchers', force });
+    if (r.status !== 200) return { ok: false, busy: true, state: s };
+    const mine = await r.json();
+    const first = buildNetwork(mine, {}, me, s.following.map((p) => p.id));
+    const ids = [...new Set([...first.nodes.filter((n) => n.ring === 1).map((n) => n.id), ...s.following.map((p) => p.id)])].slice(0, BATCH);
+    let ring: any = {};
+    if (ids.length) { const r2 = await wiseFetch(ringUrl(ids, today), { page: 'circle:researchers', force }); if (r2.status === 200) ring = await r2.json(); }
+    s.network = { ...buildNetwork(mine, ring, me, s.following.map((p) => p.id)), built: today, me };
+    await save(s);
+    return { ok: true, state: s };
+  } catch {
+    return { ok: false, busy: true, state: s };
+  }
+}
+
+export async function setCircle(on: boolean): Promise<void> { const s = await load(); s.model_circle = on; await save(s); }
+/** What your circle adds to your Model now (researchers.model_weights). */
+export async function modelWeights(): Promise<Record<string, number>> {
+  const s = await load();
+  return s.model_circle === false ? {} : circleWeights(s.network?.topics ?? {});
+}
+
 // --------------------------------------------------------------------------- the state
 export async function load(): Promise<State> {
   try {
     const d = JSON.parse((await AsyncStorage.getItem(KEY)) ?? '{}');
     return { following: Array.isArray(d.following) ? d.following : [], works: d.works && typeof d.works === 'object' ? d.works : {},
-      seen: Array.isArray(d.seen) ? d.seen : [], updated_at: d.updated_at };
+      seen: Array.isArray(d.seen) ? d.seen : [], updated_at: d.updated_at, network: d.network, model_circle: d.model_circle };
   } catch {
     return { following: [], works: {}, seen: [] };
   }
