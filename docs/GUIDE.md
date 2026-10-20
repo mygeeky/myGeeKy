@@ -150,13 +150,16 @@ In a measured check, re-reading three profiles cost 3 requests the first time an
 
 On top of that:
 - the same question asked twice in one refresh goes out **once**;
+- **slow numbers wait a day**: a repo's stars, forks and commit activity, and a person's profile, known from
+  less than a day ago aren't asked again, so switching tabs shows them at once;
 - an account that no longer exists isn't asked about again for hours;
 - **if GitHub or your network is away, the tabs still fill** from what was kept, with an honest "updated N
   hours ago" instead of an empty page.
 
 The Admin tab shows what was asked and what was free today, with a **Forget** button. Forgetting loses
-nothing: the next refresh asks again. The file is `github_cache.json` in your data folder, capped in size,
-and never synced — it only holds public data GitHub served.
+nothing: the next refresh asks again. It is a small SQLite database, `github_cache.sqlite` in your data
+folder: each answer is its own row, so a refresh never rewrites the whole cache. It is capped in size, and never
+synced — it only holds public data GitHub served.
 
 ## Finding people (`mygeeky run`)
 

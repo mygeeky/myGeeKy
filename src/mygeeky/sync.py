@@ -53,6 +53,7 @@ skills_history.json
 my_repos.json
 questions.json
 github_cache.json
+github_cache.sqlite*
 wins.json
 *.token
 *.lock

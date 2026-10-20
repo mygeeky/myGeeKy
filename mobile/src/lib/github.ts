@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchT } from './net';
 import { freshToken } from './storage';
 
@@ -7,7 +8,52 @@ export const NAME_RE = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
 
 export class GitHubError extends Error {}
 
+// Slow numbers wait a day: a repo's own page (stars, forks, language), its commit activity and contributors, a
+// person's profile and links, known from less than a day ago, are read from this phone without asking. The desktop
+// keeps the same list (ghcache.py, SLOW); tests/test_ghcache.py checks both agree.
+export const SLOW_MS = 24 * 3600 * 1000;
+const SLOW = [/^\/repos\/[^/]+\/[^/]+$/, /^\/repos\/[^/]+\/[^/]+\/stats\/commit_activity$/,
+  /^\/repos\/[^/]+\/[^/]+\/contributors$/, /^\/users\/[^/]+$/, /^\/users\/[^/]+\/social_accounts$/];
+const KEPT = 300;                                  // slow answers kept on the phone, the newest first
+const INDEX_KEY = 'mygeeky.gh.index';
+
+export function isSlow(path: string): boolean {
+  const p = path.replace(/^https:\/\/api\.github\.com/, '').split('?')[0].replace(/\/+$/, '');
+  return SLOW.some((re) => re.test(p));
+}
+
+async function keptAnswer<T>(path: string): Promise<T | undefined> {
+  try {
+    const raw = await AsyncStorage.getItem(`mygeeky.gh.${path}`);
+    const v = raw ? JSON.parse(raw) as { at: number; data: T } : null;
+    return v && Date.now() - v.at < SLOW_MS ? v.data : undefined;
+  } catch { return undefined; }
+}
+
+async function keepAnswer(path: string, data: unknown): Promise<void> {
+  try {
+    const at = Date.now();
+    await AsyncStorage.setItem(`mygeeky.gh.${path}`, JSON.stringify({ at, data }));
+    const index: [string, number][] = JSON.parse((await AsyncStorage.getItem(INDEX_KEY)) ?? '[]');
+    const next = [[path, at] as [string, number], ...index.filter(([p]) => p !== path)];
+    const gone = next.slice(KEPT).map(([p]) => `mygeeky.gh.${p}`);
+    await AsyncStorage.setItem(INDEX_KEY, JSON.stringify(next.slice(0, KEPT)));
+    if (gone.length) await AsyncStorage.multiRemove(gone);
+  } catch { /* a full or broken store: the answer is simply asked again next time */ }
+}
+
 export async function gh<T = any>(path: string, token: string | null): Promise<T> {
+  const slow = isSlow(path);
+  if (slow) {
+    const kept = await keptAnswer<T>(path);
+    if (kept !== undefined) return kept;
+  }
+  const data = await ask<T>(path, token);
+  if (slow) await keepAnswer(path, data);
+  return data;
+}
+
+async function ask<T>(path: string, token: string | null): Promise<T> {
   if (token) token = await freshToken(token);     // an 8-hour sign-in renews itself first
   const r = await fetchT(`https://api.github.com${path}`, {
     headers: {

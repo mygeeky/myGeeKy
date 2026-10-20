@@ -17,6 +17,13 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
   institution, topics and recent titles shown). Your papers then shape your profile as an ORCID would. If OpenAlex
   is busy, setup carries on with keywords and the search is tried again later by itself, asking "Is this you?"
   when it works. `whois.py` and `lib/whois.ts` rank alike (`tests/test_whois.py`).
+- **A GitHub cache that never rewrites itself** (computer): what GitHub told myGeeKy now lives in a small SQLite
+  database (`github_cache.sqlite`), one row per answer, instead of one JSON file rewritten whole while a refresh
+  runs (it had reached ~400 MB). The old file moves in once (or, if huge, is simply dropped: it's all asked again);
+  the panel and a scheduled refresh can share it; a damaged file is set aside, a busy one waited for.
+- **Slow numbers wait a day**, on the computer and the phone: a repo's stars, forks and commit activity, its
+  contributors, and a person's profile, known from less than a day ago, are read from the device without asking,
+  so switching tabs shows them at once. Both apps use the same list (`ghcache.py`, `lib/github.ts`).
 - **Suggestions without near-copies**: typing "pyth" no longer offers python2, python3, python 2 and python27 one
   after another (the most readable one stays), on both apps.
 

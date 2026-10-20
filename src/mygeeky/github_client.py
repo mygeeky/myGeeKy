@@ -107,7 +107,9 @@ class GitHubClient:
         held = self.cache.get(key) if self.cache is not None else None
         if held is not None:
             # the same question twice in one refresh, and a 404 we were told about recently, are not asked again
-            if held.age < ghcache.SAME_RUN_SECONDS or (held.status == 404 and held.age < ghcache.MISSING_SECONDS):
+            # ... nor slow numbers (stars, commit activity, a profile) known from less than a day ago
+            if held.age < ghcache.SAME_RUN_SECONDS or (held.status == 404 and held.age < ghcache.MISSING_SECONDS) \
+                    or (held.status == 200 and held.age < ghcache.slow_seconds(url)):
                 self.stats.from_cache += 1
                 if self.cache is not None:
                     self.cache.count("from_cache")

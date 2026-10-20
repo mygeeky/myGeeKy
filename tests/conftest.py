@@ -63,10 +63,10 @@ def _under_real_root(value: Path) -> tuple[Path, Path] | None:
 def _own_github_cache(tmp_path, monkeypatch):
     """Each test gets its own GitHub cache: one test's remembered answers must never serve another's."""
     import mygeeky.ghcache as ghcache
-    monkeypatch.setattr(ghcache, "CACHE_FILE", tmp_path / "github_cache.json")
-    ghcache.reset(tmp_path / "github_cache.json")
+    monkeypatch.setattr(ghcache, "CACHE_FILE", tmp_path / "github_cache.sqlite")
+    ghcache.reset(tmp_path / "github_cache.sqlite")
     yield
-    ghcache.reset(tmp_path / "github_cache.json")
+    ghcache.reset(tmp_path / "github_cache.sqlite")
 
 
 @pytest.fixture(autouse=True)
