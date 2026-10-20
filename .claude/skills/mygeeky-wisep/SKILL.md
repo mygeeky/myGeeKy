@@ -47,7 +47,7 @@ when the source asked us to wait (429/503, Retry-After), a kept answer served wh
   for a better starting point.
 - A module's own "is it time?" check goes through `wisep.timer_due(own_due, age_hours)` (phone: `timerDue`). Until
   `proven_by` says so (14 days, 100 answers, 40% from the cache, failures under 15%) the module's timer leads; after,
-  a refresh may run every half hour and WISEP decides. Admin → Settings: Auto / Always / Never (`set_mode`). A new
+  a refresh may run every half hour and WISEP decides. ⚙ / You → Settings → How myGeeKy asks the internet: Auto / Always / Never (`set_mode`), per user. A new
   module that refreshes on a timer from a WISEP source should use `timer_due` too.
 - GitHub isn't gated by WISEP (its own cache and per-person limit) but is counted beside it in Admin.
 
@@ -60,4 +60,6 @@ when the source asked us to wait (429/503, Retry-After), a kept answer served wh
 - `python tools/wisep_bench.py [--live]`: decision speed, the store's size and write cost, the simulation over
   several seeds, and (live) two identical OpenAlex asks reaching the network once.
 - `.github/workflows/wisep.yml` runs both on Windows, macOS and Linux.
-- Admin → Overview shows today's calls per source, saved by the cache, the evening top-up, and the pages learned.
+- Every user sees their own WISEP in ⚙ / You → Settings → How myGeeKy asks the internet (gui/wisep_ui.py,
+  components/wisep-settings.tsx): today's calls, what its cache answered, GitHub beside it, the pages learned, the
+  takeover progress, the switch and Forget what it learned. Admin only points to it.

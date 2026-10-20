@@ -85,6 +85,12 @@ This is enforced in code (`src/mygeeky/safety.py`), not only in words:
 experiments* and *images into numbers with Fiji* are for.
 
 **🌱 Grow** has five parts:
+- **🧠 How myGeeKy asks the internet** (⚙ on the computer, You → Settings on the phone): papers, citations and
+  datasets come from open databases. myGeeKy keeps their answers and asks again only when a fresh one is worth it --
+  when it has probably changed and you're likely to look -- within a daily budget and kindly to the databases (WISEP).
+  It learns which pages you open and when, on your device only; it spends what's left of the day's budget in the
+  evening on what you'll want tomorrow. Here you see today's numbers, what it learned, how far it is from deciding
+  alone (Auto, Always or Never) and a button to make it forget what it learned.
 - **🗂️ Data**: public datasets to practise and train on, across the sciences (biology, plants, medicine,
   neuroscience, ecology, climate, chemistry, physics and astronomy, social science, machine learning). Every one
   passes the same rules: an open licence, a download with no login or application, laptop-sized (or with a named

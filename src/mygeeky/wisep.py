@@ -407,6 +407,16 @@ def set_mode(m: str) -> str:
     return mode()
 
 
+def forget_learned() -> None:
+    """Forget what WISEP learned about you: the pages you open (and when) and the tuned priors. The answers it kept
+    are public data and stay; the call tally stays too (it's how "proven" is judged)."""
+    st = store()
+    with st.lock:
+        st.db.execute("DELETE FROM opens")
+        st.db.execute("DELETE FROM meta WHERE key='priors'")
+        st.db.commit()
+
+
 def proven(now: float | None = None) -> dict[str, Any]:
     """Whether WISEP decides alone now, and why: Admin's mode, else proven_by on the last month's tallies."""
     m = mode()

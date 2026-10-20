@@ -314,6 +314,9 @@ export async function proven(): Promise<Proven & { mode: Mode; alone: boolean }>
 
 export async function setMode(mode: Mode): Promise<void> { const st = await load(); st.mode = mode; save(); }
 
+/** Forget what WISEP learned about you (wisep.forget_learned): the pages you open and the tuned priors. */
+export async function forgetLearned(): Promise<void> { const st = await load(); st.opens = {}; st.priors = {}; st.tunedDay = ''; save(); }
+
 /** A module's own "is it time?" -- unless WISEP has taken over (then every half hour, and WISEP decides). */
 export async function timerDue(ownDue: boolean, ageHours: number | null = null): Promise<boolean> {
   if (ownDue) return true;

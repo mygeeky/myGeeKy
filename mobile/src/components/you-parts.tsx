@@ -1,4 +1,5 @@
 // You, in the centre of the orbit: your model (keywords), your badges, and the rest.
+import { WisepSettings } from './wisep-settings';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -362,6 +363,8 @@ export function MorePart() {
       <View style={{ marginBottom: 6 }}><DocSettings /></View>
       <Section>🔔 NOTIFICATIONS</Section>
       <View style={{ marginBottom: 6 }}><NotifySettings full /></View>
+      <Section>🧠 HOW MYGEEKY ASKS THE INTERNET</Section>
+      <View style={{ marginBottom: 6 }}><WisepSettings /></View>
       <Section>🎨 LOOK</Section>
       <Card>
         <Text style={st.setupKey}>Theme</Text>

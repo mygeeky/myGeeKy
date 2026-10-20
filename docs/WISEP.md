@@ -2,6 +2,8 @@
 
 **WISEP** (Wisely, a Systematic Statistically adapted system for API calling) is the one gateway every call to an
 open database goes through, on the computer (`src/mygeeky/wisep.py`) and the phone (`mobile/src/lib/wisep.ts`). It
+runs for every user, on their own device (each has their own cache, budget and what it learned; they see it all in
+⚙ / You → Settings → How myGeeKy asks the internet, can switch it and can make it forget). It
 keeps one cache of answers, estimates how often each answer really changes, learns which pages you open and when, and
 asks a source only when a fresh answer is worth it: within a daily budget per source, spaced, backing off when a
 source is busy, and spending what's left of the day's budget in the evening on what you'll want tomorrow. It runs on
@@ -39,8 +41,8 @@ by", and recomputed once a day. Admin shows what was learned ("search every ~42 
 **It takes over from the old timers once proven.** Cited by, Papers' rising work and the dataset radar each kept
 their own "once a day" timer. After 14 days of use, 100 answers given, at least 40% of them from the cache and failures
 under 15% of the asks (`proven_by`), those timers stop gating: a refresh may run every half hour and WISEP alone
-decides which answers are worth asking for (`timer_due`). Admin → Settings switches this between Auto (once proven),
-Always and Never; Admin shows how far it is ("6 of 14 days, 48 of 100 answers, 55% from the cache").
+decides which answers are worth asking for (`timer_due`). ⚙ Settings → How myGeeKy asks the internet switches this
+between Auto (once proven), Always and Never, for each user on their own device, and shows how far it is ("6 of 14 days, 48 of 100 answers, 55% from the cache").
 
 ## Daily budgets (well under each source's published limits)
 
@@ -56,7 +58,7 @@ Always and Never; Admin shows how far it is ("6 of 14 days, 48 of 100 answers, 5
 | Hugging Face | 300 | 0.2 s |
 
 GitHub keeps its own cache (`ghcache.py`: ETags, 304s, a slow list; the phone's `lib/github.ts`) and its own limit
-per person; its asks and what its cache saved are counted and shown beside WISEP's sources in Admin → Overview.
+per person; its asks and what its cache saved are counted and shown beside WISEP's sources in Settings.
 
 ## The evaluation plan
 
@@ -75,7 +77,7 @@ What we measure, and the bar each must clear:
 | Android? | the phone's rules (parity test), its store capped at 300 answers, written once things settle | the parity test; a look on a phone | `lib/wisep.ts` |
 | Does tuning stay sane? | a learned prior within its kind's limits, only with enough history | the tests pass | `test_priors_are_tuned_...` |
 | Does it take over only when it should? | the old timers lead until 14 days / 100 answers / 40% saved / <15% failures; the switch works | the tests pass | `test_wisep_takes_over_...` |
-| In real use? | today's calls per source, saved by the cache, top-up, resting sources, the pages learned | seen by the maker each day | Admin → Overview, on both apps |
+| In real use? | today's calls per source, saved by the cache, top-up, the pages learned, the takeover progress | every user sees their own | ⚙ / You → Settings → How myGeeKy asks the internet (both apps); Admin points to it |
 
 First numbers (Linux, Python 3.12, 2026-10-20): a decision takes ~1 µs; a write 2 ms, a read 0.008 ms; 11 MB for
 2,000 answers of 5 KB; the simulation saves 85% of calls (357 against 2,400 a month) with stale views 8.2% against

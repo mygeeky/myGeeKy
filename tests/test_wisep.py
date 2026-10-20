@@ -213,3 +213,20 @@ out({ t: INPUT.tunes.map((x: any) => tunedPrior(x[0], x[1], x[2], x[3])), p: INP
     assert said["p"] == [wisep.proven_by(t) for t in tallies]
     assert said["d"] == [wisep.decide(10, "search", 0, 0, 1.0, 0, 100, 0.5, prior_hours=1000),
                          wisep.decide(10, "search", 0, 0, 1.0, 0, 100, 0.5, prior_hours=2)]
+
+
+def test_every_user_sees_their_own_wisep_in_settings_and_can_forget_what_it_learned(qapp_offscreen):
+    from mygeeky.gui.app import THEMES
+    from mygeeky.gui.wisep_ui import WisepSection
+    for _ in range(3):
+        wisep.opened("model:cited", NOON)
+    wisep.store().set_meta("priors", {"search": 40.0, "_day": "2026-10-20"})
+    box = WisepSection(lambda: THEMES["midnight"])
+    assert "You open most: you:cited" in box.numbers.text() and "search about every 40 hours" in box.numbers.text()
+    assert box.mode_btn.text().endswith("Auto")
+    box.mode_btn.click()
+    assert wisep.mode() == "on" and box.mode_btn.text().endswith("Always")
+    box.forget_btn.click()
+    assert wisep.store().opens(NOON) == {} and wisep.priors() == {}
+    assert "You open most" not in box.numbers.text()
+    assert wisep.mode() == "on"                                                  # forgetting doesn't touch your choice

@@ -3335,28 +3335,6 @@ def tab_order(names: list[str], has_github: bool) -> list[str]:
     return (["model"] if "model" in names else []) + rest
 
 
-def wisep_text() -> str:
-    """WISEP today, in one paragraph: per source asked of its budget and saved by the cache; what it learned."""
-    from .. import wisep
-    s = wisep.stats()
-    parts = [f"{src}: {t['asked']} asked of {t['budget']} · {t['saved']} from the cache"
-             + (f" · {t['topup']} in the evening top-up" if t["topup"] else "") for src, t in sorted(s["today"].items())]
-    learned = ", ".join(p["page"] for p in s["pages"][:4])
-    g, pr = s["github"], s["proven"]
-    alone = ("WISEP decides alone" + (" (you said Always)" if pr["mode"] == "on" else " (proven)") if pr["alone"] else
-             "The modules' own timers still lead (you said Never)" if pr["mode"] == "off" else
-             f"WISEP takes over from the modules' timers once proven: {pr['days']} of {wisep.PROVEN_DAYS} days, "
-             f"{pr['looks']} of {wisep.PROVEN_LOOKS} answers, {round(100 * pr['saved'])}% from the cache "
-             f"(needs {round(100 * wisep.PROVEN_SAVED)}%)")
-    tuned = ", ".join(f"{k} every ~{v:g} h" for k, v in sorted(s["priors"].items()))
-    return (("WISEP today: " + "; ".join(parts) + f" ({round(100 * s['share_saved'])}% saved)." if parts
-             else "WISEP today: nothing asked yet.")
-            + f" GitHub (its own cache): {g['asked']} asked, {g['saved']} free."
-            + (f" Resting: {', '.join(s['resting'])}." if s["resting"] else "")
-            + (f" You open most: {learned}." if learned else "")
-            + f" {alone}." + (f" Learned how often answers change: {tuned}." if tuned else ""))
-
-
 # You → Admin's sections, as planets: (part, label, emoji) -- the phone has the same (components/admin-part.tsx)
 ADMIN_PARTS = [("overview", "Overview", "\U0001f4ca"), ("review", "Review", "\U0001f4e5"), ("write", "Write", "\u270d"),
                ("inbox", "Inbox", "\U0001f4a1"), ("people", "People", "\U0001f91d"), ("settings", "Settings", "\u2699")]
@@ -5693,9 +5671,7 @@ class MyGeekyPanel(QWidget):
                                self._on_scout_sites),
                               ("📧 Job-alert mailbox", "One folder of your mailbox, read-only", self._on_scout_alerts),
                               ("🧹 Forget GitHub's answers", "Throw away what GitHub told us. Nothing is lost: the "
-                               "next refresh asks again.", self._on_forget_cache),
-                              ("🧠 WISEP decides alone: Auto", "Auto: once proven (14 days, the cache saving 40%+). "
-                               "Always / Never: your choice. Click to change.", self._on_wisep_mode)):
+                               "next refresh asks again.", self._on_forget_cache)):
             b = QPushButton(text)
             b.setToolTip(tip)
             b.setCursor(Qt.PointingHandCursor)
@@ -5807,7 +5783,9 @@ class MyGeekyPanel(QWidget):
                + (f"\n  …and {len(going) - 20} more" if len(going) > 20 else "") if going
                else "\n\nNothing accepted yet, so Publish has nothing to send."))
         self.admin_publish_btn.setText(f"🚀 Publish {len(going)} to mygeeky.org" if going else "🚀 Publish")
-        self.admin_wisep.setText(wisep_text())
+        from .wisep_ui import summary as wisep_summary
+        self.admin_wisep.setText("WISEP (every user has their own; yours is in ⚙ Settings → How myGeeKy asks the "
+                                 "internet): " + wisep_summary())
         self.admin_publish_btn.setEnabled(bool(going) and not getattr(self, "_scout_publishing", False))
         self.admin_publish_btn.setStyleSheet(
             f"QPushButton {{ background:{theme['accent'] if going else theme['section_btn']}; color:{theme['text']}; "
@@ -5816,18 +5794,10 @@ class MyGeekyPanel(QWidget):
             ("DeepSeek key: kept in this computer's credential store. " if st["has_key"] else
              "No DeepSeek key yet: the scout and the writers need one (✍ Write → Bring your own answer doesn't). ")
             + "Sites and field decide where the scout looks.")
-        from .. import wisep
-        self.admin_settings_btns[-1].setText("🧠 WISEP decides alone: " + {"auto": "Auto", "on": "Always", "off": "Never"}[wisep.mode()])
         for b in self.admin_settings_btns:
             b.setStyleSheet(f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
                             "border-radius:8px; padding:6px 10px; font-size:11.5px; }")
         self.admin_import.apply_theme()
-
-    def _on_wisep_mode(self) -> None:
-        from .. import wisep
-        nxt = {"auto": "on", "on": "off", "off": "auto"}[wisep.mode()]
-        wisep.set_mode(nxt)
-        self._render_admin()
 
     def _set_admin_part(self, part: str) -> None:
         self._admin_part = part if part in {p for p, *_ in ADMIN_PARTS} else "overview"
@@ -6645,6 +6615,11 @@ class MyGeekyPanel(QWidget):
                                               lambda s: logic.set_notify(self.cfg, s), lambda: THEMES[self._theme_name()])
         layout.addWidget(self.notify_settings)
 
+        # 🧠 How myGeeKy asks the internet: your own WISEP, its numbers and its switch (wisep.py)
+        from .wisep_ui import WisepSection
+        self.wisep_section = WisepSection(lambda: THEMES[self._theme_name()], self._toast)
+        layout.addWidget(self.wisep_section)
+
         # 📄 "Is this you?": your OpenAlex author record, with no ORCID (whois.py)
         from .whois_ui import WhoisSection
         self.whois_section = WhoisSection(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, self._toast)
@@ -6856,6 +6831,7 @@ class MyGeekyPanel(QWidget):
         self.settings_panel.setVisible(not self.settings_panel.isVisible())
         if self.settings_panel.isVisible():
             self._load_setup()
+            self.wisep_section.refresh()                  # today's numbers, as of now
 
     # ------------------------------------------------------------------ your setup (in ⚙)
     def _load_setup(self) -> None:
