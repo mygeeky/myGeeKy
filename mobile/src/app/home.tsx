@@ -1,7 +1,7 @@
 // The whole app on one screen: what you picked on top, the orbit below (under
 // your thumb, clear of the phone's own buttons). The orbit zooms: six groups, a group's pages, a page's parts
 // (lib/nav-tree.ts, components/orbit-zoom.tsx). Reading folds it into a dock of planets that moves the same way,
-// with a back planet first; scrolling back to the top, or "Orbit", brings the orbit back.
+// with a back planet first; "Orbit" brings the orbit back (scrolling never does: it surprised people).
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -380,8 +380,7 @@ export default function Home() {
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
-    if (y > 24 && !collapsed) fold();
-    else if (y <= 0 && collapsed) setCollapsed(false);
+    if (y > 24 && !collapsed) fold();     // reading folds the orbit; only "Orbit" brings it back (never a scroll)
   };
   const ringsH = collapsed ? 0 : orbitHeight(width);
   // the folded dock: this level's planets in one or two rows, a back planet first (named after where it goes)

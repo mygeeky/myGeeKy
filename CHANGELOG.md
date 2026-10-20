@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Scrolling no longer opens the orbit** on the phone: reading folds it, and only **Orbit** brings it back. Scrolling to the top used to unfold it, which surprised people (and on a short page could happen while scrolling down).
 - **📑 Who cited you** (You → Cited by), on the computer and the phone: for anyone with papers, even with no profile
   tracking their citations. Your citations and h-index, the new papers citing you (authors, institution, country,
   and which of your papers), the people who cite you most, and where you're read. Once a day from OpenAlex, asking
