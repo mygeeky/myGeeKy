@@ -9,7 +9,8 @@ import { matches, type Match } from '../lib/collab';
 import { loadLists, type Lists, ranked, RESOURCE_TYPES, type Ranked } from '../lib/curated';
 import { collabAsked, isSetUp, loadBeacons, type Parsed, send, signalsData } from '../lib/signals';
 import { load as loadProtocols } from '../lib/protocols';
-import { type Doc, fieldDocs, find, ownText, rising, type Rising, skillsIn } from '../lib/skills';
+import { type Doc, fieldDocs, find, note, ownText, rising, type Rising, type RisingResult, shapes, skillsIn } from '../lib/skills';
+import { SkillViews } from './skill-views';
 import * as taste from '../lib/taste';
 import { C } from '../lib/theme';
 import { recent, refreshWins, type WinsState, loadWins } from '../lib/wins';
@@ -46,6 +47,7 @@ function SkillCard({ sk, started, onVote, onPath }: { sk: Rising; started: boole
         <Thumbs vote={sk.vote} onVote={onVote} />
       </View>
       <Text style={s.muted}>{[...sk.reasons, 'not in your profile yet'].join('; ')}</Text>
+      {note(sk) ? <Text style={[s.muted, sk.rising && { color: C.green }]}>{note(sk)}</Text> : null}
       {sk.examples.map((e) => (
         <Pressable key={e.url} onPress={() => open(e.url)}><Text style={s.link} numberOfLines={1}>e.g. {e.title}</Text></Pressable>
       ))}
@@ -86,7 +88,7 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
   const [wins, setWins] = useState<WinsState | null>(null);
   const [startedSkills, setStartedSkills] = useState<Set<string>>(new Set());
   const [startWith, setStartWith] = useState<{ skill: string; goal: string } | null>(null);
-  const [skills, setSkills] = useState<{ skills: Rising[]; strengths: Rising[]; hidden: number } | null>(null);
+  const [skills, setSkills] = useState<RisingResult | null>(null);
   const [resources, setResources] = useState<{ items: Ranked[]; hidden: number }>({ items: [], hidden: 0 });
   const [people, setPeople] = useState<{ people: Match[]; hidden: number } | null>(null);
   const [users, setUsers] = useState<Parsed[]>([]);
@@ -176,13 +178,15 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
         holdSkills || !skills ? <GeekLoader text="Reading your field…" /> : (
           <View>
             {!skills.skills.length ? <Empty>No rising skills yet. They come from what myGeeKy read about your field: open Papers, Repos and AI models once, then come back.</Empty> : null}
+            {skills.skills.length ? <SkillViews shapes={shapes(skills)} /> : null}
+            {skills.skills.length ? <Text style={s.section}>ALL SUGGESTIONS</Text> : null}
             {skills.skills.map((sk) => (
               <SkillCard key={sk.name} sk={sk} started={started.has(sk.name)} onPath={() => onPath(sk.name)}
                          onVote={vote('skill', sk.name, sk.name, [sk.name], rank)} />
             ))}
             <Hidden n={skills.hidden} onShow={async () => { await taste.unhide('skill'); rank(); }} />
             {skills.strengths.length ? <Text style={s.section}>💪 YOUR STRENGTHS THAT ARE RISING TOO</Text> : null}
-            {skills.strengths.map((sk) => (
+            {skills.strengths.slice(0, 5).map((sk) => (
               <GCard key={sk.name}><Text style={s.title}>{sk.name}</Text><Text style={s.muted}>{sk.reasons.join('; ')}; you already show it</Text></GCard>
             ))}
           </View>

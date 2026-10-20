@@ -1,0 +1,46 @@
+name: Skill trends
+
+# Grow → Skills measures whether a skill is rising on one shared file, src/mygeeky/data/skill_trends.json: for each
+# skill in data/skills.json, how many of an even sample of new bioRxiv, medRxiv and arXiv preprints mention it, the
+# last 45 days against the 45 before. Once a day this rebuilds it (python -m mygeeky.skilltrends build, which also
+# writes the phone app's identical copy, mobile/src/data/skill_trends.json) and commits it if anything changed.
+# Every myGeeKy picks it up from GitHub within a day; nothing about any user is in it, and no key or server.
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: skill-trends
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Count skills in new preprints
+        env:
+          PYTHONPATH: src
+        run: |
+          pip install --quiet requests platformdirs
+          python -m mygeeky.skilltrends build
+
+      - name: Save the changes (if any)
+        run: |
+          if git diff --quiet; then echo "nothing to change"; exit 0; fi
+          git config user.name "myGeeKy"
+          git config user.email "housekeeping@mygeeky.invalid"
+          git commit -am "Skill trends: today's counts from new preprints"
+          git pull --rebase
+          git push

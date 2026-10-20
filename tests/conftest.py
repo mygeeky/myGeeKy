@@ -151,6 +151,14 @@ def _no_ai_race_fetch(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_skill_trends(monkeypatch):
+    """Rising skills reads the shared world file (it changes daily): an empty one in tests, never over the network."""
+    import mygeeky.skilltrends as skilltrends
+    monkeypatch.setattr(skilltrends, "refresh_if_due", lambda *a, **kw: False)
+    monkeypatch.setattr(skilltrends, "load", lambda *a, **kw: skilltrends.clean({}))
+
+
+@pytest.fixture(autouse=True)
 def _no_cited_by_fetch(monkeypatch, request):
     """You → Cited by asks OpenAlex in the background: never over the network in tests (test_citedby tests it)."""
     if request.module.__name__.endswith("test_citedby"):

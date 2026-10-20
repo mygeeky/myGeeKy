@@ -4412,6 +4412,11 @@ class MyGeekyPanel(QWidget):
                 self.grow_area.addWidget(GeekLoader("Reading your field…", theme["muted"]))
                 QTimer.singleShot(wait, self._render_grow)
                 return
+            if rising.get("skills"):
+                from .. import skills as skills_mod
+                from .skillviews_ui import SkillViews
+                self.grow_area.addWidget(SkillViews(skills_mod.shapes(rising), theme))
+                self._grow_header("ALL SUGGESTIONS", theme)
             if not rising.get("skills"):
                 self._grow_note("No rising skills yet. They come from what myGeeKy has read about your field: "
                                 "open News and Market (Research, Repos, Models) once, then Refresh.", theme)

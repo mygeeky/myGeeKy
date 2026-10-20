@@ -21,8 +21,18 @@ in your profile yet". Counts are kept per day (skills_history.json), so
 **Protocols** (protocols.py) turn a skill into ordered stages, with a level
 check; they replace the four-step learning paths that used to live here.
 
-Everything here is local: it reads files myGeeKy already saved, and sends
-nothing.
+**Is it really rising?** What myGeeKy reads for you is mostly picked by your
+interests, so counting it alone can't tell "the field is moving" from "you
+started reading about it". Growth is therefore measured only on documents no
+one picked for you -- the explore share of your feeds and the shared world
+file (skilltrends.py) -- and a skill counts as rising only when that growth is
+clear for how few mentions it has (`corrected`). What you chose to read decides
+only what's close to you. A skill busy mostly in your own feed is "rising in
+your feed only"; one rising in the world but rare in your feed is "rising
+beyond your usual". `shapes` turns the result into the four views.
+
+Everything here is local: it reads files myGeeKy already saved (and the world
+file), and sends nothing.
 """
 
 from __future__ import annotations
@@ -46,6 +56,10 @@ RECENT_DAYS = 45
 HISTORY_DAYS = 120
 TOP = 12
 MIN_DOCS = 2                # a skill seen in a single place isn't a trend
+SURE_Z = 1.28               # "sure it's rising": the lower edge of an 80% interval on its growth ...
+SURE_ABOVE = 1.1            # ... is above 1.1x
+MIN_EVIDENCE = 3            # world mentions needed before its growth counts at all
+LENS_LOW, LENS_HIGH = 0.7, 2.0   # your feed's share of a skill against the world's: rare / mostly yours
 
 # where a mention comes from: (one, several, weight)
 SOURCES = {
@@ -139,25 +153,27 @@ def field_documents() -> list[dict[str, Any]]:
     """Everything myGeeKy saved about your field: [{"text", "when", "source", "url", "title"}]."""
     docs: list[dict[str, Any]] = []
 
-    def add(text: str, when: Any, source: str, url: str = "", title: str = "") -> None:
+    def add(text: str, when: Any, source: str, url: str = "", title: str = "", wide: bool = False) -> None:
         if text and text.strip():
-            docs.append({"text": text[:3000], "when": _when(when), "source": source, "url": url, "title": title[:140]})
+            docs.append({"text": text[:3000], "when": _when(when), "source": source, "url": url, "title": title[:140],
+                         "pick": "wide" if wide else "mine"})
 
     trends = read_json(TRENDS_FILE, {}) or {}
     for kind, source in (("rising", "paper"), ("tools", "tool")):
         for p in trends.get(kind) or []:
             if isinstance(p, dict):
                 add(f"{p.get('title', '')} ; {str(p.get('abstract', ''))[:1500]}", p.get("date"), source,
-                    p.get("url", ""), p.get("title", ""))
+                    p.get("url", ""), p.get("title", ""), p.get("explore") is True)
     news = read_json(NEWS_FILE, {}) or {}
     for n in news.get("items") or []:
         if isinstance(n, dict):
             add(f"{n.get('title', '')} ; {n.get('summary', '')}", n.get("published"), "discussion",
-                n.get("url", ""), n.get("title", ""))
+                n.get("url", ""), n.get("title", ""), n.get("explore") is True)
     heads = read_json(HEADLINES_FILE, {}) or {}
     for h in heads.get("items") or []:
-        if isinstance(h, dict) and h.get("match"):          # only headlines that matched your field
-            add(h.get("title", ""), h.get("published"), "news", h.get("link", ""), h.get("title", ""))
+        if isinstance(h, dict) and (h.get("match") or h.get("explore") is True):   # yours, or picked to widen it
+            add(h.get("title", ""), h.get("published"), "news", h.get("link", ""), h.get("title", ""),
+                h.get("explore") is True)
     hf = read_json(HF_MODELS_FILE, {}) or {}
     for m in hf.get("field") or []:
         if isinstance(m, dict):
@@ -171,7 +187,8 @@ def field_documents() -> list[dict[str, Any]]:
     for c in read_jsonl(CONTRIBUTE_LOG)[-200:]:
         if isinstance(c, dict):
             add(f"{c.get('full_name', '')} ; {c.get('description', '')} ; {' '.join(c.get('topics') or [])} ; "
-                f"{c.get('language', '')}", c.get("pushed_at"), "contribute", c.get("repo_url", ""), c.get("full_name", ""))
+                f"{c.get('language', '')}", c.get("pushed_at"), "contribute", c.get("repo_url", ""), c.get("full_name", ""),
+                c.get("explore") is True)
     for s in read_jsonl(SUGGESTIONS_LOG)[-300:]:
         if isinstance(s, dict) and s.get("bio"):
             add(s["bio"], s.get("timestamp"), "people", s.get("profile_url", ""), s.get("username", ""))
@@ -215,6 +232,101 @@ def repos_text(repos: Iterable[dict[str, Any]] | None = None) -> str:
                      f"{r.get('language', '')}" for r in rows)
 
 
+# --------------------------------------------------------------------------- is it really rising?
+def _round(x: float, places: int = 4) -> float:
+    """Rounded as JavaScript's Math.round does (halves up), so both apps agree."""
+    k = 10 ** places
+    return math.floor(x * k + 0.5) / k
+
+
+def corrected(docs: list[dict[str, Any]], trends: dict[str, Any], feed_growth: dict[str, float]) -> dict[str, dict[str, Any]]:
+    """Growth measured where no one picked for you. `docs`: [{"skills": names, "pick": "mine"|"wide", "recent": bool}];
+    `trends`: the shared world file (skilltrends.clean); `feed_growth`: growth over everything you read.
+    For each skill: growth (x, with an 80% interval lo..hi), sure (rising for certain), how often it shows in your
+    feed and in the world (share of documents), lens (yours / world's), self_made and beyond."""
+    t_old, t_new = trends.get("docs") or [0, 0]
+    n = {"old": t_old, "new": t_new, "mine": 0}
+    old: dict[str, float] = defaultdict(float)
+    new: dict[str, float] = defaultdict(float)
+    mine: dict[str, int] = defaultdict(int)
+    for name, (o, r) in (trends.get("skills") or {}).items():
+        old[name] += o
+        new[name] += r
+    for d in docs:
+        if d["pick"] == "wide":
+            side = new if d["recent"] else old
+            n["new" if d["recent"] else "old"] += 1
+            for s in d["skills"]:
+                side[s] += 1
+        else:
+            n["mine"] += 1
+            for s in d["skills"]:
+                mine[s] += 1
+    out = {}
+    world_n = n["old"] + n["new"]
+    for s in sorted(set(old) | set(new) | set(mine)):
+        o, r = old[s], new[s]
+        lg = math.log(((r + 0.5) / (n["new"] + 1)) / ((o + 0.5) / (n["old"] + 1)))
+        se = math.sqrt(1 / (r + 0.5) + 1 / (o + 0.5))
+        world = (o + r) / world_n if world_n else 0.0
+        yours = mine[s] / n["mine"] if n["mine"] else 0.0
+        lens = yours / max(world, 0.5 / (world_n + 1)) if n["mine"] else 1.0
+        evidence = o + r >= MIN_EVIDENCE
+        sure = evidence and lg - SURE_Z * se > math.log(SURE_ABOVE)
+        out[s] = {"growth": _round(math.exp(lg), 2) if evidence else None,
+                  "lo": _round(math.exp(lg - SURE_Z * se), 2), "hi": _round(math.exp(lg + SURE_Z * se), 2),
+                  "sure": sure, "mine": _round(yours), "world": _round(world), "lens": _round(lens, 2),
+                  "self_made": not sure and feed_growth.get(s, 1.0) >= 1.3 and lens >= LENS_HIGH,
+                  "beyond": sure and lens < LENS_LOW}
+    return out
+
+
+def note(s: dict[str, Any]) -> str:
+    """One line on whether a skill is really rising, under its card (the same words on the phone)."""
+    g = s.get("growth")
+    if s.get("beyond"):
+        return f"🌍 Rising beyond your usual: ×{g:g} in new preprints across the field, rare in your feed"
+    if s.get("rising"):
+        return f"📈 Sure it's rising: ×{g:g} in new preprints across the field (×{s['lo']:g} to ×{s['hi']:g})"
+    if s.get("self_made"):
+        return "🪞 Busy in your feed only: it follows what you chose to read, not the field"
+    return ""
+
+
+def _ratio(r: dict[str, Any]) -> float:
+    return (r["mine"] + 0.002) / (r["world"] + 0.002)
+
+
+def shapes(result: dict[str, Any]) -> dict[str, Any]:
+    """The four views of Rising skills, from `rising()`'s answer:
+    next   -- for each suggestion, the skill of yours that leads there (and how many more of yours do);
+    flow   -- bands from your skills to suggestions, as wide as the documents they share;
+    ladder -- your rising strengths joined to the suggestions they appear with;
+    lens   -- skills you see more than the world does, and the other way round."""
+    sug, strong = result.get("skills") or [], result.get("strengths") or []
+    names = [s["name"] for s in sug]
+    links = result.get("links") or []
+    nxt = []
+    for s in sug[:6]:
+        ls = [lk for lk in links if lk[1] == s["name"]]
+        nxt.append({"name": s["name"], "via": ls[0][0] if ls else "", "more": max(0, len(ls) - 1),
+                    "weight": sum(lk[2] for lk in ls), "sure": bool(s.get("rising")), "beyond": bool(s.get("beyond"))})
+    total: dict[str, int] = defaultdict(int)
+    for h, s, k in links:
+        if s in names[:8]:
+            total[h] += k
+    left = [h for h, _ in sorted(total.items(), key=lambda kv: (-kv[1], kv[0]))[:6]]
+    right = [s for s in names if any(lk[1] == s and lk[0] in left for lk in links)][:7]
+    flow = {"left": left, "right": right, "bands": [lk for lk in links if lk[0] in left and lk[1] in right]}
+    l_left, l_right = [s["name"] for s in strong[:7]], names[:10]
+    ladder = {"left": l_left, "right": l_right, "links": [lk for lk in links if lk[0] in l_left and lk[1] in l_right]}
+    rows = [{"name": s["name"], "mine": s.get("mine", 0.0), "world": s.get("world", 0.0), "yours": i < len(strong)}
+            for i, s in enumerate(strong + sug) if s.get("mine", 0.0) + s.get("world", 0.0) > 0]
+    more_mine = sorted((r for r in rows if r["mine"] > r["world"]), key=lambda r: (-_ratio(r), r["name"]))[:5]
+    more_world = sorted((r for r in rows if r["world"] > r["mine"]), key=lambda r: (_ratio(r), r["name"]))[:5]
+    return {"next": nxt, "flow": flow, "ladder": ladder, "lens": {"mine": more_mine, "world": more_world}}
+
+
 # --------------------------------------------------------------------------- rising
 def _history() -> dict[str, dict[str, float]]:
     data = read_json(SKILLS_HISTORY_FILE, {}) or {}
@@ -240,7 +352,7 @@ def _earlier_level(history: dict[str, dict[str, float]], skill: str, today: date
 
 def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: str | None = None,
            weights: dict[str, float] | None = None, today: date | None = None, save: bool = True,
-           top: int = TOP) -> dict[str, Any]:
+           top: int = TOP, trends: dict[str, Any] | None = None) -> dict[str, Any]:
     """{"skills": [...suggested, best first], "strengths": [...rising skills you already have],
         "hidden": n, "documents": n}. Each skill: name, kind, score, reasons, examples, vote."""
     from . import interests
@@ -261,12 +373,18 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
     hits: dict[str, int] = defaultdict(int)
     by_source: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     examples: dict[str, list[dict[str, str]]] = defaultdict(list)
+    seen: list[dict[str, Any]] = []
+    pairs: dict[tuple[str, str], int] = defaultdict(int)
     for d in docs:
         found = skills_in(d["text"])
+        age = (now - d["when"]).days if d["when"] else None
+        seen.append({"skills": found, "pick": d.get("pick", "mine"), "recent": age is None or age <= RECENT_DAYS})
         if not found:
             continue
+        for h in found & have:
+            for s in found - have:
+                pairs[(h, s)] += 1
         weight = SOURCES.get(d["source"], ("", "", 0.5))[2]
-        age = (now - d["when"]).days if d["when"] else None
         fit = interests.match(d["text"], w)[0] if w else 0.5
         for s in found:
             hits[s] += 1
@@ -296,19 +414,29 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
         up = growth >= 1.3 and (before is not None or older[s] > 0)
         return momentum * growth * (0.4 + 0.6 * closeness), growth, up
 
+    from . import skilltrends
+    feed = {s["name"]: score_of(s["name"])[1] for s in vocabulary() if hits[s["name"]]}
+    world = corrected(seen, skilltrends.load() if trends is None else trends, feed)
     out, strengths, hidden = [], [], 0
     for s in vocabulary():
         name = s["name"]
         if hits[name] < MIN_DOCS:
             continue
         v = int(votes.get(taste.key_of("skill", name), {}).get("vote", 0))
-        base, growth, up = score_of(name)
+        base, growth, _ = score_of(name)
+        c = world.get(name) or {}
+        if c.get("growth") is not None:          # the world's growth replaces your feed's in the score
+            base = base / growth * max(0.5, min(c["growth"], 3.0))
+        if c.get("self_made"):
+            base *= 0.6
         tilt = taste.lean(name, s["aliases"][:3], lean_w)
         score = base * (1 + 0.5 * tilt) * (1.3 if v > 0 else 1.0) * style_weight(cfg.work_style, s["kind"])
         reasons = [_said(src, n) for src, n in sorted(by_source[name].items(), key=lambda kv: kv[1], reverse=True)[:3]]
-        row = {"name": name, "kind": s["kind"], "score": round(score, 4), "growth": round(growth, 2),
+        row = {"name": name, "kind": s["kind"], "score": round(score, 4),
+               "growth": c["growth"] if c.get("growth") is not None else round(growth, 2),
+               "lo": c.get("lo"), "hi": c.get("hi"), "world": c.get("world", 0.0), "mine": c.get("mine", 0.0),
                "mentions": hits[name], "reasons": reasons, "examples": examples[name], "vote": v,
-               "rising": up}
+               "rising": bool(c.get("sure")), "self_made": bool(c.get("self_made")), "beyond": bool(c.get("beyond"))}
         if name in have:
             strengths.append(row)
         elif v < 0:
@@ -317,6 +445,8 @@ def rising(cfg: MyGeekyConfig, docs: list[dict[str, Any]] | None = None, mine: s
             out.append(row)
     out.sort(key=lambda r: r["score"], reverse=True)
     strengths.sort(key=lambda r: r["score"], reverse=True)
-    return {"skills": out[:top], "strengths": strengths[:8], "hidden": hidden, "documents": len(docs),
+    shown = {r["name"] for r in out[:top]}
+    links = sorted(([h, s, k] for (h, s), k in pairs.items() if s in shown), key=lambda x: (-x[2], x[0], x[1]))[:80]
+    return {"skills": out[:top], "strengths": strengths[:8], "hidden": hidden, "documents": len(docs), "links": links,
             "have": sorted(have),                  # the skills you already show (Collaborators reuses them)
             "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}

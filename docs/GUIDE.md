@@ -85,7 +85,16 @@ This is enforced in code (`src/mygeeky/safety.py`), not only in words:
 experiments* and *images into numbers with Fiji* are for.
 
 **🌱 Grow** has five parts:
-- **📈 Skills**: Rising Skills, the skills growing in your field that you don't show yet.
+- **📈 Skills**: Rising Skills, the skills growing in your field that you don't show yet. What myGeeKy reads
+  for you is picked by your interests, so on its own it would call anything you started reading about "rising".
+  Growth is therefore measured where no one picked for you: the explore share of your feeds, plus one shared file
+  (the same for everyone, rebuilt daily) counting each skill in an even sample of new bioRxiv, medRxiv and arXiv
+  preprints, the last 45 days against the 45 before. A skill is **📈 rising** only when that growth is clear for
+  how few mentions it has; **🌍 beyond your usual** when it's rising across the field but rare in your feed; **🪞 in
+  your feed only** when it's busy mostly in what you chose to read. Four views sit above the list: 🧭 next steps
+  (what to learn, and the skill of yours that leads there), 🌉 bridges (bands from your skills to rising ones),
+  🪜 rising with you (your rising strengths and the new skills they appear with) and 🔍 your lens (how often a skill
+  shows in your feed against the world).
   - Each one says why it's suggested.
   - 👍 means "yes, I want to learn this"; 👎 hides it ("Show them again" brings hidden ones back).
   - **🧭 Make it a protocol** turns a skill into stages.

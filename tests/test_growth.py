@@ -2,10 +2,12 @@
 collaborator match -- and the 👍/👎 that teach all of them."""
 
 import json
+from pathlib import Path
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
+import phone
 from mygeeky import collab, curated, skills, taste, wins
 from mygeeky.config import MyGeekyConfig
 
@@ -184,14 +186,55 @@ def test_rising_skills_are_what_your_field_uses_and_you_dont_show():
     assert "Nextflow" not in [s["name"] for s in out["skills"]] and out["hidden"] == 1
 
 
-def test_rising_is_only_claimed_against_something_earlier():
+def test_rising_is_only_claimed_where_no_one_picked_for_you():
     cfg = MyGeekyConfig()
-    docs = [_doc("snakemake rule"), _doc("snakemake workflow", "contribute")]
+    docs = [_doc("snakemake rule"), _doc("snakemake workflow", "contribute")] * 3 + [_doc("snakemake old", days_ago=200)]
     out = skills.rising(cfg, docs=docs, mine="", weights={}, today=TODAY, save=False)
-    assert out["skills"][0]["name"] == "Snakemake" and out["skills"][0]["rising"] is False
-    old = [_doc("snakemake old", days_ago=200)]
-    out = skills.rising(cfg, docs=docs * 3 + old, mine="", weights={}, today=TODAY, save=False)
-    assert out["skills"][0]["rising"] is True
+    assert out["skills"][0]["name"] == "Snakemake" and out["skills"][0]["rising"] is False   # only your own feed
+    world = {"docs": [1000, 1000], "skills": {"Snakemake": [10, 40]}}
+    sk = skills.rising(cfg, docs=docs, mine="", weights={}, today=TODAY, save=False, trends=world)["skills"][0]
+    assert sk["rising"] is True and sk["growth"] > 3 and sk["lo"] > 1.1
+    few = {"docs": [1000, 1000], "skills": {"Snakemake": [1, 3]}}       # 3x, but on four mentions: not sure yet
+    assert skills.rising(cfg, docs=docs, mine="", weights={}, today=TODAY, save=False, trends=few)["skills"][0]["rising"] is False
+
+
+def test_a_rise_you_made_yourself_is_marked_and_one_beyond_your_usual_too():
+    cfg = MyGeekyConfig()
+    mine = [_doc("snakemake rule")] * 6 + [_doc("snakemake old", days_ago=200)] + [_doc("python script")] * 3
+    wide = [dict(_doc("nextflow pipeline"), pick="wide"), dict(_doc("nextflow tutorial", days_ago=80), pick="wide")]
+    world = {"docs": [2000, 2000], "skills": {"Snakemake": [20, 20], "Nextflow": [5, 40]}}
+    out = skills.rising(cfg, docs=mine + wide, mine="", weights={}, today=TODAY, save=False, trends=world)
+    by = {s["name"]: s for s in out["skills"]}
+    assert by["Snakemake"]["self_made"] is True and by["Snakemake"]["rising"] is False
+    assert by["Nextflow"]["beyond"] is True and by["Nextflow"]["rising"] is True
+    assert by["Nextflow"]["mine"] == 0 and by["Nextflow"]["world"] > 0
+
+
+def test_the_views_join_your_skills_to_the_rising_ones():
+    cfg = MyGeekyConfig()
+    docs = [_doc("GWAS with Nextflow"), _doc("GWAS and nextflow again"), _doc("python and docker"),
+            _doc("docker images in python"), _doc("GWAS on Docker")]
+    world = {"docs": [1000, 1000], "skills": {"Nextflow": [5, 40], "Docker": [30, 30], "GWAS": [20, 60]}}
+    out = skills.rising(cfg, docs=docs, mine="I do GWAS in Python", weights={}, today=TODAY, save=False, trends=world)
+    assert ["GWAS", "Nextflow", 2] in out["links"] and ["Python", "Docker", 2] in out["links"]
+    v = skills.shapes(out)
+    nf = next(n for n in v["next"] if n["name"] == "Nextflow")
+    assert nf["via"] == "GWAS" and nf["more"] == 0 and nf["sure"] is True
+    assert set(v["flow"]["left"]) == {"GWAS", "Python"} and set(v["flow"]["right"]) == {"Nextflow", "Docker"}
+    assert set(v["ladder"]["left"]) == {"GWAS", "Python"} and ["GWAS", "Nextflow", 2] in v["ladder"]["links"]
+    assert all(r["mine"] > r["world"] for r in v["lens"]["mine"]) and all(r["world"] > r["mine"] for r in v["lens"]["world"])
+
+
+def test_the_world_file_is_cleaned_and_the_phone_has_the_same_one():
+    from mygeeky import skilltrends
+    c = skilltrends.clean({"version": "2026-10-19", "docs": [10, 12], "skills": {"Nextflow": [1, 2], "Made up": [1, 1],
+                                                                                "Docker": ["x", -3]}})
+    assert c == {"version": "2026-10-19", "docs": [10, 12], "skills": {"Nextflow": [1, 2], "Docker": [0, 0]}}
+    assert skilltrends.clean("junk")["skills"] == {}
+    root = Path(__file__).resolve().parents[1]
+    assert (root / "src/mygeeky/data/skill_trends.json").read_bytes() == (root / "mobile/src/data/skill_trends.json").read_bytes()
+    (old_lo, old_hi), (new_lo, new_hi) = skilltrends.windows(TODAY)
+    assert (new_hi - new_lo).days == (old_hi - old_lo).days == skilltrends.WINDOW_DAYS - 1 and (new_lo - old_hi).days == 1
 
 
 def test_counts_are_kept_per_day_for_later(monkeypatch):
@@ -323,3 +366,37 @@ def test_a_fetched_copy_with_the_same_version_still_wins():
     edited = dict(shipped, jobs=[_job("added-by-hand")])          # the maker forgot to stamp a new version
     write_json(CURATED_FILE, {"checked_at": datetime.now(timezone.utc).isoformat(), "lists": edited})
     assert [j["id"] for j in curated.load(force=True)["jobs"]] == ["added-by-hand"]
+
+
+@pytest.mark.skipif(not phone.node_ok(), reason="needs Node 22.6+ and the phone's packages")
+def test_the_phone_corrects_rising_skills_the_same_way():
+    import random
+    rng = random.Random(5)
+    names = ["Nextflow", "Docker", "GWAS", "Python", "Snakemake", "Single-cell RNA-seq", "Polars"]
+    cases = []
+    for k in range(6):
+        docs = [{"skills": rng.sample(names, rng.randint(0, 3)), "pick": rng.choice(["mine", "mine", "wide"]),
+                 "recent": rng.random() < 0.6} for _ in range(rng.randint(0, 40))]
+        trends = {"version": "2026-10-19", "docs": [rng.randint(0, 900), rng.randint(0, 900)],
+                  "skills": {n: [rng.randint(0, 30), rng.randint(0, 30)] for n in rng.sample(names, 4)}} if k else {}
+        feed = {n: round(rng.uniform(0.5, 3), 2) for n in names}
+        cases.append({"docs": docs, "trends": trends, "feed": feed})
+    cfg = MyGeekyConfig()
+    docs = [_doc("GWAS with Nextflow"), _doc("GWAS and nextflow again"), _doc("python and docker"),
+            _doc("docker images in python"), _doc("GWAS on Docker"), dict(_doc("polars in python"), pick="wide"),
+            _doc("polars dataframes")]
+    world = {"docs": [1000, 1000], "skills": {"Nextflow": [5, 40], "Docker": [30, 30], "GWAS": [20, 60]}}
+    result = skills.rising(cfg, docs=docs, mine="I do GWAS in Python", weights={}, today=TODAY, save=False, trends=world)
+    said = phone.run("""
+import { cleanTrends, corrected, note, shapes } from './lib/skills.ts';
+out({ corrected: INPUT.cases.map((c: any) => corrected(c.docs, cleanTrends(c.trends), c.feed)), shapes: shapes(INPUT.result),
+      notes: [...INPUT.result.skills, ...INPUT.result.strengths].map(note),
+      clean: INPUT.cases.map((c: any) => cleanTrends(c.trends)) });
+""", {"cases": cases, "result": result})
+    from mygeeky import skilltrends
+    for c, got, cl in zip(cases, said["corrected"], said["clean"]):
+        assert skilltrends.clean(c["trends"]) == cl
+        assert json.loads(json.dumps(skills.corrected(c["docs"], skilltrends.clean(c["trends"]), c["feed"]))) == got
+    assert json.loads(json.dumps(skills.shapes(result))) == said["shapes"]
+    assert [skills.note(s) for s in result["skills"] + result["strengths"]] == said["notes"]
+    assert any(said["notes"])

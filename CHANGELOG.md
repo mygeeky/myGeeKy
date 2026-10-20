@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Rising skills tell the field from your own reading**, on the computer and the phone. What myGeeKy reads for you is picked by your interests, so a topic you just started following used to look like it was rising. Growth is now measured where no one picked for you (the explore share of your feeds, and a new shared file counting skills in new bioRxiv, medRxiv and arXiv preprints, rebuilt daily by a GitHub Action), and a skill is called rising only when the growth is clear for how few mentions it has. New tags: 🌍 rising beyond your usual, 🪞 busy in your feed only. Four new views above the list: 🧭 next steps, 🌉 bridges from what you know, 🪜 rising with you, 🔍 your lens. In a simulation with a known truth, self-made "rises" dropped from 92% to 4% and finding real ones doubled (F1 0.31 → 0.66).
 - **Scrolling no longer opens the orbit** on the phone: reading folds it, and only **Orbit** brings it back. Scrolling to the top used to unfold it, which surprised people (and on a short page could happen while scrolling down).
 - **📑 Who cited you** (You → Cited by), on the computer and the phone: for anyone with papers, even with no profile
   tracking their citations. Your citations and h-index, the new papers citing you (authors, institution, country,

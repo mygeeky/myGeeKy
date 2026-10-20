@@ -1399,6 +1399,11 @@ def refresh_growth(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
         from ..errors import describe
         errors.append(f"Couldn't fetch the newest lists: {describe(exc)}")
     try:
+        from .. import skilltrends
+        skilltrends.refresh_if_due(force=force)        # the shared world file Rising skills measures growth on
+    except Exception:
+        pass                                           # the copy myGeeKy shipped with still works
+    try:
         client = _build_client(cfg) if cfg.github_username else None
         wins.refresh(cfg, client=client, force=force)
     except Exception as exc:

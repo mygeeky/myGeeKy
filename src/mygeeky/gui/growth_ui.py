@@ -237,6 +237,10 @@ class SkillCard(QFrame):
         why = "; ".join(s.get("reasons") or [])
         why += ("; you already show it" if strength else "; not in your profile yet") if why else ""
         lay.addWidget(_label(why, _muted(theme, 10.5)))
+        from .. import skills
+        if line := skills.note(s):
+            lay.addWidget(_label(line, f"color:{theme['good'] if s.get('rising') else theme['muted']}; font-size:10.5px; "
+                                       "background:transparent;"))
         if s.get("examples"):
             links = " · ".join(f"<a href='{html.escape(e['url'], quote=True)}' style='color:{theme['link']}'>"
                                f"{html.escape(e['title'][:48])}</a>" for e in s["examples"][:2])
