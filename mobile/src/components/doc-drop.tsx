@@ -2,8 +2,6 @@
 // field's keywords, your methods and tools, your co-authors -- untick what's wrong, and keep the rest. In setup and
 // in You → Settings (the desktop's setup page and ⚙ → From a document, gui/docread_ui.py). Read on this phone:
 // the file isn't sent anywhere or kept (lib/doc-text.ts, lib/doc-read.ts).
-import * as DocumentPicker from 'expo-document-picker';
-import { File } from 'expo-file-system';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useApp } from '../lib/app-state';
@@ -14,7 +12,17 @@ import { GeekLoader } from './geek-loader';
 
 export type Kept = { keywords: string[]; methods: string[]; coauthors: string[] };
 
+const OLD_APP = 'Choosing a file needs the newest version of the app. Paste the text instead.';
+
 async function pickFile(): Promise<{ text: string; ok: boolean; why?: string } | null> {
+  // loaded only when asked for: an app built before these add-ons existed still opens, and says so here
+  let DocumentPicker: typeof import('expo-document-picker'), File: typeof import('expo-file-system').File;
+  try {
+    DocumentPicker = await import('expo-document-picker');
+    File = (await import('expo-file-system')).File;
+  } catch {
+    return { text: '', ok: false, why: OLD_APP };
+  }
   const r = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true, multiple: false });
   if (r.canceled || !r.assets?.length) return null;
   const a = r.assets[0];
