@@ -15,9 +15,9 @@ const LEVELS = ['beginner', 'intermediate', 'advanced'];
 export const FIELD_PARTS: [string, string, string, string][] = [
   ['for-you', 'For you', 'sparkles-outline', 'for you'], ['biology', 'Biology', 'git-merge-outline', 'Biology & genomics'],
   ['plants', 'Plants', 'leaf-outline', 'Plants & agriculture'], ['medicine', 'Medicine', 'medkit-outline', 'Medicine & health'],
-  ['neuro', 'Neuroscience', 'pulse-outline', 'Neuroscience'], ['ecology', 'Ecology', 'bug-outline', 'Ecology & environment'],
-  ['climate', 'Earth & climate', 'earth-outline', 'Earth & climate'], ['chemistry', 'Chemistry', 'flask-outline', 'Chemistry & materials'],
-  ['physics', 'Physics & space', 'planet-outline', 'Physics & astronomy'], ['social', 'Society', 'people-outline', 'Social science & economics'],
+  ['neuro', 'Neuro', 'pulse-outline', 'Neuroscience'], ['ecology', 'Ecology', 'bug-outline', 'Ecology & environment'],
+  ['climate', 'Climate', 'earth-outline', 'Earth & climate'], ['chemistry', 'Chemistry', 'flask-outline', 'Chemistry & materials'],
+  ['physics', 'Physics', 'planet-outline', 'Physics & astronomy'], ['social', 'Society', 'people-outline', 'Social science & economics'],
   ['ml', 'ML & AI', 'hardware-chip-outline', 'Machine learning & AI']];
 
 /** 'data:biology' (or 'biology') -> 'Biology & genomics'; anything else -> 'for you' (datasets.field_for_part). */

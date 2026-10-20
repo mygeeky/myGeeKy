@@ -42,10 +42,10 @@ LEVELS = ("beginner", "intermediate", "advanced")
 # the phone has the same list with Ionicons names (lib/datasets.ts FIELD_PARTS)
 FIELD_PARTS = [("for-you", "For you", "✨", "for you"), ("biology", "Biology", "🧬", "Biology & genomics"),
                ("plants", "Plants", "🌱", "Plants & agriculture"), ("medicine", "Medicine", "🩺", "Medicine & health"),
-               ("neuro", "Neuroscience", "🧠", "Neuroscience"), ("ecology", "Ecology", "🦋", "Ecology & environment"),
-               ("climate", "Earth & climate", "🌍", "Earth & climate"),
+               ("neuro", "Neuro", "🧠", "Neuroscience"), ("ecology", "Ecology", "🦋", "Ecology & environment"),
+               ("climate", "Climate", "🌍", "Earth & climate"),
                ("chemistry", "Chemistry", "⚗️", "Chemistry & materials"),
-               ("physics", "Physics & space", "🔭", "Physics & astronomy"),
+               ("physics", "Physics", "🔭", "Physics & astronomy"),
                ("social", "Society", "👥", "Social science & economics"),
                ("ml", "ML & AI", "🤖", "Machine learning & AI")]
 

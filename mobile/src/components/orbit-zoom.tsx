@@ -29,6 +29,9 @@ export function OrbitZoom({ width, height, at, open, counts, onTap, onJump, youL
   const R = Math.min(width * 0.33, (height - 70) * 0.42);
   const P = Math.round(Math.max(44, Math.min(54, width * 0.13)));
   const center = Math.round(P * 1.35);
+  // a crowded ring (Data has 11 fields): planets and labels shrink to the room each one has on the circle
+  const gap = (2 * Math.PI * R) / Math.max(at.children.length, 1);
+  const p = Math.round(Math.max(34, Math.min(P, gap * 0.6))), labelW = Math.round(Math.min(88, gap * 1.15));
   const root = !at.parent;
   return (
     <View style={{ width, height }}>
@@ -72,14 +75,14 @@ export function OrbitZoom({ width, height, at, open, counts, onTap, onJump, youL
         return (
           <Pressable key={n.id} onPress={() => onTap(n.id)} accessibilityRole="button"
                      accessibilityLabel={`${n.label}${count ? `, ${count} new` : ''}${n.children.length ? `, ${n.children.length} parts` : ''}`}
-                     style={{ position: 'absolute', left: x - 44, top: y - P / 2, width: 88, alignItems: 'center' }}>
-            <View style={[st.planet, { width: P, height: P, borderRadius: P / 2, borderColor: n.color, backgroundColor: on ? n.color : C.raised },
+                     style={{ position: 'absolute', left: x - labelW / 2, top: y - p / 2, width: labelW, alignItems: 'center' }}>
+            <View style={[st.planet, { width: p, height: p, borderRadius: p / 2, borderColor: n.color, backgroundColor: on ? n.color : C.raised },
                           on && { shadowColor: n.color, shadowOpacity: 0.8, shadowRadius: 12, elevation: 8 }]}>
-              <Ionicons name={n.icon as never} size={Math.round(P * 0.44)} color={on ? '#0d0d16' : n.color} />
+              <Ionicons name={n.icon as never} size={Math.round(p * 0.44)} color={on ? '#0d0d16' : n.color} />
               {count ? <View style={st.count}><Text style={st.countText}>{count > 99 ? '99+' : count}</Text></View> : null}
               {n.children.length && !on ? <View style={[st.more, { backgroundColor: n.color }]} /> : null}
             </View>
-            <Text style={[st.label, on && { color: C.text }]} numberOfLines={1}>{n.label}</Text>
+            <Text style={[st.label, on && { color: C.text }, p < P && { fontSize: 11 }]} numberOfLines={1}>{n.label}</Text>
           </Pressable>
         );
       })}
