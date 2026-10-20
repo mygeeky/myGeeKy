@@ -17,6 +17,7 @@ import { type ChanceMode, ChancesView } from '../components/chances-view';
 import { type GrowMode, GrowView } from '../components/grow-view';
 import { MonthView, rankNews } from '../components/month-view';
 import { AiRaceView } from '../components/ai-race-view';
+import { CitedByView } from '../components/cited-by-view';
 import { useToast } from '../components/toast';
 import { SignalsView } from '../components/signals-view';
 import { Empty, open } from '../components/ui';
@@ -49,7 +50,7 @@ import { retryWhois } from '../lib/whois-store';
 const HINT_KEY = 'mygeeky.orbitHinted';
 type NewsPart = 'airace' | 'headlines' | 'discuss';
 type RepoPart = 'help' | 'rising';
-type YouPart = 'month' | 'model' | 'badges' | 'more' | 'ideas' | 'admin';
+type YouPart = 'month' | 'model' | 'cited' | 'badges' | 'more' | 'ideas' | 'admin';
 
 const EMPTY: Partial<Record<SectionId, string>> = {
   live: 'Nothing new around you yet. Pull down to check again.',
@@ -423,7 +424,7 @@ export default function Home() {
         >
           {sel === 'you' ? (
             <View style={{ marginHorizontal: -4 }}>
-              {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart me={admin} /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
+              {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'cited' ? <CitedByView /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart me={admin} /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
             </View>
           ) : !user && NEEDS_GITHUB[sel] ? (
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />

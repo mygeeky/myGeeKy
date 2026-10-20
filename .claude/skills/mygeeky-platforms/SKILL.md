@@ -75,6 +75,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `nav-tree.ts` (+ `components/orbit-zoom.tsx`, the folded dock in `app/home.tsx`) | `navtree.py` (+ `gui/qt_panel.py` `panel_tree`, `_nav_tap`, the planet row) |
 | `tokens.ts` | `tokens.py`, `token_check.py` |
 | `wins.ts` | `wins.py` |
+| `cited-by.ts` (+ `components/cited-by-view.tsx`) | `citedby.py` (+ `gui/citedby_ui.py`, `gui/app.py` `cited_by`) |
 | `word-suggest.ts` | `keywords.py` (`suggest`, `pick`) + `gui/word_suggest.py` |
 | `components/field-map.tsx`, `interest-map.tsx`, `model-plots.tsx` | `gui/signals_ui.py`, `gui/qt_panel.py` |
 | `ideas.ts` (+ `components/idea-sheet.tsx`) | `ideas.py` (+ `IdeaDialog` in `gui/qt_panel.py`) |

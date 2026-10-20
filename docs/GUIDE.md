@@ -315,6 +315,13 @@ reaches further back.
 
 ## Your profile: CV + GitHub + ORCID/OpenAlex + Google Scholar
 
+**📑 Who cited you** (You → Cited by, on the computer and the phone): with your ORCID iD or the papers you found
+with "Is this you?", myGeeKy shows your citations and h-index, the new papers citing you (who wrote them, where,
+and which of your papers they cite), the people who cite you most (your real readers: often good collaborators) and
+the countries you're read in. It reads OpenAlex once a day, and only asks about papers whose citations went up, so
+it's a few requests a day. The first read only sets the starting point; after that, new citing papers are marked
+NEW, and there's an optional notification for them (⚙ → Notifications, off unless you switch it on).
+
 ```bash
 mygeeky profile refresh --cv ~/cv.pdf --orcid 0000-0002-1825-0097 \
     --scholar "https://scholar.google.com/citations?user=XXXXXXXXXXXX"   # all remembered

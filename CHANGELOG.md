@@ -5,6 +5,11 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **📑 Who cited you** (You → Cited by), on the computer and the phone: for anyone with papers, even with no profile
+  tracking their citations. Your citations and h-index, the new papers citing you (authors, institution, country,
+  and which of your papers), the people who cite you most, and where you're read. Once a day from OpenAlex, asking
+  only about papers whose count went up (one request covers 50); the first read sets the starting point. An
+  optional "Someone cited your work" notification. `citedby.py` and `lib/cited-by.ts` agree (`tests/test_citedby.py`).
 - **A new way to move around**, on the computer and the phone: the twelve planets are gathered into six groups
   (You, Grow, World, Circle, Repos, Chances). Tap one and its pages take its place, with a back planet first named
   after where it goes ("‹ All", "‹ World"); a page with parts (News, Repos, You, Grow, Chances) opens the same way,

@@ -3350,6 +3350,7 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
     return navtree.finish(n("home", "Home", children=[
         group("you", [n("model:month", "My month", icon="\U0001f396", tab="model", part="month"),
                       n("model:model", "Model", icon="\U0001f9e0", tab="model", part="model"),
+                      n("model:cited", "Cited by", icon="\U0001f4d1", tab="model", part="cited"),
                       n("badges", "Badges", tab="badges")] + ([n("admin", "Admin", tab="admin")] if is_admin else [])),
         group("grow", modes("grow", MyGeekyPanel.GROW_MODES)),
         group("world", [n("news", "News", tab="news", children=[
@@ -7824,12 +7825,30 @@ class MyGeekyPanel(QWidget):
         self.you_stack = QStackedWidget()
         self.you_stack.addWidget(self._build_month_tab())
         self.you_stack.addWidget(self._build_model_tab())
+        self.you_stack.addWidget(self._build_cited_tab())
         lay.addWidget(self.you_stack, 1)
         return box
 
+    def _build_cited_tab(self) -> QScrollArea:
+        """📑 Cited by (citedby.py): read the first time it's shown, then from OpenAlex once a day."""
+        from .citedby_ui import CitedByPage
+        self.cited_page = CitedByPage(lambda: THEMES[self._theme_name()], self._load_cited)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setWidget(self.cited_page)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background:transparent; border:none;")
+        scroll.viewport().setAutoFillBackground(False)
+        return scroll
+
+    def _load_cited(self) -> None:
+        self.cited_page.set_data(logic.cited_by(self.cfg))
+        self._run_async(lambda: logic.cited_by(self.cfg, refresh=True), self.cited_page.set_data)
+
     def _show_you_part(self, part: str) -> None:
         self.you_part = part
-        self.you_stack.setCurrentIndex(0 if part == "month" else 1)
+        self.you_stack.setCurrentIndex({"month": 0, "model": 1, "cited": 2}.get(part, 0))
         self._nav_mark()
         theme = THEMES[self._theme_name()]
         for name, b in self.you_buttons.items():
@@ -7840,6 +7859,9 @@ class MyGeekyPanel(QWidget):
         if part == "month":
             self.month_page.show()
             self._rank_news()
+        elif part == "cited":
+            if self.cited_page.data is not None:
+                self.cited_page.render()           # the theme may have changed
         else:              # re-read (it's a local file) and replay the entrance
             self._load_model_history()
             self._play_model_animations()

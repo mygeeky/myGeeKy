@@ -28,9 +28,12 @@ RANKED = {"jobs": [{"id": "j1", "title": "Postdoc in GWAS", "score": 0.82, "days
 PAPERS = [{"id": "W1", "title": "New and rising", "date": "2026-10-01"}, {"id": "W2", "title": "Old", "date": "2025-01-01"},
           {"id": "W3", "title": "Recent", "date": "2026-09-10"}, {"id": "W4", "title": "Fourth, not top 3", "date": "2026-10-10"}]
 HIGHLIGHTS = [{"id": "hl-a", "title": "Some genes", "added": "2026-10-18"}, {"id": "hl-b", "title": "Old one", "added": "2026-09-01"}]
+CITED = [{"id": "W901", "title": "Fine-mapping lupus", "seen": "2026-10-15T08:00:00+00:00"},
+         {"id": "W902", "title": "Old find", "seen": "2026-08-01T08:00:00+00:00"},
+         {"id": "W903", "title": "My own", "seen": "2026-10-18T08:00:00+00:00", "self": True}]
 SETTINGS = [{"kinds": ["jobs", "seasons", "nonsense"], "every": "weekly", "quiet": [23, 7]},
             {"kinds": ["papers", "highlights", "funding", "conferences", "jobs", "seasons"]},
-            {"kinds": ["highlights"], "quiet": [8, 8]}, {}, "junk", {"kinds": ["jobs"], "quiet": [True, 30], "every": "hourly"}]
+            {"kinds": ["highlights", "cited"], "quiet": [8, 8]}, {}, "junk", {"kinds": ["jobs"], "quiet": [True, 30], "every": "hourly"}]
 
 
 def _node() -> bool:
@@ -42,7 +45,7 @@ def _node() -> bool:
 
 def _desktop() -> list:
     out = []
-    cands = notify.candidates(TODAY, SEASONS, RANKED, PAPERS, HIGHLIGHTS)
+    cands = notify.candidates(TODAY, SEASONS, RANKED, PAPERS, HIGHLIGHTS, CITED)
     for raw in SETTINGS:
         s = notify.clean_settings(raw)
         chosen = notify.pick(cands, ["jobs:j2"], s)
@@ -72,6 +75,10 @@ def test_only_what_is_worth_it_once_and_in_one_line():
     assert "jobs:j1" in ids and "jobs:j3" not in ids and "conferences:c1" not in ids      # only very good fits
     assert {"paper:W1", "paper:W3"} <= ids and "paper:W2" not in ids and "paper:W4" not in ids
     assert "highlight:hl-a" in ids and "highlight:hl-b" not in ids
+    cited = {c["id"] for c in notify.candidates(TODAY, cited=CITED)}
+    assert cited == {"cited:W901"}, "a paper citing you, seen lately; not your own, not an old one"
+    out = notify.summary([c for c in notify.candidates(TODAY, cited=CITED)])
+    assert out["body"] == "📑 1 new paper cites your work" and out["tab"] == "you"
     s = notify.clean_settings({"kinds": ["jobs", "seasons", "funding"]})
     chosen = notify.pick(cands, ["jobs:j2"], s)
     assert [c["id"] for c in chosen][:2] == ["season:fulbright:2026-10-01", "funding:f1"]   # the most urgent first
@@ -90,14 +97,14 @@ def test_the_phone_decides_exactly_as_the_desktop():
     (work / "notify-side.ts").write_text(
         "import { readFileSync } from 'node:fs';\n"
         "import { candidates, cleanSettings, describe, due, pick, remember, summary } from './notify.ts';\n"
-        "const [today, seasons, ranked, papers, highlights, all] = JSON.parse(readFileSync(0, 'utf8'));\n"
-        "const cands = candidates(today, seasons, ranked, papers, highlights);\n"
+        "const [today, seasons, ranked, papers, highlights, cited, all] = JSON.parse(readFileSync(0, 'utf8'));\n"
+        "const cands = candidates(today, seasons, ranked, papers, highlights, cited);\n"
         "console.log(JSON.stringify(all.map((raw) => { const s = cleanSettings(raw); const chosen = pick(cands, ['jobs:j2'], s);\n"
         "  return { s, describe: describe(s), chosen, summary: summary(chosen), told: remember(['x'], chosen),\n"
         "    due: ['', '2026-10-18', '2026-10-12', 'bad'].flatMap((last) => [3, 12, 23].map((h) =>\n"
         "      due(s, last, `${today}T${String(h).padStart(2, '0')}:00`, h))) }; })));\n", encoding="utf-8")
     run = subprocess.run(["node", "--experimental-strip-types", str(work / "notify-side.ts")],
-                         input=json.dumps([TODAY, SEASONS, RANKED, PAPERS, HIGHLIGHTS, SETTINGS]),
+                         input=json.dumps([TODAY, SEASONS, RANKED, PAPERS, HIGHLIGHTS, CITED, SETTINGS]),
                          capture_output=True, text=True, cwd=MOBILE, timeout=60)
     assert run.returncode == 0, run.stderr[-800:]
     assert json.loads(run.stdout) == json.loads(json.dumps(_desktop()))

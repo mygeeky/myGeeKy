@@ -72,6 +72,7 @@ PATHS_FILE = DATA_DIR / "learning_paths.json"         # the protocols you starte
 QUIZ_FILE = DATA_DIR / "quiz.json"                    # your best quiz scores, flags and sharing choice (synced)
 QUESTIONS_FILE = DATA_DIR / "questions.json"          # the question bank, newest copy fetched
 WINS_FILE = DATA_DIR / "wins.json"                    # stars, forks and citations: the last counts and what changed
+CITEDBY_FILE = DATA_DIR / "citedby.json"           # who cited you: the citing papers found, your totals (citedby.py)
 
 
 @dataclass

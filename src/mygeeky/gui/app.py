@@ -764,7 +764,8 @@ def notify_candidates(cfg: MyGeekyConfig, today: str) -> list[dict[str, Any]]:
     except Exception:
         ss = []
     rising = (papers.load_trends() or {}).get("rising") or []
-    return notify.candidates(today, ss, ranked, rising, data.get("highlights") or [])
+    from .. import citedby
+    return notify.candidates(today, ss, ranked, rising, data.get("highlights") or [], citedby.load().get("citing") or [])
 
 
 def notify_check(cfg: MyGeekyConfig, now: Any = None) -> dict[str, Any] | None:
@@ -1038,6 +1039,24 @@ def get_headlines(cfg: MyGeekyConfig) -> dict[str, Any]:
     """The saved headlines -- local only, no network."""
     from .. import headlines
     return headlines.load_state()
+
+
+def cited_by(cfg: MyGeekyConfig, refresh: bool = False, today: str = "") -> dict[str, Any]:
+    """You → Cited by: who cites your papers (citedby.py). {"author", "summary", "busy"?}; refresh asks OpenAlex
+    (at most once a day)."""
+    from datetime import date
+    from .. import citedby, scholar
+    author = cfg.openalex_id or ((scholar.load_scholar_profile() or {}).get("openalex") or {}).get("author_id", "")
+    busy = False
+    if refresh and author:
+        try:
+            busy = bool(citedby.refresh(author).get("busy"))
+        except Exception:
+            busy = True
+    state = citedby.load()
+    if author and state.get("author") not in ("", None, author):
+        state = {}                                 # another person's: not yours to show
+    return {"author": author, "summary": citedby.summary(state, today or date.today().isoformat()), "busy": busy}
 
 
 def ai_race(refresh: bool = False) -> dict[str, Any]:

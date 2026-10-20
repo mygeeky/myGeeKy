@@ -97,6 +97,7 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
   return finish({ id: 'home', label: 'Home', icon: 'planet-outline', children: [
     { ...G.you, icon: 'person-outline', children: [
       leaf('you', 'month', 'My month', 'ribbon-outline'), leaf('you', 'model', 'Model', 'analytics-outline'),
+      leaf('you', 'cited', 'Cited by', 'document-attach-outline'),
       leaf('you', 'badges', 'Badges', 'medal-outline'), leaf('you', 'more', 'Settings', 'settings-outline'),
       leaf('you', 'ideas', 'Ideas', 'bulb-outline'), ...(admin ? [leaf('you', 'admin', 'Admin', 'shield-outline')] : [])] },
     { ...G.grow, icon: 'leaf-outline', children: [

@@ -148,3 +148,12 @@ def _no_ai_race_fetch(monkeypatch):
     import mygeeky.airace as airace
     monkeypatch.setattr(airace, "refresh_if_due", lambda *a, **kw: False)
     monkeypatch.setattr(airace, "_loaded", None)
+
+
+@pytest.fixture(autouse=True)
+def _no_cited_by_fetch(monkeypatch, request):
+    """You → Cited by asks OpenAlex in the background: never over the network in tests (test_citedby tests it)."""
+    if request.module.__name__.endswith("test_citedby"):
+        return
+    import mygeeky.citedby as citedby
+    monkeypatch.setattr(citedby, "refresh", lambda *a, **kw: {"ok": False, "state": {}})

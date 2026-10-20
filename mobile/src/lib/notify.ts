@@ -16,14 +16,15 @@ export const KINDS: [string, string, string, string, string][] = [
   ['conferences', '🎤', 'A conference that fits you very well', 'Meetings, workshops and summer schools', 'conferences'],
   ['papers', '📄', 'An important new paper in your field', 'One of the papers rising fastest, just out', 'papers'],
   ['highlights', '✨', 'A new Highlight', 'A research article retold in plain words', 'Highlights'],
+  ['cited', '📑', 'Someone cited your work', 'A new paper citing one of yours', 'citations'],
 ];
 const ORDER = KINDS.map((k) => k[0]);
 export const TAB: Record<string, string> = { seasons: 'chances', jobs: 'chances', funding: 'chances', conferences: 'chances',
-  papers: 'papers', highlights: 'grow' };
+  papers: 'papers', highlights: 'grow', cited: 'you' };
 const EVERY: Record<string, number> = { daily: 1, weekly: 7 };
 export const FIT_MIN = 0.7;
 export const SEASON_DAYS = 21;
-const NEW_DAYS = { papers: 45, highlights: 14 };
+const NEW_DAYS = { papers: 45, highlights: 14, cited: 14 };
 const TOP_PAPERS = 3;
 const MAX_TOLD = 600;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -67,7 +68,7 @@ const age = (today: string, d: unknown): number | null => {
 };
 
 export function candidates(today: string, seasons: any[] = [], ranked: Record<string, any[]> = {}, papers: any[] = [],
-  highlights: any[] = []): Candidate[] {
+  highlights: any[] = [], cited: any[] = []): Candidate[] {
   const out: Candidate[] = [];
   for (const s of seasons) {
     const w = s?.when ?? {};
@@ -96,6 +97,10 @@ export function candidates(today: string, seasons: any[] = [], ranked: Record<st
     if (a !== null && a >= 0 && a <= NEW_DAYS.highlights) {
       out.push({ id: `highlight:${h.id ?? ''}`, kind: 'highlights', title: String(h.title ?? ''), days: null });
     }
+  }
+  for (const c of cited) {                  // a paper citing yours, first seen lately (cited-by.ts)
+    const a = age(today, String(c?.seen ?? '').slice(0, 10));
+    if (!c?.self && a !== null && a >= 0 && a <= NEW_DAYS.cited) out.push({ id: `cited:${c.id ?? ''}`, kind: 'cited', title: String(c.title ?? ''), days: null });
   }
   return out;
 }
@@ -126,6 +131,7 @@ export function summary(chosen: Candidate[]): Summary | null {
     else if (kind === 'funding') pieces.push(`💶 ${n(k, 'funding call fits', 'funding calls fit')} you`);
     else if (kind === 'conferences') pieces.push(`🎤 ${n(k, 'conference fits', 'conferences fit')} you`);
     else if (kind === 'papers') pieces.push(`📄 ${n(k, 'new paper', 'new papers')} rising in your field`);
+    else if (kind === 'cited') pieces.push(`📑 ${n(k, 'new paper cites', 'new papers cite')} your work`);
     else pieces.push(`✨ ${n(k, 'new Highlight', 'new Highlights')}`);
   }
   const body = pieces.slice(0, 3).join(' · ') + (pieces.length > 3 ? ' · and more' : '');
