@@ -258,9 +258,9 @@ def topics_like(typed: str, want: int = MAX_ALTERNATIVES, timeout: float = 8.0) 
     if not word:
         return []
     try:
-        import requests
-        resp = requests.get(_OPENALEX_TOPICS, params={"q": word}, timeout=timeout,
-                            headers={"User-Agent": "mygeeky"})
+        from . import wisep
+        resp = wisep.session("setup").get(_OPENALEX_TOPICS, params={"q": word}, timeout=timeout,
+                                          headers={"User-Agent": "mygeeky"})
         if resp.status_code != 200:
             return []
         found = resp.json().get("results") or []

@@ -2,6 +2,7 @@
 // the keyword dictionary), your research topics from OpenAlex (via ORCID) and
 // the topics on your GitHub repos -- cached for a day.
 import { fetchT } from './net';
+import { wiseFetch } from './wisep';
 import { Dict, expand, Profile, Weights } from './interests';
 import { isStale, readCache, Settings, writeCache } from './storage';
 
@@ -32,7 +33,7 @@ export async function profileFromSources(s: Settings, token: string | null, dict
     : /^A\d{2,12}$/.test(s.openalex ?? '') ? s.openalex : '';       // your ORCID, or the author you confirmed
   if (who) {                                                          // your research topics, from OpenAlex
     try {
-      const r = await fetchT(`https://api.openalex.org/authors/${who}?select=id,topics`);
+      const r = await wiseFetch(`https://api.openalex.org/authors/${who}?select=id,topics`, { page: 'you:model' });
       if (r.ok) {
         for (const t of ((await r.json()).topics ?? []).slice(0, 6)) {
           const id = String(t.id ?? '').split('/').pop() ?? '';

@@ -176,7 +176,8 @@ def refresh(author: str, session: Any = None, force: bool = False, now: datetime
         return {"ok": False, "state": state}
     if not force and not due(state, author, now):
         return {"ok": True, "state": state}
-    get = (session or requests).get
+    from . import wisep
+    get = (session or wisep.session("you:cited", force=force)).get        # OpenAlex through WISEP
     when = (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")
     fresh_author = state.get("author") != author
     try:

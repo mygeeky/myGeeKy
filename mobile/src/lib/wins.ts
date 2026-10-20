@@ -5,7 +5,7 @@
 // Skills and Learning paths read them to see what you already work with.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { gh } from './github';
-import { fetchT } from './net';
+import { wiseFetch } from './wisep';
 
 const KEY = 'mygeeky.wins';
 const REFRESH_HOURS = 20;
@@ -66,7 +66,7 @@ export function diff(old: WinsState, repos: MyRepo[], papers: Record<string, Pap
 }
 
 async function openalex(path: string): Promise<any> {
-  const r = await fetchT(`https://api.openalex.org${path}`);
+  const r = await wiseFetch(`https://api.openalex.org${path}`, { page: 'grow:wins' });
   if (!r.ok) throw new Error(`OpenAlex ${r.status}`);
   return r.json();
 }

@@ -158,7 +158,8 @@ def refresh(cfg: MyGeekyConfig, client=None, force: bool = False, session: reque
         return state
     now = _now()
     when = now.isoformat(timespec="seconds")
-    session = session or requests.Session()
+    from . import wisep
+    session = session or wisep.session("grow:wins", force=force)          # OpenAlex through WISEP
     errors: list[str] = []
     repos: list[dict[str, Any]] = []
     if cfg.github_username and client is not None:

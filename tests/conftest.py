@@ -151,6 +151,14 @@ def _no_ai_race_fetch(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _wisep_in_memory():
+    """WISEP's store in memory for every test: no answers kept between tests, nothing written to the data folder."""
+    import mygeeky.wisep as wisep
+    wisep.reset(":memory:")
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _no_skill_trends(monkeypatch):
     """Rising skills reads the shared world file (it changes daily): an empty one in tests, never over the network."""
     import mygeeky.skilltrends as skilltrends

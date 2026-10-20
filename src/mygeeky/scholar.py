@@ -95,7 +95,8 @@ def _get_json(url: str, params: dict[str, Any] | None = None, headers: dict[str,
     h = {"User-Agent": USER_AGENT, "Accept": "application/json"}
     h.update(headers or {})
     try:
-        resp = requests.get(url, params=params, headers=h, timeout=timeout)
+        from . import wisep
+        resp = wisep.session("you").get(url, params=params, headers=h, timeout=timeout)   # OpenAlex through WISEP
     except requests.RequestException:
         return None
     if resp.status_code != 200:

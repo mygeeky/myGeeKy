@@ -69,6 +69,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `signals.ts`, `signals-core.ts` | `beacon.py` |
 | `skills.ts` (+ `components/skill-views.tsx`) | `skills.py`, `skilltrends.py` (+ `gui/skillviews_ui.py`) |
 | `datasets.ts` (+ `components/datasets-view.tsx`) | `datasets.py` (+ `gui/datasets_ui.py`, `gui/app.py` `get_growth`); the rules: skill `mygeeky-datasets` |
+| `wisep.ts` | `wisep.py` (every call to an open database goes through it: skill `mygeeky-wisep`) |
 | `taste.ts` | `taste.py` |
 | `theme.ts` | `gui/app.py` (THEMES) |
 | `components/token-guide.tsx` | `gui/token_guide.py` |

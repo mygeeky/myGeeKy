@@ -1586,7 +1586,8 @@ def build_protocol(cfg: MyGeekyConfig, skill: str, goal: str = "") -> dict[str, 
     except Exception:
         client = None
     try:
-        with requests.Session() as session:
+        from .. import wisep
+        with wisep.session("grow:paths") as session:                      # OpenAlex through WISEP
             proto = protocols.build(cfg, skill, goal, client=client, session=session)
     except ValueError as exc:
         return {"error": str(exc)}            # myGeeKy doesn't teach this: the reason is already plain

@@ -16,6 +16,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { type Dict, expand } from './interests';
 import { fetchT } from './net';
+import { wiseFetch } from './wisep';
 import { b64, utf8 } from './signal-crypto';
 import { readCache, writeCache } from './storage';
 import { blendLearned, type Event, extractTerms, KIND_WEIGHTS, learnedTerms, STOPWORDS } from './learn';
@@ -343,7 +344,7 @@ export async function yourTopics(scholarText: string | null, cfg: SyncedConfig, 
   const author = String(profile.openalex?.author_id ?? '').split('/').pop() ?? '';
   if (/^[AW]\d+$/.test(author)) {
     try {
-      const r = await fetchT(`https://api.openalex.org/authors/${author}?select=topics`);
+      const r = await wiseFetch(`https://api.openalex.org/authors/${author}?select=topics`, { page: 'you:model' });
       if (r.ok) for (const t of ((await r.json()).topics ?? []).slice(0, n)) if (idOf(t.id)) topics.push({ id: idOf(t.id), name: clip(t.display_name) });
     } catch { /* offline */ }
   }
@@ -351,7 +352,7 @@ export async function yourTopics(scholarText: string | null, cfg: SyncedConfig, 
   for (const name of names) {
     if (topics.length >= n) break;
     try {
-      const r = await fetchT(`https://api.openalex.org/topics?search=${encodeURIComponent(name)}&per-page=1`);
+      const r = await wiseFetch(`https://api.openalex.org/topics?search=${encodeURIComponent(name)}&per-page=1`, { page: 'you:model' });
       if (!r.ok) continue;
       const t = ((await r.json()).results ?? [])[0];
       if (t && idOf(t.id) && !topics.some((x) => x.id === idOf(t.id))) topics.push({ id: idOf(t.id), name: clip(t.display_name) });

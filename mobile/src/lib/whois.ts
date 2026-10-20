@@ -2,7 +2,7 @@
 // desktop's whois.py (tests/test_whois.py runs both on the same answers). At most two calls. If OpenAlex is busy,
 // setup carries on with keywords and the search stays pending: tried again later, and when it works, myGeeKy asks
 // "Is this you?". Nothing is saved until you confirm.
-import { fetchT } from './net';
+import { wiseFetch } from './wisep';
 
 export type Candidate = {
   id: string; name: string; institution: string; country: string; works: number; cited: number;
@@ -110,12 +110,12 @@ export async function search(name: string, hint = ''): Promise<Found> {
   const h = hint.includes('@') ? domainHint(hint) : hint;
   if (norm(name).split(' ').filter(Boolean).length < 2) return { status: 'none', candidates: [], why: 'Type your first and last name.' };
   try {
-    const r = await fetchT(authorsUrl(name));
+    const r = await wiseFetch(authorsUrl(name), { page: 'you:whois' });
     if (busy(r.status)) return { status: 'busy', candidates: [], retry_after: Number(r.headers.get('retry-after')) || 0 };
     if (!r.ok) return { status: 'busy', candidates: [], retry_after: 0 };
     let cands = rank(parseAuthors(await r.json()), name, h);
     if (!cands.length) return { status: 'none', candidates: [] };
-    const w = await fetchT(worksUrl(cands.map((c) => c.id)));
+    const w = await wiseFetch(worksUrl(cands.map((c) => c.id)), { page: 'you:whois' });
     if (w.status === 200) cands = addTitles(cands, await w.json());
     return { status: 'found', candidates: cands };
   } catch {

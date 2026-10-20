@@ -3335,6 +3335,20 @@ def tab_order(names: list[str], has_github: bool) -> list[str]:
     return (["model"] if "model" in names else []) + rest
 
 
+def wisep_text() -> str:
+    """WISEP today, in one paragraph: per source asked of its budget and saved by the cache; what it learned."""
+    from .. import wisep
+    s = wisep.stats()
+    if not s["today"]:
+        return "WISEP today: nothing asked yet."
+    parts = [f"{src}: {t['asked']} asked of {t['budget']} · {t['saved']} from the cache"
+             + (f" · {t['topup']} in the evening top-up" if t["topup"] else "") for src, t in sorted(s["today"].items())]
+    learned = ", ".join(p["page"] for p in s["pages"][:4])
+    return ("WISEP today: " + "; ".join(parts) + f" ({round(100 * s['share_saved'])}% saved)."
+            + (f" Resting: {', '.join(s['resting'])}." if s["resting"] else "")
+            + (f" You open most: {learned}." if learned else ""))
+
+
 # You → Admin's sections, as planets: (part, label, emoji) -- the phone has the same (components/admin-part.tsx)
 ADMIN_PARTS = [("overview", "Overview", "\U0001f4ca"), ("review", "Review", "\U0001f4e5"), ("write", "Write", "\u270d"),
                ("inbox", "Inbox", "\U0001f4a1"), ("people", "People", "\U0001f91d"), ("settings", "Settings", "\u2699")]
@@ -3453,6 +3467,12 @@ class MyGeekyPanel(QWidget):
         self._activity_timer = QTimer(self)
         self._activity_timer.timeout.connect(lambda: self._refresh_activity(force=False))
         self._activity_timer.start(60_000)
+
+        # WISEP's evening top-up: once an hour it looks whether the day's budget has some left worth spending
+        from .. import wisep
+        self._wisep_timer = QTimer(self)
+        self._wisep_timer.timeout.connect(lambda: self._run_async(wisep.top_up, lambda _out: None))
+        self._wisep_timer.start(3_600_000)
 
         # every 10 minutes (and once now): search again if the list ran empty
         # and the last search is old enough -- see suggestions_auto_refresh_due
@@ -5586,6 +5606,10 @@ class MyGeekyPanel(QWidget):
         self.admin_calls = QLabel("")
         self.admin_calls.setWordWrap(True)
         overview.addWidget(self.admin_calls)
+        self.admin_wisep = QLabel("")                    # WISEP: what the open databases were asked today
+        self.admin_wisep.setWordWrap(True)
+        self.admin_wisep.setTextFormat(Qt.PlainText)
+        overview.addWidget(self.admin_wisep)
         self.admin_waiting = QLabel("")
         self.admin_waiting.setWordWrap(True)
         self.admin_waiting.setTextFormat(Qt.PlainText)
@@ -5742,7 +5766,7 @@ class MyGeekyPanel(QWidget):
                                          self.admin_hl_header, self.admin_write_header, self.admin_import_header]:
             lbl.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
                               "margin-top:6px; background:transparent;")
-        for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated, self.admin_calls, self.admin_waiting,
+        for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated, self.admin_calls, self.admin_waiting, self.admin_wisep,
                     self.admin_settings_note):
             lbl.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
         self.admin_refresh_btn.setStyleSheet(
@@ -5773,6 +5797,7 @@ class MyGeekyPanel(QWidget):
                + (f"\n  …and {len(going) - 20} more" if len(going) > 20 else "") if going
                else "\n\nNothing accepted yet, so Publish has nothing to send."))
         self.admin_publish_btn.setText(f"🚀 Publish {len(going)} to mygeeky.org" if going else "🚀 Publish")
+        self.admin_wisep.setText(wisep_text())
         self.admin_publish_btn.setEnabled(bool(going) and not getattr(self, "_scout_publishing", False))
         self.admin_publish_btn.setStyleSheet(
             f"QPushButton {{ background:{theme['accent'] if going else theme['section_btn']}; color:{theme['text']}; "
@@ -7244,6 +7269,13 @@ class MyGeekyPanel(QWidget):
         theme = THEMES[self._theme_name()]
         self.tab_bar.setStyleSheet(f"QFrame#tabBar {{ background:{theme['card_bg']}; border-radius:10px; }}")
         leaf = self._nav_leaf()
+        if leaf and leaf["id"] != getattr(self, "_wisep_page", None):       # WISEP learns your day from what you open
+            self._wisep_page = leaf["id"]
+            try:
+                from .. import wisep
+                wisep.opened(leaf["id"])
+            except Exception:
+                pass
         on_path = {n["id"] for n in navtree.path(leaf)} if leaf else set()
         planet_bg = QColor("#1c1c2c") if theme["dark"] else QColor("#ffffff")
         for nid, btn in self.nav_buttons.items():

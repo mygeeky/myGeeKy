@@ -140,7 +140,7 @@ def test_a_wrong_alternative_is_worse_than_none():
 
 
 def test_asking_openalex_never_raises(monkeypatch):
-    monkeypatch.setattr("requests.get", lambda *a, **k: (_ for _ in ()).throw(OSError("no network")))
+    monkeypatch.setattr("mygeeky.wisep.get", lambda *a, **k: (_ for _ in ()).throw(OSError("no network")))
     assert fs.topics_like("wheat breeding") == []
     assert fs.offer_for("wheat breeding", online=True)["keep"] == "wheat breeding"
 
@@ -156,7 +156,7 @@ def test_openalex_fills_the_gap_our_dictionary_has(monkeypatch):
             return {"results": [{"display_name": "Genetic Mapping and Diversity in Plants",
                                  "hint": "plant breeding"}]}
 
-    monkeypatch.setattr("requests.get", lambda *a, **k: Said())
+    monkeypatch.setattr("mygeeky.wisep.get", lambda *a, **k: Said())
     found = fs.offer_for("marker assisted selection", online=True)["alternatives"]
     assert found and found[0]["from"] == "openalex"
     assert "Genetic Mapping" in found[0]["label"]
@@ -314,7 +314,7 @@ def test_an_openalex_hint_is_cut_down_to_a_line(monkeypatch):
                                          "breeding, and genomics of wheat, with an emphasis on disease "
                                          "resistance and yield. It covers many further topics besides."}]}
 
-    monkeypatch.setattr("requests.get", lambda *a, **k: Said())
+    monkeypatch.setattr("mygeeky.wisep.get", lambda *a, **k: Said())
     means = fs.topics_like("wheat breeding")[0]["means"]
     assert len(means) <= 111, means
     assert "It covers" not in means, "more than the first sentence survived"

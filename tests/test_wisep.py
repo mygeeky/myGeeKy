@@ -1,0 +1,159 @@
+"""WISEP: the rules, the store, asking through it, backing off, the evening top-up -- and a simulation that checks it
+asks less than fixed timers while showing answers no staler."""
+
+import json
+import math
+import random
+from datetime import datetime
+
+import pytest
+import requests
+
+import phone
+from mygeeky import wisep
+
+NOON = datetime(2026, 10, 20, 12, 0).timestamp()
+
+
+def test_the_rules():
+    assert wisep.change_rate(0, 0, 24) == pytest.approx(1 / 24)
+    assert wisep.change_rate(9, 216, 24) == pytest.approx(10 / 240)          # its own history wins over the prior
+    assert wisep.p_changed(1 / 24, 0) == 0 and 0.6 < wisep.p_changed(1 / 24, 24) < 0.65
+    flat = [1.0] * 24
+    assert wisep.care(flat, 12, 24.0) == 1.0                                   # your most-opened page, any hour
+    assert wisep.care([0.0] * 24, 12, 24.0) == 0.1                             # a page you never open
+    assert wisep.care([0.0] * 24, 12, 0.0) == 0.5                              # nothing learned yet
+    evening = [0.0] * 24
+    evening[20] = 5.0
+    assert wisep.care(evening, 19, 5.0) > wisep.care(evening, 8, 5.0)          # you look at it in the evening
+    assert wisep.threshold(0, 100, 0.5) == 0.15 and wisep.threshold(100, 100, 0.5) == math.inf
+    assert wisep.threshold(80, 100, 0.5) > wisep.threshold(20, 100, 0.5)       # spending ahead of the day: a higher bar
+
+
+def test_decide_says_why():
+    d = wisep.decide
+    assert d(None, "search", 0, 0, 0.5, 0, 100, 0.5)["action"] == "fetch"
+    assert d(0.2, "search", 0, 0, 1.0, 0, 100, 0.5)["why"] == "asked moments ago"
+    assert d(100, "search", 0, 0, 0.1, 0, 100, 0.5)["action"] == "fetch"           # older than a search may be
+    assert d(10, "entity", 0, 300, 0.1, 0, 100, 0.5)["action"] == "cache"         # never changes, rarely looked at
+    assert d(10, "search", 20, 100, 1.0, 0, 100, 0.5)["action"] == "fetch"        # changes often, looked at a lot
+    assert d(10, "search", 20, 100, 1.0, 100, 100, 0.5)["action"] == "cache"      # ... but the budget is spent
+    assert d(10, "search", 0, 0, 0.1, 50, 100, 0.5, forced=True)["action"] == "fetch"
+    assert d(10, "search", 0, 0, 1.0, 0, 100, 0.5, paused=True)["action"] == "cache"
+    assert d(None, "search", 0, 0, 1.0, 0, 100, 0.5, paused=True)["action"] == "none"
+
+
+class _Net(requests.Session):
+    """Stands in for the network, counting what reached it."""
+
+    def __init__(self, bodies=None, status=200, headers=None):
+        super().__init__()
+        self.calls, self.bodies, self.status, self.extra = [], list(bodies or []), status, headers or {}
+
+    def request(self, method, url, params=None, headers=None, timeout=None, **kw):
+        self.calls.append((url, dict(params or {})))
+        r = requests.Response()
+        r.status_code, r.url = self.status, url
+        r._content = json.dumps(self.bodies.pop(0) if self.bodies else {"n": len(self.calls)}).encode()
+        r.headers.update(self.extra)
+        return r
+
+
+def test_asking_through_wisep_keeps_answers_and_learns_how_often_they_change(monkeypatch):
+    monkeypatch.setattr(wisep, "_space", lambda source, st: None)
+    net = _Net(bodies=[{"a": 1}, {"a": 1}, {"a": 2}])
+    url = "https://api.openalex.org/works"
+    r1 = wisep.get(url, {"filter": "cites:W1"}, page="you:cited", now=NOON, base=net)
+    assert r1.json() == {"a": 1} and net.calls[0][1]["mailto"] == wisep.CONTACT     # the polite pool
+    r2 = wisep.get(url, {"filter": "cites:W1"}, page="you:cited", now=NOON + 600, base=net)
+    assert r2.json() == {"a": 1} and len(net.calls) == 1 and r2.headers["X-Wisep"].startswith("cache")
+    wisep.get(url, {"filter": "cites:W1"}, page="you:cited", now=NOON + 3600 * 200, base=net)   # too old: asked
+    wisep.get(url, {"filter": "cites:W1"}, page="you:cited", now=NOON + 3600 * 400, force=True, base=net)
+    kept = wisep.store().get(wisep.key_of(url, {"filter": "cites:W1"}))
+    assert kept["checks"] == 3 and kept["changes"] == 1 and kept["kind"] == "citations"
+    s = wisep.stats(NOON)
+    assert s["today"]["openalex"]["asked"] == 1 and s["today"]["openalex"]["saved"] == 1
+    other = wisep.get("https://example.org/x", None, base=net)                      # not managed: straight through
+    assert other.status_code == 200 and net.calls[-1][0] == "https://example.org/x"
+
+
+def test_a_busy_source_is_left_alone_and_the_kept_answer_served(monkeypatch):
+    monkeypatch.setattr(wisep, "_space", lambda source, st: None)
+    url = "https://api.openalex.org/authors/A1"
+    wisep.get(url, page="you", now=NOON, base=_Net(bodies=[{"name": "Ada"}]))
+    busy = _Net(status=429, headers={"Retry-After": "120"})
+    r = wisep.get(url, page="you", now=NOON + 3600 * 400, base=busy)
+    assert r.json() == {"name": "Ada"} and r.headers["X-Wisep"] == "stale:busy"
+    assert wisep.store().paused_until["openalex"] >= NOON + 3600 * 400 + 120
+    again = _Net()
+    wisep.get(url, page="you", now=NOON + 3600 * 400 + 10, base=again)
+    assert again.calls == []                                                         # resting: not asked
+
+
+def test_the_session_is_a_drop_in(monkeypatch):
+    monkeypatch.setattr(wisep, "_space", lambda source, st: None)
+    sent = []
+    monkeypatch.setattr(wisep, "fetch_raw", lambda url, params, headers, timeout, base=None:
+                        sent.append(url) or _Net(bodies=[{"ok": True}]).request("GET", url))
+    s = wisep.session("world:papers")
+    assert s.get("https://api.openalex.org/works", params={"search": "gwas"}).json() == {"ok": True}
+    assert s.get("https://api.openalex.org/works", params={"search": "gwas"}).json() == {"ok": True}
+    assert len(sent) == 1
+
+
+def test_what_you_open_is_learned_and_fades():
+    for _ in range(5):
+        wisep.opened("you:cited", NOON)
+    wisep.opened("world:news", NOON)
+    assert wisep.care_for("you:cited", NOON) > wisep.care_for("world:news", NOON) > wisep.care_for("chances:jobs", NOON)
+    later = wisep.store().opens(NOON + 86400 * 14)
+    assert sum(later["you:cited"]) == pytest.approx(2.5)                              # a two-week half-life
+
+
+def test_the_evening_top_up_spends_what_is_left_on_what_you_will_want(monkeypatch):
+    monkeypatch.setattr(wisep, "_space", lambda source, st: None)
+    for _ in range(6):
+        wisep.opened("you:cited", NOON)
+    for i, page in enumerate(["you:cited", "never:opened"]):
+        wisep.get(f"https://api.openalex.org/works?filter=cites:W{i}", page=page, now=NOON - 3600 * 60,
+                  base=_Net(bodies=[{"i": i}]))
+    assert wisep.top_up(NOON) == {}                                                  # not evening yet
+    net = _Net()
+    spent = wisep.top_up(NOON + 9 * 3600, base=net)
+    assert spent == {"openalex": 1} and "W0" in net.calls[0][0]                      # the one you open, not the other
+
+
+# --------------------------------------------------------------------------- the evaluation: a simulation
+_simulate = wisep.simulate
+
+
+def test_wisep_asks_far_less_than_fixed_timers_and_shows_answers_no_staler():
+    timers, wise = _simulate("timers"), _simulate("wisep")
+    assert wise["calls"] < 0.5 * timers["calls"], (wise, timers)
+    assert wise["stale_share"] <= timers["stale_share"] + 0.05, (wise, timers)
+
+
+# --------------------------------------------------------------------------- the phone decides the same
+@pytest.mark.skipif(not phone.node_ok(), reason="needs Node 22.6+ and the phone's packages")
+def test_the_phone_decides_the_same():
+    rng = random.Random(3)
+    cases = [{"age": rng.choice([None, 0.3, 5, 20, 80, 400]), "kind": rng.choice(list(wisep.KINDS)),
+              "changes": rng.randint(0, 20), "watched": rng.uniform(0, 500), "care": round(rng.random(), 3),
+              "used": rng.randint(0, 120), "budget": 100, "frac": round(rng.random(), 3),
+              "forced": rng.random() < 0.2, "paused": rng.random() < 0.1} for _ in range(60)]
+    opens = [[round(rng.random() * 3, 2) for _ in range(24)] for _ in range(5)]
+    urls = ["https://api.openalex.org/works?filter=cites:W1|W2", "https://api.openalex.org/authors/A5",
+            "https://api.openalex.org/topics?search=x", "https://api.openalex.org/works?search=gwas",
+            "https://api.openalex.org/authors?search=ada", "https://zenodo.org/api/records?q=x", "https://example.org/"]
+    said = phone.run("""
+import { care, decide, kindOf, sourceOf } from './lib/wisep.ts';
+out({ d: INPUT.cases.map((c: any) => decide(c.age, c.kind, c.changes, c.watched, c.care, c.used, c.budget, c.frac, c.forced, c.paused)),
+      c: INPUT.opens.flatMap((o: number[]) => [0, 7, 19].map((h) => care(o, h, 40))),
+      k: INPUT.urls.map((u: string) => [sourceOf(u), sourceOf(u) ? kindOf(sourceOf(u)!, u) : null]) });
+""", {"cases": cases, "opens": opens, "urls": urls})
+    want = [wisep.decide(c["age"], c["kind"], c["changes"], c["watched"], c["care"], c["used"], c["budget"], c["frac"],
+                         c["forced"], c["paused"]) for c in cases]
+    assert said["d"] == json.loads(json.dumps(want).replace("Infinity", "null"))
+    assert said["c"] == [wisep.care(o, h, 40) for o in opens for h in (0, 7, 19)]
+    assert said["k"] == [[wisep.source_of(u), wisep.kind_of(wisep.source_of(u), u) if wisep.source_of(u) else None]
+                         for u in urls]

@@ -3,7 +3,7 @@
 // record, your papers' citation counts, and the newest papers citing the ones whose count went up, in one request
 // for up to 50 papers. If OpenAlex is busy, what was found before stays. Kept on this phone only.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchT } from './net';
+import { wiseFetch } from './wisep';
 
 const KEY = 'mygeeky.citedby';
 const OPENALEX = 'https://api.openalex.org';
@@ -132,10 +132,10 @@ export async function refreshCitedBy(author: string, force = false): Promise<{ o
   const when = new Date().toISOString().slice(0, 19) + '+00:00';
   const freshAuthor = state.author !== author;
   try {
-    let r = await fetchT(`${OPENALEX}/authors/${author}?select=id,display_name,cited_by_count,works_count,summary_stats`);
+    let r = await wiseFetch(`${OPENALEX}/authors/${author}?select=id,display_name,cited_by_count,works_count,summary_stats`, { page: 'you:cited' });
     if (busy(r.status) || !r.ok) return { ok: false, busy: true, state };
     const totals = parseAuthor(await r.json());
-    r = await fetchT(`${OPENALEX}/works?filter=author.id:${author}&per-page=200&select=id,title,cited_by_count`);
+    r = await wiseFetch(`${OPENALEX}/works?filter=author.id:${author}&per-page=200&select=id,title,cited_by_count`, { page: 'you:cited' });
     if (busy(r.status) || !r.ok) return { ok: false, busy: true, state };
     const papers: NonNullable<CitedState['papers']> = {};
     for (const w of (await r.json())?.results ?? []) {
@@ -147,8 +147,8 @@ export async function refreshCitedBy(author: string, force = false): Promise<{ o
     let found: Citing[] = [];
     for (let i = 0; i < ask.length; i += PER_CALL) {
       const chunk = ask.slice(i, i + PER_CALL);
-      r = await fetchT(`${OPENALEX}/works?filter=cites:${chunk.join('|')}&sort=publication_date:desc&per-page=50`
-        + '&select=id,title,publication_date,doi,authorships,referenced_works');
+      r = await wiseFetch(`${OPENALEX}/works?filter=cites:${chunk.join('|')}&sort=publication_date:desc&per-page=50`
+        + '&select=id,title,publication_date,doi,authorships,referenced_works', { page: 'you:cited' });
       if (busy(r.status) || !r.ok) break;
       // the first read only sets the starting point: what's there already isn't "new" (no flood of NEW)
       found = found.concat(parseCiting(await r.json(), new Set(Object.keys(papers)), author, freshAuthor ? '' : when));
@@ -166,7 +166,7 @@ export async function authorFor(orcid: string, openalex: string): Promise<string
   if (AUTHOR.test(openalex)) return openalex;
   if (!/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(orcid)) return '';
   try {
-    const r = await fetchT(`${OPENALEX}/authors/orcid:${orcid}?select=id`);
+    const r = await wiseFetch(`${OPENALEX}/authors/orcid:${orcid}?select=id`, { page: 'you:cited' });
     if (!r.ok) return '';
     const id = idOf((await r.json())?.id);
     return AUTHOR.test(id) ? id : '';

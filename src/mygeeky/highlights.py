@@ -139,7 +139,8 @@ def facts(work: dict[str, Any], doi: str) -> dict[str, Any]:
 
 def look_up(doi: str, session: requests.Session | None = None) -> dict[str, Any]:
     """The facts about one article, from OpenAlex (no key needed). Raises when OpenAlex doesn't know it."""
-    get = (session or requests).get
+    from . import wisep
+    get = (session or wisep.session("you:admin")).get                     # OpenAlex through WISEP
     r = get(f"{OPENALEX}/works/https://doi.org/{doi}", headers=UA, timeout=25)
     if r.status_code == 404:
         raise LookupError(f"OpenAlex doesn't know {doi} (yet). Check the DOI.")

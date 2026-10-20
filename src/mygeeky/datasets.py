@@ -657,7 +657,8 @@ def radar_refresh(keywords: Iterable[str], weights: dict[str, float], session=No
     except (TypeError, ValueError):
         pass
     terms = radar_terms(keywords, weights)
-    session = session or requests.Session()
+    from . import wisep
+    session = session or wisep.session("grow:data:new", force=force)      # Zenodo, NCBI, Figshare through WISEP
     found: list[dict[str, Any]] = []
     for term in terms:
         try:

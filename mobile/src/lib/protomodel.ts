@@ -5,7 +5,7 @@
 // so what it learned carries over to skills it never saw.
 import model from '../data/protocol_model.json';
 import { gh } from './github';
-import { fetchT } from './net';
+import { wiseFetch } from './wisep';
 import { blockedSource, isBench } from './safety';
 
 export const ROLES = ['none', 'basics', 'deeper', 'applied', 'project'] as const;
@@ -72,7 +72,7 @@ export async function searchOpenalex(search: string, filter = '', perPage = 12):
   const p = new URLSearchParams({ search, 'per-page': String(perPage),
     select: 'id,title,doi,type,publication_year,cited_by_count,open_access,abstract_inverted_index,primary_location' });
   if (filter) p.set('filter', filter);
-  const r = await fetchT(`${OPENALEX}/works?${p.toString()}`);
+  const r = await wiseFetch(`${OPENALEX}/works?${p.toString()}`, { page: 'grow:paths' });
   if (!r.ok) return [];
   const d = await r.json();
   return (d.results ?? []).map(fromWork).filter((c: Cand | null): c is Cand => !!c);

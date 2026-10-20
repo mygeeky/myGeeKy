@@ -234,7 +234,8 @@ def refresh_trends(cfg: MyGeekyConfig, force: bool = False, log: Callable[[str],
     state = load_trends()
     if not force and not trends_due(cfg, state):
         return state
-    session = session or requests.Session()
+    from . import wisep
+    session = session or wisep.session("world:papers", force=force)      # OpenAlex through WISEP
     weights = interests.profile_terms(cfg)
     since = (date.today() - timedelta(days=int(cfg.trends_months * 30.4))).isoformat()
     base = f",from_publication_date:{since},type:article|preprint"
@@ -340,7 +341,8 @@ def annotate_repos(client, names: list[str], max_lookups: int = 15,
                    session: requests.Session | None = None) -> dict[str, dict[str, Any]]:
     """{repo: paper} for the repos that have one; at most `max_lookups` new
     GitHub/OpenAlex lookups per call, everything else from a 14-day cache."""
-    session = session or requests.Session()
+    from . import wisep
+    session = session or wisep.session("repos:rising")
     cache = _load_cache()
     now = datetime.now(timezone.utc)
     lookups = 0

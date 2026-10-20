@@ -4,6 +4,7 @@
 // can only look when Android lets it run in the background (BackgroundTask, at most every CHECK_MINUTES), and each
 // time myGeeKy opens; nothing is ever pushed to it from outside.
 import { loadRadar } from './datasets';
+import { topUp } from './wisep';
 import { loadCitedBy } from './cited-by';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as BackgroundTask from 'expo-background-task';
@@ -104,6 +105,7 @@ export async function checkNow(now = new Date()): Promise<N.Summary | null> {
 TaskManager.defineTask(TASK, async () => {
   try {
     await checkNow();
+    await topUp().catch(() => undefined);           // WISEP's evening top-up, while the phone is awake anyway
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch {
     return BackgroundTask.BackgroundTaskResult.Failed;

@@ -2,6 +2,7 @@
 // your thumb, clear of the phone's own buttons). The orbit zooms: six groups, a group's pages, a page's parts
 // (lib/nav-tree.ts, components/orbit-zoom.tsx). Reading folds it into a dock of planets that moves the same way,
 // with a back planet first; "Orbit" brings the orbit back (scrolling never does: it surprised people).
+import { opened, topUp } from '../lib/wisep';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -240,6 +241,9 @@ export default function Home() {
   const tree = useMemo(() => phoneTree(!!user, !!admin), [user, admin]);
   const partOf = (s: SectionId) => ({ you: youPart, news: newsPart, repos: repoPart, grow: growMode, chances: chanceMode } as Record<string, string>)[s] ?? '';
   const leaf = leafFor(tree, sel, partOf(sel));
+  const leafId = leaf?.id ?? '';
+  useEffect(() => { if (leafId) opened(leafId).catch(() => undefined); }, [leafId]);   // WISEP learns your day from what you open
+  useEffect(() => { topUp().catch(() => undefined); }, []);                // the evening top-up, when the app opens late
   const [navAt, setNavAt] = useState('home');
   const navNode = find(tree, navAt) ?? tree;
   useEffect(() => {                                       // the page changed from elsewhere (a part's tabs, a link): follow it

@@ -8,6 +8,7 @@ import { englishEnough } from './curated';
 import { match, type Weights } from './interests';
 import { find as findSkill } from './skills';
 import { fetchT } from './net';
+import { wiseFetch } from './wisep';
 import { isStale, readCache, writeCache } from './storage';
 
 export const REMOTE_URL = 'https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/data/datasets.json';
@@ -288,15 +289,15 @@ export async function refreshRadar(keywords: string[], weights: Weights, force =
   const q = (o: Record<string, string | number>) => Object.entries(o).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
   for (const term of terms) {
     try {
-      const r = await fetchT(`https://zenodo.org/api/records?${q({ q: term, type: 'dataset', sort: 'mostrecent', size: RADAR_PER_TERM })}`);
+      const r = await wiseFetch(`https://zenodo.org/api/records?${q({ q: term, type: 'dataset', sort: 'mostrecent', size: RADAR_PER_TERM })}`, { page: 'grow:data:new', force });
       if (r.ok) found.push(...parseZenodoNew(await r.json(), term));
     } catch { /* one source down: the others still count */ }
     try {
       const eu = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
-      const s = await fetchT(`${eu}/esearch.fcgi?${q({ db: 'gds', term: `${term} AND gse[ETYP]`, reldate: RADAR_DAYS, datetype: 'pdat', retmax: RADAR_PER_TERM, retmode: 'json' })}`);
+      const s = await wiseFetch(`${eu}/esearch.fcgi?${q({ db: 'gds', term: `${term} AND gse[ETYP]`, reldate: RADAR_DAYS, datetype: 'pdat', retmax: RADAR_PER_TERM, retmode: 'json' })}`, { page: 'grow:data:new', force });
       const ids: string[] = s.ok ? ((await s.json())?.esearchresult?.idlist ?? []) : [];
       if (ids.length) {
-        const r = await fetchT(`${eu}/esummary.fcgi?${q({ db: 'gds', id: ids.join(','), retmode: 'json' })}`);
+        const r = await wiseFetch(`${eu}/esummary.fcgi?${q({ db: 'gds', id: ids.join(','), retmode: 'json' })}`, { page: 'grow:data:new', force });
         if (r.ok) found.push(...parseGeoNew((await r.json())?.result ?? {}, ids, term));
       }
     } catch { /* as above */ }
@@ -305,7 +306,7 @@ export async function refreshRadar(keywords: string[], weights: Weights, force =
         body: JSON.stringify({ search_for: term, item_type: 3, order: 'published_date', order_direction: 'desc', page_size: RADAR_PER_TERM / 2 }) });
       const hits: any[] = r.ok ? await r.json() : [];
       for (const h of Array.isArray(hits) ? hits : []) {
-        const d = await fetchT(`https://api.figshare.com/v2/articles/${Number(h.id)}`);
+        const d = await wiseFetch(`https://api.figshare.com/v2/articles/${Number(h.id)}`, { page: 'grow:data:new', force });
         const it = d.ok ? parseFigshareNew(await d.json(), term) : null;
         if (it) found.push(it);
       }
