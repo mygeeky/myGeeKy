@@ -12,6 +12,7 @@ import { load as loadProtocols } from '../lib/protocols';
 import { type Doc, fieldDocs, find, note, ownText, rising, type Rising, type RisingResult, shapes, skillsIn } from '../lib/skills';
 import { SkillViews } from './skill-views';
 import { DatasetsView } from './datasets-view';
+import { fieldForPart } from '../lib/datasets';
 import * as taste from '../lib/taste';
 import { C } from '../lib/theme';
 import { recent, refreshWins, type WinsState, loadWins } from '../lib/wins';
@@ -22,7 +23,7 @@ import { HighlightsView } from './highlights-view';
 import { Empty, open, Segments } from './ui';
 import { GeekLoader, useHold } from './geek-loader';
 
-export type GrowMode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'data' | 'wins' | 'collab';
+export type GrowMode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'data' | `data:${string}` | 'wins' | 'collab';
 type Mode = GrowMode;
 const MODES: [Mode, string][] = [['highlights', 'Highlights'], ['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'], ['data', 'Data'],
   ['wins', 'Wins'], ['collab', 'People']];
@@ -83,6 +84,7 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
   const me = settings?.username ?? '';
   const [own, setOwn] = useState<Mode>('highlights');
   const mode = shown ?? own;
+  const base = (mode.startsWith('data') ? 'data' : mode) as keyof typeof ABOUT;   // 'data:biology': Data, on one field
   const setMode = (m: Mode) => { setOwn(m); onMode?.(m); };
   // 🏁 pressed on a protocol: which quiz the 🏆 Quiz tab opens when it appears
   const [openQuiz, setOpenQuiz] = useState<{ pid: string; stage: string } | null>(null);
@@ -172,7 +174,7 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
   return (
     <View>
       {onMode ? null : <View style={{ marginHorizontal: -16 }}><Segments value={mode} options={MODES} onChange={setMode} /></View>}
-      <Text style={s.muted}>{ABOUT[mode]}</Text>
+      <Text style={s.muted}>{ABOUT[base]}</Text>
       {note ? <Text style={s.warn}>{note}</Text> : null}
 
       {mode === 'highlights' ? <HighlightsView items={lists ? lists.highlights : null} onLearn={(skill) => onPath(skill)} /> : null}
@@ -217,8 +219,8 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
         </View>
       ) : null}
 
-      {mode === 'data' ? (
-        <DatasetsView weights={weights} wanted={[...(skills?.skills ?? []).slice(0, 8).map((x) => x.name), ...(skills?.directions ?? []).map((x) => x.name)]} />
+      {base === 'data' ? (
+        <DatasetsView field={fieldForPart(mode)} weights={weights} wanted={[...(skills?.skills ?? []).slice(0, 8).map((x) => x.name), ...(skills?.directions ?? []).map((x) => x.name)]} />
       ) : null}
 
       {mode === 'wins' ? (

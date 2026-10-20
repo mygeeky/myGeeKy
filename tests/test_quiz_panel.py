@@ -288,7 +288,8 @@ def test_a_long_protocol_title_cannot_make_the_panel_wider_than_it_is(qapp_offsc
             viewport = panel._grow_scroll.viewport().width()
             page = panel._grow_scroll.widget()
             too_wide = [(type(x).__name__, (getattr(x, "text", lambda: "")() or "")[:40])
-                        for x in page.findChildren(QWidget) if x.minimumSizeHint().width() > viewport]
+                        for x in page.findChildren(QWidget)
+                        if x.isVisibleTo(page) and x.minimumSizeHint().width() > viewport]   # hidden ones take no room
             assert not too_wide, f"{mode}: these can't fit in {viewport}px: {too_wide[:3]}"
             assert page.width() <= viewport + 2, f"{mode}: the page is {page.width()}px in a {viewport}px panel"
     finally:

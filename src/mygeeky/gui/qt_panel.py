@@ -3345,6 +3345,12 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
 
     def group(gid: str, children: list[dict[str, Any]]) -> dict[str, Any]:
         return n(gid, G[gid]["label"], G[gid]["color"], children=children)
+
+    def grow() -> list[dict[str, Any]]:              # Data has its own level: For you and the ten fields
+        from .. import datasets
+        data = n("grow:data", "Data", icon="\U0001f5c2", tab="grow", part="data", children=[
+            n(f"grow:data:{p}", label, icon=emoji, tab="grow", part=f"data:{p}") for p, label, emoji, _ in datasets.FIELD_PARTS])
+        return [data if c["id"] == "grow:data" else c for c in modes("grow", MyGeekyPanel.GROW_MODES)]
     circle = {"live": n("live", "Live", tab="live"), "suggestions": n("suggestions", "People", tab="suggestions"),
               "activity": n("activity", "Activity", tab="activity"), "signals": n("signals", "Signals", tab="signals")}
     return navtree.finish(n("home", "Home", children=[
@@ -3352,7 +3358,7 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
                       n("model:model", "Model", icon="\U0001f9e0", tab="model", part="model"),
                       n("model:cited", "Cited by", icon="\U0001f4d1", tab="model", part="cited"),
                       n("badges", "Badges", tab="badges")] + ([n("admin", "Admin", tab="admin")] if is_admin else [])),
-        group("grow", modes("grow", MyGeekyPanel.GROW_MODES)),
+        group("grow", grow()),
         group("world", [n("news", "News", tab="news", children=[
             n("news:airace", "AI race", icon="\U0001f3c1", tab="news", part="airace"),
             n("news:headlines", "Headlines", icon="\U0001f5de", tab="news", part="headlines"),
@@ -4355,7 +4361,7 @@ class MyGeekyPanel(QWidget):
                         warnings=warnings).exec()
 
     def _set_grow_mode(self, mode: str) -> None:
-        self._grow_mode = mode
+        self._grow_mode = "data:for-you" if mode == "data" else mode     # Data opens on For you
         if mode == "collab":
             self._load_collaborators()
         self._render_grow()
@@ -4447,15 +4453,17 @@ class MyGeekyPanel(QWidget):
                 self._grow_note("No learning resources yet.", theme)
             if res.get("hidden"):
                 self._hidden_note(self.grow_area, res["hidden"], "resource", theme)
-        elif mode == "data":
+        elif mode.startswith("data"):
             self.grow_hint.setText("Public datasets to practise and train on, across the sciences: open, documented, "
                                    "laptop-sized and downloadable without a login. Yours first: your field and the "
                                    "skills rising for you. 👍 / 👎 teach it what helps.")
+            from .. import datasets
             from .datasets_ui import DatasetsSection
             d = data.get("datasets") or {}
             self.grow_area.addWidget(DatasetsSection(
                 d.get("items") or [], d.get("weights") or {}, d.get("wanted") or [], theme,
-                lambda ds, up: logic.vote("dataset", ds["id"], up, ds["title"], ds["skills"]), open_))
+                lambda ds, up: logic.vote("dataset", ds["id"], up, ds["title"], ds["skills"]), open_,
+                datasets.field_for_part(mode)))
         elif mode == "wins":
             self.grow_hint.setText("New stars and forks on your repos, and new citations of your papers "
                                    "(with the newest paper citing you). Checked once a day.")

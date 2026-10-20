@@ -11,9 +11,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from .. import datasets
-from .growth_ui import FlowRow, ThumbBar, _card_style
-
-CHOICES = ["for you", "", *datasets.FIELDS]
+from .growth_ui import ThumbBar, _card_style
 
 
 def _label(text: str, css: str) -> QLabel:
@@ -73,54 +71,38 @@ class DatasetCard(QFrame):
 
 
 class DatasetsSection(QWidget):
-    """The field picker and the list; picking a field redraws the list in place."""
+    """One field's list (or For you): the fields themselves are planets in the navigation, not tabs in the page."""
 
     def __init__(self, items: list[dict[str, Any]], weights: dict[str, float], wanted: list[str],
                  theme: dict[str, Any], on_vote: Callable[[dict[str, Any], bool], int],
-                 on_open: Callable[[str], Any]) -> None:
+                 on_open: Callable[[str], Any], field: str = "for you") -> None:
         super().__init__()
         self.setStyleSheet("background:transparent;")
         self.items, self.weights, self.wanted, self.theme = items, weights, wanted, theme
-        self.on_vote, self.on_open, self.field = on_vote, on_open, "for you"
+        self.on_vote, self.on_open, self.field = on_vote, on_open, field
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(5)
-        self.chips = FlowRow()
-        self.buttons: dict[str, QPushButton] = {}
-        for f in CHOICES:
-            b = QPushButton(_choice_label(f).replace("&", "&&"))    # a single & would be read as a shortcut
-            b.setCursor(Qt.PointingHandCursor)
-            b.clicked.connect(lambda _=False, f=f: self.pick(f))
-            self.buttons[f] = b
-            self.chips.add(b)
-        self.chips.finish()
-        lay.addWidget(self.chips)
-        lay.addWidget(_label(f"{len(items)} datasets, each open, documented and downloadable without a login.",
-                             f"color:{theme['muted']}; font-size:10.5px;"))
+        lay.addWidget(_label(f"{_choice_label(field)}: of {len(items)} datasets, each open, documented and "
+                             "downloadable without a login.", f"color:{theme['muted']}; font-size:10.5px;"))
         self.list = QVBoxLayout()
         self.list.setSpacing(6)
         lay.addLayout(self.list)
-        self.pick("for you")
+        self.fill()
 
     def _votes(self) -> dict[str, int]:
         from .. import taste
         votes = taste.load()
         return {d["id"]: int(votes.get(taste.key_of("dataset", d["id"]), {}).get("vote", 0)) for d in self.items}
 
-    def pick(self, field: str) -> None:
-        self.field = field
-        for f, b in self.buttons.items():
-            on = f == field
-            b.setStyleSheet(f"QPushButton {{ color:{self.theme['text'] if on else self.theme['muted']}; "
-                            f"background:{'rgba(128,128,128,70)' if on else 'rgba(128,128,128,25)'}; border:none; "
-                            "border-radius:10px; padding:3px 9px; font-size:10.5px; }")
+    def fill(self) -> None:
         while self.list.count():
             w = self.list.takeAt(0).widget()
             if w:
                 w.deleteLater()
         votes = self._votes()
-        r = datasets.rank(self.items, self.weights, self.wanted, field, votes)
-        if field == "for you" and not r["items"]:          # nothing matches you yet: everything, not an empty page
+        r = datasets.rank(self.items, self.weights, self.wanted, self.field, votes)
+        if self.field == "for you" and not r["items"]:     # nothing matches you yet: everything, not an empty page
             r = datasets.rank(self.items, self.weights, self.wanted, "", votes)
         green = self.theme.get("good", "#34d399")
         for d in r["items"]:
@@ -133,5 +115,5 @@ class DatasetsSection(QWidget):
     def _vote(self, d: dict[str, Any], up: bool) -> int:
         v = self.on_vote(d, up)
         if v < 0:
-            self.pick(self.field)
+            self.fill()
         return v

@@ -11,6 +11,20 @@ export const REMOTE_URL = 'https://raw.githubusercontent.com/mygeeky/myGeeKy/mai
 export const FIELDS = ['Biology & genomics', 'Plants & agriculture', 'Medicine & health', 'Neuroscience', 'Ecology & environment',
   'Earth & climate', 'Chemistry & materials', 'Physics & astronomy', 'Social science & economics', 'Machine learning & AI'];
 const LEVELS = ['beginner', 'intermediate', 'advanced'];
+/** Grow → Data's parts in the navigation: [part id, planet label, Ionicons name, the field it shows] (datasets.FIELD_PARTS). */
+export const FIELD_PARTS: [string, string, string, string][] = [
+  ['for-you', 'For you', 'sparkles-outline', 'for you'], ['biology', 'Biology', 'git-merge-outline', 'Biology & genomics'],
+  ['plants', 'Plants', 'leaf-outline', 'Plants & agriculture'], ['medicine', 'Medicine', 'medkit-outline', 'Medicine & health'],
+  ['neuro', 'Neuroscience', 'pulse-outline', 'Neuroscience'], ['ecology', 'Ecology', 'bug-outline', 'Ecology & environment'],
+  ['climate', 'Earth & climate', 'earth-outline', 'Earth & climate'], ['chemistry', 'Chemistry', 'flask-outline', 'Chemistry & materials'],
+  ['physics', 'Physics & space', 'planet-outline', 'Physics & astronomy'], ['social', 'Society', 'people-outline', 'Social science & economics'],
+  ['ml', 'ML & AI', 'hardware-chip-outline', 'Machine learning & AI']];
+
+/** 'data:biology' (or 'biology') -> 'Biology & genomics'; anything else -> 'for you' (datasets.field_for_part). */
+export function fieldForPart(part: string): string {
+  const slug = part.startsWith('data:') ? part.slice(5) : part;
+  return FIELD_PARTS.find(([p]) => p === slug)?.[3] ?? 'for you';
+}
 const OPEN = ['cc0', 'cc-by', 'cc-by-sa', 'odbl', 'odc-by', 'pddl', 'public domain', 'mit', 'bsd', 'apache', 'cc-pddc', 'etalab'];
 const LEVEL_BONUS: Record<string, number> = { beginner: 0.4, intermediate: 0.2, advanced: 0 };
 

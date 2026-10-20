@@ -2,6 +2,7 @@
 // A port of the desktop's navtree.py (tests/test_navtree.py checks both agree): tap a group and its sections take
 // its place, with a back planet first; tap a section with parts and its parts appear; tap a part to open it.
 // The tree below hangs the phone's own pages under the shared groups.
+import { FIELD_PARTS } from './datasets';
 import type { SectionId } from './sections';
 
 export type Node = { id: string; label: string; color: string; icon: string; tab: string; part: string; children: Node[]; parent: Node | null };
@@ -103,7 +104,9 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     { ...G.grow, icon: 'leaf-outline', children: [
       leaf('grow', 'highlights', 'Highlights', 'sparkles-outline'), leaf('grow', 'skills', 'Skills', 'trending-up-outline'),
       leaf('grow', 'paths', 'Protocols', 'compass-outline'), leaf('grow', 'quiz', 'Quiz', 'trophy-outline'),
-      leaf('grow', 'learn', 'Learn', 'library-outline'), leaf('grow', 'data', 'Data', 'server-outline'),
+      leaf('grow', 'learn', 'Learn', 'library-outline'),
+      { id: 'grow:data', label: 'Data', icon: 'server-outline', tab: 'grow', part: 'data',     // its own level: For you and the fields
+        children: FIELD_PARTS.map(([p, label, icon]) => leaf('grow', `data:${p}`, label, icon)) },
       leaf('grow', 'wins', 'Wins', 'happy-outline'),
       leaf('grow', 'collab', 'People', 'hand-left-outline')] },
     { ...G.world, icon: 'earth-outline', children: [

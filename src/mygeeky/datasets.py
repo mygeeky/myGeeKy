@@ -38,6 +38,22 @@ FIELDS = ["Biology & genomics", "Plants & agriculture", "Medicine & health", "Ne
           "Earth & climate", "Chemistry & materials", "Physics & astronomy", "Social science & economics",
           "Machine learning & AI"]
 LEVELS = ("beginner", "intermediate", "advanced")
+# Grow → Data's parts in the navigation (the orbit and the dock): (part id, planet label, emoji, the field it shows);
+# the phone has the same list with Ionicons names (lib/datasets.ts FIELD_PARTS)
+FIELD_PARTS = [("for-you", "For you", "✨", "for you"), ("biology", "Biology", "🧬", "Biology & genomics"),
+               ("plants", "Plants", "🌱", "Plants & agriculture"), ("medicine", "Medicine", "🩺", "Medicine & health"),
+               ("neuro", "Neuroscience", "🧠", "Neuroscience"), ("ecology", "Ecology", "🦋", "Ecology & environment"),
+               ("climate", "Earth & climate", "🌍", "Earth & climate"),
+               ("chemistry", "Chemistry", "⚗️", "Chemistry & materials"),
+               ("physics", "Physics & space", "🔭", "Physics & astronomy"),
+               ("social", "Society", "👥", "Social science & economics"),
+               ("ml", "ML & AI", "🤖", "Machine learning & AI")]
+
+
+def field_for_part(part: str) -> str:
+    """"data:biology" (or "biology") -> "Biology & genomics"; anything else -> "for you"."""
+    slug = part.split(":", 1)[1] if part.startswith("data:") else part
+    return next((f for p, _, _, f in FIELD_PARTS if p == slug), "for you")
 MAX_TOTAL_MB = 5000          # rule 3: a laptop can hold it ...
 MAX_STARTER_MB = 1000        # ... and one file is enough to begin
 MIN_ABOUT = 120              # rule 5: says what it is

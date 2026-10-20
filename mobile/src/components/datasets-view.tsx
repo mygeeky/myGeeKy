@@ -1,9 +1,10 @@
 // Grow → 🗂️ Data: public datasets to practise and train on, ordered for you (your field, the skills rising for you,
-// easy ones first), with a field picker -- the desktop's Data part (gui/qt_panel.py `_render_datasets`).
+// easy ones first). The fields are planets in the navigation (nav-tree.ts), not tabs here -- the desktop's
+// gui/datasets_ui.py.
 // lib/datasets.ts reads and ranks the list; 👍/👎 teach your model like everywhere else.
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { FIELDS, loadDatasets, rank, type Dataset, type Ranked, sizeText } from '../lib/datasets';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { loadDatasets, rank, type Dataset, type Ranked, sizeText } from '../lib/datasets';
 import type { Weights } from '../lib/interests';
 import * as taste from '../lib/taste';
 import { C } from '../lib/theme';
@@ -11,7 +12,6 @@ import { GeekLoader, useHold } from './geek-loader';
 import { GCard, Hidden, s, Thumbs } from './growth-parts';
 import { Empty, open } from './ui';
 
-const CHOICES = ['for you', '', ...FIELDS];
 const label = (f: string) => (f === 'for you' ? '✨ For you' : f === '' ? 'All' : f);
 
 function DatasetCard({ d, onVote }: { d: Ranked; onVote: (up: boolean) => Promise<number> }) {
@@ -37,9 +37,8 @@ function DatasetCard({ d, onVote }: { d: Ranked; onVote: (up: boolean) => Promis
   );
 }
 
-export function DatasetsView({ weights, wanted }: { weights: Weights; wanted: string[] }) {
+export function DatasetsView({ field, weights, wanted }: { field: string; weights: Weights; wanted: string[] }) {
   const [all, setAll] = useState<Dataset[] | null>(null);
-  const [field, setField] = useState('for you');
   const [shown, setShown] = useState<{ items: Ranked[]; hidden: number }>({ items: [], hidden: 0 });
   const hold = useHold(all === null);
   useEffect(() => { loadDatasets().then(setAll).catch(() => setAll([])); }, []);
@@ -55,14 +54,7 @@ export function DatasetsView({ weights, wanted }: { weights: Weights; wanted: st
   if (hold || all === null) return <GeekLoader text="Finding data to practise on…" />;
   return (
     <View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}>
-        {CHOICES.map((f) => (
-          <Pressable key={f || 'all'} onPress={() => setField(f)} style={[st.chip, field === f && st.chipOn]}>
-            <Text style={[st.chipText, field === f && { color: C.text }]}>{label(f)}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-      <Text style={[s.muted, { marginTop: 6 }]}>{all.length} datasets, each open, documented and downloadable without a login.</Text>
+      <Text style={[s.muted, { marginTop: 4 }]}>{label(field)}: of {all.length} datasets, each open, documented and downloadable without a login.</Text>
       {shown.items.map((d) => (
         <DatasetCard key={d.id} d={d} onVote={async (up) => {
           const v = await taste.vote('dataset', d.id, up, d.title, d.skills);
@@ -77,9 +69,6 @@ export function DatasetsView({ weights, wanted }: { weights: Weights; wanted: st
 }
 
 const st = StyleSheet.create({
-  chip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 14, backgroundColor: C.card, borderWidth: 1, borderColor: C.line },
-  chipOn: { backgroundColor: C.cardHi, borderColor: C.green },
-  chipText: { color: C.muted, fontSize: 12.5, fontWeight: '600' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' },
   btn: { backgroundColor: C.cardHi, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
   btnText: { color: C.text, fontSize: 12, fontWeight: '700' },
