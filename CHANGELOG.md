@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.30.0 (2026-10-21): people who publish, a wiser way to ask, and packs to share (phone 1.12.0)
 
 - **📦 Packs:** share your setup like a seed, as one to three QR codes (⚙ Settings → Packs on the computer, You → Settings → Packs on the phone). Tick what goes in (keywords and topics, research field, researchers you follow, a note); the codes show one at a time ("Code 1 of 3", Next). The phone receives them: the first scan says how many codes there are, it counts them in any order and asks for the next, checks the set is whole, shows what the pack holds, then Merge into mine or Start from it, with Undo. No internet, no server; a pack is plain data, checked on arrival.
 - **📄 Researchers** (Circle → Researchers), on the computer and the phone: people who publish, not only people on GitHub. Follow anyone by name (picked from OpenAlex's author search with the "is this the right one?" check; the list stays on your device), see their new preprints and papers as they appear (a preprint and its published version show as one: "now published · first as a preprint on bioRxiv"), and get suggestions for free from who cites you and who leads your field's rising papers. Everyone you follow is looked up in one batched search, each about as often as they publish, through WISEP. A new optional notification: New work from people you follow. **🕸 Network:** you, your co-authors, the people one introduction away and the people you follow, with who connects you to anyone; rebuilt weekly with two searches. Your Model learns gently from the topics your circle publishes on (switch it off on the Network page).
