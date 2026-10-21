@@ -82,7 +82,10 @@ def _quiet_stdio() -> None:
     try:
         from .config import LOG_DIR
         LOG_DIR.mkdir(parents=True, exist_ok=True)
-        log = open(LOG_DIR / "weekly.log", "a", encoding="utf-8", buffering=1)
+        path = LOG_DIR / "weekly.log"
+        if path.exists() and path.stat().st_size > 1_000_000:     # one older copy kept, never more (plan 7)
+            os.replace(path, LOG_DIR / "weekly.log.1")
+        log = open(path, "a", encoding="utf-8", buffering=1)
     except OSError:
         log = open(os.devnull, "w", encoding="utf-8")
     sys.stdout = sys.stdout or log

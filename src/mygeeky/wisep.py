@@ -43,7 +43,7 @@ import re
 import sqlite3
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import unquote, urlencode, urlsplit
@@ -311,6 +311,8 @@ class Store:
 
     def _trim(self) -> None:
         with self.lock:
+            old = (date.today() - timedelta(days=3 * KEEP_DAYS)).isoformat()
+            self.db.execute("DELETE FROM calls WHERE day < ?", (old,))   # the tally: three months is plenty
             n, size = self.db.execute("SELECT COUNT(*), COALESCE(SUM(size), 0) FROM answers").fetchone()
             if n <= MAX_ENTRIES and size <= MAX_BYTES:
                 return

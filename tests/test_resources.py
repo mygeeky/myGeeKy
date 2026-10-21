@@ -98,3 +98,48 @@ def test_a_sealed_box_is_opened_once():
     info = sc._open_box.cache_info()
     assert info.hits == 1 and info.misses == 1                   # the second read cost nothing
     assert sc.open_box(key, 123) is None and sc.open_box(None, box) is None
+
+
+def test_history_files_keep_four_months_live_and_archive_the_rest(tmp_path):
+    import gzip
+    import json
+    from datetime import datetime, timezone
+    from mygeeky import storage
+    log = tmp_path / "suggestions_history.jsonl"
+    now = datetime(2026, 10, 21, tzinfo=timezone.utc)
+    rows = [{"username": f"u{i}", "timestamp": f"2026-{m:02d}-15T00:00:00+00:00"} for i, m in enumerate([4, 5, 5, 9, 10])]
+    log.write_text("".join(json.dumps(r) + "\n" for r in rows) + "not json\n")
+    assert storage.rotate_jsonl(log, now=now) == 3                       # April and May: past 120 days
+    kept = log.read_text().splitlines()
+    assert [json.loads(x)["username"] for x in kept[:2]] == ["u3", "u4"] and kept[2] == "not json"
+    may = gzip.decompress((tmp_path / "archive" / "suggestions_history-2026-05.jsonl.gz").read_bytes()).decode()
+    assert [json.loads(x)["username"] for x in may.splitlines()] == ["u1", "u2"]   # kept, compressed, on this computer
+    assert storage.rotate_jsonl(log, now=now) == 0                       # nothing old left: no rewrite
+    log.write_text(json.dumps({"username": "x", "timestamp": "2026-06-10T00:00:00+00:00"}) + "\n")
+    assert storage.rotate_jsonl(log, now=now) == 0                       # 133 days: within the monthly slack, wait
+    from mygeeky import sync
+    assert "archive/" in sync.GITIGNORE.splitlines()                     # the archive never travels
+
+
+def test_the_avatar_cache_keeps_the_newest_photos(tmp_path):
+    import os
+    from mygeeky.gui.qt_panel import AvatarLoader
+    for i in range(AvatarLoader.MAX_FILES + 25):
+        p = tmp_path / f"{i:04d}.png"
+        p.write_bytes(b"x")
+        os.utime(p, (1000 + i, 1000 + i))
+    assert AvatarLoader.prune(tmp_path) == 25
+    left = sorted(p.name for p in tmp_path.glob("*.png"))
+    assert len(left) == AvatarLoader.MAX_FILES and left[0] == "0025.png"          # the oldest went
+
+
+def test_wisep_keeps_three_months_of_its_tally():
+    from datetime import date, timedelta
+    from mygeeky import wisep
+    st = wisep.store()
+    old, today = (date.today() - timedelta(days=200)).isoformat(), date.today().isoformat()
+    st.count("openalex", "asked", old)
+    st.count("openalex", "asked", today)
+    st._trim()
+    days = [r[0] for r in st.db.execute("SELECT day FROM calls").fetchall()]
+    assert today in days and old not in days

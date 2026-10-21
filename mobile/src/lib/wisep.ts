@@ -11,6 +11,7 @@ import { getOpenAlexKey, setOpenAlexKey } from './storage';
 export const CONTACT = 'support@mygeeky.org';
 const KEY = 'mygeeky.wisep';
 const MAX_ANSWERS = 300;              // the phone keeps fewer than the computer
+const MAX_STORE_CHARS = 1_200_000;    // ...and in one AsyncStorage row: Android refuses rows past ~2 MB
 const HALF_LIFE_DAYS = 14;
 const FORCE_ALLOWANCE = 1.2;
 const TOP_UP_HOUR = 20, TOP_UP_SHARE = 0.5, TOP_UP_MAX = 15, TOP_UP_FLOOR = 0.15;
@@ -178,7 +179,13 @@ function save(): void {                       // written once things settle, not
     mem.answers = Object.fromEntries(keep);
     const days = Object.keys(mem.calls).sort().reverse().slice(0, 30);
     mem.calls = Object.fromEntries(days.map((d) => [d, mem!.calls[d]]));
-    AsyncStorage.setItem(KEY, JSON.stringify(mem)).catch(() => undefined);
+    let text = JSON.stringify(mem);
+    while (text.length > MAX_STORE_CHARS && Object.keys(mem.answers).length) {   // the least used go first
+      const least = Object.entries(mem.answers).sort((a, b) => a[1].used - b[1].used).slice(0, 20);
+      for (const [k] of least) delete mem.answers[k];
+      text = JSON.stringify(mem);
+    }
+    AsyncStorage.setItem(KEY, text).catch(() => undefined);
   }, 1500);
 }
 

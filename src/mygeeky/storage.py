@@ -7,8 +7,9 @@ derived scores -- but none of it lives inside the project/repo either.
 
 from __future__ import annotations
 
+import gzip
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -39,6 +40,50 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 def log_suggestions(records: Iterable[dict[str, Any]]) -> None:
     for r in records:
         append_jsonl(SUGGESTIONS_LOG, r)
+    rotate_jsonl(SUGGESTIONS_LOG)
+
+
+# --------------------------------------------------------------------------- history files don't grow forever
+KEEP_DAYS = 120     # what the suggestion and repo histories keep live: nothing reads past POOL_DAYS (90) of them
+ROTATE_SLACK_DAYS = 30   # rotate in monthly batches, so the synced file isn't rewritten every day
+
+
+def rotate_jsonl(path: Path, keep_days: int = KEEP_DAYS, now: datetime | None = None) -> int:
+    """Move lines older than `keep_days` out of a history file into compressed monthly archives on this computer
+    (`archive/<name>-<YYYY-MM>.jsonl.gz`, kept, not synced), once the oldest line is a month past that. Returns how
+    many lines moved. Lines without a readable `timestamp` stay. Both computers trimming the same top lines, or one
+    trimming while the other appends, merge cleanly (the .jsonl files merge by union)."""
+    path = Path(path)
+    now = now or datetime.now(timezone.utc)
+    cutoff = (now - timedelta(days=keep_days)).isoformat()
+    try:
+        with path.open(encoding="utf-8") as fh:
+            first = fh.readline()
+        oldest = str(json.loads(first).get("timestamp") or "")
+    except (OSError, ValueError, AttributeError):
+        return 0
+    if not oldest or oldest >= (now - timedelta(days=keep_days + ROTATE_SLACK_DAYS)).isoformat():
+        return 0
+    keep, old = [], {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            stamp = str(json.loads(line).get("timestamp") or "")
+        except (ValueError, AttributeError):
+            stamp = ""
+        if stamp and stamp < cutoff:
+            old.setdefault(stamp[:7], []).append(line)
+        elif line.strip():
+            keep.append(line)
+    archive = path.parent / "archive"
+    archive.mkdir(parents=True, exist_ok=True)
+    for month, lines in old.items():
+        gz = archive / f"{path.stem}-{month}.jsonl.gz"
+        have = gzip.decompress(gz.read_bytes()).decode("utf-8").splitlines() if gz.exists() else []
+        seen = set(have)
+        merged = have + [x for x in lines if x not in seen]
+        gz.write_bytes(gzip.compress(("\n".join(merged) + "\n").encode("utf-8"), mtime=0))
+    files.write_text_atomic(path, "\n".join(keep) + ("\n" if keep else ""))
+    return sum(len(v) for v in old.values())
 
 
 def log_training_example(record: dict[str, Any]) -> None:
@@ -140,6 +185,7 @@ def save_activity_cache(events: list[dict[str, Any]], fetched_at: str,
 def log_contributions(records: Iterable[dict[str, Any]]) -> None:
     for r in records:
         append_jsonl(CONTRIBUTE_LOG, r)
+    rotate_jsonl(CONTRIBUTE_LOG)
 
 
 POOL_DAYS = 90      # older suggestions are too stale to bring back

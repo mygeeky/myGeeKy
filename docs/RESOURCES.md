@@ -66,7 +66,7 @@ several times what a release build uses).
    several network round-trips even with nothing new (`SYNC_EVERY_MS` 15 min). Commit/push only when a synced file
    changed (and at quit), fetch less often (30–60 min), and skip a sync when the only change is a file rewritten
    by reading (`seen.json` every 5 s).
-5. **Append-only history files rotate.** `suggestions_history.jsonl` (1.26 MB, read in full twice every 5 min),
+5. ✅ **Done 2026-10-21** (the suggestion and repo histories keep 120 days live and move older lines, in monthly batches, to compressed archives on this computer; the small logs and the Model's training data stay whole). **Append-only history files rotate.** `suggestions_history.jsonl` (1.26 MB, read in full twice every 5 min),
    `contribute_history.jsonl`, `training_data.jsonl`, `interest_events.jsonl`, `usage.jsonl` and the admin logs
    grow forever and are rewritten into the git history on each change. Keep the last N months (or N lines) live and
    fold older lines into a small summary; read the tail, not the whole file.
@@ -74,7 +74,7 @@ several times what a release build uses).
    Build each page the first time it's shown (keep the data loading as it is). Also cap the in-session caches that
    only grow: `ghcache.Store._rows` (decoded bodies kept for the whole session), `AvatarLoader._memory` (pixmaps),
    `profile_card._cache`.
-7. **Caps where there are none:** the avatar cache folder (keep ~500 files / 30 MB, oldest first), `logs/weekly.log`
+7. ✅ **Done 2026-10-21** (avatar photos: newest 600 on disk, 400 in memory; weekly.log rotated at 1 MB; WISEP's tally trimmed to 3 months; the phone's WISEP row kept under 1.2 MB). **Caps where there are none:** the avatar cache folder (keep ~500 files / 30 MB, oldest first), `logs/weekly.log`
    (rotate at 1 MB, like `fatal.log`), the phone's single `wisep` AsyncStorage key (up to 300 full bodies in one row,
    near Android's ~2 MB row limit: cap by bytes, or one key per answer), WISEP's `calls` table (`KEEP_DAYS` is
    declared but never applied).

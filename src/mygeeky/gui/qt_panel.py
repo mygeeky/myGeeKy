@@ -8,6 +8,7 @@ import hashlib
 import html
 import math
 import os
+import threading
 import sys
 import re
 import time
@@ -451,9 +452,30 @@ class AvatarLoader:
     this session and on disk (`AVATAR_CACHE_DIR`) across restarts, so the
     same photo is only ever downloaded once."""
 
+    MAX_FILES = 600          # on disk: the newest photos kept, the rest asked again if ever needed (plan 7)
+    MAX_MEMORY = 400         # in memory this session: the oldest dropped first
+
     def __init__(self) -> None:
         self._memory: dict[str, QPixmap] = {}
         self._workers: list[_Worker] = []
+        threading.Thread(target=self.prune, daemon=True).start()
+
+    @classmethod
+    def prune(cls, folder: Path | None = None) -> int:
+        """Keep the newest MAX_FILES photos on disk; returns how many were removed."""
+        folder = folder or AVATAR_CACHE_DIR
+        try:
+            files = sorted(folder.glob("*.png"), key=lambda p: p.stat().st_mtime, reverse=True)
+        except OSError:
+            return 0
+        gone = 0
+        for p in files[cls.MAX_FILES:]:
+            try:
+                p.unlink()
+                gone += 1
+            except OSError:
+                pass
+        return gone
 
     def request(self, url: str, size: int, on_loaded: Callable[[QPixmap], None]) -> None:
         if not url:
@@ -494,6 +516,8 @@ class AvatarLoader:
             if isinstance(result, QImage) and not result.isNull():
                 pixmap = QPixmap.fromImage(result)        # here, on the UI thread
                 self._memory[cache_key] = pixmap
+                while len(self._memory) > self.MAX_MEMORY:
+                    self._memory.pop(next(iter(self._memory)))
                 on_loaded(pixmap)
             if worker in self._workers:
                 self._workers.remove(worker)
