@@ -40,6 +40,7 @@ KIND_WEIGHTS = {
     "join": 2.5,      # said "I'm in" to someone's call for contributors
     "follow": 2.0,
     "star": 1.5,
+    "like": 1.5,      # ♡ or 🔖 on a Home card (feed.py)
     "repo": 1.0,      # clicked a repo (Repos, Market)
     "news": 0.8,
     "person": 0.7,    # clicked a suggested person

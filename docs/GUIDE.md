@@ -1055,14 +1055,22 @@ a short private folder, `~/.mygeeky/qt` (or `$MYGEEKY_QT_DIR`).
 **🏠 Home** (the first page, on the computer and the phone): one scrolling feed of what the other pages found for
 you: new work from people you follow, rising papers, jobs and funding still open, datasets just out, repos and people,
 headlines, a quiz question or two. New things come first; after **"You're all caught up"** come the ones you've seen,
-best first. Every card says why it's there ("matches GWAS · new today") and has **Open**, **More in … ›** (that page),
-and 👍/👎.
+best first. Each card glows in its kind's colour (a plain outline in the light theme) and shows what makes it worth
+a look: a ring counting down the days left on a job, grant or conference, a repo's stars and how many it gained this
+week, a dataset's size and licence, a model's downloads, and quiz questions you answer right on the card. A banner on
+top celebrates what's new ("3 new papers from your circle this week", "2 deadlines this week"). Every card says why
+it's there ("matches GWAS · new today") and has:
+
+- **♡ More like this**: Home shows more of that kind, and your Model learns the card's topics (never names).
+- **🔖 Save**: keeps it in **🔖 Saved** at the top of Home for later, and teaches like ♡.
+- **✕ Fewer like this**: Home shows fewer of that kind (with **Undo**); your Model only learns what you like.
+- **↗ Open**, and **More in … ›** for its page.
 
 Home learns what you enjoy: which kinds of card you open, vote up or read for a while, and which you scroll straight
 past. It keeps room for every kind, one card in five for new territory 🔭, and never more than two of a kind in any
 four. It's built only from what the other pages already keep, so scrolling never downloads anything and works offline;
 what you open there also tells WISEP to keep those pages fresh first. **⏱ learning** at the top switches off the
-time-on-screen part (taps and votes still count). Everything it learns stays on your devices (feed.json on the
+time-on-screen part (taps, ♡, 🔖 and ✕ still count). Everything it learns stays on your devices (feed.json on the
 computer, synced with your other computers like your Model).
 
 **Moving around** (the panel and the phone): everything sits under six groups, **You, Grow, World, Circle, Repos

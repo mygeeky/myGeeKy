@@ -5,7 +5,7 @@
 // in five of new territory 🔭. Deterministic, so both apps agree.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type Card = { id: string; kind: string; title: string; sub?: string; url?: string; at?: string; terms?: string[]; source?: string; page?: string };
+export type Card = { id: string; kind: string; title: string; sub?: string; url?: string; at?: string; terms?: string[]; source?: string; page?: string; facts?: Record<string, any> };
 export type Seen = Record<string, { n?: number; opened?: boolean; at?: string }>;
 export type Stats = Record<string, { s: number; f: number }>;
 export type Ctx = { today: string; weights?: Record<string, number>; seen?: Seen; stats?: Stats };
@@ -17,6 +17,14 @@ export const KINDS: Record<string, [string, string, number]> = {
   dataset: ['Dataset', '🗂', 30], repo: ['Repo to help', '📦', 14], rising: ['Rising repo', '📈', 7], person: ['Someone to meet', '👥', 14],
   model: ['AI model', '🤗', 7], highlight: ['Highlight', '✨', 30], skill: ['Rising skill', '🧠', 30], quiz: ['Quiz', '🏆', 3650],
 };
+/** Each kind's colour: the outline and glow of its card (Neon), as feed.KIND_COLORS. */
+export const KIND_COLORS: Record<string, string> = {
+  work: '#ff8fab', paper: '#eab308', news: '#2dd4bf', headline: '#a5b4fc', job: '#f87171', funding: '#fb923c', conference: '#f472b6',
+  dataset: '#4ade80', repo: '#7fd8ff', rising: '#38bdf8', person: '#ff6fd8', model: '#c084fc', highlight: '#facc15', skill: '#34d399', quiz: '#ffd24a',
+};
+export const DEADLINE_KINDS = ['job', 'funding', 'conference'];
+export const RING_DAYS = 60;
+const SAVED_KEEP = 100;
 const EXPLORE_EVERY = 5, SAME_KIND_RUN = 2, SOURCE_WINDOW = 10, SOURCE_MAX = 3, STATS_HALF_LIFE = 30;
 export const READ_SECONDS = 4;
 const SKIP_SECONDS = 1, SEEN_KEEP = 2000;
@@ -57,6 +65,64 @@ export function kindPref(stats: Stats, kind: string): number {
   const mean = (s + 1) / (s + f + 2), bonus = 0.25 * Math.sqrt((2 * Math.log(total + 2)) / (s + f + 1));
   return r4(Math.min(1.25, mean + bonus));
 }
+const one = (x: number) => { const v = Math.floor(x * 10 + 0.5) / 10; return Number.isInteger(v) ? String(v) : v.toFixed(1); };
+/** feed.short_num: 1234 -> "1.2k", 25300 -> "25k", 2100000 -> "2.1M". */
+export function shortNum(x: unknown): string {
+  const n = Number(x);
+  if (!Number.isFinite(n)) return '';
+  if (n < 1000) return String(Math.trunc(n));
+  if (n < 10000) return `${one(n / 1000)}k`;
+  if (n < 1000000) return `${Math.floor(n / 1000 + 0.5)}k`;
+  return `${one(n / 1000000)}M`;
+}
+const num = (x: unknown) => { const v = Number(x); return Number.isFinite(v) && v > 0 ? v : 0; };
+
+/** feed.facts_line: the few numbers that make a card worth a look, as short chips. */
+export function factsLine(c: Card): string[] {
+  const f = c.facts && typeof c.facts === 'object' ? c.facts : {};
+  const out: string[] = [];
+  if (c.kind === 'paper' && num(f.cited)) out.push(`${shortNum(f.cited)} citations`);
+  else if (c.kind === 'rising' || c.kind === 'repo') {
+    if (num(f.stars)) out.push(`★ ${shortNum(f.stars)}`);
+    if (c.kind === 'rising' && num(f.stars_week)) out.push(`▲ ${shortNum(f.stars_week)} this week`);
+    if (f.lang) out.push(String(f.lang).slice(0, 20));
+    const n = Math.trunc(num(f.starters));
+    if (c.kind === 'repo' && n) out.push(`${n} starter issue${n > 1 ? 's' : ''}`);
+  } else if (c.kind === 'dataset') {
+    const mb = num(f.size_mb);
+    if (mb) out.push(mb < 1 ? `${one(mb * 1000)} KB` : mb < 1024 ? `${one(mb)} MB` : `${one(mb / 1024)} GB`);
+    if (f.license) out.push(String(f.license).toUpperCase().slice(0, 20));
+  } else if (c.kind === 'model') {
+    if (num(f.downloads)) out.push(`⬇ ${shortNum(f.downloads)}`);
+    if (num(f.likes)) out.push(`♡ ${shortNum(f.likes)}`);
+  } else if (c.kind === 'person') {
+    if (num(f.followers)) out.push(`${shortNum(f.followers)} followers`);
+    if (num(f.repos)) out.push(`${shortNum(f.repos)} repos`);
+  }
+  return out;
+}
+export function daysLeft(c: Card): number | null {
+  const d = c.facts?.days;
+  return typeof d === 'number' && Number.isFinite(d) && d >= 0 ? Math.trunc(d) : null;
+}
+export type Milestone = { emoji: string; title: string; sub: string; page: string };
+/** feed.milestone: one thing worth celebrating at the top of Home, or null. */
+export function milestone(cards: Card[], today: string): Milestone | null {
+  const work = cards.filter((c) => c.kind === 'work' && ageDays(c, today) <= 7);
+  if (work.length >= 2) return { emoji: '🎉', title: `${work.length} new papers from your circle this week`, sub: 'See them all in Researchers', page: 'researchers:new' };
+  const due = cards.filter((c) => DEADLINE_KINDS.includes(c.kind) && daysLeft(c) !== null && daysLeft(c)! <= 7)
+    .sort((a, b) => daysLeft(a)! - daysLeft(b)! || cmp(a.id, b.id));
+  if (due.length) {
+    const d = daysLeft(due[0])!, when = d === 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
+    return { emoji: '⏳', title: `${due.length} deadline${due.length > 1 ? 's' : ''} this week`, sub: `The first closes ${when}: ${String(due[0].title ?? '').slice(0, 70)}`, page: due[0].page ?? '' };
+  }
+  const data = cards.filter((c) => c.kind === 'dataset' && ageDays(c, today) <= 1);
+  if (data.length >= 3) return { emoji: '🗂', title: `${data.length} new datasets for you today`, sub: 'See them in Data', page: 'grow:data:new' };
+  return null;
+}
+export const caughtUp = (fresh: number, liked = 0, saved = 0) =>
+  `✓ You're all caught up · ${[`${fresh} new`, ...(liked ? [`${liked} liked`] : []), ...(saved ? [`${saved} saved`] : [])].join(', ')}`;
+
 function why(c: Card, terms: string[], age: number, explore: boolean, pref: number): string {
   const bits: string[] = [];
   if (explore) bits.push('new territory 🔭'); else if (terms.length) bits.push(`matches ${terms.slice(0, 2).join(', ')}`);
@@ -106,12 +172,12 @@ export function arrange(cards: Card[], ctx: Ctx, n = 60): Item[] {
   return [...picked, ...older.slice(0, Math.max(0, n - picked.length))];
 }
 
-export function learn(stats: Stats, kind: string, what: 'open' | 'up' | 'down' | 'view', dwell = 0, daysSince = 0): Stats {
+export function learn(stats: Stats, kind: string, what: 'open' | 'up' | 'down' | 'view' | 'save', dwell = 0, daysSince = 0): Stats {
   const decay = 0.5 ** (Math.max(0, daysSince) / STATS_HALF_LIFE);
   const out: Stats = {};
   for (const [k, v] of Object.entries(stats)) out[k] = { s: r4(Number(v.s ?? 0) * decay), f: r4(Number(v.f ?? 0) * decay) };
   const k = (out[kind] ??= { s: 0, f: 0 });
-  if (what === 'open' || what === 'up') k.s = r4(k.s + 1);
+  if (what === 'open' || what === 'up' || what === 'save') k.s = r4(k.s + 1);
   else if (what === 'down') k.f = r4(k.f + 1);
   else if (what === 'view') { if (dwell >= READ_SECONDS) k.s = r4(k.s + 0.5); else if (dwell < SKIP_SECONDS) k.f = r4(k.f + 0.25); }
   return out;
@@ -137,14 +203,16 @@ export const interestKind = (c: Card) => (['repo', 'rising', 'model'].includes(c
 export const interestText = (c: Card) => String((c.kind === 'person' ? c.sub : c.title) ?? '');
 
 // ---- the store
-export type FeedState = { stats: Stats; seen: Seen; learned_at: string; dwell: boolean };
+export type Saved = { card: Card; at: string };
+export type FeedState = { stats: Stats; seen: Seen; saved: Saved[]; learned_at: string; dwell: boolean };
 export async function load(): Promise<FeedState> {
   try {
     const d = JSON.parse((await AsyncStorage.getItem(KEY)) ?? '{}');
-    return { stats: d.stats && typeof d.stats === 'object' ? d.stats : {}, seen: d.seen && typeof d.seen === 'object' ? d.seen : {},
+    const saved = (Array.isArray(d.saved) ? d.saved : []).filter((x: any) => x && x.card && typeof x.card === 'object' && x.card.id && x.card.title).slice(0, SAVED_KEEP);
+    return { stats: d.stats && typeof d.stats === 'object' ? d.stats : {}, seen: d.seen && typeof d.seen === 'object' ? d.seen : {}, saved,
       learned_at: String(d.learned_at ?? ''), dwell: d.dwell !== false };
   } catch {
-    return { stats: {}, seen: {}, learned_at: '', dwell: true };
+    return { stats: {}, seen: {}, saved: [], learned_at: '', dwell: true };
   }
 }
 const save = (s: FeedState) => AsyncStorage.setItem(KEY, JSON.stringify(s)).catch(() => undefined);
@@ -170,5 +238,20 @@ async function recordNow(kind: string, id: string, what: 'open' | 'up' | 'down' 
   if (what === 'open' || what === 'view') s.seen = markSeen(s.seen, id, what === 'open', today);
   await save(s);
   return s;
+}
+/** feed.toggle_save: 🔖 keeps a card in Saved (newest first) or takes it out; saving teaches like ♡. Whether it's saved now. */
+export function toggleSave(card: Card, today = new Date().toISOString().slice(0, 10)): Promise<boolean> {
+  return inTurn(async () => {
+    const s = await load();
+    const saved = s.saved.filter((x) => x.card.id !== card.id);
+    const now = saved.length === s.saved.length;
+    if (now) {
+      saved.unshift({ card: { ...card }, at: today.slice(0, 10) });
+      s.stats = learn(s.stats, card.kind, 'save');
+    }
+    s.saved = saved.slice(0, SAVED_KEEP);
+    await save(s);
+    return now;
+  });
 }
 export function setDwell(on: boolean): Promise<void> { return inTurn(async () => { const s = await load(); s.dwell = on; await save(s); }); }

@@ -45,6 +45,15 @@ KINDS: dict[str, tuple[str, str, float]] = {
     "skill": ("Rising skill", "🧠", 30),
     "quiz": ("Quiz", "🏆", 3650),
 }
+# each kind's colour: the outline and glow of its card (Neon), the same on both apps
+KIND_COLORS: dict[str, str] = {
+    "work": "#ff8fab", "paper": "#eab308", "news": "#2dd4bf", "headline": "#a5b4fc", "job": "#f87171",
+    "funding": "#fb923c", "conference": "#f472b6", "dataset": "#4ade80", "repo": "#7fd8ff", "rising": "#38bdf8",
+    "person": "#ff6fd8", "model": "#c084fc", "highlight": "#facc15", "skill": "#34d399", "quiz": "#ffd24a",
+}
+DEADLINE_KINDS = ("job", "funding", "conference")
+RING_DAYS = 60               # a deadline's ring is full at this many days left
+SAVED_KEEP = 100
 EXPLORE_EVERY = 5            # one card in five: new territory
 SAME_KIND_RUN = 2            # at most two of a kind in any four cards in a row
 SOURCE_WINDOW, SOURCE_MAX = 10, 3
@@ -103,6 +112,102 @@ def kind_pref(stats: dict[str, dict[str, float]], kind: str) -> float:
     mean = (s + 1) / (s + f + 2)
     bonus = 0.25 * math.sqrt(2 * math.log(total + 2) / (s + f + 1))
     return r4(min(1.25, mean + bonus))
+
+
+def _one(x: float) -> str:
+    v = math.floor(x * 10 + 0.5) / 10
+    return str(int(v)) if v == int(v) else f"{v:.1f}"
+
+
+def short_num(n: Any) -> str:
+    """1234 -> "1.2k", 25300 -> "25k", 2100000 -> "2.1M" (the same on the phone)."""
+    try:
+        n = float(n)
+    except (TypeError, ValueError):
+        return ""
+    if n < 1000:
+        return str(int(n))
+    if n < 10000:
+        return _one(n / 1000) + "k"
+    if n < 1000000:
+        return str(int(math.floor(n / 1000 + 0.5))) + "k"
+    return _one(n / 1000000) + "M"
+
+
+def _num(x: Any) -> float:
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return 0.0
+    return v if math.isfinite(v) and v > 0 else 0.0
+
+
+def facts_line(card: dict[str, Any]) -> list[str]:
+    """The few numbers that make a card worth a look, as short chips ("★ 2.1k", "▲ 40 this week", "3.4 MB")."""
+    f = card.get("facts") or {}
+    if not isinstance(f, dict):
+        return []
+    k, out = card.get("kind"), []
+    if k == "paper" and _num(f.get("cited")):
+        out.append(f"{short_num(f['cited'])} citations")
+    elif k in ("rising", "repo"):
+        if _num(f.get("stars")):
+            out.append(f"★ {short_num(f['stars'])}")
+        if k == "rising" and _num(f.get("stars_week")):
+            out.append(f"▲ {short_num(f['stars_week'])} this week")
+        if f.get("lang"):
+            out.append(str(f["lang"])[:20])
+        n = int(_num(f.get("starters")))
+        if k == "repo" and n:
+            out.append(f"{n} starter issue{'s' if n > 1 else ''}")
+    elif k == "dataset":
+        mb = _num(f.get("size_mb"))
+        if mb:
+            out.append(f"{_one(mb * 1000)} KB" if mb < 1 else f"{_one(mb)} MB" if mb < 1024 else f"{_one(mb / 1024)} GB")
+        if f.get("license"):
+            out.append(str(f["license"]).upper()[:20])
+    elif k == "model":
+        if _num(f.get("downloads")):
+            out.append(f"⬇ {short_num(f['downloads'])}")
+        if _num(f.get("likes")):
+            out.append(f"♡ {short_num(f['likes'])}")
+    elif k == "person":
+        if _num(f.get("followers")):
+            out.append(f"{short_num(f['followers'])} followers")
+        if _num(f.get("repos")):
+            out.append(f"{short_num(f['repos'])} repos")
+    return out
+
+
+def days_left(card: dict[str, Any]) -> int | None:
+    d = (card.get("facts") or {}).get("days") if isinstance(card.get("facts"), dict) else None
+    return int(d) if isinstance(d, (int, float)) and not isinstance(d, bool) and d >= 0 else None
+
+
+def milestone(cards: list[dict[str, Any]], today: str) -> dict[str, str] | None:
+    """One thing worth celebrating at the top of Home, or None: your circle's new papers, deadlines this week, a
+    batch of new datasets."""
+    work = [c for c in cards if c.get("kind") == "work" and age_days(c, today) <= 7]
+    if len(work) >= 2:
+        return {"emoji": "🎉", "title": f"{len(work)} new papers from your circle this week",
+                "sub": "See them all in Researchers", "page": "researchers:new"}
+    due = sorted((c for c in cards if c.get("kind") in DEADLINE_KINDS and (days_left(c) is not None and days_left(c) <= 7)),
+                 key=lambda c: (days_left(c), c.get("id", "")))
+    if due:
+        first, d = due[0], days_left(due[0])
+        when = "today" if d == 0 else "tomorrow" if d == 1 else f"in {d} days"
+        return {"emoji": "⏳", "title": f"{len(due)} deadline{'s' if len(due) > 1 else ''} this week",
+                "sub": f"The first closes {when}: {str(first.get('title') or '')[:70]}", "page": first.get("page", "")}
+    data = [c for c in cards if c.get("kind") == "dataset" and age_days(c, today) <= 1]
+    if len(data) >= 3:
+        return {"emoji": "🗂", "title": f"{len(data)} new datasets for you today", "sub": "See them in Data",
+                "page": "grow:data:new"}
+    return None
+
+
+def caught_up(new: int, liked: int = 0, saved: int = 0) -> str:
+    bits = [f"{new} new"] + ([f"{liked} liked"] if liked else []) + ([f"{saved} saved"] if saved else [])
+    return "✓ You're all caught up · " + ", ".join(bits)
 
 
 def _why(card: dict[str, Any], terms: list[str], age: int, explore: bool, pref: float) -> str:
@@ -174,7 +279,7 @@ def learn(stats: dict[str, dict[str, float]], kind: str, what: str, dwell: float
     decay = 0.5 ** (max(0.0, days_since) / STATS_HALF_LIFE)
     out = {k: {"s": r4(float(v.get("s", 0)) * decay), "f": r4(float(v.get("f", 0)) * decay)} for k, v in stats.items()}
     k = out.setdefault(kind, {"s": 0.0, "f": 0.0})
-    if what in ("open", "up"):
+    if what in ("open", "up", "save"):
         k["s"] = r4(k["s"] + 1)
     elif what == "down":
         k["f"] = r4(k["f"] + 1)
@@ -218,6 +323,8 @@ def load() -> dict[str, Any]:
     d = d if isinstance(d, dict) else {}
     return {"stats": d.get("stats") if isinstance(d.get("stats"), dict) else {},
             "seen": d.get("seen") if isinstance(d.get("seen"), dict) else {},
+            "saved": [x for x in d.get("saved") or [] if isinstance(x, dict) and isinstance(x.get("card"), dict)
+                      and x["card"].get("id") and x["card"].get("title")][:SAVED_KEEP],
             "learned_at": str(d.get("learned_at") or ""),
             "dwell": d.get("dwell", True) is not False}
 
@@ -249,6 +356,20 @@ def record(kind: str, cid: str, what: str, dwell: float = 0.0, today: str | None
     return state
 
 
+def toggle_save(card: dict[str, Any], today: str | None = None) -> bool:
+    """🔖: keep a card in Saved (newest first), or take it out. Saving teaches like ♡. Returns whether it's saved now."""
+    today = today or date.today().isoformat()
+    state = load()
+    saved = [x for x in state["saved"] if x["card"].get("id") != card.get("id")]
+    now = len(saved) == len(state["saved"])
+    if now:
+        saved.insert(0, {"card": {k: card[k] for k in card if k != "why"}, "at": today[:10]})
+        state["stats"] = learn(state["stats"], str(card.get("kind") or ""), "save")
+    state["saved"] = saved[:SAVED_KEEP]
+    save(state)
+    return now
+
+
 def set_dwell(on: bool) -> None:
     state = load()
     state["dwell"] = bool(on)
@@ -275,6 +396,16 @@ def _cards_from(rows: Any, limit: int, make) -> list[dict[str, Any]]:
     return out
 
 
+def _quiz_facts(q: dict[str, Any]) -> dict[str, Any]:
+    """A choice question can be answered right on its card: its options, which is right, and why."""
+    opts = q.get("options")
+    ans = q.get("answer")
+    if not (isinstance(opts, list) and 2 <= len(opts) <= 6 and isinstance(ans, int) and not isinstance(ans, bool)
+            and 0 <= ans < len(opts) and not q.get("code")):
+        return {}
+    return {"options": [_clip(o, 160) for o in opts], "answer": ans, "why": _clip(q.get("why"), 300)}
+
+
 def candidates(cfg: Any, today: str | None = None) -> list[dict[str, Any]]:
     """Everything the other pages already keep, as cards (at most a few dozen per source). Nothing here goes online:
     each source is read from its file, and one that can't be read is simply left out."""
@@ -299,7 +430,7 @@ def candidates(cfg: Any, today: str | None = None) -> list[dict[str, Any]]:
         return _cards_from(papers.load_trends().get("rising"), 15, lambda p: {
             "id": f"paper:{p['id']}", "kind": "paper", "title": _clip(p.get("title")), "url": p.get("url", ""),
             "sub": _clip(p.get("venue")), "at": p.get("date", ""), "terms": list(p.get("match") or []),
-            "source": "openalex", "page": "market:research"})
+            "source": "openalex", "page": "market:research", "facts": {"cited": _num(p.get("cited"))}})
 
     def news_():
         from . import news
@@ -326,9 +457,9 @@ def candidates(cfg: Any, today: str | None = None) -> list[dict[str, Any]]:
                 left = curated.days_left(it)
                 where = " · ".join(x for x in [it.get("org", ""), it.get("place", "")] if x)
                 return {"id": f"{k}:{it['id']}", "kind": k, "title": _clip(it.get("title")), "url": it.get("url", ""),
-                        "sub": _clip(where + (f" · closes in {left} days" if left is not None else "")),
+                        "sub": _clip(where),                       # the days left are on the card's ring
                         "at": str(it.get("added") or it.get("checked") or ""), "terms": list(it.get("keywords") or []),
-                        "source": "curated", "page": page}
+                        "source": "curated", "page": page, "facts": {} if left is None else {"days": left}}
             out += _cards_from(curated.live(data.get(kind) or []), 12, make)
         out += _cards_from(data.get("highlights"), 6, lambda h: {
             "id": f"highlight:{h['id']}", "kind": "highlight", "title": _clip(h.get("title")), "url": h.get("url", ""),
@@ -343,35 +474,41 @@ def candidates(cfg: Any, today: str | None = None) -> list[dict[str, Any]]:
             "id": f"dataset:{d['id']}", "kind": "dataset", "title": _clip(d.get("title")), "url": d.get("url", ""),
             "sub": _clip(" · ".join(x for x in [d.get("source", ""), d.get("term", "")] if x)),
             "at": str(d.get("found") or d.get("date") or ""), "terms": [d.get("term", "")] if d.get("term") else [],
-            "source": str(d.get("source") or "datasets"), "page": "grow:data:new"})
+            "source": str(d.get("source") or "datasets"), "page": "grow:data:new",
+            "facts": {"size_mb": _num(d.get("size_mb")), "license": _clip(d.get("license"), 20)}})
 
     def repos():
         from . import storage
         return _cards_from(storage.contribution_pool(), 12, lambda r: {
             "id": f"repo:{r['full_name']}", "kind": "repo", "title": _clip(r.get("full_name")), "url": r.get("repo_url", ""),
             "sub": _clip(r.get("description"), 160), "at": str(r.get("pushed_at") or r.get("timestamp") or "")[:10],
-            "terms": list(r.get("topics") or []) + list(r.get("matched_terms") or []), "source": "github", "page": "repos"})
+            "terms": list(r.get("topics") or []) + list(r.get("matched_terms") or []), "source": "github", "page": "repos",
+            "facts": {"stars": _num(r.get("stars")), "lang": _clip(r.get("language"), 20),
+                      "starters": len(r.get("starter_issues") or []) if isinstance(r.get("starter_issues"), list) else 0}})
 
     def rising():
         from . import market
         return _cards_from(market.compute_board(market.load_state()), 10, lambda r: {
             "id": f"rising:{r['repo']}", "kind": "rising", "title": _clip(r.get("repo")), "url": r.get("url", ""),
             "sub": _clip(r.get("description"), 160), "at": str(r.get("pushed_at") or "")[:10],
-            "terms": [r.get("language", "")] if r.get("language") else [], "source": "market", "page": "market:repos"})
+            "terms": [r.get("language", "")] if r.get("language") else [], "source": "market", "page": "market:repos",
+            "facts": {"stars": _num(r.get("stars")), "stars_week": _num(r.get("stars_week")), "lang": _clip(r.get("language"), 20)}})
 
     def people():
         from . import storage
         return _cards_from(storage.suggestion_pool("domain"), 10, lambda p: {
             "id": f"person:{p['username']}", "kind": "person", "title": _clip(p.get("username")),
             "url": p.get("profile_url", ""), "sub": _clip(p.get("bio"), 160), "at": str(p.get("timestamp") or "")[:10],
-            "terms": [], "source": "people", "page": "suggestions"})
+            "terms": [], "source": "people", "page": "suggestions",
+            "facts": {"followers": _num(p.get("followers")), "repos": _num(p.get("public_repos"))}})
 
     def models():
         from . import hfmodels
         return _cards_from(hfmodels.load_state().get("field"), 8, lambda m: {
             "id": f"model:{m['id']}", "kind": "model", "title": _clip(m.get("id")), "url": m.get("url", ""),
             "sub": _clip(m.get("pipeline")), "at": str(m.get("created") or ""), "terms": list(m.get("match") or m.get("tags") or [])[:8],
-            "source": "huggingface", "page": "market:models"})
+            "source": "huggingface", "page": "market:models",
+            "facts": {"downloads": _num(m.get("downloads")), "likes": _num(m.get("likes"))}})
 
     def quiz_():
         from . import quiz
@@ -382,7 +519,7 @@ def candidates(cfg: Any, today: str | None = None) -> list[dict[str, Any]]:
         picks = [qs[(day * 7 + i * 13) % len(qs)] for i in range(2)]          # two a day, the same on every start
         return [{"id": f"quiz:{q.get('id', i)}:{today}", "kind": "quiz", "title": _clip(q.get("q"), 220),
                  "sub": _clip(q.get("protocol")), "url": "", "at": today, "terms": [str(q.get("protocol") or "")],
-                 "source": "quiz", "page": "grow:quiz"} for i, q in enumerate(picks)]
+                 "source": "quiz", "page": "grow:quiz", "facts": _quiz_facts(q)} for i, q in enumerate(picks)]
 
     for fn in (work, papers_, news_, headlines_, chances, radar, repos, rising, people, models, quiz_):
         add(fn)

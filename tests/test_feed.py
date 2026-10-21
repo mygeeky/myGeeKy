@@ -158,8 +158,7 @@ def test_home_is_the_first_page_and_learns_from_what_you_do(qapp_offscreen, monk
         page._tick()
         assert page.dwell.get(cid) == 0.0 or cid not in page.dwell          # first seen counts 0 s
         page.dwell = {cid: 0.0, "never-read": 2.0}
-        card.hide()                                                          # off screen now
-        card.move(0, 10000)
+        card.move(0, 10000)                                                  # off screen now
         before = feed.load()["stats"].get(card.card["kind"], {"f": 0})["f"]
         page._tick()
         assert feed.load()["stats"][card.card["kind"]]["f"] == before + 0.25 and cid in page.told
@@ -168,5 +167,104 @@ def test_home_is_the_first_page_and_learns_from_what_you_do(qapp_offscreen, monk
         page.dwell = {other.card["id"]: 2.0}
         page._flush()
         assert page.dwell == {} and feed.load()["stats"] == stats            # dropped, not taught as a skip
+    finally:
+        p.close()
+
+
+FACT_CARDS = [
+    dict(card("r", "rising", "lab/tool"), facts={"stars": 2140, "stars_week": 40, "lang": "Python"}),
+    dict(card("rp", "repo", "lab/help"), facts={"stars": 17, "lang": "R", "starters": 3}),
+    dict(card("d", "dataset", "Gut metagenomes"), facts={"size_mb": 1240.5, "license": "cc-by-4.0"}),
+    dict(card("ds", "dataset", "Tiny table"), facts={"size_mb": 0.25, "license": ""}),
+    dict(card("m", "model", "org/model"), facts={"downloads": 25300, "likes": 999}),
+    dict(card("p", "paper", "A paper"), facts={"cited": 2100000}),
+    dict(card("u", "person", "someone"), facts={"followers": 36, "repos": 0}),
+    dict(card("w1", "work", "From the circle", "2026-10-19")),
+    dict(card("w2", "work", "Also from the circle", "2026-10-10")),
+    dict(card("j", "job", "A job closing", "2026-10-01"), facts={"days": 3}, page="chances:jobs"),
+    dict(card("f", "funding", "A grant closing first"), facts={"days": 1}, page="chances:funding"),
+]
+
+
+def test_cards_show_their_numbers_and_home_celebrates_what_is_new():
+    said = {c["id"]: feed.facts_line(c) for c in FACT_CARDS}
+    assert said["r"] == ["★ 2.1k", "▲ 40 this week", "Python"] and said["rp"] == ["★ 17", "R", "3 starter issues"]
+    assert said["d"] == ["1.2 GB", "CC-BY-4.0"] and said["ds"] == ["250 KB"] and said["m"] == ["⬇ 25k", "♡ 999"]
+    assert said["p"] == ["2.1M citations"] and said["u"] == ["36 followers"]
+    assert feed.days_left(FACT_CARDS[9]) == 3 and feed.days_left(FACT_CARDS[0]) is None
+    one_paper = [c for c in FACT_CARDS if c["id"] != "w1"]
+    m = feed.milestone(one_paper, TODAY)                         # one circle paper: no party; deadlines first
+    assert m["title"] == "2 deadlines this week" and m["sub"].startswith("The first closes tomorrow: A grant") \
+        and m["page"] == "chances:funding"
+    assert feed.milestone([FACT_CARDS[7], dict(FACT_CARDS[8], at=TODAY)], TODAY)["page"] == "researchers:new"
+    assert feed.caught_up(12, 2, 0) == "✓ You're all caught up · 12 new, 2 liked"
+
+
+def test_saved_keeps_cards_newest_first_and_teaches_like_a_heart():
+    a, b = FACT_CARDS[0], FACT_CARDS[1]
+    assert feed.toggle_save(a, TODAY) and feed.toggle_save(b, TODAY)
+    st = feed.load()
+    assert [x["card"]["id"] for x in st["saved"]] == ["rp", "r"] and st["stats"]["rising"]["s"] == 1
+    assert feed.toggle_save(a, TODAY) is False and [x["card"]["id"] for x in feed.load()["saved"]] == ["rp"]
+
+
+@pytest.mark.skipif(not phone.node_ok(), reason="needs Node 22.6+ and the phone's packages")
+def test_the_phone_shows_the_same_numbers_milestone_and_saved():
+    said = phone.run("""
+import { caughtUp, daysLeft, factsLine, milestone, toggleSave, load } from './lib/feed.ts';
+const s1 = await toggleSave(INPUT.cards[0], INPUT.today); const s2 = await toggleSave(INPUT.cards[1], INPUT.today);
+const s3 = await toggleSave(INPUT.cards[0], INPUT.today); const st = await load();
+out({ facts: INPUT.cards.map(factsLine), days: INPUT.cards.map(daysLeft), mark: milestone(INPUT.cards.filter((c) => c.id !== 'w1'), INPUT.today),
+      mark2: milestone(INPUT.cards, INPUT.today), caught: caughtUp(12, 2, 1), toggles: [s1, s2, s3],
+      saved: st.saved.map((x) => x.card.id), stats: st.stats });
+""", {"cards": FACT_CARDS, "today": TODAY})
+    assert said["facts"] == [feed.facts_line(c) for c in FACT_CARDS]
+    assert said["days"] == [feed.days_left(c) for c in FACT_CARDS]
+    assert said["mark"] == feed.milestone([c for c in FACT_CARDS if c["id"] != "w1"], TODAY)
+    assert said["mark2"] == feed.milestone(FACT_CARDS, TODAY) and said["caught"] == feed.caught_up(12, 2, 1)
+    assert said["toggles"] == [True, True, False] and said["saved"] == ["rp"] and said["stats"]["rising"]["s"] == 1
+
+
+def test_home_cards_heart_save_dismiss_and_quiz(qapp_offscreen, monkeypatch):
+    from PySide6.QtWidgets import QApplication
+    from mygeeky import interests
+    from mygeeky.config import MyGeekyConfig
+    from mygeeky.gui.feed_ui import FeedCard
+    from mygeeky.gui.qt_panel import MyGeekyPanel
+    p = MyGeekyPanel(MyGeekyConfig(github_username="me", keywords=["gwas"], interest_learning=True))
+    try:
+        p.resize(460, 800)
+        p.show()
+        quiz = dict(card("q", "quiz", "What does the y-axis of a Manhattan plot show?"), page="grow:quiz",
+                    facts={"options": ["-log10(p)", "Effect size"], "answer": 0, "why": "Taller is stronger."})
+        cards = [dict(c, page="chances:jobs") for c in FACT_CARDS] + [quiz]
+        home = p.home_page
+        home._got(feed.arrange(cards, {"today": TODAY, "weights": W}, 90))
+        QApplication.processEvents()
+        assert home.cards_box.itemAt(0).widget().objectName() == "milestone"        # deadlines this week
+        def shown():
+            return {x.card["id"]: x for x in (home.cards_box.itemAt(i).widget() for i in range(home.cards_box.count()))
+                    if isinstance(x, FeedCard)}
+        w = shown()
+        w["r"].like()                                                 # ♡: Home and the Model learn
+        assert feed.load()["stats"]["rising"]["s"] == 1 and interests.load_events()[-1]["kind"] == "like"
+        assert w["r"].like_btn.text() == "♥"
+        w["m"].save()                                                 # 🔖: in Saved, teaches like ♡
+        assert [x["card"]["id"] for x in feed.load()["saved"]] == ["m"] and home.saved_btn.text() == "🔖 1"
+        assert len([e for e in interests.load_events() if e["kind"] == "like"]) == 2
+        home.toggle_saved_view()                                      # 🔖 above: only what you saved
+        assert list(shown()) == ["m"] and home.status.text().strip() == "saved for later"
+        home.toggle_saved_view()
+        w = shown()
+        w["d"].dismiss()                                              # ✕ then Undo: nothing learned
+        w["d"].undo_btn.click()
+        w["rp"].dismiss()                                             # ✕ kept: learned when you leave
+        home._flush()
+        st = feed.load()["stats"]
+        assert "dataset" not in st or st["dataset"]["f"] == 0
+        assert st["repo"]["f"] == 1
+        w["q"].answer(1)                                              # the quiz: answered right on the card
+        assert "Not quite" in w["q"].verdict.text() and "Taller is stronger." in w["q"].verdict.text()
+        assert feed.load()["stats"]["quiz"]["s"] == 1
     finally:
         p.close()
