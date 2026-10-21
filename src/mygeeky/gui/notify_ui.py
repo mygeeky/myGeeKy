@@ -49,6 +49,9 @@ class NotifySettings(QWidget):
         self.every.addItem("At most once a week", "weekly")
         self.every.currentIndexChanged.connect(self._changed)
         row.addWidget(self.every)
+        row.addStretch(1)
+        lay.addLayout(row)
+        row = QHBoxLayout()                              # quiet hours on their own line, so ⚙ fits a narrow panel
         self.quiet_label = QLabel("Quiet from")
         row.addWidget(self.quiet_label)
         self.q_start, self.q_end = QSpinBox(), QSpinBox()
@@ -95,6 +98,9 @@ class NotifySettings(QWidget):
         self._loading = False
         self._show(self.save(self.current()))
 
+    def apply_theme(self) -> None:
+        self._show(self.get())
+
     def _show(self, s: dict[str, Any]) -> None:
         t = self.theme()
         on = bool(s["kinds"])
@@ -106,6 +112,8 @@ class NotifySettings(QWidget):
         self.summary.setStyleSheet(f"color:{'#7fe6c8' if on else t['muted']}; font-size:11px; background:transparent;")
         for w in (self.quiet_label, self.to_label):
             w.setStyleSheet(f"color:{t['text']}; font-size:11px; background:transparent;")
+        self.off_btn.setStyleSheet(f"QPushButton {{ background:{t['btn_bg']}; color:{t['text']}; border:none; border-radius:7px; "
+                                   f"padding:4px 10px; font-size:11px; }} QPushButton:disabled {{ color:{t['muted']}; }}")
         for box in self.boxes.values():                 # a visible box, empty or filled: plainly a switch
             box.setStyleSheet(
                 f"QCheckBox {{ color:{t['text']}; font-size:11px; background:transparent; spacing:7px; }}"

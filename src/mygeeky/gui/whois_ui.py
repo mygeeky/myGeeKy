@@ -51,6 +51,10 @@ class WhoisSection(QWidget):
         (layout or self.lay).addWidget(b)
         return b
 
+    def apply_theme(self) -> None:
+        """Another theme in ⚙: drawn again in its colours (the panel calls this on every part that has it)."""
+        self.render()
+
     def render(self) -> None:
         _clear(self.lay)
         t = self.theme()

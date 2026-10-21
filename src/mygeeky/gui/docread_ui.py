@@ -62,6 +62,10 @@ class DocSection(QWidget):
         return (f"color:{t['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; background:transparent;",
                 f"color:{t['muted']}; font-size:11px; background:transparent;")
 
+    def apply_theme(self) -> None:
+        """Another theme in ⚙: drawn again in its colours (the panel calls this on every part that has it)."""
+        self.render()
+
     def render(self, note: str = "", chooser: bool = True) -> None:
         _clear(self.lay)
         self.checks = []

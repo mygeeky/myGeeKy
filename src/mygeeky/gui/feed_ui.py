@@ -75,8 +75,8 @@ def cards_sheet(t: dict[str, Any]) -> str:
 
 def kind_color(kind: str, theme: dict[str, Any]) -> QColor:
     """The kind's colour, darkened in light themes so its words stay readable."""
-    c = QColor(feed.KIND_COLORS.get(kind) or theme.get("accent") or "#a78bfa")
-    return c if theme.get("dark", True) else c.darker(165)
+    from .app import readable
+    return QColor(readable(feed.KIND_COLORS.get(kind) or theme.get("accent") or "#a78bfa", theme))
 
 
 class Ring(QWidget):
@@ -605,7 +605,11 @@ class HomePage(QScrollArea):
         t = self.theme()
         sheet = cards_sheet(t)
         if self.inner.styleSheet() != sheet:
+            changed = bool(self.inner.styleSheet())
             self.inner.setStyleSheet(sheet)
+            if changed and self.built_at is not None:   # another theme: redraw the cards (their banner, ring, glow)
+                self._render()
+                return
         self.title.setStyleSheet(f"color:{t['text']}; font-size:15px; font-weight:800; background:transparent;")
         self.status.setStyleSheet(f"color:{t['muted']}; font-size:10.5px; background:transparent;")
         on = feed.load()["dwell"]

@@ -42,10 +42,21 @@ to push or publish it, saying what would go out. A "yes" covers only what was as
 - Text from the internet is untrusted: never render it as HTML (Qt labels use plain text), never run code from
   it.
 
+## Themes (desktop)
+
+Every colour on the panel comes from the theme (`gui/app.py` `THEMES`), never a literal that suits one theme only.
+A colour used for text (a group's, a kind's, a warning's) goes through `logic.readable(color, theme)`, which darkens
+it on a light theme or lightens it on a dark one until it reads. A part that styles its own widgets defines
+`apply_theme()` (no arguments): when the theme changes, the panel calls it on every part that has one. A wide row in ⚙
+wraps to a second line rather than widening ⚙ (it must fit a 360px panel). `python tools/theme_audit.py` opens every
+page and part in every theme, started in it and switched to it, and lists any text that's hard to read
+(`tests/test_theme_audit.py` runs it for Frosted).
+
 ## Checks
 
 - Desktop: `.venv/bin/python -m pytest -q`
 - Phone: `cd mobile && npx tsc --noEmit && npx expo lint`
 - Website: `.venv/bin/python website/build.py`
+- Themes (desktop): `.venv/bin/python tools/theme_audit.py` (every page in every theme; 0 hard-to-read texts)
 - Code map: `graphify query "<question>"` when `graphify-out/graph.json` exists (local only; rebuild with
   `graphify update .`).

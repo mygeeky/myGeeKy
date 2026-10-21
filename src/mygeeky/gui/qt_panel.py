@@ -3740,7 +3740,7 @@ class MyGeekyPanel(QWidget):
 
         self.settings_panel = self._build_settings_panel()
         self.settings_panel.setVisible(False)
-        panel_layout.addWidget(self.settings_panel)
+        panel_layout.addWidget(self.settings_panel, 1)
 
         self.update_banner = self._build_update_banner()
         self.update_banner.setVisible(False)
@@ -6718,9 +6718,9 @@ class MyGeekyPanel(QWidget):
             self._render_admin()
 
     def _build_settings_panel(self) -> QFrame:
-        panel = QFrame()
-        panel.setObjectName("settings")
-        layout = QVBoxLayout(panel)
+        content = QWidget()
+        content.setObjectName("settingsContent")
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(8)
 
@@ -6919,6 +6919,22 @@ class MyGeekyPanel(QWidget):
         bottom.addWidget(self.quit_btn)
         layout.addLayout(bottom)
 
+        # ⚙ holds more than any panel is tall: it scrolls, and while open it has the panel to itself (_toggle_settings)
+        # -- squeezed in beside the page, its rows were drawn on top of each other
+        panel = QFrame()
+        panel.setObjectName("settings")
+        outer = QVBoxLayout(panel)
+        outer.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        content.setStyleSheet("QWidget#settingsContent { background:transparent; }")
+        scroll.setWidget(content)
+        scroll.viewport().setAutoFillBackground(False)
+        scroll.setStyleSheet("QScrollArea { background:transparent; }")
+        outer.addWidget(scroll)
+        self.settings_scroll = scroll
         return panel
 
     # ------------------------------------------------------------------ ⚙ → Window
@@ -6988,6 +7004,7 @@ class MyGeekyPanel(QWidget):
         box.exec()
         if box.clickedButton() is hide:
             self.settings_panel.hide()
+            self.rail_host.show()
             self.hearts.hide()
             self.hide()
 
@@ -7090,8 +7107,11 @@ class MyGeekyPanel(QWidget):
                       **({} if sys.platform == "win32" else {"start_new_session": True}))
 
     def _toggle_settings(self) -> None:
-        self.settings_panel.setVisible(not self.settings_panel.isVisible())
-        if self.settings_panel.isVisible():
+        opening = not self.settings_panel.isVisible()
+        self.settings_panel.setVisible(opening)
+        self.rail_host.setVisible(not opening)             # ⚙ open: it has the panel to itself
+        if opening:
+            self.settings_scroll.verticalScrollBar().setValue(0)
             self._load_setup()
             self.wisep_section.refresh()                  # today's numbers, as of now
 
@@ -7245,7 +7265,8 @@ class MyGeekyPanel(QWidget):
         self.local_only = QLabel(LOCAL_ONLY_TEXT)
         self.local_only.setWordWrap(True)
         self.local_only.setTextFormat(Qt.PlainText)
-        self.local_only.setStyleSheet("color:#ffc457; font-size:11px; background:transparent;")
+        self.local_only.setStyleSheet(f"color:{logic.readable('#ffc457', THEMES[self._theme_name()])}; font-size:11px; "
+                                      "background:transparent;")
         layout.addWidget(self.local_only)
 
         self.map_header = QLabel("\U0001f9ed YOUR INTEREST MAP")
@@ -7435,12 +7456,14 @@ class MyGeekyPanel(QWidget):
         self.quit_btn.setStyleSheet(f"QPushButton {{ background:{theme['btn_bg']}; color:{theme['text']}; border:none; "
                                     f"border-radius:7px; padding:4px 10px; font-size:11px; }}"
                                     f"QPushButton:hover {{ background:{theme['btn_hover']}; }}")
-        self.opacity_slider.setStyleSheet(
-            f"QSlider::groove:horizontal {{ height:4px; background:{theme['border']}; border-radius:2px; }}"
-            f"QSlider::sub-page:horizontal {{ background:{theme['accent']}; border-radius:2px; }}"
-            f"QSlider::handle:horizontal {{ background:{theme['accent']}; width:14px; height:14px; "
-            f"margin:-5px 0; border-radius:7px; }}"
-        )
+        track = "rgba(255,255,255,40)" if theme.get("dark", True) else "rgba(0,0,0,40)"
+        for slider in (self.opacity_slider, self.height_slider, self.width_slider):
+            slider.setStyleSheet(                          # one look for ⚙'s sliders, its track visible on every theme
+                f"QSlider::groove:horizontal {{ height:4px; background:{track}; border-radius:2px; }}"
+                f"QSlider::sub-page:horizontal {{ background:{theme['accent']}; border-radius:2px; }}"
+                f"QSlider::handle:horizontal {{ background:{theme['accent']}; width:14px; height:14px; "
+                f"margin:-5px 0; border-radius:7px; }}"
+            )
         for name, btn in self.swatch_buttons.items():
             active = name == self._theme_name()
             border = f"2px solid {theme['accent']}" if active else f"1px solid {theme['swatch_border']}"
@@ -7466,6 +7489,8 @@ class MyGeekyPanel(QWidget):
         self.model_summary_label.setStyleSheet(f"color:{theme['text']}; font-size:11.5px; background:transparent;")
         self._style_model_grade()
         self._update_tab_styles()
+        if hasattr(self, "local_only"):
+            self.local_only.setStyleSheet(f"color:{logic.readable('#ffc457', theme)}; font-size:11px; background:transparent;")
         if hasattr(self, "rail_host"):
             self.rail_host.restyle()
 
@@ -7549,7 +7574,7 @@ class MyGeekyPanel(QWidget):
         self.nav_trail.setText(" \u203a ".join(n["label"] for n in navtree.path(leaf)[1:]) if leaf else "")
         # where you are, in the open page's colour (the rail has its own way back, so no "Back to" here)
         self.nav_back_text.setVisible(False)
-        color = leaf["color"] if leaf else theme["text"]
+        color = logic.readable(leaf["color"], theme) if leaf else theme["text"]
         self.nav_trail.setStyleSheet(f"color:{color}; font-size:11.5px; font-weight:700; background:transparent;")
         if hasattr(self, "rail_host"):
             self.rail_host.refresh()
@@ -7606,6 +7631,27 @@ class MyGeekyPanel(QWidget):
             self._set_news_mode(self._news_mode)
             self._render_models(logic.get_hf_models(self.cfg))
             self._restyle_rest()
+            self._restyle_parts()
+
+    def _restyle_parts(self) -> None:
+        """Every part that knows how to restyle itself (an apply_theme() method: Home, Packs, notifications, WISEP,
+        admin...) does it now, wherever it sits; a part added later only has to define apply_theme()."""
+        done: set[int] = set()
+        for w in [self, *self.findChildren(QWidget)]:
+            fn = getattr(type(w), "apply_theme", None)
+            if w is self or id(w) in done or not callable(fn):
+                continue
+            done.add(id(w))
+            try:
+                if fn.__code__.co_argcount == 1:          # apply_theme(self): it reads the theme itself
+                    w.apply_theme()
+            except Exception:                            # one part failing to restyle must not stop the rest
+                pass
+        if getattr(self, "_setup", None):                # ⚙'s sections, drawn when ⚙ was last opened
+            try:
+                self._render_setup(self._setup)
+            except Exception:
+                pass
 
     def _restyle_rest(self) -> None:
         """Everything else that was coloured when it was drawn, redrawn in the new
@@ -9344,6 +9390,8 @@ class MyGeekyPanel(QWidget):
 
     # ------------------------------------------------------------------ tabs
     def _switch_tab(self, name: str) -> None:
+        if getattr(self, "settings_panel", None) is not None and self.settings_panel.isVisible():
+            self._toggle_settings()                       # a page asked for (a notification, a link): ⚙ steps aside
         # TABS is every tab there is; _tab_order is the ones this panel actually built -- Admin only
         # exists for a maker. The tab buttons already filter on that, so this cannot be reached by
         # clicking; it guards the two lists drifting apart, which would otherwise be a ValueError on a

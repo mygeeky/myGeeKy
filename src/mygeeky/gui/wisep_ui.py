@@ -75,11 +75,13 @@ class WisepSection(QWidget):
         self.key_btn.setToolTip("A free OpenAlex key gives you your own daily budget instead of the one everyone on "
                                 "your network shares. Kept in this computer's credential store.")
         self.key_btn.clicked.connect(self.key_menu)
-        for b in (self.mode_btn, self.forget_btn, self.key_btn):
+        for b in (self.mode_btn, self.key_btn):
             b.setCursor(Qt.PointingHandCursor)
             row.addWidget(b)
         row.addStretch(1)
         lay.addLayout(row)
+        self.forget_btn.setCursor(Qt.PointingHandCursor)            # on its own line: three fit no panel's width
+        lay.addWidget(self.forget_btn, 0, Qt.AlignLeft)
         self.refresh()
 
     def refresh(self) -> None:

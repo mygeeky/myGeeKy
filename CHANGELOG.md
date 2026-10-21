@@ -5,6 +5,9 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Every text is readable in every theme** (computer). Switching to the light ❄️ Frosted theme left Home, ⚙'s notifications, packs, papers and CV sections in the dark theme's near-white text; now every part restyles itself when the theme changes. Coloured text -- the "Circle › People" line above each page, Home's card kinds, the "learning on this computer only" note -- was too pale on a light theme; it's now darkened (or lightened on a dark one) just enough to read. The Researchers "Find" button no longer shows white on light blue. A new check (`tools/theme_audit.py`) opens every page and part in every theme and lists any text that's hard to read: it finds none now (it found 143).
+- **⚙ settings scroll** (computer). They used to share the panel with the page and were squeezed until their rows drew on top of each other; now ⚙ has the panel to itself while open, scrolls, and fits even the narrowest panel. Its three sliders share the theme's look.
+
 - **Home uses less memory** (computer): its cards share one style instead of each label carrying its own, and it draws 12 cards at first (more as you scroll) instead of 20. Home's cards now take about 8 MB instead of about 19.
 
 ## 0.34.0 (2026-10-21): Neon Home that teaches your Model, and a wider panel (phone 1.16.0)

@@ -202,6 +202,39 @@ def field_summary(cfg: MyGeekyConfig) -> dict[str, Any]:
     return fieldstart.summary(cfg)
 
 
+def _luminance(hex_color: str) -> float:
+    def ch(v: int) -> float:
+        x = v / 255
+        return x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4
+    h = hex_color.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+
+
+def contrast_ratio(a: str, b: str) -> float:
+    """WCAG contrast between two "#rrggbb" colours (1 = the same, 21 = black on white)."""
+    la, lb = sorted((_luminance(a), _luminance(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def readable(color: str, theme: dict[str, Any], min_ratio: float = 3.5) -> str:
+    """A colour used for text (a group's, a kind's, a warning's), darkened on a light theme or lightened on a dark
+    one just enough to read on the theme's background. Every coloured text goes through this, so a bright pink
+    or amber that glows on Midnight doesn't vanish on Frosted."""
+    bg = theme.get("solid_bg") or ("#1c1c2a" if theme.get("dark", True) else "#f6f1ea")
+    h = (color or "").lstrip("#")[:6]
+    if len(h) != 6:
+        return theme.get("text", "#f0f0f5")
+    rgb = [int(h[i:i + 2], 16) for i in (0, 2, 4)]
+    toward = 0 if not theme.get("dark", True) else 255
+    for _ in range(24):
+        out = "#" + "".join(f"{v:02x}" for v in rgb)
+        if contrast_ratio(out, bg) >= min_ratio:
+            return out
+        rgb = [round(v + (toward - v) * 0.12) for v in rgb]
+    return theme.get("text", "#f0f0f5")
+
+
 def set_theme(cfg: MyGeekyConfig, theme: str) -> bool:
     if theme not in THEME_NAMES:
         return False

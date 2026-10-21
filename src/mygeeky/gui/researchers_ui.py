@@ -174,7 +174,8 @@ class ResearchersPage(QScrollArea):
         t = self.theme()
         b = QPushButton(text)
         b.setCursor(Qt.PointingHandCursor)
-        b.setStyleSheet(f"QPushButton {{ background:{t['accent'] if accent else t['section_btn']}; color:{t['text']}; "
+        b.setStyleSheet(f"QPushButton {{ background:{t['accent'] if accent else t['section_btn']}; "
+                        f"color:{t['on_accent'] if accent else t['text']}; "
                         "border:none; border-radius:8px; padding:4px 10px; font-size:11px; }")
         b.clicked.connect(fn)
         return b
