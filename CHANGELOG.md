@@ -3,6 +3,10 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **A resource audit** (`tools/resource_audit.py`, run on Windows, macOS and Linux by `.github/workflows/resources.yml`): storage (the data folder, its git history, caches, logs, the beacon), a leak test (every page round after round: widgets and memory must level off), idle CPU shown and hidden with the timers still running, and startup; the findings and the plan to make myGeeKy lighter are in `docs/RESOURCES.md`. Four files the program calls "never synced" (notifications state, rank seen, your GitHub events, "Is this you?") were still synced: they no longer are.
+
 ## 0.30.1 (2026-10-21): sync stops carrying databases, and WISEP counts credits right
 
 - **Sync no longer carries live databases, and the data folder shrinks back.** The GitHub cache (24 MB) and WISEP's database had ended up in the synced data folder: every sync, from every computer, stored a new copy (a data folder of several GB, slow syncs, a slow setup), and a copy pulled over the open file damaged it (the `.broken-…` files). They now live beside the data folder (`mygeeky-local`), moved there once; files the ignore list names stop being carried even if an older version committed them; a computer still running an older myGeeKy can't break a sync or overwrite anything (its conflict on such a file is settled by leaving the file out); git's loose copies are packed when they pile up (gently: capped memory, never failing a sync); damaged cache copies are trimmed to the newest two; uninstalling erases the new folder too. Update every computer you sync: an older version's sync stops at that conflict until it is updated.

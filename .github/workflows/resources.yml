@@ -1,0 +1,49 @@
+name: Resources
+
+# What myGeeKy takes from a computer, on all three desktop systems (tools/resource_audit.py; the protocol and the
+# budgets: docs/RESOURCES.md, the mygeeky-resources skill). In a throwaway profile with the network blocked: the time
+# and RAM to open the panel, every page visited round after round (widgets, Qt objects and Python memory must level
+# off: a leak grows with each round), and the CPU while idle, shown and hidden, with the timers still running. The
+# report is kept per system (resources-<os>.json); a FAIL fails the job.
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/mygeeky/gui/**", "src/mygeeky/sync.py", "src/mygeeky/config.py", "tools/resource_audit.py",
+            "tests/test_resources.py", ".github/workflows/resources.yml"]
+  pull_request:
+    paths: ["src/mygeeky/gui/**", "src/mygeeky/sync.py", "tools/resource_audit.py"]
+  schedule:
+    - cron: "17 4 * * 0"          # weekly: the runners and Qt change under us
+  workflow_dispatch:
+
+jobs:
+  audit:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONIOENCODING: utf-8
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -q -e . pytest psutil
+      - name: Linux needs Qt's system libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libxkbcommon0 libgl1 > /dev/null
+      - name: The quick version (tests)
+        run: python -m pytest -q tests/test_resources.py tests/test_sync_databases.py
+      - name: The audit
+        shell: bash
+        run: python tools/resource_audit.py all --isolated --json --strict > resources-${{ matrix.os }}.json; status=$?; cat resources-${{ matrix.os }}.json | head -c 4000; exit $status
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resources-${{ matrix.os }}
+          path: resources-${{ matrix.os }}.json

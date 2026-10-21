@@ -56,6 +56,10 @@ github_cache.json
 github_cache.sqlite*
 *.sqlite
 *.sqlite-*
+whois.json
+notify_state.json
+rank_seen.json
+my_github_events.json
 wins.json
 *.token
 *.lock

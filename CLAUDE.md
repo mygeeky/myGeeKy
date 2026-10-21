@@ -27,6 +27,8 @@ to push or publish it, saying what would go out. A "yes" covers only what was as
 - `mygeeky-article`: Highlights and the article skill DeepSeek follows (`src/mygeeky/data/article_skill.md`).
 - `mygeeky-wisep`: every call to an open database (OpenAlex, arXiv, Zenodo, NCBI...) goes through WISEP; its rules
   and how it's evaluated (`docs/WISEP.md`).
+- `mygeeky-resources`: what myGeeKy takes from a computer or phone (RAM, CPU, battery, storage, the synced repo, the
+  beacon): the audit (`tools/resource_audit.py`), the budgets, and the plan (`docs/RESOURCES.md`).
 - `mygeeky-datasets`: Grow → Data: the rules a dataset must pass to be shown, the sources harvested and how the list
   is updated.
 

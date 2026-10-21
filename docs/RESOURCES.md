@@ -1,0 +1,99 @@
+# myGeeKy's resources: what it takes, and how to make it take less
+
+myGeeKy is a quiet helper; it must never be why a laptop fan spins, a phone battery drains or a disk fills. This is
+the measured state, the budgets, and the plan in order of impact. The protocol (how to measure, the tools, the rules)
+is in the `mygeeky-resources` skill; the audit is `tools/resource_audit.py`; CI runs it on Windows, macOS and Linux
+(`.github/workflows/resources.yml`); `tests/test_resources.py` is its quick version on every test run.
+
+First audit: 2026-10-21, on the maintainer's Linux computer (two computers syncing), the installed desktop 0.30.0,
+the code at 0.30.1, and the phone app's current code on the Android emulator (a development build, so its RAM is
+several times what a release build uses).
+
+## The numbers
+
+| What | Measured | Budget | Verdict |
+|---|---|---|---|
+| **Desktop, idle (shown, after startup settles)** | 0.05% CPU | 2% | ✅ |
+| Desktop, idle (hidden) | 0.02% CPU | 0.5% | ✅ |
+| Desktop, a running panel over 3 min (real use) | 0.39% average CPU, 9% peak, 91% of samples under 1% | | ✅ |
+| Desktop RAM (running panel) | 388 MB RSS, 343 MB its own (USS), 21–25 threads | 450 MB | ⚠️ heavy |
+| Desktop RAM (throwaway profile, every page visited) | 328 MB | 450 MB | ⚠️ |
+| Widgets the panel builds | 1,467 (every page at once, at startup) | | ⚠️ |
+| **Leak test: every page × 8 rounds** | widgets +0, Qt objects +0 per round; Python +25 KB/round (mostly the audit itself) | +2 widgets, +512 KB | ✅ no leak |
+| Startup (throwaway profile) | a few seconds | 8 s | ✅ |
+| **Phone, Live page idle 60 s** | 0 frames drawn, 2.4% CPU (development build) | | ✅ |
+| **Phone, Model page idle 30 s** | **902 frames (30 fps), 52% janky, 108% CPU (over one core)** | ~0 frames | ❌ |
+| Phone, app in the background | 0.1% CPU (Android pauses it) | | ✅ |
+| Phone RAM (development build) | 503–604 MB PSS, Hermes native heap 260 MB | | ⚠️ measure a release build |
+| Phone storage | AsyncStorage 4.1 MB, files 10.6 MB, cache 16.5 MB | | ✅ |
+| **Data folder (synced)** | 284 MB: history 171 MB packed + 36 MB loose; working files 83 MB (82 of it stray caches from 0.30.0) | 40 MB working, 300 MB history | ❌ until both computers run 0.30.1 |
+| Your real data in that history | under 5 MB in all; grows ~0.5 MB a day | | ✅ |
+| Old cache copies in that history | 193 MB (`github_cache.json`, 697 versions) + 14 MB (`github_cache.sqlite`) | | stays (compressed); not worth rewriting history |
+| Syncs a day (two computers) | 138 | 60 | ❌ |
+| Tracked but ignored files | `headlines.json` (155 versions), `keywords.json`, `github_achievements.json`, plus four "never synced" files | none | ❌ fixed in code (untracked at the next sync) |
+| Live databases (beside the data folder) | 25 MB (`github_cache.sqlite`, capped at 60 MB / 4,000 entries) | 120 MB | ✅ |
+| Avatar cache | 1.1–2.2 MB, 513 files, **no limit** | 30 MB | ⚠️ |
+| Logs | 20 KB; `logs/weekly.log` never rotated | 20 MB | ⚠️ |
+| Beacon | `beacon.json` 165 B; the public repo 13 KB, 88 commits | 64 KB | ✅ |
+| Desktop app install (venv) | 562 MB (Qt is most of it) | | — |
+
+## Why the data folder is ~280 MB, and how it grows
+
+- 193 MB is 697 old copies of `github_cache.json`, a cache an older myGeeKy (still on the second computer) commits
+  every 15 minutes; 14 MB is copies of the newer `github_cache.sqlite`. Your own history (suggestions, settings,
+  what you liked, your Model's learning) is under 5 MB in all.
+- With 0.30.1 on **both** computers, caches are never committed again; the folder then grows only with your data:
+  about **0.5 MB a day (~15 MB a month, ~180 MB a year)**, mostly `suggestions_history.jsonl` rewritten on each
+  sync. Plan item 5 below brings that down to a few MB a year.
+- The old copies stay in the history, compressed (~170 MB). Removing them means rewriting the history on GitHub and
+  re-cloning on every computer; not worth it at this size.
+
+## The plan, in order of impact
+
+1. **Phone: stop the interest map's endless animation** (`mobile/src/components/interest-map.tsx:62`). A 50 ms
+   `setInterval` sets state twice per tick, so the whole SVG re-renders 20–30 times a second for as long as the
+   Model page is open: a full CPU core and a warm battery while someone reads. Fix: animate with the native driver
+   (`Animated` / Reanimated, no React re-render), or run the motion for a few seconds after the page appears and
+   then rest; pause when the screen isn't focused (`useIsFocused` / AppState). Budget: ~0 frames when nothing moves.
+2. **Desktop: the live ticker never stops** (`qt_panel.py:3455`, `SpotlightTicker`): every 4.5 s it builds a new
+   card and animates it, even folded, hidden or minimised. Stop it on hide/fold, start it on show.
+3. **Desktop: pages rebuild on timers while nobody looks.** Activity rebuilds its whole tab every 60 s from the
+   cache (`:3457`) even when nothing changed and the tab isn't open; Signals reads the keyring and decrypts every
+   sealed box from every beacon every 5 min (`:3482`, beacon `inbox()`), even when nothing new was fetched. Rebuild
+   only when the data changed and the tab is showing (mark it dirty otherwise); decrypt only new boxes (remember
+   what was opened).
+4. **Sync less, and only when something changed.** 138 syncs a day between two computers, each ~8 git commands and
+   several network round-trips even with nothing new (`SYNC_EVERY_MS` 15 min). Commit/push only when a synced file
+   changed (and at quit), fetch less often (30–60 min), and skip a sync when the only change is a file rewritten
+   by reading (`seen.json` every 5 s).
+5. **Append-only history files rotate.** `suggestions_history.jsonl` (1.26 MB, read in full twice every 5 min),
+   `contribute_history.jsonl`, `training_data.jsonl`, `interest_events.jsonl`, `usage.jsonl` and the admin logs
+   grow forever and are rewritten into the git history on each change. Keep the last N months (or N lines) live and
+   fold older lines into a small summary; read the tail, not the whole file.
+6. **Desktop RAM: build pages when first opened.** All 14 tabs are filled at startup (1,467 widgets, ~330 MB).
+   Build each page the first time it's shown (keep the data loading as it is). Also cap the in-session caches that
+   only grow: `ghcache.Store._rows` (decoded bodies kept for the whole session), `AvatarLoader._memory` (pixmaps),
+   `profile_card._cache`.
+7. **Caps where there are none:** the avatar cache folder (keep ~500 files / 30 MB, oldest first), `logs/weekly.log`
+   (rotate at 1 MB, like `fatal.log`), the phone's single `wisep` AsyncStorage key (up to 300 full bodies in one row,
+   near Android's ~2 MB row limit: cap by bytes, or one key per answer), WISEP's `calls` table (`KEEP_DAYS` is
+   declared but never applied).
+8. **Threads:** every async job and avatar starts a fresh `QThread`; a small pool (`QThreadPool`, 4 workers) would
+   cut thread churn. The N+1 Activity fetch (one `/users/<x>/events` per matched person, up to 24 every 5 min)
+   should go through the GitHub cache with a longer refresh, or batch.
+9. **Phone bundle:** 1.7 MB of data files are imported statically, so they're parsed into the JS heap at startup
+   (`field-words.json` twice). Load the big ones (`protocol_model`, `keywords`/`field-words`, `questions`,
+   `datasets`) lazily when their page opens.
+10. **The half-second "seen" tick** (`SEEN_TICK_MS`) walks every card on the page; it returns at once when hidden,
+    but could stop its timer on hide and restart on show (the audit flags any sub-second timer left running hidden).
+
+## Budgets
+
+The numbers the audit checks are in `tools/resource_audit.py` (`BUDGETS`). Tighten a budget when a fix lands (for
+example `rss_mb` after plan item 6), never loosen one to make a check pass without writing down why here.
+
+## History of this page
+
+- 2026-10-21: first audit. Fixed the same day: live databases moved out of the synced folder, ignored files untracked,
+  conflicts from older computers settled, git's loose copies packed (data folder 4.9 GB → 279 MB), the four
+  "never synced" files added to the ignore list, tests isolated from the real data and the network.
