@@ -42,6 +42,9 @@ cover new work.
   `mobile/package.json` scripts: restore it with `git checkout -- mobile/package.json`. Copy it to
   `dist/myGeeKy-<version>-test.apk`, attach with `gh release upload v0.X.Y <file> --clobber`, and offer a QR
   code of the download URL. `.github/workflows/phone-test-apk.yml` does the same on GitHub but can hang.
+- **Check it against Play's rules** before sharing or submitting: `.venv/bin/python tools/play_check.py` (the
+  `mygeeky-play` skill). A locally built `app-release.apk` is signed with the public Android Debug key and has
+  versionCode 1: fine for testing, never for Play (EAS sets the versionCode for Play builds).
 - **Google Play:** needs an `.aab` signed with the upload key, never the test APK:
   `npx eas-cli@latest build --platform android --profile production`, then
   `npx eas-cli@latest submit --platform android --profile production` (EAS keeps the keystore; Expo account

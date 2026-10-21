@@ -22,6 +22,9 @@ to push or publish it, saying what would go out. A "yes" covers only what was as
 - `mygeeky-platforms`: every code, data or text change (always).
 - `mygeeky-phone`: running and debugging the phone app on the emulator.
 - `mygeeky-release`: versions, changelog, tags, PyPI, the Windows installer, APKs and Google Play.
+- `mygeeky-play`: getting the phone app through Google Play: its current rules (target API, 16 KB pages, Data safety,
+  privacy policy, permissions, user content, signing) with sources, where myGeeKy stands, the open gaps, and
+  `tools/play_check.py`, which checks a built APK.
 - `mygeeky-ideas`: the maintainer's private `ideas.md` and `future.md`, kept in the private repo
   `AlsammanAlsamman/mygeeky_ideas` (symlinked here, git-ignored); changes to them are pushed there automatically.
 - `mygeeky-article`: Highlights and the article skill DeepSeek follows (`src/mygeeky/data/article_skill.md`).
