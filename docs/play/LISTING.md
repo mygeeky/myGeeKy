@@ -120,7 +120,7 @@ No account, no adverts, no tracking. Free and open source.
 | Location, contacts, photos, health, financial | No | | | |
 | Files and docs (*Drop a CV, thesis or abstract*) | **No**: the file is read on the phone and not kept or sent; only the words the user keeps are saved, on the phone | | | |
 
-Camera: used only to scan the QR code from the desktop app; no picture is saved or sent. That's a permission, not data collection.
+Camera: used only to scan QR codes (from the desktop app, or a pack someone shows you); no picture is saved or sent. That's a permission, not data collection.
 
 **Government app / Financial features / Health**: No.
 

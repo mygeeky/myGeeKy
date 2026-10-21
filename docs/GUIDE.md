@@ -300,6 +300,25 @@ time), each person about as often as they publish (daily for the prolific, every
 quiet), through WISEP. An optional notification (🔔 → "New work from people you follow") tells you when something new
 appears.
 
+## 📦 Packs: share your setup like a seed
+
+Setting myGeeKy up well takes a while. A pack lets someone start from your setup instead of from zero: the lab's
+GitHub-savvy person sets it up once, or a teacher hands one pack to a whole class.
+
+- **Make one:** ⚙ Settings → 📦 Packs (computer) or You → Settings → 📦 Packs (phone). Tick what goes in:
+  keywords and topics, your research field, the researchers you follow, and add a note ("Plant genomics lab, 2026").
+  Nothing else ever goes in: no account, no tokens, no Model.
+- **Show it:** it appears as one to three QR codes, one at a time: "Code 1 of 3", then **Next code**. A full pack
+  (40 keywords, 40 topics, a field and 30 researchers) usually needs two.
+- **Receive it (on a phone):** You → Settings → 📦 Packs → **Receive a pack**, then point the camera at any code.
+  The first scan tells how many codes the pack has; the screen shows which ones you have (✓ 1 ○ 2 ○ 3) and says
+  which to show next, in any order. A code from a different pack starts over; a damaged set is never imported.
+- **Choose:** you see what the pack holds before anything changes, then **Merge into mine** (only adds) or **Start
+  from it** (its keywords, topics and field replace yours). **Undo** in Packs puts everything back.
+
+Packs travel only as QR codes on a screen: no internet, no server, nothing stored anywhere. A pack is checked like
+anything from outside: only plain words and researcher ids get through, and nothing in it can run.
+
 ## Your field's repos as a market board (`mygeeky market`)
 
 <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/market.png" width="300" align="right" alt="Market tab">

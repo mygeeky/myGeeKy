@@ -57,6 +57,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `news.ts` | `news.py` |
 | `orcid-login.ts` | `orcid_login.py` |
 | `pairing.ts` | `pairing.py` (the QR code: both sides read the same format) |
+| `packs.ts` (+ `components/pack-settings.tsx`, `app/pack-scan.tsx`) | `packs.py` (+ `gui/packs_ui.py`); only the phone receives (no camera on the computer) |
 | `profile-card.ts` | `profile_card.py` |
 | `protocols.ts`, `protocol-shape.ts`, `reviewed-fit.ts` | `protocols.py` |
 | `protomodel.ts` | `protomodel.py` |

@@ -6632,6 +6632,11 @@ class MyGeekyPanel(QWidget):
         self.wisep_section = WisepSection(lambda: THEMES[self._theme_name()], self._toast)
         layout.addWidget(self.wisep_section)
 
+        # 📦 Packs: your setup as one to three QR codes a phone scans (packs.py)
+        from .packs_ui import PackSection
+        self.pack_section = PackSection(self.cfg, lambda: THEMES[self._theme_name()], QrWidget)
+        layout.addWidget(self.pack_section)
+
         # 📄 "Is this you?": your OpenAlex author record, with no ORCID (whois.py)
         from .whois_ui import WhoisSection
         self.whois_section = WhoisSection(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, self._toast)
