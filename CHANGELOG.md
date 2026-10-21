@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.32.0 (2026-10-21): a side rail to find your way, and the phone signs in again (phone 1.14.0)
 
 - **A side rail for moving around the panel** (computer). The row of six unlabeled planets is replaced by a narrow rail down the left: folded (46px) it shows the six groups with their "new" counts and the page you're on written down the side; opened (128px) it lists the groups by name, a group drops down its pages and a page its parts, and tapping again or ‹ (Esc) goes up a level. Every count sits on its icon (groups, pages and parts alike), so the open rail needs no column for numbers. Unpinned it opens over the page and folds after you pick; 📌 pins it beside the page (remembered). The line above the page says where you are in its group's colour. News keeps its own count again (the group count used to overwrite it with 0).
 - **"GitHub said 401" on the phone is fixed.** When GitHub refuses the token (an 8-hour sign-in that couldn't renew, or a token that expired or was revoked), the phone forgets it, shows **Sign in with GitHub** again, and keeps reading public data without it, instead of failing on every screen. The phone used to keep the expired token when the renewal was refused. The computer now does the same on a refused token: it reads on without it (the token warning still tells you to make a new one).
