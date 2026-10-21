@@ -3,6 +3,10 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **Home uses less memory** (computer): its cards share one style instead of each label carrying its own, and it draws 12 cards at first (more as you scroll) instead of 20. Home's cards now take about 8 MB instead of about 19.
+
 ## 0.34.0 (2026-10-21): Neon Home that teaches your Model, and a wider panel (phone 1.16.0)
 
 - **🏠 Home's cards are Neon, and do more** (computer and phone). Each card is outlined and softly glowing in its kind's colour (a plain outline in light themes) and shows what makes it worth a look: a ring counting down the days left on a job, grant or conference, a repo's stars and this week's gain, a dataset's size and licence, a model's downloads, and quiz questions you answer right on the card. A banner on top celebrates what's new ("3 new papers from your circle this week", "2 deadlines this week"), and the end says what you got through. New buttons: **♡ More like this** teaches Home *and* your Model (the card's topics, never names; it used to teach only Home), **🔖 Save** keeps a card in **🔖 Saved** at the top of Home, and **✕ Fewer like this** comes with **Undo**. Deadline cards no longer repeat "closes in N days" under the title (the ring shows it).

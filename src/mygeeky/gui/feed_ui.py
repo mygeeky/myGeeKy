@@ -23,7 +23,7 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollA
 from .. import feed
 from .window_ui import qcolor
 
-FIRST, MORE = 20, 15            # cards drawn at first, and each time you near the bottom
+FIRST, MORE = 12, 12            # cards drawn at first, and each time you near the bottom (each card is ~20 widgets)
 TICK_MS = 1000                  # how often time on screen is counted
 VISIBLE = 0.6                   # a card counts as on screen when this much of it shows
 GLOW = 4                        # px kept around each card for its glow
@@ -36,6 +36,41 @@ def _label(text: str, style: str, wrap: bool = True) -> QLabel:
     lbl.setWordWrap(wrap)
     lbl.setStyleSheet(style + " background:transparent;")
     return lbl
+
+
+def _plain(text: str, name: str, wrap: bool = True) -> QLabel:
+    """A label styled by its card's one stylesheet (one sheet per card, not per label: Qt keeps a style per sheet)."""
+    lbl = QLabel(text)
+    lbl.setObjectName(name)
+    lbl.setTextFormat(Qt.PlainText)                 # titles come from the internet: never rendered as HTML
+    lbl.setWordWrap(wrap)
+    return lbl
+
+
+def cards_sheet(t: dict[str, Any]) -> str:
+    """One stylesheet for every card on Home, each kind picking its colour by the card's "kind" property: Qt keeps a
+    style object per widget that has its own sheet, and ~20 labels a card each with a sheet cost megabytes."""
+    card = "QFrame#feedCard"
+    rules = [
+        "QWidget#homeInner { background:transparent; }",
+        f"{card} QLabel {{ background:transparent; color:{t['text']}; }}",
+        f"{card} QLabel#kind {{ font-size:11px; font-weight:800; }}",
+        f"{card} QLabel#title {{ font-size:13px; font-weight:700; }}",
+        f'{card}[hero="yes"] QLabel#title {{ font-size:16px; font-weight:800; }}',
+        f"{card} QLabel#sub {{ color:{t['muted']}; font-size:11.5px; }}",
+        f"{card} QLabel#why {{ color:{t['muted']}; font-size:10.5px; font-style:italic; }}",
+        f"{card} QLabel#chip {{ font-size:11px; font-weight:600; padding:1px 8px; border-radius:8px; }}",
+        f"{card} QLabel#choice {{ background:{t['btn_bg']}; border:1px solid transparent; border-radius:9px; padding:6px 9px; font-size:12px; }}",
+        f"{card} QPushButton {{ background:transparent; color:{t['muted']}; border:none; border-radius:7px; padding:3px 7px; font-size:13px; }}",
+        f"{card} QPushButton:hover {{ background:{t['btn_hover']}; color:{t['text']}; }}",
+        f"{card} QPushButton#more {{ color:{t['text']}; font-size:11.5px; }}",
+        f"{card} QPushButton#liked {{ color:{LIKED}; }}",
+    ]
+    for kind in feed.KINDS:
+        c = kind_color(kind, t)
+        rules.append(f'{card}[kind="{kind}"] QLabel#kind {{ color:{c.name()}; }}')
+        rules.append(f'{card}[kind="{kind}"] QLabel#chip {{ background:rgba({c.red()},{c.green()},{c.blue()},40); }}')
+    return "\n".join(rules)
 
 
 def kind_color(kind: str, theme: dict[str, Any]) -> QColor:
@@ -106,11 +141,13 @@ class FeedCard(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(12 + GLOW, 10 + GLOW, 12 + GLOW, 6 + GLOW)
         lay.setSpacing(5)
-        lay.addWidget(_label(f"{emoji}  {label}", f"color:{self.color.name()}; font-size:11px; font-weight:800;"))
-        title = _label(self.card["title"], f"color:{t['text']}; font-size:{16 if hero else 13}px; font-weight:{800 if hero else 700};")
+        self.setProperty("kind", self.card["kind"])            # styled by Home's one sheet (cards_sheet)
+        self.setProperty("hero", "yes" if hero else "no")
+        lay.addWidget(_plain(f"{emoji}  {label}", "kind"))
+        title = _plain(self.card["title"], "title")
         title.setCursor(Qt.PointingHandCursor)
         title.mousePressEvent = lambda e: self.open()          # noqa: ARG005
-        sub = _label(self.card["sub"], f"color:{t['muted']}; font-size:11.5px;") if self.card.get("sub") else None
+        sub = _plain(self.card["sub"], "sub") if self.card.get("sub") else None
         days = feed.days_left(self.card)
         if days is not None:                                       # a deadline: the ring beside its title
             row = QHBoxLayout()
@@ -134,14 +171,11 @@ class FeedCard(QFrame):
         if chips:
             crow = QHBoxLayout()
             crow.setSpacing(5)
-            c = self.color
             for text in chips:
-                crow.addWidget(_label(text, f"color:{t['text']}; font-size:11px; font-weight:600; padding:1px 8px; "
-                                            f"border-radius:8px; background:rgba({c.red()},{c.green()},{c.blue()},40);", wrap=False))
+                crow.addWidget(_plain(text, "chip", wrap=False))
             crow.addStretch(1)
             lay.addLayout(crow)
-        lay.addWidget(_label(f"saved {saved_at}" if saved_at else item.get("why", ""),
-                             f"color:{t['muted']}; font-size:10.5px; font-style:italic;"))
+        lay.addWidget(_plain(f"saved {saved_at}" if saved_at else item.get("why", ""), "why"))
         lay.addLayout(self._actions(t))
 
     # ---- parts
@@ -149,24 +183,22 @@ class FeedCard(QFrame):
         self.choices: list[_Choice] = []
         for i, text in enumerate(facts["options"]):
             ch = _Choice(text, lambda i=i: self.answer(i))
+            ch.setObjectName("choice")
             self.choices.append(ch)
             lay.addWidget(ch)
-        self.verdict = _label("", f"color:{t['muted']}; font-size:11.5px;")
+        self.verdict = _plain("", "sub")
         self.verdict.hide()
         lay.addWidget(self.verdict)
-        self._style_choices(None)
 
-    def _style_choices(self, picked: int | None) -> None:
+    def _style_choices(self, picked: int) -> None:
+        """Only once answered do the two answers that matter get a style of their own."""
         t = self.page.theme()
         right = (self.card.get("facts") or {}).get("answer")
         for i, ch in enumerate(self.choices):
-            bg, line = t["btn_bg"], "transparent"
-            if picked is not None and i == right:
-                bg, line = "rgba(74,222,128,45)", t["good"]
-            elif picked is not None and i == picked:
-                bg, line = "rgba(248,113,113,40)", t["bad"]
-            ch.setStyleSheet(f"QLabel {{ background:{bg}; color:{t['text']}; border:1px solid {line}; border-radius:9px; "
-                             f"padding:6px 9px; font-size:12px; }}")
+            if i == right:
+                ch.setStyleSheet(f"QLabel {{ background:rgba(74,222,128,45); border:1px solid {t['good']}; }}")
+            elif i == picked:
+                ch.setStyleSheet(f"QLabel {{ background:rgba(248,113,113,40); border:1px solid {t['bad']}; }}")
 
     def answer(self, i: int) -> None:
         if self._answered:
@@ -178,11 +210,6 @@ class FeedCard(QFrame):
         self.verdict.show()
         self.page.learned(self.card, "open")                       # answering is reading it
 
-    def _button_style(self, color: str, size: str = "13px") -> str:
-        t = self.page.theme()
-        return (f"QPushButton {{ background:transparent; color:{color}; border:none; border-radius:7px; padding:3px 7px; "
-                f"font-size:{size}; }} QPushButton:hover {{ background:{t['btn_hover']}; color:{t['text']}; }}")
-
     def _actions(self, t: dict[str, Any]) -> QHBoxLayout:
         row = QHBoxLayout()
         row.setSpacing(2)
@@ -192,7 +219,6 @@ class FeedCard(QFrame):
             b.setCursor(Qt.PointingHandCursor)
             b.setToolTip(tip)
             b.setAccessibleName(tip)
-            b.setStyleSheet(self._button_style(t["muted"]))
             b.clicked.connect(fn)
             row.addWidget(b)
             return b
@@ -205,14 +231,16 @@ class FeedCard(QFrame):
         row.addStretch(1)
         more = self.page.page_label(self.card.get("page", ""))
         if more:
-            button(f"More in {more} ›", f"More in {more}", self.more).setStyleSheet(self._button_style(t["text"], "11.5px"))
+            button(f"More in {more} ›", f"More in {more}", self.more).setObjectName("more")
         self._paint_marks()
         return row
 
     def _paint_marks(self) -> None:
         liked, saved = self.card["id"] in self.page.liked_ids, self.card["id"] in self.page.saved_ids()
         self.like_btn.setText("♥" if liked else "♡")
-        self.like_btn.setStyleSheet(self._button_style(LIKED if liked else self.page.theme()["muted"]))
+        self.like_btn.setObjectName("liked" if liked else "")
+        self.like_btn.style().unpolish(self.like_btn)
+        self.like_btn.style().polish(self.like_btn)
         self.save_btn.setText("🔖✓" if saved else "🔖")
 
     # ---- what you do
@@ -292,7 +320,8 @@ class HomePage(QScrollArea):
         self.setFrameShape(QFrame.NoFrame)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         inner = QWidget()
-        inner.setStyleSheet("background:transparent;")
+        inner.setObjectName("homeInner")
+        self.inner = inner
         self.lay = QVBoxLayout(inner)
         self.lay.setContentsMargins(0, 2, 4, 8)
         self.lay.setSpacing(4)
@@ -574,6 +603,9 @@ class HomePage(QScrollArea):
 
     def apply_theme(self) -> None:
         t = self.theme()
+        sheet = cards_sheet(t)
+        if self.inner.styleSheet() != sheet:
+            self.inner.setStyleSheet(sheet)
         self.title.setStyleSheet(f"color:{t['text']}; font-size:15px; font-weight:800; background:transparent;")
         self.status.setStyleSheet(f"color:{t['muted']}; font-size:10.5px; background:transparent;")
         on = feed.load()["dwell"]
