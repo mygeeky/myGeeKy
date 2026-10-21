@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.30.1 (2026-10-21): sync stops carrying databases, and WISEP counts credits right
 
 - **Sync no longer carries live databases, and the data folder shrinks back.** The GitHub cache (24 MB) and WISEP's database had ended up in the synced data folder: every sync, from every computer, stored a new copy (a data folder of several GB, slow syncs, a slow setup), and a copy pulled over the open file damaged it (the `.broken-…` files). They now live beside the data folder (`mygeeky-local`), moved there once; files the ignore list names stop being carried even if an older version committed them; a computer still running an older myGeeKy can't break a sync or overwrite anything (its conflict on such a file is settled by leaving the file out); git's loose copies are packed when they pile up (gently: capped memory, never failing a sync); damaged cache copies are trimmed to the newest two; uninstalling erases the new folder too. Update every computer you sync: an older version's sync stops at that conflict until it is updated.
 - **WISEP knows an OpenAlex text search costs 10 credits** (a filtered list 1, one record by id nothing), as OpenAlex's own headers say; it counted every search as 1.
