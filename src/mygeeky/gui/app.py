@@ -230,6 +230,13 @@ def set_dock_side(cfg: MyGeekyConfig, side: str) -> bool:
     return True
 
 
+def set_rail_pinned(cfg: MyGeekyConfig, pinned: bool) -> None:
+    """The side rail's 📌: remembered between starts."""
+    if cfg.gui_rail_pinned != bool(pinned):
+        cfg.gui_rail_pinned = bool(pinned)
+        save_config(cfg)
+
+
 def set_layer(cfg: MyGeekyConfig, value: str) -> bool:
     if value not in LAYERS:
         return False

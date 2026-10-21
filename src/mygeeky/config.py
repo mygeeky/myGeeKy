@@ -256,6 +256,7 @@ class MyGeekyConfig:
     gui_dock_side: str = "right"          # "right" | "left" | "bottom-right" | "bottom-left" (bottom: opens rising to the middle)
     gui_layer: str = "front"              # "front" (always on top) | "normal" | "behind" (under other windows while folded)
     gui_expanded_width: int = 380
+    gui_rail_pinned: bool = False       # the side rail stays open beside the page (else it opens over it)
     gui_folded_width: int = 76                # folded, the panel is just the app icon on the screen edge
     gui_folded_height: int = 76
     gui_hearts_enabled: bool = True           # folded icon lets a few small hearts drift up now and then

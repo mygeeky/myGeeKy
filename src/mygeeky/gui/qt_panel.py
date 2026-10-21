@@ -3744,15 +3744,27 @@ class MyGeekyPanel(QWidget):
         nh.addWidget(self.nav_back_text)
         nh.addWidget(self.nav_trail, 1)
         panel_layout.addWidget(self.nav_head)
+        # the planet row is no longer shown (the side rail below replaces it), but its planets still carry each
+        # place's count and dot, which the rail reads
         self.tab_bar = QFrame()
         self.tab_bar.setObjectName("tabBar")
         self.nav_row = QHBoxLayout(self.tab_bar)
         self.nav_row.setContentsMargins(3, 3, 3, 3)
         self.nav_row.setSpacing(1)
+        self.tab_bar.hide()
         panel_layout.addWidget(self.tab_bar)
 
         self.content_stack = QStackedWidget()
-        panel_layout.addWidget(self.content_stack, 1)
+        # the side rail (navrail.py): folded 46px with each group's count, open 128px; over the page unless pinned
+        from .navrail import RailHost
+        self.rail_host = RailHost(
+            self.content_stack, self.nav_tree, open_node=self._nav_open, leaf=self._nav_leaf,
+            count_of=lambda nid: getattr(self.nav_buttons.get(nid), "_count", 0),
+            dot_of=lambda nid: bool(getattr(self.nav_buttons.get(nid), "_dot", False)),
+            icon_of=self._rail_icon, theme=lambda: THEMES[self._theme_name()],
+            pinned=bool(getattr(self.cfg, "gui_rail_pinned", False)),
+            on_pin=lambda on: logic.set_rail_pinned(self.cfg, on))
+        panel_layout.addWidget(self.rail_host, 1)
         self.height_grip = HeightGrip(self._resize_from_grip, lambda: self.cfg.gui_panel_height_fraction)
         panel_layout.addWidget(self.height_grip, 0, Qt.AlignHCenter)
 
@@ -7300,6 +7312,8 @@ class MyGeekyPanel(QWidget):
         self.model_summary_label.setStyleSheet(f"color:{theme['text']}; font-size:11.5px; background:transparent;")
         self._style_model_grade()
         self._update_tab_styles()
+        if hasattr(self, "rail_host"):
+            self.rail_host.restyle()
 
     # ------------------------------------------------------------------ the dock: groups → pages → parts
     def _nav_part(self, tab: str) -> str:
@@ -7338,6 +7352,14 @@ class MyGeekyPanel(QWidget):
                     self._nav_opening = False
         self._switch_tab(tab)
 
+    def _rail_icon(self, nd: dict[str, Any]) -> tuple[str, str]:
+        """(line icon path, emoji) for a place in the side rail: the same icons the planets drew."""
+        if nd["parent"] is self.nav_tree:
+            return GROUP_ICONS.get(nd["id"], ""), ""
+        if nd["part"] or nd["tab"] not in PLANETS:
+            return "", nd["icon"] or TABS.get(nd["tab"], ("\u2022",))[0]
+        return PLANETS[nd["tab"]][1], ""
+
     def _nav_follow(self) -> None:
         """The open page changed from elsewhere (a notification, a link): show the level it lives on."""
         leaf, at = self._nav_leaf(), navtree.find(self.nav_tree, self._nav_at)
@@ -7371,7 +7393,12 @@ class MyGeekyPanel(QWidget):
             self.nav_back_text.setStyleSheet(f"QPushButton {{ background:{c}; color:#ffffff; border:none; border-radius:10px; "
                                              "padding:2px 10px; font-size:10.5px; font-weight:800; }")
         self.nav_trail.setText(" \u203a ".join(n["label"] for n in navtree.path(leaf)[1:]) if leaf else "")
-        self.nav_trail.setStyleSheet(f"color:{theme['muted']}; font-size:10px; font-weight:600; background:transparent;")
+        # where you are, in the open page's colour (the rail has its own way back, so no "Back to" here)
+        self.nav_back_text.setVisible(False)
+        color = leaf["color"] if leaf else theme["text"]
+        self.nav_trail.setStyleSheet(f"color:{color}; font-size:11.5px; font-weight:700; background:transparent;")
+        if hasattr(self, "rail_host"):
+            self.rail_host.refresh()
 
     def _update_group_counts(self) -> None:
         """A group's (or a page's) planet counts what's new in the pages under it."""
@@ -7380,8 +7407,12 @@ class MyGeekyPanel(QWidget):
                 continue
             btn = self.nav_buttons[nd["id"]]
             tabs = {x["tab"] for x in navtree.walk(nd) if x["tab"]}
+            if tabs == {nd["tab"]} and self.tab_buttons.get(nd["tab"]) is btn:
+                continue                     # a page whose parts are all its own tab (News): it keeps its own count
             btn.set_count(sum(self.tab_buttons[t]._count for t in tabs
                               if t in self.tab_buttons and self.tab_buttons[t] is not btn))
+        if hasattr(self, "rail_host"):
+            self.rail_host.refresh()
 
     def _update_tab_styles(self) -> None:
         theme = THEMES[self._theme_name()]
