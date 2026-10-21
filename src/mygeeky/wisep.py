@@ -22,7 +22,7 @@ fresh, fast screen against asking aimlessly:
    days of use with the cache saving at least 40% and few failures (`proven_by`), those timers stop gating and
    WISEP decides alone (`timer_due`). Admin → Settings can say Always or Never instead of Auto.
 7. **The source's own budget wins.** OpenAlex now gives every network (IP address) without a key a free daily budget
-   of 1,000 credits ($0.10), shared by everyone on it: a search or list costs 1 credit, one record by its id costs
+   of 1,000 credits ($0.10), shared by everyone on it: a text search costs 10 credits, a filtered list 1, one record by its id
    nothing. Every answer says what's left (X-RateLimit-Remaining, -Limit, -Reset); WISEP paces itself to those real
    numbers (`server_budget`), counts credits rather than requests (`credit_cost`), keeps a reserve, and rests until
    the reset when they're spent. A free OpenAlex key (Settings) gives the person a budget of their own.
@@ -39,6 +39,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import sqlite3
 import threading
 import time
@@ -137,14 +138,20 @@ def threshold(used: int, budget: int, day_frac: float) -> float:
     return _r(0.15 * (1.0 + 3.0 * max(0.0, pace - 0.5)))
 
 
+SEARCH_CREDITS = 10             # OpenAlex: a text search costs ten credits (measured 2026-10-21, its own headers)
+
+
 def credit_cost(source: str, url: str) -> int:
-    """What an ask costs against the source's budget: OpenAlex charges a credit for a search or a list and nothing for
-    one record by its id (/works/W…, /authors/A…, /works/doi:…); other sources count each ask as one."""
+    """What an ask costs against the source's budget. OpenAlex (its X-RateLimit-Credits-Used header, measured): a
+    text search (`search=`, or a `*.search:` filter) costs SEARCH_CREDITS, a filtered list one credit, and one record
+    by its id (/works/W…, /authors/A…, /works/doi:…) nothing; other sources count each ask as one."""
     if source != "openalex":
         return 1
     parts = urlsplit(url)
     path, query = unquote(parts.path), unquote(parts.query)
-    if any(k in query for k in ("filter=", "search=", "sort=", "group_by=", "sample=")):
+    if re.search(r"(^|&)search=|\.search:", query):
+        return SEARCH_CREDITS
+    if any(k in query for k in ("filter=", "sort=", "group_by=", "sample=")):
         return 1
     one = path.count("/") >= 2 and not path.endswith("/") and path.split("/")[1] in (
         "works", "authors", "sources", "institutions", "topics", "concepts", "funders", "publishers")
@@ -311,11 +318,11 @@ class Store:
             self.db.commit()
 
     # ---- the day's tally
-    def count(self, source: str, field: str, day: str) -> None:
+    def count(self, source: str, field: str, day: str, n: int = 1) -> None:
         with self.lock:
             self.db.execute("INSERT OR IGNORE INTO calls (day, source, asked, saved, stale, failed, topup, credits) "
                             "VALUES (?,?,0,0,0,0,0,0)", (day, source))
-            self.db.execute(f"UPDATE calls SET {field}={field}+1 WHERE day=? AND source=?", (day, source))
+            self.db.execute(f"UPDATE calls SET {field}={field}+? WHERE day=? AND source=?", (n, day, source))
             self.db.commit()
 
     def used(self, source: str, day: str) -> int:
@@ -650,7 +657,7 @@ def get(url: str, params: dict[str, Any] | None = None, page: str = "", kind: st
     _space(source, st)
     st.count(source, "asked", day)
     if cost:
-        st.count(source, "credits", day)
+        st.count(source, "credits", day, cost)
     try:
         resp = fetch_raw(url, params, headers, timeout, base)
     except requests.RequestException:
@@ -728,7 +735,7 @@ def top_up(now: float | None = None, limit: int = TOP_UP_MAX, base: requests.Ses
         st.count(source, "asked", day)
         st.count(source, "topup", day)
         if credit_cost(source, url):
-            st.count(source, "credits", day)
+            st.count(source, "credits", day, credit_cost(source, url))
         try:
             resp = fetch_raw(url, None, None, 30.0, base)
         except requests.RequestException:

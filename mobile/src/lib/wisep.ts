@@ -52,12 +52,15 @@ export function threshold(used: number, budget: number, dayFrac: number): number
 
 export type Decision = { action: 'fetch' | 'cache' | 'none'; why: string; worth: number; bar: number | null };
 
-/** What an ask costs against the source's budget (wisep.credit_cost): OpenAlex charges for a search or list, not for one record by id. */
+/** What an ask costs against the source's budget (wisep.credit_cost): 10 for a text search, 1 for a filtered list, 0 for one record by id. */
+/** OpenAlex: a text search costs ten credits (wisep.SEARCH_CREDITS, measured from its own headers). */
+export const SEARCH_CREDITS = 10;
 export function creditCost(source: string, url: string): number {
   if (source !== 'openalex') return 1;
   let path = '', query = '';
   try { const u = new URL(url); path = decodeURIComponent(u.pathname); query = decodeURIComponent(u.search.slice(1)); } catch { return 1; }
-  if (['filter=', 'search=', 'sort=', 'group_by=', 'sample='].some((k) => query.includes(k))) return 1;
+  if (/(^|&)search=|\.search:/.test(query)) return SEARCH_CREDITS;
+  if (['filter=', 'sort=', 'group_by=', 'sample='].some((k) => query.includes(k))) return 1;
   const seg = path.split('/');
   const one = (path.match(/\//g) ?? []).length >= 2 && !path.endsWith('/')
     && ['works', 'authors', 'sources', 'institutions', 'topics', 'concepts', 'funders', 'publishers'].includes(seg[1]);
@@ -187,10 +190,10 @@ function digest(s: string): string {
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
   return (h >>> 0).toString(16);
 }
-function count(st: State, source: string, field: 'asked' | 'saved' | 'stale' | 'failed' | 'topup' | 'credits', now: number) {
+function count(st: State, source: string, field: 'asked' | 'saved' | 'stale' | 'failed' | 'topup' | 'credits', now: number, n = 1) {
   const d = (st.calls[dayOf(now)] ??= {});
   const c = (d[source] ??= { asked: 0, saved: 0, stale: 0, failed: 0, topup: 0, credits: 0 });
-  c[field] = (c[field] ?? 0) + 1;
+  c[field] = (c[field] ?? 0) + n;
 }
 
 function noteServer(st: State, source: string, res: Response, now: number, key: boolean) {
@@ -291,7 +294,7 @@ export async function wiseFetch(url: string, opts: { page?: string; force?: bool
   if (d.action === 'none') { count(st, source, 'failed', now); save(); return respond('{}', 503, 'resting'); }
   await space(source);
   count(st, source, 'asked', now);
-  if (cost) count(st, source, 'credits', now);
+  if (cost) count(st, source, 'credits', now, cost);
   const keyed = await withKey(source, opts.init);
   let res: Response;
   try {
@@ -344,7 +347,7 @@ export async function topUp(): Promise<Record<string, number>> {
     await space(a.source);
     count(st, a.source, 'asked', now);
     count(st, a.source, 'topup', now);
-    if (cost) count(st, a.source, 'credits', now);
+    if (cost) count(st, a.source, 'credits', now, cost);
     try {
       const keyed = await withKey(a.source);
       const res = await fetchT(withContact(key, a.source), keyed.init);

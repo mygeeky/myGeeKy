@@ -33,9 +33,9 @@ leaves it.
 
 ## OpenAlex's budget is real and shared
 
-Without a key OpenAlex allows **1,000 credits a day per network (IP)**, shared by everyone on it: a search or list costs
-1, one record by id costs 0. WISEP reads its rate-limit headers (`_note_server`, `server_budget`), counts credits
-(`credit_cost`), and rests until the reset on a 429. So: prefer a record by id over a search where you can; batch ids
+Without a key OpenAlex allows **1,000 credits a day per network (IP)**, shared by everyone on it: a text search (`search=`, `*.search:`)
+costs 10, a filtered list 1, one record by id 0. WISEP reads its rate-limit headers (`_note_server`, `server_budget`), counts credits
+(`credit_cost`), and rests until the reset on a 429. So: prefer a record by id over a search, and a filter (`author.id:`, `cites:`) over a text search, where you can; batch ids
 into one search (`filter=id:a|b|c`); never loop a search per item. A free key (`wisep.request_key`, `set_key`; the
 phone: `requestKey`, `saveKey`) gives the person their own budget.
 

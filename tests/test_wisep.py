@@ -233,11 +233,15 @@ def test_every_user_sees_their_own_wisep_in_settings_and_can_forget_what_it_lear
 
 
 # --------------------------------------------------------------------------- the source's own budget (OpenAlex credits)
-def test_a_search_costs_a_credit_and_one_record_by_id_costs_nothing():
-    c = wisep.credit_cost
+def test_a_search_costs_ten_credits_a_list_one_and_one_record_by_id_nothing():
+    c = wisep.credit_cost                                   # as OpenAlex's X-RateLimit-Credits-Used said, 2026-10-21
     assert c("openalex", "https://api.openalex.org/works?filter=cites:W1") == 1
-    assert c("openalex", "https://api.openalex.org/authors?search=ada") == 1
-    assert c("openalex", "https://api.openalex.org/topics?search=x") == 1
+    assert c("openalex", "https://api.openalex.org/works?filter=author.id:A1|A2,from_publication_date:2026-06-01") == 1
+    assert c("openalex", "https://api.openalex.org/authors?search=ada") == 10
+    assert c("openalex", "https://api.openalex.org/topics?search=x") == 10
+    assert c("openalex", "https://api.openalex.org/works?filter=title.search:genomics,from_publication_date:2026-01-01") == 10
+    assert c("openalex", "https://api.openalex.org/works?filter=title_and_abstract.search%3Agwas") == 10
+    assert c("openalex", "https://api.openalex.org/works?filter=research_search:x") == 1   # not a text search
     assert c("openalex", "https://api.openalex.org/authors/A5083340569?select=id,topics") == 0
     assert c("openalex", "https://api.openalex.org/works/W123") == 0
     assert c("openalex", "https://api.openalex.org/works/doi:10.1/x") == 0
@@ -258,12 +262,13 @@ def test_wisep_paces_itself_to_what_openalex_says_is_left_and_rests_when_it_is_s
     wisep.get("https://api.openalex.org/works", {"filter": "cites:W1"}, page="you:cited", now=NOON, base=_oa_net(600))
     srv = wisep.server_of("openalex", NOON)
     assert srv["limit"] == 1000 and srv["remaining"] == 600
-    assert wisep.store().used("openalex", wisep._day(NOON)) == 1                    # a search: one credit
+    assert wisep.store().used("openalex", wisep._day(NOON)) == 1                    # a filtered list: one credit
     wisep.get("https://api.openalex.org/authors/A1", page="you", now=NOON, base=_oa_net(600))
     assert wisep.store().used("openalex", wisep._day(NOON)) == 1                    # one record by id: free
     spent = _oa_net(0, status=429, retry=7063)
     r = wisep.get("https://api.openalex.org/works", {"search": "gwas"}, page="world:papers", now=NOON + 10, base=spent)
     assert r.status_code == 429 and wisep.store().paused_until["openalex"] == pytest.approx(NOON + 10 + 7063)
+    assert wisep.store().used("openalex", wisep._day(NOON)) == 11                   # a text search: ten more
     after = _Net()
     wisep.get("https://api.openalex.org/works", {"search": "other"}, page="world:papers", now=NOON + 600, base=after)
     assert after.calls == []                                                         # resting until OpenAlex's reset
@@ -300,7 +305,9 @@ def test_the_phone_counts_credits_and_reads_the_budget_the_same():
     urls = ["https://api.openalex.org/works?filter=cites:W1", "https://api.openalex.org/authors?search=ada",
             "https://api.openalex.org/authors/A5083340569?select=id,topics", "https://api.openalex.org/works/W123",
             "https://api.openalex.org/works/doi:10.1/x", "https://api.openalex.org/topics?search=x",
-            "https://api.openalex.org/works", "https://zenodo.org/api/records/1"]
+            "https://api.openalex.org/works", "https://zenodo.org/api/records/1",
+            "https://api.openalex.org/works?filter=title.search:genomics,from_publication_date:2026-01-01",
+            "https://api.openalex.org/works?filter=title_and_abstract.search%3Agwas"]
     cases = [[0, 0, 0, 7, 900, 0.5], [1000, 400, 43200, 7, 900, 0.9], [1000, 0, 7063, 0, 900, 0.2], [500, 999, 10, 1, 900, 0.1]]
     said = phone.run("""
 import { creditCost, serverBudget, sourceOf } from './lib/wisep.ts';

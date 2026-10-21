@@ -31,10 +31,10 @@ def summary() -> str:
     tuned = ", ".join(f"{k} about every {v:g} hours" for k, v in sorted(s["priors"].items()))
     oa = s["server"].get("openalex")
     whose = "your own key's" if s["key"] else "the free budget your whole network shares"
-    budget = (f" OpenAlex: {oa['remaining']} of {oa['limit']} credits left ({whose}; a search costs 1, one record "
+    budget = (f" OpenAlex: {oa['remaining']} of {oa['limit']} credits left ({whose}; a text search costs 10, a list 1, one record "
               f"nothing), back in {oa['reset_in'] // 3600} h {oa['reset_in'] % 3600 // 60} min." if oa else
               (" OpenAlex: with your own key." if s["key"] else
-               " OpenAlex: no key, so the free budget your whole network shares (1,000 searches a day)."))
+               " OpenAlex: no key, so the free budget your whole network shares (1,000 credits a day)."))
     return ("Today: " + ("; ".join(parts) + "." if parts else "nothing asked yet.")
             + f" GitHub (with its own cache): {g['asked']} asked, {g['saved']} free."
             + (f" You open most: {pages}." if pages else "") + f" {alone}"

@@ -46,7 +46,8 @@ between Auto (once proven), Always and Never, for each user on their own device,
 
 **The source's own budget wins.** Since 2026 OpenAlex gives every network (IP address) without a key a **free daily
 budget of 1,000 credits ($0.10), shared by everyone on it** -- a whole university floor shares one -- and resets it at
-midnight UTC. A search or a list costs 1 credit; one record by its id (`/authors/A…`, `/works/W…`, `/works/doi:…`)
+midnight UTC. A text search (`search=`, or a `*.search:` filter) costs 10 credits and a filtered list 1 (measured from
+OpenAlex's `X-RateLimit-Credits-Used` header, 2026-10-21); one record by its id (`/authors/A…`, `/works/W…`, `/works/doi:…`)
 costs nothing. Every answer says what's left (`X-RateLimit-Limit`, `-Remaining`, `-Reset`). WISEP keeps those
 numbers and paces itself to them (`server_budget`: everyone on the network counts, 5% is kept back for what you ask
 yourself, the day is OpenAlex's day), counts credits rather than requests (`credit_cost`: a free record by id is

@@ -21,8 +21,8 @@ export async function wisepSummary(): Promise<{ text: string; mode: Mode; key: b
       : `It takes over from the old once-a-day timers once it has proven itself: ${p.days} of ${PROVEN_DAYS} days, ${p.looks} of ${PROVEN_LOOKS} answers, ${Math.round(p.saved * 100)}% from what it kept (it needs ${Math.round(PROVEN_SAVED * 100)}%).`;
   const tuned = Object.entries(st.priors).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, v]) => `${k} about every ${v} hours`).join(', ');
   const oa = st.server.openalex, whose = st.key ? "your own key's" : 'the free budget your whole network shares';
-  const budget = oa ? ` OpenAlex: ${oa.remaining} of ${oa.limit} credits left (${whose}; a search costs 1, one record nothing), back in ${Math.floor(oa.resetIn / 3600)} h ${Math.floor((oa.resetIn % 3600) / 60)} min.`
-    : st.key ? ' OpenAlex: with your own key.' : ' OpenAlex: no key, so the free budget your whole network shares (1,000 searches a day).';
+  const budget = oa ? ` OpenAlex: ${oa.remaining} of ${oa.limit} credits left (${whose}; a text search costs 10, a list 1, one record nothing), back in ${Math.floor(oa.resetIn / 3600)} h ${Math.floor((oa.resetIn % 3600) / 60)} min.`
+    : st.key ? ' OpenAlex: with your own key.' : ' OpenAlex: no key, so the free budget your whole network shares (1,000 credits a day).';
   return { mode: p.mode, text: `Today: ${parts.length ? `${parts.join('; ')}.` : 'nothing asked yet.'} GitHub (with its own cache): ${st.github.asked} asked, ${st.github.saved} free.`
     + `${pages ? ` You open most: ${pages}.` : ''} ${alone}${tuned ? ` It learned how often answers change here: ${tuned}.` : ''}${budget}`, key: st.key };
 }
