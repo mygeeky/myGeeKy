@@ -37,6 +37,21 @@ several times what a release build uses).
 | Beacon | `beacon.json` 165 B; the public repo 13 KB, 88 commits | 64 KB | ✅ |
 | Desktop app install (venv) | 562 MB (Qt is most of it) | | — |
 
+## Release 0.31.0 on every system (2026-10-21)
+
+The audit on GitHub's runners (throwaway profile, offline; `.github/workflows/resources.yml`) and the phone's release APK
+on the emulator:
+
+| System | Startup | RAM, every page visited | Leak (widgets per round) | Idle CPU shown / hidden |
+|---|---|---|---|---|
+| Windows | 0.88 s | 176 MB | 0 | 0.31% / 0.39% |
+| macOS | 0.65 s | 247 MB (close to the 250 MB budget: watch it) | 0 | 0.39% / 0.27% |
+| Linux | 0.46 s | 205 MB | 0 | 0.09% / 0.06% |
+| Phone (release APK 1.13.0) | | 161 MB at start (PSS) | | Model page idle: 0 frames, 1.9% |
+
+The only WARN everywhere is the half-second "seen" tick (plan 10: measured, not worth changing). The pack QR code drawn by
+the phone decodes into a whole pack with an independent reader.
+
 ## Why the data folder is ~280 MB, and how it grows
 
 - 193 MB is 697 old copies of `github_cache.json`, a cache an older myGeeKy (still on the second computer) commits
