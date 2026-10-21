@@ -87,6 +87,7 @@ class GitHubClient:
         if token:
             headers["Authorization"] = f"Bearer {token}"
         self.session.headers.update(headers)
+        self.token_refused = False    # GitHub answered 401: the token is expired or revoked (token_check says so)
         self.rate_limit_sleep = rate_limit_sleep
         self._blocked_until = 0.0
         # what GitHub already told us, and what this client did with it
@@ -142,6 +143,13 @@ class GitHubClient:
             if resp.status_code in (403, 429) and _is_slow_down(resp):
                 self._blocked_until = time.time() + max(_retry_after(resp), MAX_WAIT)
                 raise RateLimited(self._blocked_until, secondary=True)
+        if resp.status_code == 401 and "Authorization" in self.session.headers:
+            # the token was refused (expired or revoked): read public data without it for the rest of this run,
+            # instead of every read failing; the token warning (token_check) tells you to make a new one.
+            # The phone does the same (lib/github.ts).
+            self.token_refused = True
+            del self.session.headers["Authorization"]
+            resp = self.session.get(url, params=params, timeout=30)
         if resp.status_code == 200 and _looks_like_web_page(resp):
             raise NotGitHub()
         resp = self._remember(key, resp, is_search)

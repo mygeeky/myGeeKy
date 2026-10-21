@@ -216,3 +216,48 @@ def test_chances_draws_its_cards_when_first_opened(qapp_offscreen):
         assert panel._chances_drawn and not panel._chances_pending              # built on first open
     finally:
         panel.close()
+
+
+def test_a_refused_token_is_dropped_and_public_data_still_reads():
+    """GitHub's 401 (an expired or revoked token): the computer reads on without it, as the phone does."""
+    import requests
+    from mygeeky.github_client import GitHubClient
+    c = GitHubClient(token="ghp_expired0000000000000000000000000000", use_cache=False, rate_limit_sleep=0)
+    seen = []
+
+    def get(url, params=None, headers=None, timeout=None):
+        seen.append("Authorization" in c.session.headers)
+        r = requests.Response()
+        r.status_code = 401 if "Authorization" in c.session.headers else 200
+        r._content = b'{"login": "octocat"}'
+        r.headers["Content-Type"] = "application/json"
+        return r
+    c.session.get = get
+    assert c._get("/users/octocat").json() == {"login": "octocat"}
+    assert seen == [True, False] and c.token_refused                       # tried with it, then without
+    c._get("/users/torvalds")
+    assert seen[-1] is False                                               # and without it from then on
+
+
+@pytest.mark.skipif(not __import__("tests.phone", fromlist=["x"]).node_ok(), reason="needs Node 22.6+")
+def test_the_phone_forgets_a_refused_token_and_reads_on_without_it():
+    from tests import phone
+    said = phone.run("""
+import { gh } from './lib/github.ts';
+import { getToken, isRejected, onTokenRejected, setToken } from './lib/storage.ts';
+const sent: (string | null)[] = [];
+let told = 0;
+onTokenRejected(() => { told += 1; });
+globalThis.fetch = (async (_url: string, init: any) => {
+  const auth = init?.headers?.Authorization ?? null;
+  sent.push(auth);
+  return new Response(JSON.stringify({ login: 'octocat' }), { status: auth ? 401 : 200, headers: { 'Content-Type': 'application/json' } });
+}) as any;
+await setToken('ghp_expired');
+const first = await gh('/users/octocat', 'ghp_expired');
+const second = await gh('/users/torvalds', 'ghp_expired');     // a screen still holding the old token
+out({ first, sent, told, stored: await getToken(), rejected: isRejected('ghp_expired') });
+""", {})
+    assert said["first"] == {"login": "octocat"}
+    assert said["sent"] == ["Bearer ghp_expired", None, None]               # once with it, then never again
+    assert said["told"] == 1 and said["stored"] is None and said["rejected"] is True

@@ -6,7 +6,7 @@ import { logOpenToday } from './badges';
 import { Profile } from './interests';
 import { type Brain, syncModel, withLocalLearning } from './model-repo';
 import { buildProfile, loadDictionary } from './profile';
-import { getToken, isStale, loadSettings, readCache, saveSettings, setToken, Settings, writeCache } from './storage';
+import { getToken, isStale, loadSettings, onTokenRejected, readCache, saveSettings, setToken, Settings, writeCache } from './storage';
 
 type AppState = {
   ready: boolean;
@@ -44,6 +44,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [token, setTok] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+
+  // GitHub refused the token (lib/github.ts): it's forgotten, and the app shows "Sign in with GitHub" again
+  useEffect(() => onTokenRejected(() => setTok(null)), []);
 
   useEffect(() => {
     (async () => {

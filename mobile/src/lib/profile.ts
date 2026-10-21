@@ -4,7 +4,7 @@
 import { fetchT } from './net';
 import { wiseFetch } from './wisep';
 import { Dict, expand, Profile, Weights } from './interests';
-import { isStale, readCache, Settings, writeCache } from './storage';
+import { isStale, readCache, rejectToken, Settings, writeCache } from './storage';
 
 const DICT_URL = 'https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/data/keywords.json';
 const STOP = new Set(['and', 'the', 'for', 'with', 'studies', 'study', 'research', 'analysis', 'methods']);
@@ -54,6 +54,7 @@ export async function profileFromSources(s: Settings, token: string | null, dict
       const r = await fetchT(`https://api.github.com/users/${encodeURIComponent(s.username)}/repos?per_page=100&sort=pushed`, {
         headers: { Accept: 'application/vnd.github+json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
+      if (r.status === 401 && token) await rejectToken(token);       // refused: forgotten, sign in again (lib/github.ts)
       if (r.ok) {
         const counts: Record<string, number> = {};
         for (const repo of await r.json()) for (const t of repo.topics ?? []) counts[t] = (counts[t] ?? 0) + 1;

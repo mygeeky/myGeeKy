@@ -102,6 +102,20 @@ export async function saveSignin(grant: Grant | null): Promise<void> {
 
 let renewing: Promise<string | null> | null = null;   // one renewal at a time, however many screens load
 
+// ---- a token GitHub refused (401: expired, revoked, or a sign-in that couldn't renew)
+const rejected = new Set<string>();
+const listeners = new Set<() => void>();
+/** Called when the token was refused and forgotten: the app shows "Sign in with GitHub" again. */
+export function onTokenRejected(cb: () => void): () => void { listeners.add(cb); return () => { listeners.delete(cb); }; }
+export const isRejected = (token: string | null) => !!token && rejected.has(token);
+/** GitHub answered 401 with this token: forget it everywhere (it can never work again) and say so once. */
+export async function rejectToken(token: string): Promise<void> {
+  if (rejected.has(token)) return;
+  rejected.add(token);
+  if ((await getToken()) === token) await setToken(null);
+  listeners.forEach((cb) => { try { cb(); } catch { /* a closed screen */ } });
+}
+
 /** The token to call GitHub with: renewed first when an 8-hour sign-in is about to end. */
 export async function freshToken(fallback: string | null): Promise<string | null> {
   const raw = await readSecure(SIGNIN_KEY);
@@ -117,7 +131,9 @@ export async function freshToken(fallback: string | null): Promise<string | null
     renewing = (async () => {
       const got = await renewGrant(record.refresh);
       if (got === 'refused') {
-        await writeSecure(SIGNIN_KEY, null);          // the sign-in ended: You -> Sign in with GitHub
+        const old = await getToken();                  // the sign-in ended: its token is expired too
+        await writeSecure(SIGNIN_KEY, null);
+        if (old) await rejectToken(old);               // You -> Sign in with GitHub shows again
         return null;
       }
       if (!got) return null;                           // offline: try again next time
@@ -128,7 +144,8 @@ export async function freshToken(fallback: string | null): Promise<string | null
       renewing = null;
     });
   }
-  return (await renewing) ?? (await getToken()) ?? fallback;
+  const got = (await renewing) ?? (await getToken()) ?? fallback;
+  return isRejected(got) ? null : got;
 }
 
 // ---- cached results: { at: ISO time, data }

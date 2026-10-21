@@ -1,7 +1,7 @@
 import { noteGitHub } from './wisep';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchT } from './net';
-import { freshToken } from './storage';
+import { freshToken, isRejected, rejectToken } from './storage';
 
 // Read-only GitHub API calls. With the sign-in token the limit is 5,000 calls an
 // hour; without one it's 60, so screens that need many calls say so.
@@ -56,6 +56,7 @@ export async function gh<T = any>(path: string, token: string | null): Promise<T
 }
 
 async function ask<T>(path: string, token: string | null): Promise<T> {
+  if (isRejected(token)) token = null;
   if (token) token = await freshToken(token);     // an 8-hour sign-in renews itself first
   const r = await fetchT(`https://api.github.com${path}`, {
     headers: {
@@ -67,6 +68,12 @@ async function ask<T>(path: string, token: string | null): Promise<T> {
   if (r.status === 403 || r.status === 429) {
     throw new GitHubError(token ? 'GitHub asks us to slow down. Try again in a few minutes.'
                                 : 'GitHub limits reading without signing in. Sign in with GitHub on the You tab.');
+  }
+  if (r.status === 401 && token) {
+    // the token was refused (expired, revoked, or a sign-in that couldn't renew): forget it, show "Sign in with
+    // GitHub" again, and read this without it -- public data still works, at GitHub's lower limit
+    await rejectToken(token);
+    return ask<T>(path, null);
   }
   if (!r.ok) throw new GitHubError(`GitHub said ${r.status}.`);
   return r.json();
