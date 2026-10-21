@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.33.0 (2026-10-21): 🏠 Home, a scrolling feed that learns what you enjoy (phone 1.15.0)
 
 - **🏠 Home, a scrolling feed, is the first page** (computer and phone). Cards from every part of myGeeKy (new work from your circle, rising papers, open jobs, funding and conferences, new datasets, repos, people, headlines, AI models, a daily quiz question), new first, then "You're all caught up" and what you've seen. It learns what you enjoy from taps, 👍/👎 and time on screen (switch: ⏱ learning), with a small bandit over the kinds of card so it keeps trying every kind, at most two of a kind in any four, and one in five from new territory 🔭. Built only from what the other pages keep: no downloads while you scroll. Each card says why it's there and leads to its page. The ranking is the same on both apps (tested).
 - **Your Model stops learning names** (computer and phone). Following someone could be learned 20+ times (when GitHub sent your list of follows short once, the same people looked newly followed on every check), and each time it learned their name and company ("jake", "wharton", "skylightfamily") as interests. Now a follow, star or fork counts once -- this also fixes what was already learned, without rewriting your data -- and a follow teaches the person's bio only; words from their username are never learned. Opening a person (a suggestion or a Home card) no longer teaches their login, the repo owner's name or how they were found ("followers", "type", "user"); opening a Home card teaches its title, not the authors under it or "closes in 9 days".
