@@ -143,3 +143,37 @@ def test_wisep_keeps_three_months_of_its_tally():
     st._trim()
     days = [r[0] for r in st.db.execute("SELECT day FROM calls").fetchall()]
     assert today in days and old not in days
+
+
+def test_the_panel_starts_without_loading_scikit_learn():
+    """scikit-learn, SciPy and NumPy cost about a second and 100+ MB: only what needs them loads them."""
+    import subprocess
+    import sys
+    code = ("import sys; import mygeeky.gui.qt_panel, mygeeky.interests, mygeeky.cli; "
+            "print(sorted(m for m in ('sklearn', 'scipy', 'numpy') if m in sys.modules))")
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120,
+                         env={**__import__('os').environ, "QT_QPA_PLATFORM": "offscreen"})
+    assert out.stdout.strip() == "[]", out.stdout + out.stderr
+
+
+def test_the_vocabulary_matches_scikit_learn_without_loading_it():
+    from sklearn.feature_extraction.text import CountVectorizer
+    from mygeeky.matcher import build_domain_vocabulary
+    text = ("Genome-wide association studies (GWAS) of wheat and chickpea; GWAS pipelines in Snakemake; "
+            "machine learning for plant breeding, plant genomics and genomic selection. " * 3)
+    v = CountVectorizer(stop_words="english", ngram_range=(1, 2), max_features=200, min_df=1)
+    m = v.fit_transform([text]).toarray()[0]
+    ref = {t: c / m.max() for t, c in zip(v.get_feature_names_out(), m) if c > 0}
+    assert build_domain_vocabulary(text, 200) == ref                     # every term, every weight (no ties cut)
+
+
+def test_the_model_page_reads_saved_weights(tmp_path, monkeypatch):
+    from mygeeky import matcher
+    from mygeeky.gui import app as logic
+    monkeypatch.setattr(matcher, "MODEL_FILE", tmp_path / "model.pkl")
+    model = matcher.LearnedModel()
+    assert model.train([[0.1] * len(matcher.FEATURE_NAMES), [0.9] * len(matcher.FEATURE_NAMES)] * 3, [0, 1] * 3)
+    model.save()
+    assert (tmp_path / "model_weights.json").exists() and matcher.saved_weights() is not None
+    shown = logic.get_model_weights()
+    assert len(shown) == len(matcher.FEATURE_NAMES) and all("weight" in w for w in shown)

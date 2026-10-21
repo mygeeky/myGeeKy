@@ -17,18 +17,17 @@ follows *you* back, not just the generic heuristic.
 from __future__ import annotations
 
 import pickle
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.model_selection import StratifiedKFold, cross_val_predict
-from sklearn.preprocessing import StandardScaler
+# scikit-learn, SciPy and NumPy are imported where they're used, not here: loading them costs about a second and
+# well over 100 MB, and the panel imports this module at startup (docs/RESOURCES.md, plan 6).
+if TYPE_CHECKING:
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.preprocessing import StandardScaler
 
 from .config import MODEL_FILE, MyGeekyConfig
 from .profile_builder import Profile
@@ -70,6 +69,8 @@ def _follow_back_ratio(followers: int, following: int) -> float:
 def content_similarity(self_corpus: str, candidate_corpus: str) -> float:
     if not self_corpus.strip() or not candidate_corpus.strip():
         return 0.0
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
     vectorizer = TfidfVectorizer(stop_words="english", max_features=2000)
     try:
         matrix = vectorizer.fit_transform([self_corpus, candidate_corpus])
@@ -148,6 +149,8 @@ class LearnedModel:
     def train(self, X: list[list[float]], y: list[int]) -> bool:
         if len(set(y)) < 2:
             return False  # need both positive and negative examples
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.preprocessing import StandardScaler
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
         clf = LogisticRegression(max_iter=1000)
@@ -170,6 +173,12 @@ class LearnedModel:
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("wb") as fh:
             pickle.dump(self.pipeline, fh)
+        try:                                  # what it rewards, readable without loading scikit-learn (the Model page)
+            import json
+            coef = [float(c) for c in self.pipeline[1].coef_[0]] if self.pipeline else []
+            weights_path(path).write_text(json.dumps({"features": FEATURE_NAMES, "coef": coef}), encoding="utf-8")
+        except Exception:
+            pass
 
     @classmethod
     def load(cls, path: Path | None = None) -> "LearnedModel":
@@ -182,6 +191,24 @@ class LearnedModel:
             except Exception:
                 model.pipeline = None
         return model
+
+
+def weights_path(model_path: Path | None = None) -> Path:
+    """The trained model's coefficients beside it (model_weights.json): the Model page reads these at startup."""
+    return (model_path or MODEL_FILE).with_name("model_weights.json")
+
+
+def saved_weights() -> list[float] | None:
+    """The coefficients saved with the model, if they belong to the model file there now."""
+    import json
+    w, m = weights_path(), MODEL_FILE
+    try:
+        if not m.exists() or not w.exists() or w.stat().st_mtime < m.stat().st_mtime:
+            return None
+        data = json.loads(w.read_text(encoding="utf-8"))
+        return [float(c) for c in data["coef"]] if data.get("features") == FEATURE_NAMES else None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
 
 
 def final_score(features: Features, cfg: MyGeekyConfig, model: LearnedModel) -> tuple[float, dict[str, Any]]:
@@ -206,16 +233,40 @@ def build_domain_vocabulary(self_corpus: str, size: int = 25) -> dict[str, float
     """
     if not self_corpus.strip():
         return {}
-    vectorizer = CountVectorizer(stop_words="english", ngram_range=(1, 2), max_features=size, min_df=1)
-    try:
-        matrix = vectorizer.fit_transform([self_corpus])
-    except ValueError:
+    # scikit-learn's CountVectorizer(stop_words="english", ngram_range=(1, 2)) on one text, in plain Python: the panel
+    # builds this at startup from your CV, and loading scikit-learn for it cost a second and 100+ MB (plan 6)
+    words = [w for w in _TOKEN.findall(self_corpus.lower()) if w not in _stop_words()]
+    counts: dict[str, int] = {}
+    for gram in words + [f"{a} {b}" for a, b in zip(words, words[1:])]:
+        counts[gram] = counts.get(gram, 0) + 1
+    if not counts:
         return {}
-    counts = matrix.toarray()[0]
-    terms = vectorizer.get_feature_names_out()
-    if counts.max() == 0:
-        return {}
-    return {term: float(count) / float(counts.max()) for term, count in zip(terms, counts) if count > 0}
+    top = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:size]
+    best = top[0][1]
+    return {term: n / best for term, n in sorted(top)}
+
+
+_TOKEN = re.compile(r"(?u)\b\w\w+\b")      # scikit-learn's default token_pattern
+_STOP: frozenset[str] | None = None
+
+
+def _stop_words() -> frozenset[str]:
+    """scikit-learn's English stop words, read from its file without importing the library."""
+    global _STOP
+    if _STOP is None:
+        try:
+            import ast
+            import importlib.util
+            spec = importlib.util.find_spec("sklearn")
+            src = Path(spec.origin).parent / "feature_extraction" / "_stop_words.py"
+            tree = ast.parse(src.read_text(encoding="utf-8"))
+            node = next(n.value for n in ast.walk(tree) if isinstance(n, ast.Assign)
+                        and any(getattr(t, "id", "") == "ENGLISH_STOP_WORDS" for t in n.targets))
+            _STOP = frozenset(ast.literal_eval(node.args[0]))
+        except Exception:
+            from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+            _STOP = frozenset(ENGLISH_STOP_WORDS)
+    return _STOP
 
 
 def domain_fit_score(candidate_text: str, vocabulary: dict[str, float]) -> float:
@@ -236,6 +287,11 @@ def cross_validated_auc(X: list[list[float]], y: list[int]) -> float | None:
     """Report how well the learned model actually predicts follow-backs, so
     the user can see whether the model is trustworthy yet rather than take
     it on faith. Returns None when there isn't enough data to cross-validate."""
+    import numpy as np
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import StratifiedKFold, cross_val_predict
+    from sklearn.preprocessing import StandardScaler
     y_arr = np.array(y)
     n_pos, n_neg = int(y_arr.sum()), int((1 - y_arr).sum())
     if n_pos < 2 or n_neg < 2:

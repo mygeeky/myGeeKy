@@ -23,8 +23,6 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 from .config import MyGeekyConfig
 from .github_client import GitHubClient
@@ -130,6 +128,8 @@ def fit_scores(self_corpus: str, repos: list[dict[str, Any]], languages: set[str
     sims = [0.0] * len(repos)
     if self_corpus.strip():
         try:
+            from sklearn.feature_extraction.text import TfidfVectorizer      # loaded when needed (matcher.py)
+            from sklearn.metrics.pairwise import cosine_similarity
             matrix = TfidfVectorizer(stop_words="english", max_features=5000).fit_transform([self_corpus, *texts])
             sims = list(cosine_similarity(matrix[0:1], matrix[1:])[0])
         except ValueError:

@@ -57,6 +57,7 @@ github_cache.sqlite*
 *.sqlite
 *.sqlite-*
 archive/
+model_weights.json
 whois.json
 notify_state.json
 rank_seen.json

@@ -17,7 +17,7 @@ several times what a release build uses).
 | Desktop, idle (hidden) | 0.02% CPU | 0.5% | ✅ |
 | Desktop, a running panel over 3 min (real use) | 0.39% average CPU, 9% peak, 91% of samples under 1% | | ✅ |
 | Desktop RAM (running panel) | 388 MB RSS, 343 MB its own (USS), 21–25 threads | 450 MB | ⚠️ heavy |
-| Desktop RAM (throwaway profile, every page visited) | 328 MB | 450 MB | ⚠️ |
+| Desktop RAM (throwaway profile, every page visited) | 328 MB → **175 MB** after plan 6 (173 MB with a CV) | 250 MB | ✅ |
 | Widgets the panel builds | 1,467 (every page at once, at startup) | | ⚠️ |
 | **Leak test: every page × 8 rounds** | widgets +0, Qt objects +0 per round; Python +25 KB/round (mostly the audit itself) | +2 widgets, +512 KB | ✅ no leak |
 | Startup (throwaway profile) | a few seconds | 8 s | ✅ |
@@ -70,7 +70,13 @@ several times what a release build uses).
    `contribute_history.jsonl`, `training_data.jsonl`, `interest_events.jsonl`, `usage.jsonl` and the admin logs
    grow forever and are rewritten into the git history on each change. Keep the last N months (or N lines) live and
    fold older lines into a small summary; read the tail, not the whole file.
-6. **Desktop RAM: build pages when first opened.** All 14 tabs are filled at startup (1,467 widgets, ~330 MB).
+6. ✅ **Done differently 2026-10-21, after measuring.** Pages turned out to cost only 65–90 MB; **importing
+   scikit-learn, SciPy and NumPy at startup cost ~140 MB and a second** (matcher.py, contribute.py imported them at
+   the top). They now load only when needed; the CV vocabulary is counted in plain Python (the same terms and weights
+   as scikit-learn's CountVectorizer, ties at the cutoff aside), and the Model page reads `model_weights.json` saved
+   with the model instead of unpickling it. **Panel RAM 313 → 175 MB (−44%), startup imports 1.2 s → 0.23 s**, with or
+   without a CV; budget tightened to 250 MB. Building pages on first open (the original idea) would save the remaining
+   65–90 MB but touches most of qt_panel.py: left for later. **Desktop RAM: build pages when first opened.** All 14 tabs are filled at startup (1,467 widgets, ~330 MB).
    Build each page the first time it's shown (keep the data loading as it is). Also cap the in-session caches that
    only grow: `ghcache.Store._rows` (decoded bodies kept for the whole session), `AvatarLoader._memory` (pixmaps),
    `profile_card._cache`.

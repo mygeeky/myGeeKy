@@ -2034,15 +2034,17 @@ def get_model_weights() -> list[dict[str, Any]]:
     """What the trained model rewards (+) and penalizes (-): the logistic
     regression's coefficients on standardized features, so their sizes are
     comparable. Empty when no model has been trained yet."""
-    from ..matcher import FEATURE_NAMES, LearnedModel
+    from ..matcher import FEATURE_NAMES, LearnedModel, saved_weights
 
-    model = LearnedModel.load()
-    if not model.is_trained:
-        return []
-    try:
-        coef = model.pipeline[1].coef_[0]
-    except (AttributeError, IndexError, TypeError):
-        return []
+    coef = saved_weights()                    # no scikit-learn needed to show them (docs/RESOURCES.md, plan 6)
+    if coef is None:
+        model = LearnedModel.load()
+        if not model.is_trained:
+            return []
+        try:
+            coef = model.pipeline[1].coef_[0]
+        except (AttributeError, IndexError, TypeError):
+            return []
     weights = [{"feature": name, "label": FEATURE_LABELS.get(name, name), "weight": float(c)}
                for name, c in zip(FEATURE_NAMES, coef)]
     return sorted(weights, key=lambda w: abs(w["weight"]), reverse=True)

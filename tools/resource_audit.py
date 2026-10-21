@@ -39,7 +39,7 @@ BUDGETS = {
     "idle_cpu_pct": 2.0,          # shown, nothing happening
     "hidden_cpu_pct": 0.5,        # hidden: animations must stop
     "startup_s": 8.0,
-    "rss_mb": 450,                # the panel's RAM after visiting every page
+    "rss_mb": 250,                # the panel's RAM after visiting every page (175 MB since scikit-learn loads lazily)
 }
 
 
