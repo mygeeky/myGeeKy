@@ -22,14 +22,14 @@ several times what a release build uses).
 | **Leak test: every page × 8 rounds** | widgets +0, Qt objects +0 per round; Python +25 KB/round (mostly the audit itself) | +2 widgets, +512 KB | ✅ no leak |
 | Startup (throwaway profile) | a few seconds | 8 s | ✅ |
 | **Phone, Live page idle 60 s** | 0 frames drawn, 2.4% CPU (development build) | | ✅ |
-| **Phone, Model page idle 30 s** | **902 frames (30 fps), 52% janky, 108% CPU (over one core)** | ~0 frames | ❌ |
+| **Phone, Model page idle 30 s** | before: 902 frames (30 fps), 52% janky, 108% CPU · **after plan 1: 0 frames, 2.5% CPU** | ~0 frames | ✅ fixed |
 | Phone, app in the background | 0.1% CPU (Android pauses it) | | ✅ |
 | Phone RAM (development build) | 503–604 MB PSS, Hermes native heap 260 MB | | ⚠️ measure a release build |
 | Phone storage | AsyncStorage 4.1 MB, files 10.6 MB, cache 16.5 MB | | ✅ |
 | **Data folder (synced)** | 284 MB: history 171 MB packed + 36 MB loose; working files 83 MB (82 of it stray caches from 0.30.0) | 40 MB working, 300 MB history | ❌ until both computers run 0.30.1 |
 | Your real data in that history | under 5 MB in all; grows ~0.5 MB a day | | ✅ |
 | Old cache copies in that history | 193 MB (`github_cache.json`, 697 versions) + 14 MB (`github_cache.sqlite`) | | stays (compressed); not worth rewriting history |
-| Syncs a day (two computers) | 138 | 60 | ❌ |
+| Syncs a day (two computers) | 138 at every 15 min · hourly now (≤ 48 for two computers) | 60 | ✅ fixed in code |
 | Tracked but ignored files | `headlines.json` (155 versions), `keywords.json`, `github_achievements.json`, plus four "never synced" files | none | ❌ fixed in code (untracked at the next sync) |
 | Live databases (beside the data folder) | 25 MB (`github_cache.sqlite`, capped at 60 MB / 4,000 entries) | 120 MB | ✅ |
 | Avatar cache | 1.1–2.2 MB, 513 files, **no limit** | 30 MB | ⚠️ |
@@ -50,19 +50,19 @@ several times what a release build uses).
 
 ## The plan, in order of impact
 
-1. **Phone: stop the interest map's endless animation** (`mobile/src/components/interest-map.tsx:62`). A 50 ms
+1. ✅ **Done 2026-10-21.** **Phone: stop the interest map's endless animation** (`mobile/src/components/interest-map.tsx:62`). A 50 ms
    `setInterval` sets state twice per tick, so the whole SVG re-renders 20–30 times a second for as long as the
    Model page is open: a full CPU core and a warm battery while someone reads. Fix: animate with the native driver
    (`Animated` / Reanimated, no React re-render), or run the motion for a few seconds after the page appears and
    then rest; pause when the screen isn't focused (`useIsFocused` / AppState). Budget: ~0 frames when nothing moves.
-2. **Desktop: the live ticker never stops** (`qt_panel.py:3455`, `SpotlightTicker`): every 4.5 s it builds a new
+2. ✅ **Done 2026-10-21.** **Desktop: the live ticker never stops** (`qt_panel.py:3455`, `SpotlightTicker`): every 4.5 s it builds a new
    card and animates it, even folded, hidden or minimised. Stop it on hide/fold, start it on show.
-3. **Desktop: pages rebuild on timers while nobody looks.** Activity rebuilds its whole tab every 60 s from the
+3. ✅ **Done 2026-10-21** (rebuild only when the data changed; each sealed box decrypted once per run). **Desktop: pages rebuild on timers while nobody looks.** Activity rebuilds its whole tab every 60 s from the
    cache (`:3457`) even when nothing changed and the tab isn't open; Signals reads the keyring and decrypts every
    sealed box from every beacon every 5 min (`:3482`, beacon `inbox()`), even when nothing new was fetched. Rebuild
    only when the data changed and the tab is showing (mark it dirty otherwise); decrypt only new boxes (remember
    what was opened).
-4. **Sync less, and only when something changed.** 138 syncs a day between two computers, each ~8 git commands and
+4. ✅ **Partly done 2026-10-21** (hourly and at quit; committing only real changes is still to do). **Sync less, and only when something changed.** 138 syncs a day between two computers, each ~8 git commands and
    several network round-trips even with nothing new (`SYNC_EVERY_MS` 15 min). Commit/push only when a synced file
    changed (and at quit), fetch less often (30–60 min), and skip a sync when the only change is a file rewritten
    by reading (`seen.json` every 5 s).
@@ -94,6 +94,7 @@ example `rss_mb` after plan item 6), never loosen one to make a check pass witho
 
 ## History of this page
 
+- 2026-10-21: plans 1–3 done and 4 partly (the interest map rests after 8 s on both apps; the phone's Model page went from 902 frames and 108% CPU in 30 s to 0 frames and 2.5%; the ticker stops while hidden; Activity and Signals rebuild only on new data; sealed boxes decrypted once; sync hourly).
 - 2026-10-21: first audit. Fixed the same day: live databases moved out of the synced folder, ignored files untracked,
   conflicts from older computers settled, git's loose copies packed (data folder 4.9 GB → 279 MB), the four
   "never synced" files added to the ignore list, tests isolated from the real data and the network.

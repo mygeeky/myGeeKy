@@ -83,7 +83,8 @@ from ..config import AVATAR_CACHE_DIR, MyGeekyConfig, profile_ready
 from ..protocols import REVIEWED_SHOWN
 
 ASSETS_DIR = Path(__file__).parent / "assets"
-SYNC_EVERY_MS = 15 * 60 * 1000   # how often the panel syncs your data between computers
+SYNC_EVERY_MS = 60 * 60 * 1000   # how often the panel syncs your data between computers (and at quit); was 15 min:
+#                                  138 commits a day between two computers (docs/RESOURCES.md, plan 4)
 DOCK_GUARD_MS = 3000   # how often the panel checks it is still docked where it belongs
 DOCK_ANIM_MS = 280     # a bottom-corner panel rising to the middle as it opens (and sinking as it folds)
 ICON_WINDOW = ASSETS_DIR / "icon_64.png"
@@ -1268,11 +1269,17 @@ MAP_LEARNED = "#ff6fd8"    # what you're into lately
 MAP_EXPLORE = "#9b87ff"    # today's new territory
 
 
+MAP_MOTION_MS = 8000    # the interest map moves this long after it appears, then rests (docs/RESOURCES.md, plan 1)
+MAP_WAKE_MS = 6000      # ...and this long again when the mouse comes over it (the phone: a tap)
+
+
 class InterestMap(QWidget):
     """Your interests as a slowly turning constellation: you in the middle,
     your research field on the inner ring, what you've been into lately on
     the middle ring (bigger = stronger, gently pulsing), and today's new
-    territory drifting on a dashed outer ring. Hover a point for what it is."""
+    territory drifting on a dashed outer ring. Hover a point for what it is.
+    It moves for a few seconds when it appears or the mouse comes over it, then rests: a page left open must not
+    repaint 30 times a second for hours."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -1286,6 +1293,7 @@ class InterestMap(QWidget):
         self._timer = QTimer(self)
         self._timer.setInterval(33)
         self._timer.timeout.connect(self._tick)
+        self._awake_until = 0.0
         self._intro_anim = _grow_animation(self, self._set_intro, 1400)
 
     def set_theme_colors(self, text_color: str, explore_color: str | None = None) -> None:
@@ -1325,15 +1333,27 @@ class InterestMap(QWidget):
         self._intro = v
         self.update()
 
+    def wake(self, ms: int) -> None:
+        self._awake_until = max(self._awake_until, time.monotonic() + ms / 1000)
+        if self.isVisible() and not self._timer.isActive():
+            self._timer.start()
+
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)
-        self._timer.start()
+        self.wake(MAP_MOTION_MS)
+
+    def enterEvent(self, event) -> None:  # noqa: N802
+        super().enterEvent(event)
+        self.wake(MAP_WAKE_MS)
 
     def hideEvent(self, event) -> None:  # noqa: N802
         super().hideEvent(event)
         self._timer.stop()
 
     def _tick(self) -> None:
+        if time.monotonic() > self._awake_until:
+            self._timer.stop()                         # at rest: drawn once more where it stopped, then nothing
+            return
         self._phase += 0.033
         self.update()
 
@@ -3002,19 +3022,34 @@ class SpotlightTicker(QWidget):
         self._next_index = count % len(self._items)
 
     def start(self, interval_ms: int) -> None:
-        if len(self._items) > len(self._cards):
-            self._timer.start(max(1200, interval_ms))
+        self._interval = max(1200, interval_ms)
+        if len(self._items) > len(self._cards) and self.isVisible():
+            self._timer.start(self._interval)
         else:
             self._timer.stop()
 
     def stop(self) -> None:
+        self._interval = 0
         self._timer.stop()
 
     def is_running(self) -> bool:
         return self._timer.isActive()
 
+    # Folded, hidden or minimised, nobody sees it turn: no new card and animation every few seconds
+    # (docs/RESOURCES.md, plan 2). It picks up again when it's shown.
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        if getattr(self, "_interval", 0) and len(self._items) > len(self._cards):
+            self._timer.start(self._interval)
+
+    def hideEvent(self, event) -> None:  # noqa: N802
+        super().hideEvent(event)
+        self._timer.stop()
+
     def _advance(self) -> None:
         if not self._cards or len(self._items) <= len(self._cards):
+            return
+        if not self.isVisible() or self.window().isMinimized():
             return
 
         departing = self._cards.pop(0)
@@ -8339,6 +8374,15 @@ class MyGeekyPanel(QWidget):
             return
         theme = THEMES[self._theme_name()]
         events = (data or {}).get("events") or []
+        fetched_at = (data or {}).get("fetched_at")
+        same = (events == getattr(self, "_last_activity_events", None)
+                and self._theme_name() == getattr(self, "_activity_theme", None))
+        if same and self.activity_area.count():
+            # the 60-second check found what's already shown: no rebuild of every card and avatar (plan 3)
+            if fetched_at:
+                self.activity_updated_label.setText("updated " + _time_ago(fetched_at))
+            return
+        self._activity_theme = self._theme_name()
         _clear_layout(self.activity_area)
         if not events:
             empty = QLabel("No recent activity from people you follow or your profile matches yet.")
@@ -8377,6 +8421,9 @@ class MyGeekyPanel(QWidget):
     def _on_signals_ready(self, data: Any) -> None:
         self._signals_running = False
         data = data or {}
+        if data == getattr(self, "_signals_data", None) and self._theme_name() == getattr(self, "_signals_theme", None):
+            return                                   # the 5-minute check found nothing new: no rebuild (plan 3)
+        self._signals_theme = self._theme_name()
         self._render_signals(data)
         self._last_incoming = data.get("incoming") or []
         self._update_live_ticker()

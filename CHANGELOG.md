@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Lighter when nobody is looking** (from the resource audit, `docs/RESOURCES.md`): the interest map (the phone's Model page and the computer's) moves for a few seconds when it appears or you touch it, then rests -- it used to redraw 20-30 times a second for as long as the page was open (over a full CPU core on the phone); the live ticker stops while the panel is folded, hidden or minimised; Activity and Signals no longer rebuild their pages when the 60-second / 5-minute check finds nothing new; a sealed signal is decrypted once, not on every check; the panel syncs every hour (and when you quit) instead of every 15 minutes.
 - **A resource audit** (`tools/resource_audit.py`, run on Windows, macOS and Linux by `.github/workflows/resources.yml`): storage (the data folder, its git history, caches, logs, the beacon), a leak test (every page round after round: widgets and memory must level off), idle CPU shown and hidden with the timers still running, and startup; the findings and the plan to make myGeeKy lighter are in `docs/RESOURCES.md`. Four files the program calls "never synced" (notifications state, rank seen, your GitHub events, "Is this you?") were still synced: they no longer are.
 
 ## 0.30.1 (2026-10-21): sync stops carrying databases, and WISEP counts credits right

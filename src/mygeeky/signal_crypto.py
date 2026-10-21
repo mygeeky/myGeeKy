@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+from functools import lru_cache
 
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives import hashes, serialization
@@ -82,9 +83,16 @@ def seal(recipient_pub_b64: str, plaintext: bytes) -> str:
 
 
 def open_box(private_b64: str, box_b64: object) -> bytes | None:
-    """The plaintext if this box was sealed to our key, else None (never raises)."""
-    if not isinstance(box_b64, str) or len(box_b64) != BOX_LEN:
+    """The plaintext if this box was sealed to our key, else None (never raises). A box never changes and most aren't
+    ours, so each answer is remembered for this run: the inbox is re-read every few minutes, and trying every box of
+    every beacon each time was the panel's busiest idle work (docs/RESOURCES.md, plan 3)."""
+    if not isinstance(box_b64, str) or len(box_b64) != BOX_LEN or not isinstance(private_b64, str):
         return None
+    return _open_box(private_b64, box_b64)
+
+
+@lru_cache(maxsize=40_000)                 # 60 beacons x 600 boxes at most, ~200 B each: a few MB at the very worst
+def _open_box(private_b64: str, box_b64: str) -> bytes | None:
     data = _unb64(box_b64)
     raw_priv = _unb64(private_b64)
     if data is None or raw_priv is None or len(data) < 32 + 16:

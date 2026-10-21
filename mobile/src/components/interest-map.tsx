@@ -1,7 +1,8 @@
 // "Your interest map": you in the middle, your research field on the inner ring, what you're
 // into lately on the middle ring (bigger = stronger, gently pulsing), and today's new territory on a
 // dashed outer ring, all slowly turning. Tap a point for what it is. Same layout as the
-// desktop (InterestMap in src/mygeeky/gui/qt_panel.py).
+// desktop (InterestMap in src/mygeeky/gui/qt_panel.py). It moves for a few seconds when it appears or is tapped,
+// then rests: each step re-renders the map, and an endless loop kept a phone over one CPU core (docs/RESOURCES.md).
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, type LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import { C, ink } from '../lib/theme';
@@ -13,6 +14,8 @@ export const MAP_EXPLORE = '#9b87ff';  // today's new territory
 type Node = { ring: 0 | 1 | 2; label: string; size: number; color: string; tip: string; angle: number };
 
 const HEIGHT = 300;
+export const MOTION_MS = 8000;   // moving after it appears (qt_panel.MAP_MOTION_MS)
+export const WAKE_MS = 6000;     // and again after a tap (the desktop: the mouse coming over it)
 const SQUASH = 0.86;
 const SPEED = [0.05, -0.035, 0.022];
 const FONT = 10;
@@ -51,6 +54,7 @@ export function InterestMap({ center, field, learned, explore }: {
   const [phase, setPhase] = useState(0);
   const [intro, setIntro] = useState(0);
   const [picked, setPicked] = useState<Node | null>(null);
+  const [awake, setAwake] = useState(() => ({ until: Date.now() + MOTION_MS }));
 
   useEffect(() => {
     let still = false;
@@ -60,13 +64,14 @@ export function InterestMap({ center, field, learned, explore }: {
       if (still) return;
       if (reduce) { setIntro(1); return; }
       timer = setInterval(() => {
+        if (Date.now() > awake.until) { clearInterval(timer); setIntro(1); return; }   // at rest: no more renders
         const t = Math.min((Date.now() - started) / 1400, 1);
-        setIntro(1 - (1 - t) ** 3);
+        setIntro((v) => Math.max(v, 1 - (1 - t) ** 3));
         setPhase((p) => p + 0.05);
       }, 50);
     }).catch(() => setIntro(1));
     return () => { still = true; if (timer) clearInterval(timer); };
-  }, []);
+  }, [awake]);
 
   const nodes = buildNodes(field, learned, explore);
   const cx = w / 2;
@@ -123,7 +128,7 @@ export function InterestMap({ center, field, learned, explore }: {
             })}
             {/* the points: a soft glow, a core */}
             {placed.map(({ n, x, y, size }) => (
-              <Pressable key={`dot${n.ring}${n.label}`} onPress={() => setPicked(picked?.tip === n.tip ? null : n)} hitSlop={8}
+              <Pressable key={`dot${n.ring}${n.label}`} onPress={() => { setPicked(picked?.tip === n.tip ? null : n); setAwake({ until: Date.now() + WAKE_MS }); }} hitSlop={8}
                          accessibilityLabel={n.tip.replace('\n', ': ')}
                          style={[st.hit, { left: x - size * 2.6, top: y - size * 2.6, width: size * 5.2, height: size * 5.2 }]}>
                 <View style={[st.glow, { width: size * 5.2, height: size * 5.2, borderRadius: size * 2.6, backgroundColor: n.color }]} />

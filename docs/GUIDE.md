@@ -519,7 +519,7 @@ On a new computer: `pip install mygeeky`, then `gh auth login` and
 `mygeeky sync init --repo <you>/mygeeky-data` (the **same** repo). It pulls your
 config, keywords, CV text, publications, history, sent signals and training data.
 
-After that it keeps itself in step: **the panel syncs every 15 minutes while it's
+After that it keeps itself in step: **the panel syncs every hour while it's
 open** (and once more when you quit it), so what you do on one computer shows up
 on the others. `mygeeky pipeline` (the weekly job) also does
 **pull → learn → run → contribute → push**. Your Signals token and key stay per
