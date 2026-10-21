@@ -276,7 +276,7 @@ def _tidy() -> None:
     loose_kb = next((int(line.split()[1]) for line in out.splitlines() if line.startswith("size:")), 0)
     if loose_kb > TIDY_LOOSE_MB * 1024:
         try:                                     # gently: a few threads and capped memory, and never fails a sync
-            _git("-c", "pack.threads=2", "-c", "pack.windowMemory=256m", "-c", "core.bigFileThreshold=16m",
+            _git("-c", "pack.threads=2", "-c", "pack.windowMemory=256m",
                  "gc", "-q", check=False, timeout=1800)
         except SyncError:
             pass
