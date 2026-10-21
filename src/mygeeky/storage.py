@@ -174,11 +174,13 @@ def load_activity_cache() -> dict[str, Any] | None:
 
 
 def save_activity_cache(events: list[dict[str, Any]], fetched_at: str,
-                        following: Iterable[str] | None = None) -> None:
+                        following: Iterable[str] | None = None, match_fetched_at: str = "") -> None:
     ensure_dirs()
     payload: dict[str, Any] = {"fetched_at": fetched_at, "events": events}
     if following is not None:
         payload["following"] = sorted(following)
+    if match_fetched_at:
+        payload["match_fetched_at"] = match_fetched_at
     write_json(ACTIVITY_CACHE_FILE, payload)
 
 

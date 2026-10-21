@@ -62,7 +62,7 @@ several times what a release build uses).
    sealed box from every beacon every 5 min (`:3482`, beacon `inbox()`), even when nothing new was fetched. Rebuild
    only when the data changed and the tab is showing (mark it dirty otherwise); decrypt only new boxes (remember
    what was opened).
-4. ✅ **Partly done 2026-10-21** (hourly and at quit; committing only real changes is still to do). **Sync less, and only when something changed.** 138 syncs a day between two computers, each ~8 git commands and
+4. ✅ **Done 2026-10-21** (hourly and at quit; a sync with nothing new on either side is one `ls-remote`, no fetch, merge or push). **Sync less, and only when something changed.** 138 syncs a day between two computers, each ~8 git commands and
    several network round-trips even with nothing new (`SYNC_EVERY_MS` 15 min). Commit/push only when a synced file
    changed (and at quit), fetch less often (30–60 min), and skip a sync when the only change is a file rewritten
    by reading (`seen.json` every 5 s).
@@ -76,7 +76,7 @@ several times what a release build uses).
    as scikit-learn's CountVectorizer, ties at the cutoff aside), and the Model page reads `model_weights.json` saved
    with the model instead of unpickling it. **Panel RAM 313 → 175 MB (−44%), startup imports 1.2 s → 0.23 s**, with or
    without a CV; budget tightened to 250 MB. Building pages on first open (the original idea) would save the remaining
-   65–90 MB but touches most of qt_panel.py: left for later. **Desktop RAM: build pages when first opened.** All 14 tabs are filled at startup (1,467 widgets, ~330 MB).
+   65–90 MB but touches most of qt_panel.py. Measured instead which page holds the widgets: **Chances, 575 of 1,019** (32 cards); it now draws on first open (no "new" count depends on it): **1,019 → 479 widgets at startup**, 150 → 137 MB before any page is opened. **Desktop RAM: build pages when first opened.** All 14 tabs are filled at startup (1,467 widgets, ~330 MB).
    Build each page the first time it's shown (keep the data loading as it is). Also cap the in-session caches that
    only grow: `ghcache.Store._rows` (decoded bodies kept for the whole session), `AvatarLoader._memory` (pixmaps),
    `profile_card._cache`.
@@ -84,7 +84,7 @@ several times what a release build uses).
    (rotate at 1 MB, like `fatal.log`), the phone's single `wisep` AsyncStorage key (up to 300 full bodies in one row,
    near Android's ~2 MB row limit: cap by bytes, or one key per answer), WISEP's `calls` table (`KEEP_DAYS` is
    declared but never applied).
-8. **Threads:** every async job and avatar starts a fresh `QThread`; a small pool (`QThreadPool`, 4 workers) would
+8. ✅ **Done 2026-10-21, with a measured trade-off.** Workers share a pool (8 for work, 8 for avatar photos; idle threads end after 30 s). A page of 40 uncached photos: 40 threads in 0.2 s before, 8 threads in 1.0 s now (3 threads took 2.8 s: too slow); photos from the disk cache stay instant. Matched people's Activity is asked every 30 min (was every 5), their events kept from the cache in between. **Threads:** every async job and avatar starts a fresh `QThread`; a small pool (`QThreadPool`, 4 workers) would
    cut thread churn. The N+1 Activity fetch (one `/users/<x>/events` per matched person, up to 24 every 5 min)
    should go through the GitHub cache with a longer refresh, or batch.
 9. ✅ **Done 2026-10-21** for the four biggest (protocol model, curated lists, quiz, datasets: 1.2 MB, now read on first use; development build startup 503 → 480 MB PSS, Hermes native heap 260 → 233 MB; Chances checked on the emulator). `field-words` and `geekoc` stay: the first pages use them. **Phone bundle:** 1.7 MB of data files are imported statically, so they're parsed into the JS heap at startup

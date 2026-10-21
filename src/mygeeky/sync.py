@@ -288,6 +288,16 @@ def _tidy() -> None:
             pass
 
 
+def _in_step_with_remote() -> bool:
+    """Nothing to send and nothing new there: GitHub's main is the commit this computer last fetched, and every
+    commit here is already on it. One `ls-remote`; anything unclear says no (a full sync follows)."""
+    remote = _git("ls-remote", "--heads", "origin", "main", check=False).stdout.split()
+    known = _git("rev-parse", "-q", "--verify", "origin/main", check=False).stdout.strip()
+    if not remote or not known or remote[0] != known:
+        return False
+    return not _git("rev-list", "--count", "origin/main..HEAD", check=False).stdout.strip().strip("0")
+
+
 def _remote_has_main() -> bool:
     return bool(_git("ls-remote", "--heads", "origin", "main", check=False).stdout.strip())
 
@@ -422,6 +432,8 @@ def push() -> str:
     if not is_initialized():
         raise SyncError("Sync isn't set up on this machine -- run `mygeeky sync init --repo owner/name`.")
     committed = _commit_local(f"myGeeKy sync from {_stamp()}")
+    if not committed and _in_step_with_remote():
+        return "Nothing new to push (remote is up to date)."   # one small check, no fetch, merge or push (plan 4)
     _git("fetch", "-q", "origin")
     if _remote_has_main():
         _merge()

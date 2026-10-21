@@ -110,3 +110,17 @@ def test_the_databases_live_beside_the_data_folder_and_move_there_once(tmp_path,
     real = config.DATA_DIR.parent / f"{config.DATA_DIR.name}-local"
     assert ghcache.CACHE_FILE.parent != config.DATA_DIR and wisep.DB_FILE.parent != config.DATA_DIR
     assert real.name.endswith("-local")
+
+
+def test_a_sync_with_nothing_new_on_either_side_only_checks(two_computers, monkeypatch):
+    remote, old, new = two_computers
+    sync.push()                                                              # in step now
+    calls = []
+    real = sync._git
+    monkeypatch.setattr(sync, "_git", lambda *a, **k: calls.append(a[0]) or real(*a, **k))
+    assert sync.push() == "Nothing new to push (remote is up to date)."
+    assert "fetch" not in calls and "push" not in calls and "merge" not in calls
+    _old_sync(old, {"notes.md": b"new there\n"}, "the other computer")       # something new there...
+    calls.clear()
+    sync.push()
+    assert "fetch" in calls and (new / "notes.md").read_text() == "new there\n"   # ...is fetched and merged

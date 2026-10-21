@@ -964,6 +964,9 @@ def _profile_matches(cfg: MyGeekyConfig, following: list[str]) -> list[str]:
     return picked[: cfg.gui_activity_match_people]
 
 
+MATCH_REFRESH_MINUTES = 30
+
+
 def get_activity(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
     if not cfg.github_username:
         return {"events": [], "error": "not configured"}
@@ -997,7 +1000,20 @@ def get_activity(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
                                      following=following)
         for e in events:
             e["source"] = "following"
-        events += get_matched_activity(client, _profile_matches(cfg, following))
+        # your matched people (one GitHub call each) change slowly: asked every MATCH_REFRESH_MINUTES, their events
+        # reused from the cache in between (docs/RESOURCES.md, plan 8)
+        match_at = str((cache or {}).get("match_fetched_at") or "")
+        try:
+            fresh_match = match_at and (now - datetime.fromisoformat(match_at)).total_seconds() < MATCH_REFRESH_MINUTES * 60
+        except ValueError:
+            fresh_match = False
+        if fresh_match:
+            follow_low = {u.lower() for u in following}
+            events += [e for e in (cache or {}).get("events") or []
+                       if e.get("source") == "match" and (e.get("actor") or "").lower() not in follow_low]
+        else:
+            events += get_matched_activity(client, _profile_matches(cfg, following))
+            match_at = now.isoformat()
         events.sort(key=lambda e: e.get("created_at", ""), reverse=True)
     except Exception as exc:
         if cache:
@@ -1005,7 +1021,7 @@ def get_activity(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
         return {"events": [], "error": str(exc)}
 
     fetched_at_iso = now.isoformat()
-    save_activity_cache(events, fetched_at_iso, following)
+    save_activity_cache(events, fetched_at_iso, following, match_at)
     return {"events": events, "fetched_at": fetched_at_iso, "cached": False}
 
 

@@ -30,7 +30,8 @@ from PySide6.QtCore import (
     QPropertyAnimation,
     QRectF,
     QSize,
-    QThread,
+    QRunnable,
+    QThreadPool,
     QTimer,
     QVariantAnimation,
     Signal,
@@ -406,29 +407,76 @@ def _with_seen_earlier(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return fresh + [i for i in items if i.get("_fresh") == "seen"][:SEEN_EARLIER_MAX]
 
 
-class _Worker(QThread):
+class _Job(QRunnable):
+    def __init__(self, worker: "_Worker") -> None:
+        super().__init__()
+        self.setAutoDelete(True)
+        self._worker = worker
+
+    def run(self) -> None:
+        self._worker._run()
+
+
+class _Worker(QObject):
     """Runs one callable off the UI thread so a slow network call (a real
-    `mygeeky run`, or an activity-feed fetch) never freezes the panel."""
+    `mygeeky run`, or an activity-feed fetch) never freezes the panel.
+
+    The callables share a small pool of threads instead of each starting a new one (a page of avatars started
+    dozens at once; docs/RESOURCES.md, plan 8): WORK_THREADS for work, AVATAR_THREADS for photos, so a page full
+    of photos never queues real work behind it. `done` is emitted from the pool thread and delivered on the UI
+    thread (this object lives there); `_alive` holds every worker until its callable has returned."""
 
     done = Signal(object)
-    # Qt aborts the whole program if a QThread object is destroyed while its thread
-    # still runs. `done` fires from inside the thread, before it has stopped, so the
-    # callers' own lists can't be what keeps it alive: hold every worker here until
-    # `finished` (delivered on the UI thread, after run() returned) says it stopped.
+    _over = Signal()                 # queued after `done`, so the worker is released only once its result arrived
     _alive: set = set()
+    WORK_THREADS = 8
+    AVATAR_THREADS = 8
+    _pools: dict[str, QThreadPool] = {}
 
-    def __init__(self, fn: Callable[[], Any]) -> None:
+    def __init__(self, fn: Callable[[], Any], pool: str = "work") -> None:
         super().__init__()
         self._fn = fn
-        self.finished.connect(self._stopped)
+        self._pool = pool
+        self._finished = threading.Event()
+        self._started = False
+        self._over.connect(self._release)
+
+    def _release(self) -> None:
+        _Worker._alive.discard(self)
+
+    @classmethod
+    def _pool_for(cls, name: str) -> QThreadPool:
+        if name not in cls._pools:
+            pool = QThreadPool()
+            pool.setMaxThreadCount(cls.AVATAR_THREADS if name == "avatar" else cls.WORK_THREADS)
+            pool.setExpiryTimeout(30_000)          # idle threads end after 30 s
+            cls._pools[name] = pool
+        return cls._pools[name]
 
     def start(self, *args: Any) -> None:
         _Worker._alive.add(self)
-        super().start(*args)
+        self._started = True
+        self._pool_for(self._pool).start(_Job(self))
 
-    def _stopped(self) -> None:
-        self.wait()
-        _Worker._alive.discard(self)
+    def _run(self) -> None:
+        try:
+            result = self._fn()
+        except Exception as exc:  # keep the worker thread from ever crashing the app
+            from ..errors import describe
+            result = {"error": describe(exc)}    # what happened in plain words (network, limits, files...)
+        try:
+            self.done.emit(result)
+            self._over.emit()
+        except RuntimeError:
+            _Worker._alive.discard(self)           # its Qt object is gone (the app is closing)
+        finally:
+            self._finished.set()
+
+    def isRunning(self) -> bool:  # noqa: N802 -- the QThread name callers already use
+        return self._started and not self._finished.is_set()
+
+    def wait(self, ms: int | None = None) -> bool:
+        return self._finished.wait(None if ms is None else ms / 1000) if self._started else True
 
     @classmethod
     def drain(cls, timeout_ms: int) -> int:
@@ -436,15 +484,7 @@ class _Worker(QThread):
         deadline = time.monotonic() + timeout_ms / 1000
         for w in list(cls._alive):
             w.wait(max(0, int((deadline - time.monotonic()) * 1000)))
-        return sum(1 for w in cls._alive if w.isRunning())
-
-    def run(self) -> None:
-        try:
-            result = self._fn()
-        except Exception as exc:  # keep the worker thread from ever crashing the app
-            from ..errors import describe
-            result = {"error": describe(exc)}    # what happened in plain words (network, limits, files...)
-        self.done.emit(result)
+        return sum(1 for w in list(cls._alive) if w.isRunning())
 
 
 class AvatarLoader:
@@ -510,7 +550,7 @@ class AvatarLoader:
                 pass
             return circular
 
-        worker = _Worker(fetch)
+        worker = _Worker(fetch, pool="avatar")
 
         def _finish(result: Any) -> None:
             if isinstance(result, QImage) and not result.isNull():
@@ -4714,6 +4754,13 @@ class MyGeekyPanel(QWidget):
             self.chances_area.addWidget(note)
 
     def _render_chances(self) -> None:
+        if getattr(self, "active_tab", None) != "chances" and not getattr(self, "_chances_drawn", False):
+            # drawn the first time Chances is opened: its cards were over half the panel's widgets, built at
+            # every start for a page many never open (docs/RESOURCES.md, plan 6); it shows no "new" count
+            self._chances_pending = True
+            return
+        self._chances_drawn = True
+        self._chances_pending = False
         from .growth_ui import OpportunityCard
         theme = THEMES[self._theme_name()]
         self._style_grow_switches()
@@ -9134,6 +9181,8 @@ class MyGeekyPanel(QWidget):
             self._show_you_part(self.you_part)
         if name == "researchers":
             self.researchers_page.shown()
+        if name == "chances" and getattr(self, "_chances_pending", False):
+            self._render_chances()
         if name in getattr(self, "_notify_dots", set()):     # the notification's dot: seen now
             self._notify_dots.discard(name)
             self.tab_buttons[name].set_dot(False)

@@ -177,3 +177,42 @@ def test_the_model_page_reads_saved_weights(tmp_path, monkeypatch):
     assert (tmp_path / "model_weights.json").exists() and matcher.saved_weights() is not None
     shown = logic.get_model_weights()
     assert len(shown) == len(matcher.FEATURE_NAMES) and all("weight" in w for w in shown)
+
+
+def test_matched_people_are_asked_every_half_hour_not_every_five_minutes(monkeypatch):
+    from datetime import datetime, timezone
+    from mygeeky.config import MyGeekyConfig
+    from mygeeky.gui import app as logic
+    asked = []
+
+    class Client:
+        def list_following(self, me):
+            return ["friend"]
+
+        def list_user_events(self, login, per_page=30):
+            asked.append(login)
+            return [{"type": "WatchEvent", "actor": {"login": login, "avatar_url": ""},
+                     "repo": {"name": f"{login}/x"}, "payload": {"action": "started"},
+                     "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}]
+    monkeypatch.setattr(logic, "_build_client", lambda cfg: Client())
+    monkeypatch.setattr(logic, "get_recent_activity", lambda *a, **k: [])
+    monkeypatch.setattr(logic, "_profile_matches", lambda cfg, following: ["ada", "grace"])
+    cfg = MyGeekyConfig(github_username="me")
+    first = logic.get_activity(cfg, force=True)
+    assert asked == ["ada", "grace"] and {e["actor"] for e in first["events"]} == {"ada", "grace"}
+    second = logic.get_activity(cfg, force=True)                       # 5 minutes later, say
+    assert [x for x in asked if x != "me"] == ["ada", "grace"]         # no new calls for them (your own: learning)
+    assert {e["actor"] for e in second["events"]} == {"ada", "grace"}  # ...their events kept
+
+
+def test_chances_draws_its_cards_when_first_opened(qapp_offscreen):
+    from mygeeky.config import MyGeekyConfig
+    from mygeeky.gui.qt_panel import MyGeekyPanel
+    panel = MyGeekyPanel(MyGeekyConfig(github_username="me", keywords=["gwas"]))
+    try:
+        panel._on_chances_ready({"jobs": [], "funding": [], "conferences": []})
+        assert panel.chances_area.count() == 0 and panel._chances_pending       # not built while unseen
+        panel._switch_tab("chances")
+        assert panel._chances_drawn and not panel._chances_pending              # built on first open
+    finally:
+        panel.close()
