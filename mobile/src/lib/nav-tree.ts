@@ -102,6 +102,7 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     signals: { id: 'signals', label: 'Signals', icon: 'radio-outline', tab: 'signals' },
   };
   return finish({ id: 'home', label: 'Home', icon: 'planet-outline', children: [
+    { id: 'feed', label: 'Home', icon: 'home-outline', tab: 'feed', color: '#a78bfa' },   // 🏠 the feed: the first page
     { ...G.you, icon: 'person-outline', children: [
       leaf('you', 'month', 'My month', 'ribbon-outline'), leaf('you', 'model', 'Model', 'analytics-outline'),
       leaf('you', 'cited', 'Cited by', 'document-attach-outline'),

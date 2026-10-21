@@ -1611,6 +1611,7 @@ GROUP_ICONS = {
     "you": PLANETS["model"][1], "grow": PLANETS["grow"][1], "repos": PLANETS["repos"][1], "chances": PLANETS["chances"][1],
     "world": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
     "circle": PLANETS["suggestions"][1],
+    "feed": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",     # 🏠 Home, the first page
 }
 BACK_ICON = "M15 18l-6-6 6-6"
 
@@ -3404,6 +3405,7 @@ class RoundedButton(QPushButton):
 
 # name -> (icon, name shown when open / on hover)
 TABS = {
+    "home": ("\U0001f3e0", "Home"),
     "live": ("\u26a1", "Live"),
     "suggestions": ("\U0001f465", "People"),
     "repos": ("\U0001f4e6", "Repos"),
@@ -3462,6 +3464,7 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
                   n(f"researchers:{p}", label, icon=emoji, tab="researchers", part=p) for p, label, emoji in RESEARCHER_PARTS]),
               "activity": n("activity", "Activity", tab="activity"), "signals": n("signals", "Signals", tab="signals")}
     return navtree.finish(n("home", "Home", children=[
+        n("feed", "Home", "#a78bfa", tab="home"),          # 🏠 the feed (feed.py): the first page, above the groups
         group("you", [n("model:month", "My month", icon="\U0001f396", tab="model", part="month"),
                       n("model:model", "Model", icon="\U0001f9e0", tab="model", part="model"),
                       n("model:cited", "Cited by", icon="\U0001f4d1", tab="model", part="cited"),
@@ -3485,7 +3488,7 @@ class MyGeekyPanel(QWidget):
     def __init__(self, cfg: MyGeekyConfig) -> None:
         super().__init__()
         self.cfg = cfg
-        self.active_tab = "live"
+        self.active_tab = "home"                 # 🏠 the feed is the first page
         # freshness (what you've seen): ready before any tab renders
         self._seen_dwell: dict[str, int] = {}
         self._seen_done: set[str] = set()
@@ -3608,6 +3611,7 @@ class MyGeekyPanel(QWidget):
         self._sugg_timer.start(10 * 60_000)
         QTimer.singleShot(5_000, self._maybe_auto_refresh_suggestions)
         self._start_seen_tracker()
+        QTimer.singleShot(800, lambda: self.home_page.shown() if self.active_tab == "home" else None)
 
     # ------------------------------------------------------------------ UI construction
     def _build_ui(self) -> None:
@@ -3769,7 +3773,7 @@ class MyGeekyPanel(QWidget):
         panel_layout.addWidget(self.height_grip, 0, Qt.AlignHCenter)
 
         # built in this fixed order (later builders may use what earlier ones made), shown in `tabs` order
-        pages = {"live": self._build_live_tab(), "suggestions": self._build_suggestions_tab(),
+        pages = {"home": self._build_home_tab(), "live": self._build_live_tab(), "suggestions": self._build_suggestions_tab(),
                  "repos": self._build_repos_tab(), "market": self._build_market_tab(),
                  "news": self._build_news_tab(), "activity": self._build_activity_tab(),
                  "researchers": self._build_researchers_tab(),
@@ -3781,10 +3785,29 @@ class MyGeekyPanel(QWidget):
         self._tab_order = [name for name in tabs if name in pages]
         for name in self._tab_order:
             self.content_stack.addWidget(pages[name])
-        self.content_stack.setCurrentIndex(self._tab_order.index(self.active_tab))   # still opens on Live
+        self.content_stack.setCurrentIndex(self._tab_order.index(self.active_tab))   # opens on Home
 
         outer.addWidget(self.panel_frame)
         self.folded_widget.hide()
+
+    def _build_home_tab(self) -> QWidget:
+        """🏠 Home (feed_ui.py): one scrolling feed of what the other pages found, learning what you enjoy."""
+        from .feed_ui import HomePage
+
+        def go(page_id: str) -> None:
+            self._nav_open(navtree.find(self.nav_tree, page_id))
+
+        def label(page_id: str) -> str:
+            nd = navtree.find(self.nav_tree, page_id) if page_id else None
+            return nd["label"] if nd else ""
+
+        def color(card: dict[str, Any]) -> str:
+            nd = navtree.find(self.nav_tree, card.get("page", "")) if card.get("page") else None
+            return nd["color"] if nd else THEMES[self._theme_name()]["accent"]
+
+        self.home_page = HomePage(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, logic.open_link, go,
+                                  label, color, lambda: self.panel_frame.isVisible() and self.isVisible())
+        return self.home_page
 
     def _build_researchers_tab(self) -> QWidget:
         """Circle → 📄 Researchers (researchers_ui.py): new work from the people you follow, following, suggestions."""
@@ -9212,6 +9235,8 @@ class MyGeekyPanel(QWidget):
             self._show_you_part(self.you_part)
         if name == "researchers":
             self.researchers_page.shown()
+        if name == "home":
+            self.home_page.shown()
         if name == "chances" and getattr(self, "_chances_pending", False):
             self._render_chances()
         if name in getattr(self, "_notify_dots", set()):     # the notification's dot: seen now

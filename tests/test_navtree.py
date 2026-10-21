@@ -57,7 +57,7 @@ def test_the_panel_tree_has_every_tab():
     t = panel_tree(True, True)
     tabs = {n["tab"] for n in nt.walk(t) if n["tab"]}
     assert tabs == set(TABS), "every tab is somewhere under a group"
-    assert [g["id"] for g in t["children"]] == [g["id"] for g in nt.GROUPS]
+    assert [g["id"] for g in t["children"]] == ["feed"] + [g["id"] for g in nt.GROUPS]   # 🏠 Home, then the groups
     assert "admin" not in {n["tab"] for n in nt.walk(panel_tree(False, False))}
     circle = [c["tab"] for c in nt.find(panel_tree(False, False), "circle")["children"]]
     assert circle[-2:] == ["activity", "signals"], "without GitHub, what needs it goes last"
@@ -89,10 +89,10 @@ out({ groups: N.GROUPS, root: N.ROOT_LABEL, levels: ids.map((id: string) => N.le
     assert said["taps"] == [nt.tap(t, *x) for x in taps]
     assert said["rows"] == [nt.rows(n) for n in (2, 6, 7, 8)]
     assert said["leaf"] == ["repos:rising", "news:airace", None]
-    assert said["phoneGroups"] == [g["id"] for g in nt.GROUPS]
+    assert said["phoneGroups"] == ["feed"] + [g["id"] for g in nt.GROUPS]   # 🏠 Home first, as on the computer
     assert said["phoneCircle"] == ["researchers", "live", "people", "activity", "signals"]   # no GitHub: what works first
     assert said["phoneTabs"] == sorted(["you", "grow", "news", "papers", "models", "launches", "live", "people", "activity",
-                                        "signals", "repos", "chances", "researchers"])
+                                        "signals", "repos", "chances", "researchers", "feed"])
 
 
 def test_the_panel_row_goes_in_and_out(monkeypatch):

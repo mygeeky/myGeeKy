@@ -1052,6 +1052,19 @@ The first run sets up Qt (PySide6, about 80 MB) by itself. It uses this
 Python's normal package folder when Windows' path limit allows, and otherwise
 a short private folder, `~/.mygeeky/qt` (or `$MYGEEKY_QT_DIR`).
 
+**🏠 Home** (the first page, on the computer and the phone): one scrolling feed of what the other pages found for
+you: new work from people you follow, rising papers, jobs and funding still open, datasets just out, repos and people,
+headlines, a quiz question or two. New things come first; after **"You're all caught up"** come the ones you've seen,
+best first. Every card says why it's there ("matches GWAS · new today") and has **Open**, **More in … ›** (that page),
+and 👍/👎.
+
+Home learns what you enjoy: which kinds of card you open, vote up or read for a while, and which you scroll straight
+past. It keeps room for every kind, one card in five for new territory 🔭, and never more than two of a kind in any
+four. It's built only from what the other pages already keep, so scrolling never downloads anything and works offline;
+what you open there also tells WISEP to keep those pages fresh first. **⏱ learning** at the top switches off the
+time-on-screen part (taps and votes still count). Everything it learns stays on your devices (feed.json on the
+computer, synced with your other computers like your Model).
+
 **Moving around** (the panel and the phone): everything sits under six groups, **You, Grow, World, Circle, Repos
 and Chances**.
 

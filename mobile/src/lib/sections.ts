@@ -15,12 +15,13 @@ import { Paper } from './research';
 import { C, BADGES, tint } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
-export type SectionId = 'live' | 'people' | 'researchers' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
+export type SectionId = 'feed' | 'live' | 'people' | 'researchers' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
   | 'chances' | 'you' | 'market' | 'discuss';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
 
 export type Section = { id: SectionId; label: string; color: string; icon: IconName; about: string };
 
 export const SECTIONS: Record<SectionId, Section> = {
+  feed: { id: 'feed', label: 'Home', color: '#a78bfa', icon: 'home-outline', about: 'New things from everywhere, learning what you enjoy.' },
   live: { id: 'live', label: 'Live', color: '#ff6fd8', icon: 'flash-outline', about: 'New faces and the latest moves around you.' },
   people: { id: 'people', label: 'People', color: '#7fd8ff', icon: 'people-outline', about: 'People building the tools of your field, and who follows you.' },
   researchers: { id: 'researchers', label: 'Researchers', color: '#c4b5fd', icon: 'school-outline', about: 'People who publish: new preprints and papers from the people you follow.' },

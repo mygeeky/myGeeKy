@@ -408,7 +408,12 @@ class RailHost(QWidget):
         if nd is None:
             return
         level = len(navtree.path(nd)) - 1                 # 1 group, 2 page, 3 part
-        if level == 1:
+        if level == 1 and not nd["children"]:              # 🏠 Home: a page of its own, not a group
+            self._open_node(nd)
+            self.state.open_group, self.state.open_page = None, None
+            if not self.state.pinned:
+                self.state.open = False
+        elif level == 1:
             same = self.state.open_group == nid
             self.state.open_group, self.state.open_page = (None, None) if same else (nid, None)
         elif nd["children"]:

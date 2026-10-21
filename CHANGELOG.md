@@ -3,6 +3,10 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **🏠 Home, a scrolling feed, is the first page** (computer and phone). Cards from every part of myGeeKy (new work from your circle, rising papers, open jobs, funding and conferences, new datasets, repos, people, headlines, AI models, a daily quiz question), new first, then "You're all caught up" and what you've seen. It learns what you enjoy from taps, 👍/👎 and time on screen (switch: ⏱ learning), with a small bandit over the kinds of card so it keeps trying every kind, at most two of a kind in any four, and one in five from new territory 🔭. Built only from what the other pages keep: no downloads while you scroll. Each card says why it's there and leads to its page. The ranking is the same on both apps (tested).
+
 ## 0.32.0 (2026-10-21): a side rail to find your way, and the phone signs in again (phone 1.14.0)
 
 - **A side rail for moving around the panel** (computer). The row of six unlabeled planets is replaced by a narrow rail down the left: folded (46px) it shows the six groups with their "new" counts and the page you're on written down the side; opened (128px) it lists the groups by name, a group drops down its pages and a page its parts, and tapping again or ‹ (Esc) goes up a level. Every count sits on its icon (groups, pages and parts alike), so the open rail needs no column for numbers. Unpinned it opens over the page and folds after you pick; 📌 pins it beside the page (remembered). The line above the page says where you are in its group's colour. News keeps its own count again (the group count used to overwrite it with 0).

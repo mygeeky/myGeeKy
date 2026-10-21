@@ -63,7 +63,7 @@ def test_the_phone_orders_its_ring_by_the_same_rule():
 
 
 @pytest.mark.parametrize("username", ["me", ""])
-def test_the_panel_shows_its_tabs_in_that_order_and_still_opens_on_live(monkeypatch, username):
+def test_the_panel_shows_its_tabs_in_that_order_and_opens_on_home(monkeypatch, username):
     pytest.importorskip("PySide6")
     from mygeeky.config import MyGeekyConfig
     from tests.test_freshness import _close, _quiet_panel
@@ -74,17 +74,18 @@ def test_the_panel_shows_its_tabs_in_that_order_and_still_opens_on_live(monkeypa
         from mygeeky import navtree
         bar = panel.tab_bar.layout()
         row = lambda: [bar.itemAt(i).widget() for i in range(bar.count())]   # noqa: E731
-        assert row() == [panel.nav_buttons[g["id"]] for g in navtree.GROUPS]   # the dock: the six groups
-        assert panel.nav_back_text.isHidden() and panel.nav_trail.text() == "Circle \u203a Live"   # where you are
+        top = [panel.nav_buttons["feed"]] + [panel.nav_buttons[g["id"]] for g in navtree.GROUPS]
+        assert row() == top                                                    # Home, then the six groups
+        assert panel.active_tab == "home" and panel.nav_trail.text() == "Home"   # 🏠 the first page
+        assert panel.nav_back_text.isHidden()
         panel.nav_buttons["circle"].click()                                    # a group: back planet, then its pages
         circle = [panel.nav_buttons[i] for i in ("live", "suggestions", "researchers", "activity", "signals")]
         if not username:                                                       # what needs GitHub goes last
             assert [b.accessibleName() for b in row()[1:]] == ["Live", "People", "Researchers", "Activity", "Signals"]
         assert row()[0] is panel.nav_back and set(row()[1:]) == set(circle)
-        assert panel.nav_back_text.text().endswith("Back to All") and panel.nav_trail.text() == "Circle \u203a Live"
         panel.nav_back.click()
-        assert row() == [panel.nav_buttons[g["id"]] for g in navtree.GROUPS]
-        assert panel.active_tab == "live" and panel.content_stack.currentIndex() == shown.index("live")
+        assert row() == top
+        assert panel.active_tab == "live" and panel.content_stack.currentIndex() == shown.index("live")   # Circle opened Live
         panel._switch_tab("model")
         assert panel.content_stack.currentWidget() is panel.content_stack.widget(0)   # You is the first page
         panel._switch_tab("chances")

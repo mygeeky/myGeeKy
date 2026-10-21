@@ -83,7 +83,7 @@ def test_counts_sit_on_the_icons_folded_and_open(panel):
     panel._update_group_counts()
     assert host.count_of("circle") == 3 and host.count_of("world") == 12
     assert host.count_of("news") == 12                              # a page with parts keeps its own count
-    assert "3 new" in host.tip(panel.nav_tree["children"][3])
+    assert "3 new" in host.tip(next(c for c in panel.nav_tree["children"] if c["id"] == "circle"))
     host.open_at("world")
     row = host.overlay.rows["news"]
     assert row.rail.count_of("news") == 12

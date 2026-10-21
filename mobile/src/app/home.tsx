@@ -3,6 +3,7 @@
 // (lib/nav-tree.ts, components/orbit-zoom.tsx). Reading folds it into a dock of planets that moves the same way,
 // with a back planet first; "Orbit" brings the orbit back (scrolling never does: it surprised people).
 import { ResearchersView } from '../components/researchers-view';
+import { FeedView } from '../components/feed-view';
 import { opened, topUp } from '../lib/wisep';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -202,12 +203,13 @@ export default function Home() {
     live: [live, people], activity: [live], people: [people], signals: [], news: [headlines, discuss], papers: [research],
     repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market], discuss: [discuss],
     researchers: [],                                  // its own refresh (lib/researchers.ts, through WISEP)
+    feed: [],                                         // 🏠 built from the others' saved copies (lib/feed-store.ts)
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
   const params = useLocalSearchParams<{ sel?: string; fold?: string; open?: string; part?: string }>();
   const [sel, setSel] = useState<SectionId>(params.sel && params.sel in SECTIONS ? params.sel as SectionId
-    : user ? 'live' : 'papers');                          // without GitHub, start where your field is
+    : 'feed');                                            // 🏠 Home, the feed, is the first page
   // a notification tapped while home is already open: follow its link to the right planet
   useEffect(() => {
     if (params.sel && params.sel in SECTIONS) {
@@ -437,6 +439,8 @@ export default function Home() {
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />
           ) : sel === 'news' && newsPart === 'airace' ? (
             <AiRaceView />
+          ) : sel === 'feed' ? (
+            <FeedView onGo={openNode} labelOf={(id) => find(tree, id)?.label ?? ''} colorOf={(id) => find(tree, id)?.color ?? C.violet} />
           ) : sel === 'researchers' ? (
             <ResearchersView part={researcherPart} />
           ) : sel === 'signals' ? (
