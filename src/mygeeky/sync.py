@@ -54,6 +54,8 @@ my_repos.json
 questions.json
 github_cache.json
 github_cache.sqlite*
+*.sqlite
+*.sqlite-*
 wins.json
 *.token
 *.lock
@@ -110,7 +112,7 @@ def _has_gh() -> bool:
     return shutil.which("gh") is not None
 
 
-def _git(*args: str, cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess:
+def _git(*args: str, cwd: Path | None = None, check: bool = True, timeout: int | None = None) -> subprocess.CompletedProcess:
     cmd = [git_exe() or "git"]
     if _has_gh():
         # let git borrow gh's login for github.com without touching the user's git config
@@ -127,7 +129,7 @@ def _git(*args: str, cwd: Path | None = None, check: bool = True) -> subprocess.
         # background syncs never wait on a password prompt nobody can see; only the
         # `sync init` the user runs themselves may open Git's sign-in window
         env.update(GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="never")
-    timeout = 900 if _interactive else 180
+    timeout = timeout or (900 if _interactive else 180)
     try:
         result = winproc.run(cmd, cwd=str(cwd or DATA_DIR), capture_output=True, text=True, env=env,
                              timeout=timeout)
@@ -231,11 +233,53 @@ def _commit_local(message: str) -> bool:
     if not _git("config", "user.email", check=False).stdout.strip():
         _git("config", "user.name", "myGeeKy sync")
         _git("config", "user.email", "mygeeky-sync@users.noreply.github.com")
+    _untrack_ignored()
     _git("add", "-A")
     if not _git("status", "--porcelain").stdout.strip():
         return False
     _git("commit", "-q", "-m", message)
     return True
+
+
+def _untrack_ignored() -> None:
+    """Stop carrying files the ignore list names but git still tracks (an older version committed them, or another
+    computer still does: a live database among them, which grew this repo by 24 MB a sync). The files stay here."""
+    tracked = [p for p in _git("ls-files", "-ci", "--exclude-standard", "-z").stdout.split("\0") if p]
+    if tracked:
+        _git("rm", "-q", "--cached", "--ignore-unmatch", "--", *tracked)
+
+
+def _merge(*extra: str) -> None:
+    """Merge the other computer's data (theirs wins for the small state files, the .jsonl logs keep both sides).
+    A computer with an older myGeeKy may still commit a file this one no longer carries (a database): that conflict
+    is settled by leaving the file out, without its copy ever replacing anything here."""
+    r = _git("merge", "-q", "--no-edit", *extra, "-X", "theirs", "origin/main", check=False)
+    if r.returncode == 0:
+        return
+    conflicted = [p for p in _git("diff", "--name-only", "--diff-filter=U", "-z").stdout.split("\0") if p]
+    ignored = {p for p in conflicted if _git("check-ignore", "-q", "--no-index", "--", p, check=False).returncode == 0}
+    if not conflicted or ignored != set(conflicted):
+        _git("merge", "--abort", check=False)
+        raise SyncError("Couldn't merge the other computer's data: " + (r.stderr or r.stdout).strip()[:300])
+    _git("rm", "-q", "--cached", "--ignore-unmatch", "--", *conflicted)
+    for p in conflicted:                         # their copy, written for the conflict: not used here, so dropped
+        (DATA_DIR / p).unlink(missing_ok=True)
+    _git("commit", "-q", "--no-edit")
+
+
+TIDY_LOOSE_MB = 200
+
+
+def _tidy() -> None:
+    """Pack git's loose copies when they pile up (each sync leaves some; old versions left 24 MB ones)."""
+    out = _git("count-objects", "-v", check=False).stdout
+    loose_kb = next((int(line.split()[1]) for line in out.splitlines() if line.startswith("size:")), 0)
+    if loose_kb > TIDY_LOOSE_MB * 1024:
+        try:                                     # gently: a few threads and capped memory, and never fails a sync
+            _git("-c", "pack.threads=2", "-c", "pack.windowMemory=256m", "-c", "core.bigFileThreshold=16m",
+                 "gc", "-q", check=False, timeout=1800)
+        except SyncError:
+            pass
 
 
 def _remote_has_main() -> bool:
@@ -313,9 +357,10 @@ def _init(repo: str) -> str:
     else:
         _commit_local(f"myGeeKy sync from {_stamp()}")
         if _remote_has_main():
-            _git("merge", "-q", "--no-edit", "--allow-unrelated-histories", "-X", "theirs", "origin/main")
+            _merge("--allow-unrelated-histories")
             import_config()
         _git("push", "-q", "-u", "origin", "main")
+        _tidy()
         messages.append("Pushed this machine's data to GitHub.")
     return "\n".join(messages)
 
@@ -359,7 +404,7 @@ def pull() -> str:
     before = _git("rev-parse", "HEAD").stdout.strip()
     # union-merged .jsonl never conflicts; for the small JSON state files the
     # other machine's newer copy wins
-    _git("merge", "-q", "--no-edit", "-X", "theirs", "origin/main")
+    _merge()
     after = _git("rev-parse", "HEAD").stdout.strip()
     import_config()
     _apply_admin_log()
@@ -373,11 +418,12 @@ def push() -> str:
     committed = _commit_local(f"myGeeKy sync from {_stamp()}")
     _git("fetch", "-q", "origin")
     if _remote_has_main():
-        _git("merge", "-q", "--no-edit", "-X", "theirs", "origin/main")
+        _merge()
         import_config()
         if _apply_admin_log():
             _commit_local(f"myGeeKy sync from {_stamp()}")     # what the phone asked for, applied, goes up too
     _git("push", "-q", "-u", "origin", "main")
+    _tidy()
     return "Pushed to GitHub." if committed else "Nothing new to push (remote is up to date)."
 
 

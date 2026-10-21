@@ -44,14 +44,16 @@ import sqlite3
 import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import unquote, urlencode, urlsplit
 
 import requests
 
-from .config import DATA_DIR, ensure_dirs
+from . import config
+from .config import LOCAL_DIR, ensure_dirs
 
-DB_FILE = DATA_DIR / "wisep.sqlite"
+DB_FILE = LOCAL_DIR / "wisep.sqlite"      # never in the synced data folder (config.LOCAL_DIR)
 CONTACT = "support@mygeeky.org"      # OpenAlex's polite pool: requests with a contact get the faster, steadier lane
 UA = {"User-Agent": f"mygeeky (https://mygeeky.org; mailto:{CONTACT})"}
 MAX_ENTRIES = 3000
@@ -258,6 +260,8 @@ class Store:
         self.paused_until: dict[str, float] = {}
         if self.path != ":memory:":
             ensure_dirs()
+            if Path(self.path).parent == config.LOCAL_DIR:    # moved once from the data folder older versions used
+                config.local_db(Path(self.path).name)
         self.db = sqlite3.connect(self.path, timeout=15, check_same_thread=False)
         self.db.execute("PRAGMA journal_mode=WAL") if self.path != ":memory:" else None
         self.db.executescript("""

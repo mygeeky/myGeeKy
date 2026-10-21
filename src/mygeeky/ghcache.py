@@ -50,9 +50,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .config import DATA_DIR, ensure_dirs
+from . import config
+from .config import LOCAL_DIR, ensure_dirs
 
-CACHE_FILE = DATA_DIR / "github_cache.sqlite"
+CACHE_FILE = LOCAL_DIR / "github_cache.sqlite"     # never in the synced data folder (config.LOCAL_DIR)
 MAX_ENTRIES = 4000            # the oldest-used go first
 MAX_BYTES = 60_000_000        # and the answers stay this small together, whatever they weigh
 LEGACY_IMPORT_MAX = 30_000_000   # a bigger old JSON cache isn't read in (too slow): it is simply asked again
@@ -158,6 +159,8 @@ class Store:
         self._opened = True
         try:
             ensure_dirs()
+            if self.path.parent == config.LOCAL_DIR:     # moved once from the data folder older versions used
+                config.local_db(self.path.name)
             self.path.parent.mkdir(parents=True, exist_ok=True)
             self._db = self._open_waiting()
         except sqlite3.DatabaseError as exc:
@@ -167,6 +170,8 @@ class Store:
                 try:                             # a damaged file: set it aside, start again
                     if self.path.exists():
                         os.replace(self.path, self.path.with_name(self.path.name + f".broken-{int(time.time())}"))
+                        for old in sorted(self.path.parent.glob(self.path.name + ".broken-*"))[:-2]:
+                            old.unlink(missing_ok=True)      # keep the newest two: they're only caches
                     self._db = self._open_waiting()
                 except (sqlite3.DatabaseError, OSError):
                     self._db = None

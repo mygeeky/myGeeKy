@@ -3,6 +3,12 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **Sync no longer carries live databases, and the data folder shrinks back.** The GitHub cache (24 MB) and WISEP's database had ended up in the synced data folder: every sync, from every computer, stored a new copy (a data folder of several GB, slow syncs, a slow setup), and a copy pulled over the open file damaged it (the `.broken-…` files). They now live beside the data folder (`mygeeky-local`), moved there once; files the ignore list names stop being carried even if an older version committed them; a computer still running an older myGeeKy can't break a sync or overwrite anything (its conflict on such a file is settled by leaving the file out); git's loose copies are packed when they pile up (gently: capped memory, never failing a sync); damaged cache copies are trimmed to the newest two; uninstalling erases the new folder too. Update every computer you sync: an older version's sync stops at that conflict until it is updated.
+- **WISEP knows an OpenAlex text search costs 10 credits** (a filtered list 1, one record by id nothing), as OpenAlex's own headers say; it counted every search as 1.
+- The tests can no longer touch your real data: programs they start get temporary folders, background jobs a test starts must finish inside it, and tests can't reach the internet.
+
 ## 0.30.0 (2026-10-21): people who publish, a wiser way to ask, and packs to share (phone 1.12.0)
 
 - **📦 Packs:** share your setup like a seed, as one to three QR codes (⚙ Settings → Packs on the computer, You → Settings → Packs on the phone). Tick what goes in (keywords and topics, research field, researchers you follow, a note); the codes show one at a time ("Code 1 of 3", Next). The phone receives them: the first scan says how many codes there are, it counts them in any order and asks for the next, checks the set is whole, shows what the pack holds, then Merge into mine or Start from it, with Undo. No internet, no server; a pack is plain data, checked on arrival.

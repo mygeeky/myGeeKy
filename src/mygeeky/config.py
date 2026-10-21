@@ -9,6 +9,7 @@ committed or published by accident.
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,9 @@ APP_NAME = "mygeeky"
 
 CONFIG_DIR = Path(user_config_dir(APP_NAME))
 DATA_DIR = Path(user_data_dir(APP_NAME))
+# Live databases (the GitHub cache, WISEP) sit beside the data folder, never in it: the data folder is a git repo that
+# sync carries between computers, and a database replaced under a running program is damaged.
+LOCAL_DIR = DATA_DIR.parent / f"{DATA_DIR.name}-local"
 
 CONFIG_FILE = CONFIG_DIR / "config.json"
 PREVIOUS_CONFIG_FILE = CONFIG_DIR / "config.previous.json"   # the version before the last save
@@ -310,8 +314,29 @@ def profile_ready(cfg: MyGeekyConfig) -> bool:
 def ensure_dirs() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    LOCAL_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     AVATAR_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def local_db(name: str, keep_broken: int = 2) -> Path:
+    """Where the live database `name` lives (LOCAL_DIR), moved there once from the data folder where older versions
+    kept it (with its -wal and -shm files). Damaged copies an older version set aside are trimmed to the newest
+    `keep_broken`: they're caches, and dozens of them filled the folder."""
+    new, old = LOCAL_DIR / name, DATA_DIR / name
+    try:
+        LOCAL_DIR.mkdir(parents=True, exist_ok=True)
+        if old.exists() and not new.exists():
+            for suffix in ("", "-wal", "-shm"):
+                src = old.with_name(name + suffix)
+                if src.exists():
+                    os.replace(src, new.with_name(name + suffix))
+        broken = sorted(DATA_DIR.glob(f"{name}.broken-*"), key=lambda p: p.stat().st_mtime, reverse=True)
+        for p in broken[keep_broken:]:
+            p.unlink(missing_ok=True)
+    except OSError:
+        pass                    # in use (Windows) or read-only: start afresh beside it; it's only a cache
+    return new
 
 
 # set when this start had to recover settings from a damaged config.json (the panel says so)

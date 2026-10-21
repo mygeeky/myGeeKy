@@ -47,7 +47,25 @@ import mygeeky.quiz  # noqa: F401
 import mygeeky.quizwriter  # noqa: F401
 import mygeeky.leaderboard  # noqa: F401
 
-REAL_ROOTS = (Path(config_module.CONFIG_DIR), Path(config_module.DATA_DIR))
+@pytest.fixture(autouse=True, scope="session")
+def _isolate_child_processes(tmp_path_factory):
+    """Tests that start myGeeKy as a separate program (the CLI, the setup helper, the phone checks) can't see the
+    patching below: point every OS's data and settings folders somewhere temporary for them, so they never open the
+    user's real databases (one moved the real GitHub cache)."""
+    import os
+    root = tmp_path_factory.mktemp("child-home")
+    saved = {k: os.environ.get(k) for k in ("XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "APPDATA", "LOCALAPPDATA")}
+    for k in saved:
+        os.environ[k] = str(root / k.lower())
+    yield
+    for k, v in saved.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = v
+
+
+REAL_ROOTS = (Path(config_module.CONFIG_DIR), Path(config_module.DATA_DIR), Path(config_module.LOCAL_DIR))
 
 
 def _under_real_root(value: Path) -> tuple[Path, Path] | None:
@@ -71,7 +89,7 @@ def _own_github_cache(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _isolate_real_data(tmp_path, monkeypatch):
-    fake_roots = {REAL_ROOTS[0]: tmp_path / "config", REAL_ROOTS[1]: tmp_path / "data"}
+    fake_roots = {REAL_ROOTS[0]: tmp_path / "config", REAL_ROOTS[1]: tmp_path / "data", REAL_ROOTS[2]: tmp_path / "data-local"}
     for name, module in list(sys.modules.items()):
         if not (name == "mygeeky" or name.startswith("mygeeky.")) or module is None:
             continue
@@ -81,6 +99,38 @@ def _isolate_real_data(tmp_path, monkeypatch):
                 if hit:
                     root, rel = hit
                     monkeypatch.setattr(module, attr, fake_roots[root] / rel)
+
+
+@pytest.fixture(autouse=True)
+def _background_work_ends_inside_its_test(_isolate_real_data):
+    """A panel starts quiet background refreshes (repos you could improve, new faces...). One that outlives its test
+    runs after the isolation above is undone: with the user's real settings, real cache and real network (it searched
+    GitHub with a real profile). Each test waits here for its workers, while still isolated."""
+    yield
+    qt_panel = sys.modules.get("mygeeky.gui.qt_panel")
+    if qt_panel is not None:
+        for worker in list(getattr(qt_panel._Worker, "_alive", ())):
+            try:
+                worker.wait(20_000)
+            except RuntimeError:
+                pass                       # its Qt object is already gone: nothing left running
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _no_real_network():
+    """Tests never reach the internet: anything that tries (a leftover background job, a forgotten fake) fails fast
+    instead of using the network with whatever settings it finds. Loopback stays open (local servers, Node)."""
+    import socket
+    real_connect = socket.socket.connect
+
+    def connect(self, address):
+        host = address[0] if isinstance(address, tuple) else address
+        if isinstance(host, str) and (host in ("localhost", "::1") or host.startswith("127.") or self.family == socket.AF_UNIX):
+            return real_connect(self, address)
+        raise OSError(f"tests are offline (tried to reach {host})")
+    socket.socket.connect = connect
+    yield
+    socket.socket.connect = real_connect
 
 
 @pytest.fixture(autouse=True)
