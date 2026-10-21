@@ -87,10 +87,10 @@ several times what a release build uses).
 8. **Threads:** every async job and avatar starts a fresh `QThread`; a small pool (`QThreadPool`, 4 workers) would
    cut thread churn. The N+1 Activity fetch (one `/users/<x>/events` per matched person, up to 24 every 5 min)
    should go through the GitHub cache with a longer refresh, or batch.
-9. **Phone bundle:** 1.7 MB of data files are imported statically, so they're parsed into the JS heap at startup
+9. ✅ **Done 2026-10-21** for the four biggest (protocol model, curated lists, quiz, datasets: 1.2 MB, now read on first use; development build startup 503 → 480 MB PSS, Hermes native heap 260 → 233 MB; Chances checked on the emulator). `field-words` and `geekoc` stay: the first pages use them. **Phone bundle:** 1.7 MB of data files are imported statically, so they're parsed into the JS heap at startup
    (`field-words.json` twice). Load the big ones (`protocol_model`, `keywords`/`field-words`, `questions`,
    `datasets`) lazily when their page opens.
-10. **The half-second "seen" tick** (`SEEN_TICK_MS`) walks every card on the page; it returns at once when hidden,
+10. ⏸ **Not worth it, measured:** hidden idle is already 0.02% CPU; the tick returns at once. **The half-second "seen" tick** (`SEEN_TICK_MS`) walks every card on the page; it returns at once when hidden,
     but could stop its timer on hide and restart on show (the audit flags any sub-second timer left running hidden).
 
 ## Budgets

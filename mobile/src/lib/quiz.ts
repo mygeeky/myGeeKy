@@ -11,7 +11,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
-import bundled from '../data/questions.json';
 import { https, text } from './protocol-shape';
 import type { Protocol } from './protocol-shape';
 import { type Resource, resourceOf } from './protocols';
@@ -102,7 +101,9 @@ const CACHE_KEY = 'mygeeky.questions';
 /** The newest bank we have: the one shipped, or a newer one fetched since. */
 export async function bank(): Promise<Bank> {
   if (cached) return cached;
-  const shipped = cleanBank(bundled as any);
+  // loaded the first time it's needed, not at startup: the bundle's data files are parsed into memory when imported
+  // (Metro's inline requires are off), and most people never open this (docs/RESOURCES.md, plan 9)
+  const shipped = cleanBank(require('../data/questions.json'));
   try {
     const saved = JSON.parse((await AsyncStorage.getItem(CACHE_KEY)) ?? 'null');
     const fetched = cleanBank(saved?.bank);

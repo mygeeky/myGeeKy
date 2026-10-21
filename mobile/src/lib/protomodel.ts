@@ -3,7 +3,6 @@
 // returns for a repo or article and says how likely it is to be learning material for
 // each stage: none, basics, deeper, applied, project. The skill's own name is masked,
 // so what it learned carries over to skills it never saw.
-import model from '../data/protocol_model.json';
 import { gh } from './github';
 import { wiseFetch } from './wisep';
 import { blockedSource, isBench } from './safety';
@@ -13,7 +12,10 @@ export type Cand = { kind: 'repo' | 'article'; id: string; title: string; url: s
   language?: string; stars?: number; updated?: string; pages?: boolean; archived?: boolean; type?: string; year?: number;
   cited?: number; oa?: boolean; venue?: string; askedBy?: string };
 type Model = { roles: string[]; bias: number[]; weights: Record<string, number[]> };
-const M = model as unknown as Model;
+// loaded the first time it's needed, not at startup: the bundle's data files are parsed into memory when imported
+// (Metro's inline requires are off), and most people never open this (docs/RESOURCES.md, plan 9)
+let M: Model | null = null;
+const bundledModel = (): Model => (M ??= require('../data/protocol_model.json') as Model);
 
 const OPENALEX = 'https://api.openalex.org';
 
@@ -115,7 +117,7 @@ export function tokens(c: Cand, aliases: string[] = [], today = new Date()): Set
 }
 
 /** {role: probability} for a candidate. */
-export function predict(c: Cand, aliases: string[] = [], m: Model = M, today = new Date()): Record<string, number> {
+export function predict(c: Cand, aliases: string[] = [], m: Model = bundledModel(), today = new Date()): Record<string, number> {
   const z = [...m.bias];
   for (const t of tokens(c, aliases, today)) {
     const w = m.weights[t];

@@ -3,7 +3,6 @@
 // the app reads the newest copy from GitHub at most once a day and falls back to the one it shipped with.
 // tests/test_datasets.py checks both apps give the same answers.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import bundled from '../data/datasets.json';
 import { englishEnough } from './curated';
 import { match, type Weights } from './interests';
 import { find as findSkill } from './skills';
@@ -85,7 +84,9 @@ export function clean(data: any): { version: string; datasets: Dataset[] } {
 
 /** The newest list: the copy in the app, or a newer one fetched from GitHub (at most once a day). */
 export async function loadDatasets(): Promise<Dataset[]> {
-  const shipped = clean(bundled);
+  // loaded the first time it's needed, not at startup: the bundle's data files are parsed into memory when imported
+  // (Metro's inline requires are off), and most people never open this (docs/RESOURCES.md, plan 9)
+  const shipped = clean(require('../data/datasets.json'));
   const cached = await readCache<{ version: string; datasets: Dataset[] }>('datasets');
   let best = cached?.data ? clean(cached.data) : shipped;
   if (!best.datasets.length || best.version < shipped.version) best = shipped;

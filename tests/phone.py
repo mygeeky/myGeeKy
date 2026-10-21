@@ -76,6 +76,8 @@ def _fix(text: str, depth: int) -> str:
         return m.group(0)
 
     out = _IMPORT.sub(sub, text)
+    if re.search(r"\brequire\(", out):        # data loaded on first use (require) works in Node's ES modules too
+        out = "import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);\n" + out
     return re.sub(r"""(from\s+['"][^'"]+\.json['"])(?!\s*with)""", r"\1 with { type: 'json' }", out)
 
 

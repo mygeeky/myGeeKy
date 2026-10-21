@@ -3,7 +3,6 @@
 // downloaded (at most every few hours) and matched to you here, on the phone:
 // nobody learns what matched or that you looked. Anything with a deadline
 // disappears the day after it.
-import bundled from '../data/curated.json';
 import { countryOf } from './countries';
 import { match, Weights } from './interests';
 import { fetchT } from './net';
@@ -149,7 +148,9 @@ export function clean(data: any): Lists {
 
 /** The newest lists we have: the ones in the app, or newer ones fetched since (every few hours). */
 export async function loadLists(force = false): Promise<Lists> {
-  const shipped = clean(bundled);
+  // loaded the first time it's needed, not at startup: the bundle's data files are parsed into memory when imported
+  // (Metro's inline requires are off), and most people never open this (docs/RESOURCES.md, plan 9)
+  const shipped = clean(require('../data/curated.json'));
   const cached = await readCache<Lists>('curated');
   // the newest version wins; on a tie the fetched copy (the maker may have edited without a new version)
   let best = cached?.data && cached.data.version >= shipped.version ? clean(cached.data) : shipped;
