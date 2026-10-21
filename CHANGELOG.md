@@ -3,7 +3,9 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.34.0 (2026-10-21): Neon Home that teaches your Model, and a wider panel (phone 1.16.0)
+
+- **🏠 Home's cards are Neon, and do more** (computer and phone). Each card is outlined and softly glowing in its kind's colour (a plain outline in light themes) and shows what makes it worth a look: a ring counting down the days left on a job, grant or conference, a repo's stars and this week's gain, a dataset's size and licence, a model's downloads, and quiz questions you answer right on the card. A banner on top celebrates what's new ("3 new papers from your circle this week", "2 deadlines this week"), and the end says what you got through. New buttons: **♡ More like this** teaches Home *and* your Model (the card's topics, never names; it used to teach only Home), **🔖 Save** keeps a card in **🔖 Saved** at the top of Home, and **✕ Fewer like this** comes with **Undo**. Deadline cards no longer repeat "closes in N days" under the title (the ring shows it).
 
 - **A wider panel, as wide as you like, with the menu on the screen-edge side** (computer). The open panel is 460px wide (was 380px, before the side rail took its share); drag its inner edge, or use **⚙ → Panel width**, for anything from 360 to 900px (double-click the edge: back to normal). A width you had chosen yourself is kept. The side rail now sits on the side nearest the screen's edge -- on the right for a panel on the right, on the left for one on the left -- and follows the panel when you move it; **⚙ → Menu side** puts it always left or always right.
 
