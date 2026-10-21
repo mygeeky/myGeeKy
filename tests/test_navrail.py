@@ -97,3 +97,41 @@ def test_the_rail_draws_in_every_theme(panel):
         panel.rail_host.open_at("you")
         assert not panel.rail_host.overlay.grab().isNull()
         panel.rail_host.fold()
+
+
+def test_the_rail_sits_on_the_screen_edge_side_and_can_be_moved_in_settings(panel, monkeypatch):
+    from mygeeky.gui import app as logic
+    monkeypatch.setattr(logic, "save_config", lambda cfg: None)
+    host = panel.rail_host
+    assert panel.cfg.gui_dock_side == "right" and host.side == "right"     # a panel on the right: the menu on the right
+    assert host.strip.x() > host.content.x() and host.arrow(opening=True) == "«"
+    host.open_at("grow")
+    assert host.overlay.geometry().right() == host.width() - 1           # it opens from the right edge
+    host.fold()
+    panel._on_side_picked("left")                                        # the panel moves: "screen edge" follows
+    assert host.side == "left" and host.strip.x() < host.content.x() and host.arrow(opening=True) == "»"
+    panel._on_rail_side_changed("right")                                 # ⚙ → Menu side: always right
+    assert panel.cfg.gui_rail_side == "right" and host.side == "right"
+    panel._on_side_picked("bottom-right")
+    assert host.side == "right"
+    panel._on_rail_side_changed("left")
+    assert host.side == "left" and panel.rail_side_switch.value() == "left"
+
+
+def test_the_panel_is_wider_and_its_inner_edge_or_settings_change_the_width(panel, monkeypatch):
+    from mygeeky.config import _migrate
+    from mygeeky.gui import app as logic
+    saved = []
+    monkeypatch.setattr(logic, "save_config", lambda cfg: saved.append(cfg.gui_expanded_width))
+    assert MyGeekyConfig().gui_expanded_width == 460
+    assert _migrate({"gui_expanded_width": 380}, 4)["gui_expanded_width"] == 460   # the old default grows
+    assert _migrate({"gui_expanded_width": 520}, 4)["gui_expanded_width"] == 520   # a chosen width is kept
+    grip = panel.width_grip
+    assert grip.x() == 0 and grip.width() == 6                           # docked right: the grip on the left edge
+    panel._resize_width_from_grip(120, 460, True)
+    assert panel.cfg.gui_expanded_width == 580 and saved[-1] == 580 and panel.width_slider.value() == 580
+    panel._resize_width_from_grip(-900, 460, True)
+    assert panel.cfg.gui_expanded_width == logic.MIN_PANEL_WIDTH
+    panel.width_slider.setValue(700)
+    panel._on_width_committed()
+    assert saved[-1] == 700 and panel.width_value_label.text() == "700 px"

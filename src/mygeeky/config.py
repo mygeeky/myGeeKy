@@ -255,8 +255,9 @@ class MyGeekyConfig:
     # every profile link is opened in your browser only when you click it.
     gui_dock_side: str = "right"          # "right" | "left" | "bottom-right" | "bottom-left" (bottom: opens rising to the middle)
     gui_layer: str = "front"              # "front" (always on top) | "normal" | "behind" (under other windows while folded)
-    gui_expanded_width: int = 380
+    gui_expanded_width: int = 460             # the open panel's width; ⚙ or drag its inner edge (360-900)
     gui_rail_pinned: bool = False       # the side rail stays open beside the page (else it opens over it)
+    gui_rail_side: str = "auto"               # the side rail: "auto" (the screen-edge side) | "left" | "right"
     gui_folded_width: int = 76                # folded, the panel is just the app icon on the screen edge
     gui_folded_height: int = 76
     gui_hearts_enabled: bool = True           # folded icon lets a few small hearts drift up now and then
@@ -293,7 +294,7 @@ class MyGeekyConfig:
     # Bumped when a default changes in a way existing configs should pick up
     # (see _migrate). Every saved config carries every key, so a new default
     # alone never reaches people who already ran myGeeKy.
-    config_version: int = 4
+    config_version: int = 5
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -401,6 +402,10 @@ def _migrate(values: dict[str, Any], version: int) -> dict[str, Any]:
         # 0.21.3: the panel is never more than 40% see-through (gui.app.MIN_OPACITY)
         if isinstance(values.get("gui_opacity"), (int, float)) and values["gui_opacity"] < 0.6:
             values["gui_opacity"] = 0.6
+    if version < 5:
+        # 0.34: the panel grew from 380px for the side rail; keep any width someone chose themselves
+        if values.get("gui_expanded_width") == 380:
+            values["gui_expanded_width"] = 460
     values["config_version"] = MyGeekyConfig.config_version
     return values
 

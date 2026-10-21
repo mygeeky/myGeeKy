@@ -3,6 +3,10 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **A wider panel, as wide as you like, with the menu on the screen-edge side** (computer). The open panel is 460px wide (was 380px, before the side rail took its share); drag its inner edge, or use **⚙ → Panel width**, for anything from 360 to 900px (double-click the edge: back to normal). A width you had chosen yourself is kept. The side rail now sits on the side nearest the screen's edge -- on the right for a panel on the right, on the left for one on the left -- and follows the panel when you move it; **⚙ → Menu side** puts it always left or always right.
+
 ## 0.33.0 (2026-10-21): 🏠 Home, a scrolling feed that learns what you enjoy (phone 1.15.0)
 
 - **🏠 Home, a scrolling feed, is the first page** (computer and phone). Cards from every part of myGeeKy (new work from your circle, rising papers, open jobs, funding and conferences, new datasets, repos, people, headlines, AI models, a daily quiz question), new first, then "You're all caught up" and what you've seen. It learns what you enjoy from taps, 👍/👎 and time on screen (switch: ⏱ learning), with a small bandit over the kinds of card so it keeps trying every kind, at most two of a kind in any four, and one in five from new territory 🔭. Built only from what the other pages keep: no downloads while you scroll. Each card says why it's there and leads to its page. The ranking is the same on both apps (tested).

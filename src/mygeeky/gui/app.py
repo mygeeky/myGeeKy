@@ -271,6 +271,37 @@ def set_panel_height(cfg: MyGeekyConfig, fraction: float) -> float:
     return cfg.gui_panel_height_fraction
 
 
+MIN_PANEL_WIDTH = 360       # px: the rail and a readable page side by side...
+MAX_PANEL_WIDTH = 900       # ...up to about a third of a wide screen
+RAIL_SIDES = ("auto", "left", "right")
+
+
+def clamp_panel_width(width: float) -> int:
+    return int(min(max(float(width), MIN_PANEL_WIDTH), MAX_PANEL_WIDTH))
+
+
+def set_panel_width(cfg: MyGeekyConfig, width: float) -> int:
+    cfg.gui_expanded_width = clamp_panel_width(width)
+    save_config(cfg)
+    return cfg.gui_expanded_width
+
+
+def rail_side(cfg: MyGeekyConfig) -> str:
+    """Where the side rail sits: "auto" puts it on the screen-edge side (a panel on the right has it on the right)."""
+    chosen = getattr(cfg, "gui_rail_side", "auto")
+    if chosen in ("left", "right"):
+        return chosen
+    return "left" if dock_side(cfg).endswith("left") else "right"
+
+
+def set_rail_side(cfg: MyGeekyConfig, side: str) -> bool:
+    if side not in RAIL_SIDES:
+        return False
+    cfg.gui_rail_side = side
+    save_config(cfg)
+    return True
+
+
 def setup_overview(cfg: MyGeekyConfig) -> dict[str, Any]:
     """Everything that decides how myGeeKy works for you, for ⚙ (may check the
     tokens' expiry with GitHub, at most once a day)."""
@@ -2195,7 +2226,7 @@ def _panel_geometry(cfg: MyGeekyConfig, folded: bool, screen_rect,
     if folded:
         width, height = cfg.gui_folded_width, cfg.gui_folded_height
     else:
-        width, height = cfg.gui_expanded_width, int(screen_rect.height() * clamp_panel_height(cfg.gui_panel_height_fraction))
+        width, height = clamp_panel_width(cfg.gui_expanded_width), int(screen_rect.height() * clamp_panel_height(cfg.gui_panel_height_fraction))
     width = min(max(width, min_width), screen_rect.width())
     height = min(max(height, min_height), screen_rect.height())
     side = dock_side(cfg)

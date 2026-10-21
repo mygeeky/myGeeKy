@@ -219,13 +219,16 @@ def test_panel_geometry_docks_to_configured_side():
     pytest.importorskip("PySide6", reason="PySide6 (the 'gui' extra) is not installed")
     from PySide6.QtCore import QRect
 
-    cfg = MyGeekyConfig(gui_dock_side="left", gui_expanded_width=300, gui_folded_width=40,
+    cfg = MyGeekyConfig(gui_dock_side="left", gui_expanded_width=520, gui_folded_width=40,
                          gui_panel_height_fraction=0.5)
     screen_rect = QRect(0, 0, 1920, 1080)
 
     x, y, w, h = logic._panel_geometry(cfg, folded=False, screen_rect=screen_rect)
     assert x == 0  # docked left -> flush to x=0
-    assert w == 300
+    assert w == 520
+    cfg.gui_expanded_width = 300                   # below the least the rail and a page need: widened
+    assert logic._panel_geometry(cfg, folded=False, screen_rect=screen_rect)[2] == logic.MIN_PANEL_WIDTH
+    cfg.gui_expanded_width = 520
 
     cfg.gui_dock_side = "right"
     x2, y2, w2, h2 = logic._panel_geometry(cfg, folded=True, screen_rect=screen_rect)

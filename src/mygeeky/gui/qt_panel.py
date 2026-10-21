@@ -1788,6 +1788,71 @@ class HeightGrip(QWidget):
         self._on_drag(0, 0.6, True)
 
 
+class WidthGrip(QWidget):
+    """The panel's inner edge (away from the screen edge): drag it to make the panel wider or narrower. Double-click
+    goes back to the default width. It sits over the frame's edge and follows it as the panel resizes."""
+
+    def __init__(self, frame: QWidget, on_drag: Callable[[float, int, bool], None], current: Callable[[], int],
+                 side: Callable[[], str]) -> None:
+        super().__init__(frame)
+        self._on_drag, self._current, self._side = on_drag, current, side
+        self._start_x: float | None = None
+        self._start_w = 460
+        self.setCursor(Qt.SizeHorCursor)
+        self.setToolTip("Drag to make the panel wider or narrower (double-click: back to normal)")
+        frame.installEventFilter(self)
+        self.place()
+
+    def place(self) -> None:
+        frame = self.parentWidget()
+        x = frame.width() - 6 if self._side().endswith("left") else 0      # a panel on the left grows rightwards
+        self.setGeometry(x, 24, 6, max(0, frame.height() - 48))
+        self.raise_()
+
+    def eventFilter(self, obj, event) -> bool:  # noqa: N802
+        if event.type() in (QEvent.Resize, QEvent.Show):
+            self.place()
+        return False
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        if not (self.underMouse() or self._start_x is not None):
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(255, 255, 255, 110))
+        mid = self.height() / 2
+        painter.drawRoundedRect(QRectF(1.5, mid - 32, 3, 64), 1.5, 1.5)
+        painter.end()
+
+    def enterEvent(self, event) -> None:  # noqa: N802
+        self.update()
+
+    def leaveEvent(self, event) -> None:  # noqa: N802
+        self.update()
+
+    def _outward(self, event) -> float:
+        dx = event.globalPosition().x() - self._start_x
+        return dx if self._side().endswith("left") else -dx
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        self._start_x = event.globalPosition().x()
+        self._start_w = self._current()
+
+    def mouseMoveEvent(self, event) -> None:  # noqa: N802
+        if self._start_x is not None:
+            self._on_drag(self._outward(event), self._start_w, False)
+
+    def mouseReleaseEvent(self, event) -> None:  # noqa: N802
+        if self._start_x is not None:
+            self._on_drag(self._outward(event), self._start_w, True)
+        self._start_x = None
+        self.update()
+
+    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802
+        self._on_drag(0, MyGeekyConfig().gui_expanded_width, True)
+
+
 class QrWidget(QWidget):
     """Paints a QR code (a matrix of dark modules) crisply at any size."""
 
@@ -3767,8 +3832,11 @@ class MyGeekyPanel(QWidget):
             dot_of=lambda nid: bool(getattr(self.nav_buttons.get(nid), "_dot", False)),
             icon_of=self._rail_icon, theme=lambda: THEMES[self._theme_name()],
             pinned=bool(getattr(self.cfg, "gui_rail_pinned", False)),
-            on_pin=lambda on: logic.set_rail_pinned(self.cfg, on))
+            on_pin=lambda on: logic.set_rail_pinned(self.cfg, on), side=logic.rail_side(self.cfg))
         panel_layout.addWidget(self.rail_host, 1)
+        self.width_grip = WidthGrip(self.panel_frame, self._resize_width_from_grip,
+                                    lambda: logic.clamp_panel_width(self.cfg.gui_expanded_width),
+                                    lambda: logic.dock_side(self.cfg))
         self.height_grip = HeightGrip(self._resize_from_grip, lambda: self.cfg.gui_panel_height_fraction)
         panel_layout.addWidget(self.height_grip, 0, Qt.AlignHCenter)
 
@@ -6721,6 +6789,27 @@ class MyGeekyPanel(QWidget):
         self.height_slider.sliderReleased.connect(self._on_height_committed)
         layout.addWidget(self.height_slider)
 
+        width_row = QHBoxLayout()
+        width_label = QLabel("Panel width")
+        width_label.setStyleSheet("font-size:11px; font-weight:600; background:transparent;")
+        self.width_value_label = QLabel("")
+        self.width_value_label.setStyleSheet("font-size:10.5px; background:transparent;")
+        width_row.addWidget(width_label)
+        width_row.addStretch(1)
+        width_row.addWidget(self.width_value_label)
+        layout.addLayout(width_row)
+        self.width_slider = QSlider(Qt.Horizontal)
+        self.width_slider.setRange(logic.MIN_PANEL_WIDTH, logic.MAX_PANEL_WIDTH)
+        self.width_slider.setSingleStep(10)
+        self.width_slider.setPageStep(40)
+        self.width_slider.setCursor(Qt.PointingHandCursor)
+        self.width_slider.setToolTip("How wide the open panel is (you can also drag its inner edge)")
+        self.width_slider.setValue(logic.clamp_panel_width(self.cfg.gui_expanded_width))
+        self.width_value_label.setText(f"{self.width_slider.value()} px")
+        self.width_slider.valueChanged.connect(self._on_width_preview)
+        self.width_slider.sliderReleased.connect(self._on_width_committed)
+        layout.addWidget(self.width_slider)
+
         self.hearts_check = QCheckBox("Floating hearts on the folded icon")
         self.hearts_check.setCursor(Qt.PointingHandCursor)
         self.hearts_check.setChecked(self.cfg.gui_hearts_enabled)
@@ -6761,6 +6850,14 @@ class MyGeekyPanel(QWidget):
         place_row.addLayout(place_col, 1)
         layout.addLayout(place_row)
         self._show_place(logic.dock_side(self.cfg))
+
+        self.rail_side_label = QLabel("Menu side")
+        self.rail_side_label.setStyleSheet("font-size:11px; font-weight:600; background:transparent;")
+        layout.addWidget(self.rail_side_label)
+        from .window_ui import RAIL_CHOICES
+        self.rail_side_switch = LayerSwitch(getattr(self.cfg, "gui_rail_side", "auto"), choices=RAIL_CHOICES, name="Menu side")
+        self.rail_side_switch.changed.connect(self._on_rail_side_changed)
+        layout.addWidget(self.rail_side_switch)
 
         # 🔔 notifications: exactly what you agreed to (all off until you switch a kind on)
         from .notify_ui import NotifySettings
@@ -6839,7 +6936,14 @@ class MyGeekyPanel(QWidget):
         logic.set_dock_side(self.cfg, side)
         self.screen_picker.set_side(side)
         self._show_place(side)
+        self.rail_host.set_side(logic.rail_side(self.cfg))   # "screen edge": the menu follows the panel
         self._dock(self.folded_widget.isVisible())       # moves now; the settings stay open
+        self.width_grip.place()
+
+    def _on_rail_side_changed(self, value: str) -> None:
+        if logic.set_rail_side(self.cfg, value):
+            self.rail_side_switch.set_value(value)
+            self.rail_host.set_side(logic.rail_side(self.cfg))
 
     def _on_layer_changed(self, value: str) -> None:
         if value == logic.layer(self.cfg):
@@ -7066,6 +7170,31 @@ class MyGeekyPanel(QWidget):
         if not self.folded_widget.isVisible():
             self._dock(folded=False)
 
+    # ------------------------------------------------------------------ panel width
+    def _on_width_preview(self, value: int) -> None:
+        """Live while dragging the slider; saved on release."""
+        self.cfg.gui_expanded_width = logic.clamp_panel_width(value)
+        self.width_value_label.setText(f"{self.cfg.gui_expanded_width} px")
+        if not self.folded_widget.isVisible():
+            self._dock(folded=False)
+
+    def _on_width_committed(self) -> None:
+        logic.set_panel_width(self.cfg, self.width_slider.value())
+
+    def _resize_width_from_grip(self, dx: float, start_width: int, done: bool) -> None:
+        """The inner-edge grip: dragging away from the screen edge makes the panel wider."""
+        screen_w = self._home_screen().availableGeometry().width()
+        width = min(logic.clamp_panel_width(start_width + dx), screen_w)
+        self.cfg.gui_expanded_width = width
+        self._dock(folded=False)
+        if hasattr(self, "width_slider"):
+            self.width_slider.blockSignals(True)
+            self.width_slider.setValue(width)
+            self.width_slider.blockSignals(False)
+            self.width_value_label.setText(f"{width} px")
+        if done:
+            logic.set_panel_width(self.cfg, width)
+
     def _on_height_committed(self) -> None:
         logic.set_panel_height(self.cfg, self.height_slider.value() / 100)
 
@@ -7289,6 +7418,8 @@ class MyGeekyPanel(QWidget):
         self.opacity_value_label.setStyleSheet(f"font-size:10.5px; color:{theme['muted']}; background:transparent;")
         self.hearts_check.setStyleSheet(f"QCheckBox {{ font-size:11px; color:{theme['text']}; background:transparent; }}")
         self.layer_switch.set_theme(theme)
+        if hasattr(self, "rail_side_switch"):
+            self.rail_side_switch.set_theme(theme)
         self.screen_picker.set_theme(theme)
         self.place_name.setStyleSheet(f"color:{theme['text']}; font-size:11.5px; font-weight:700; background:transparent;")
         self.place_hint.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")

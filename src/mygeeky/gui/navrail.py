@@ -134,8 +134,8 @@ class RailRow(_Clickable):
             p.setBrush(bg)
             p.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 8, 8)
         color = QColor(nd["color"])
-        if here:
-            p.fillRect(QRectF(1, 6, 2.5, self.height() - 12), color)
+        if here:                                           # on the rail's outer edge
+            p.fillRect(QRectF(self.width() - 3.5 if r.host.side == "right" else 1, 6, 2.5, self.height() - 12), color)
         indent = {0: 4, 1: 9, 2: 16}[self.level]
         side = 28 if self.level < 2 else 24
         tile = QRectF(indent, self.height() - side - 3, side, side)
@@ -269,7 +269,7 @@ class NavRail(QWidget):
         self.path_ids = {n["id"] for n in navtree.path(leaf)} if leaf else set()
         tree = self.host.tree
         if self.folded:
-            top = self._button("»", "Open the menu (Ctrl+\\)", self.host.open_here, checked=None)
+            top = self._button(self.host.arrow(opening=True), "Open the menu (Ctrl+\\)", self.host.open_here, checked=None)
             self.lay.addWidget(top, 0, Qt.AlignHCenter)
             for g in tree["children"]:
                 self.lay.addWidget(FoldedTile(self, g), 0, Qt.AlignHCenter)
@@ -282,7 +282,7 @@ class NavRail(QWidget):
             self.back_btn = self._button("‹", "Up a level (Esc)", self.host.back, checked=None)
             self.pin_btn = self._button("\U0001f4cc", "Unpin (opens over the page)" if self.state.pinned
                                         else "Pin beside the page", self.host.toggle_pin, checked=self.state.pinned)
-            self.fold_btn = self._button("«", "Fold (Ctrl+\\)", self.host.fold, checked=None)
+            self.fold_btn = self._button(self.host.arrow(opening=False), "Fold (Ctrl+\\)", self.host.fold, checked=None)
             bl.addWidget(self.back_btn)
             bl.addStretch(1)
             bl.addWidget(self.pin_btn)
@@ -329,7 +329,8 @@ class NavRail(QWidget):
         line = QColor(t["text"])
         line.setAlpha(28)
         self.setStyleSheet(
-            f"NavRail {{ background:{bg}; border-right:1px solid rgba({line.red()},{line.green()},{line.blue()},28); }}"
+            f"NavRail {{ background:{bg}; border-{'left' if self.host.side == 'right' else 'right'}:1px solid "
+            f"rgba({line.red()},{line.green()},{line.blue()},28); }}"
             f"QToolButton {{ background:transparent; color:{t['muted']}; border:none; border-radius:7px; font-size:13px; }}"
             f"QToolButton:hover {{ background:{t['btn_hover']}; color:{t['text']}; }}"
             f"QToolButton:checked {{ background:{t['section_btn']}; color:{t['text']}; }}"
@@ -366,9 +367,11 @@ class RailHost(QWidget):
     def __init__(self, content: QWidget, tree: dict[str, Any], *, open_node: Callable[[dict[str, Any]], None],
                  leaf: Callable[[], dict[str, Any] | None], count_of: Callable[[str], int],
                  dot_of: Callable[[str], bool], icon_of: Callable[[dict[str, Any]], tuple[str, str]],
-                 theme: Callable[[], dict[str, Any]], pinned: bool, on_pin: Callable[[bool], None]) -> None:
+                 theme: Callable[[], dict[str, Any]], pinned: bool, on_pin: Callable[[bool], None],
+                 side: str = "left") -> None:
         super().__init__()
         self.tree, self.content = tree, content
+        self.side = "right" if side == "right" else "left"
         self._open_node, self.leaf, self.count_of, self.dot_of, self.icon_of = open_node, leaf, count_of, dot_of, icon_of
         self.theme, self._on_pin = theme, on_pin
         self.state = RailState(open=pinned, pinned=pinned)
@@ -379,13 +382,30 @@ class RailHost(QWidget):
         self.docked = NavRail(self, folded=False)
         self.overlay = NavRail(self, folded=False)
         self.scrim = _Scrim(self)
-        self.row.addWidget(self.strip)
-        self.row.addWidget(self.docked)
-        self.row.addWidget(content, 1)
+        self._lay_out()
         QShortcut(QKeySequence(Qt.Key_Escape), self, self._escape, context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence("Ctrl+\\"), self, self.toggle, context=Qt.WidgetWithChildrenShortcut)
         self._follow_leaf()
         self.apply()
+
+    def _lay_out(self) -> None:
+        for w in (self.strip, self.docked, self.content):
+            self.row.removeWidget(w)
+        order = [self.content, self.docked, self.strip] if self.side == "right" else [self.strip, self.docked, self.content]
+        for w in order:
+            self.row.addWidget(w, 1 if w is self.content else 0)
+
+    def set_side(self, side: str) -> None:
+        """The rail moves to the other side of the page (⚙ → Menu side, or the panel moved to the other edge)."""
+        side = "right" if side == "right" else "left"
+        if side != self.side:
+            self.side = side
+            self._lay_out()
+            self.apply()
+
+    def arrow(self, opening: bool) -> str:
+        """» opens a rail on the left (it grows rightwards); on the right the arrows are mirrored."""
+        return "»" if opening == (self.side == "left") else "«"
 
     def rail_bg(self) -> QColor:
         t = self.theme()
@@ -493,7 +513,7 @@ class RailHost(QWidget):
     def _place(self) -> None:
         if self.overlay.isVisibleTo(self):
             self.scrim.setGeometry(self.rect())
-            self.overlay.setGeometry(0, 0, OPEN_W, self.height())
+            self.overlay.setGeometry(self.width() - OPEN_W if self.side == "right" else 0, 0, OPEN_W, self.height())
             self.scrim.raise_()
             self.overlay.raise_()
 

@@ -21,6 +21,11 @@ LAYER_CHOICES = (
     ("normal", "Normal", "Like any window: others can cover it"),
     ("behind", "Behind", "Folded, it waits under your windows, on the desktop"),
 )
+RAIL_CHOICES = (
+    ("auto", "Screen edge", "The menu sits on the side of the panel nearest the screen's edge"),
+    ("left", "Left", "The menu always on the panel's left"),
+    ("right", "Right", "The menu always on the panel's right"),
+)
 SIDE_LABELS = {
     "right": ("Right edge", "folded in the middle of the right edge"),
     "left": ("Left edge", "folded in the middle of the left edge"),
@@ -42,11 +47,12 @@ def qcolor(spec: str) -> QColor:
 
 
 class LayerSwitch(QWidget):
-    """In front | Normal | Behind, as one segmented pill."""
+    """In front | Normal | Behind (or any other `choices`), as one segmented pill."""
 
     changed = Signal(str)
 
-    def __init__(self, value: str, parent: QWidget | None = None) -> None:
+    def __init__(self, value: str, parent: QWidget | None = None, choices: tuple = LAYER_CHOICES,
+                 name: str = "Stay") -> None:
         super().__init__(parent)
         row = QHBoxLayout(self)
         row.setContentsMargins(2, 2, 2, 2)
@@ -54,12 +60,12 @@ class LayerSwitch(QWidget):
         self.group = QButtonGroup(self)
         self.group.setExclusive(True)
         self.buttons: dict[str, QPushButton] = {}
-        for key, label, tip in LAYER_CHOICES:
+        for key, label, tip in choices:
             btn = QPushButton(label)
             btn.setCheckable(True)
             btn.setCursor(Qt.PointingHandCursor)
             btn.setToolTip(tip)
-            btn.setAccessibleName(f"Stay: {label}")
+            btn.setAccessibleName(f"{name}: {label}")
             btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             btn.clicked.connect(lambda checked=False, k=key: self._pick(k))
             self.group.addButton(btn)
@@ -68,10 +74,10 @@ class LayerSwitch(QWidget):
         self.set_value(value)
 
     def value(self) -> str:
-        return next((k for k, b in self.buttons.items() if b.isChecked()), "front")
+        return next((k for k, b in self.buttons.items() if b.isChecked()), next(iter(self.buttons)))
 
     def set_value(self, value: str) -> None:
-        self.buttons.get(value, self.buttons["front"]).setChecked(True)
+        self.buttons.get(value, next(iter(self.buttons.values()))).setChecked(True)
 
     def _pick(self, key: str) -> None:
         self.changed.emit(key)
