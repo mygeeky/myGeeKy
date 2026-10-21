@@ -118,3 +118,8 @@ out({ steps, pack, phoneCodes: codes(big), phoneSmall: codes(small), clean: clea
     mine = {"keywords": ["GWAS", "rust"], "topics": [], "field": ["Genetics"]}
     assert said["merge"] == packs.apply(mine, packs.clean(SMALL), "merge")
     assert said["start"] == packs.apply(mine, packs.clean(SMALL), "start")
+
+
+def test_one_keyword_reads_right():
+    assert packs.describe(packs.clean({"k": ["gwas"]})) == "1 keyword"
+    assert packs.describe(packs.clean({"k": ["gwas"], "t": ["genomics"]})).startswith("2 keywords and topics")

@@ -116,7 +116,8 @@ def describe(pack: dict[str, Any]) -> str:
     """What a pack holds, in one plain line."""
     bits = []
     if pack["k"] or pack["t"]:
-        bits.append(f"{len(pack['k']) + len(pack['t'])} keywords and topics")
+        n = len(pack["k"]) + len(pack["t"])
+        bits.append(f"{n} keywords and topics" if n != 1 else "1 keyword")
     if pack["f"]:
         bits.append("a research field")
     if pack["r"]:

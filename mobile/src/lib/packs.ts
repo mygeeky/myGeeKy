@@ -113,7 +113,7 @@ export const missing = (g: Gathering | null): number[] =>
 
 export function describe(p: Pack): string {
   const bits: string[] = [];
-  if (p.k.length || p.t.length) bits.push(`${p.k.length + p.t.length} keywords and topics`);
+  if (p.k.length || p.t.length) { const n = p.k.length + p.t.length; bits.push(n !== 1 ? `${n} keywords and topics` : '1 keyword'); }
   if (p.f.length) bits.push('a research field');
   if (p.r.length) bits.push(`${p.r.length} researcher${p.r.length !== 1 ? 's' : ''} to follow`);
   return bits.join(', ') || 'nothing yet';
