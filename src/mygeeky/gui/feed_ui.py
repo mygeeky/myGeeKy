@@ -190,8 +190,7 @@ class HomePage(QScrollArea):
         self._learn(card, "open")
         try:                                              # what you open here teaches the Model too
             from .. import interests
-            interests.record("repo" if card["kind"] in ("repo", "rising") else "person" if card["kind"] == "person"
-                             else "news", text=f"{card['title']} {card.get('sub', '')}", topics=card.get("terms") or [],
+            interests.record(feed.interest_kind(card), text=feed.interest_text(card), topics=card.get("terms") or [],
                              source="home", cfg=self.cfg)
         except Exception:
             pass
@@ -221,8 +220,8 @@ class HomePage(QScrollArea):
             top = w.mapTo(self.viewport(), w.rect().topLeft()).y()
             shown = max(0, min(top + w.height(), view.height()) - max(top, 0))
             cid = w.card["id"]
-            if w.height() and shown / w.height() >= VISIBLE:
-                self.dwell[cid] = self.dwell.get(cid, 0.0) + TICK_MS / 1000
+            if w.height() and shown / w.height() >= VISIBLE:     # first seen counts 0 s, so a quick pass is a skip
+                self.dwell[cid] = self.dwell[cid] + TICK_MS / 1000 if cid in self.dwell else 0.0
             elif cid in self.dwell:                          # it was on screen and now isn't: what did it teach?
                 self._tell(w.card)
 
@@ -231,10 +230,14 @@ class HomePage(QScrollArea):
         self._learn(card, "view", self.dwell.pop(card["id"], 0.0))
 
     def _flush(self) -> None:
+        """Leaving Home (or refreshing it) isn't skipping what's on screen: only a card read long enough teaches."""
         for i in range(self.cards_box.count()):
             w = self.cards_box.itemAt(i).widget()
             if isinstance(w, FeedCard) and w.card["id"] in self.dwell and w.card["id"] not in self.told:
-                self._tell(w.card)
+                if self.dwell[w.card["id"]] >= feed.READ_SECONDS:
+                    self._tell(w.card)
+                else:
+                    self.dwell.pop(w.card["id"])
 
     def toggle_dwell(self) -> None:
         feed.set_dwell(not feed.load()["dwell"])

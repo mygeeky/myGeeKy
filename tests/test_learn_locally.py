@@ -22,6 +22,9 @@ EVENTS = [
     {"at": "2026-09-01T09:00:00+00:00", "kind": "fork", "terms": {"gwas": 0.7, "plink": 0.3}},
     {"at": "2026-10-18T08:00:00+00:00", "kind": "news", "terms": {"protein folding": 1.0}},
     {"at": "2026-10-16T08:00:00+00:00", "kind": "follow", "terms": {"scanpy": 0.5, "spatial": 0.5}},
+    # the same follow seen "new" again and again, with the person's name in it: counted once, the name left out
+    *[{"at": f"2026-10-1{d}T08:00:00+00:00", "kind": "follow", "source": "followed JakeWharton",
+       "terms": {"jake": 0.3, "wharton": 0.3, "kotlin": 0.4}} for d in range(8)],
 ]
 TEXTS = [["Scanpy: single-cell analysis in Python, with UMAP and Leiden clustering", ["single-cell", "scanpy"]],
          ["PLINK 2.0 for GWAS and population genetics", ["gwas"]],
@@ -56,6 +59,7 @@ def test_the_phone_learns_exactly_as_the_desktop():
     cfg = MyGeekyConfig(interest_learning=True, interest_half_life_days=30)
     desktop = interests.learned_terms(cfg, 15, datetime.fromisoformat(NOW))
     assert desktop and [[t, w] for t, w in desktop] == phone["learned"]
+    assert not {"jake", "wharton", "kotlin"} & {t for t, _ in desktop}       # 2.0 x 0.4 once is below the bar
     assert interests.blend_learned({"gwas": 1, "ai": 0.4}, desktop) == phone["blend"]
     for (text, topics), said in zip(TEXTS, phone["terms"]):
         assert interests.extract_terms(text, topics) == said, text

@@ -455,9 +455,9 @@ def record_click(cfg: MyGeekyConfig, kind: str, item: dict[str, Any]) -> None:
     _log_click_for_badges(kind, item)
     try:
         from .. import interests
-        if kind == "person":
-            sources = " ".join(s.split(":", 1)[-1].replace("/", " ") for s in item.get("sources") or [])
-            interests.record("person", f"{item.get('bio') or ''} {sources}", source=item.get("username", ""), cfg=cfg)
+        if kind == "person":                    # their bio and the repos' own names: never a login, nor how they were found
+            repos = {s.split(":", 1)[-1].split("/")[-1] for s in item.get("sources") or [] if s.startswith("domain_repo_")}
+            interests.record("person", " ".join([item.get("bio") or "", *sorted(repos)]), source=item.get("username", ""), cfg=cfg)
         elif kind == "repo":
             name = item.get("full_name") or item.get("repo") or ""
             interests.record("repo", f"{name.replace('/', ' ')} {item.get('description') or ''} "

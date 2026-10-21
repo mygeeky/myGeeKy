@@ -60,6 +60,7 @@ first make makes made build built support supports supported way well one two th
 analysis analyses associated association different various several including include includes high low large
 show shows shown found among within across however therefore also used provide provides provided
 toolkit toolkits toolbox utility utilities wrapper wrappers helper helpers module modules plugin plugins
+followers follows following user users type repos builds
 """.split())
 
 # Broad fields to wander into; today's picks rotate daily and skip what you already follow
@@ -111,19 +112,39 @@ def load_events() -> list[dict[str, Any]]:
     return out
 
 
+ONCE_KINDS = ("follow", "star", "fork")
+
+
+def _followed_login(ev: dict[str, Any]) -> str:
+    src = str(ev.get("source") or "")
+    return src[len("followed "):].strip().lower() if ev.get("kind") == "follow" and src.startswith("followed ") else ""
+
+
+def once_each(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """A follow, star or fork counts once, at its latest: a list GitHub sent short once made the same follow look new
+    again and again (the phone's learn.ts onceEach does the same)."""
+    def key(ev: dict[str, Any]) -> tuple[str, str] | None:
+        return (str(ev["kind"]), str(ev["source"]).lower()) if ev.get("kind") in ONCE_KINDS and ev.get("source") else None
+    last = {key(ev): i for i, ev in enumerate(events) if key(ev)}
+    return [ev for i, ev in enumerate(events) if key(ev) is None or last[key(ev)] == i]
+
+
 def learned_weights(cfg: MyGeekyConfig, now: datetime | None = None) -> dict[str, float]:
     """term -> weight, each event fading with the configured half-life."""
     if not cfg.interest_learning:
         return {}
     now = now or datetime.now(timezone.utc)
     weights: Counter[str] = Counter()
-    for ev in load_events():
+    for ev in once_each(load_events()):
         try:
             age_days = (now - datetime.fromisoformat(ev["at"])).total_seconds() / 86400
         except (KeyError, ValueError, TypeError):
             continue
         fade = 0.5 ** (max(age_days, 0) / max(cfg.interest_half_life_days, 1))
+        login = _followed_login(ev)
         for term, share in (ev.get("terms") or {}).items():
+            if login and term.replace(" ", "") in login:     # "jake", "wharton" from JakeWharton: a name, not a topic
+                continue
             weights[term] += KIND_WEIGHTS.get(ev.get("kind"), 0.5) * float(share) * fade
     return dict(weights)
 
@@ -243,7 +264,8 @@ def _load_seen() -> set[str]:
 def _save_seen(seen: set[str]) -> None:
     from .config import INTEREST_SEEN_FILE
     ensure_dirs()
-    write_json(INTEREST_SEEN_FILE, sorted(seen)[-500:])
+    follows = sorted(x for x in seen if x.startswith("follow:"))[-2000:]
+    write_json(INTEREST_SEEN_FILE, follows + sorted(x for x in seen if not x.startswith("follow:"))[-500:])
 
 
 def learn_from_github(client, cfg: MyGeekyConfig, new_follows: Iterable[str] = (), max_lookups: int = 5) -> int:
@@ -253,14 +275,16 @@ def learn_from_github(client, cfg: MyGeekyConfig, new_follows: Iterable[str] = (
     if not cfg.interest_learning or not cfg.github_username:
         return 0
     recorded = 0
-    for login in list(new_follows)[:max_lookups]:
+    seen = _load_seen()
+    fresh = [u for u in new_follows if f"follow:{u.lower()}" not in seen]   # each follow is learned from once
+    for login in fresh[:max_lookups]:
+        seen.add(f"follow:{login.lower()}")
         user = client.get_user(login) or {}
-        text = " ".join(str(user.get(k) or "") for k in ("bio", "company", "name"))
+        text = str(user.get("bio") or "")                 # what they work on; their name and company say nothing
         if text.strip():
             record("follow", text, source=f"followed {login}", cfg=cfg)
             recorded += 1
-    seen = _load_seen()
-    first_run = not seen
+    first_run = not any(not x.startswith("follow:") for x in seen)
     lookups = 0
     for ev in client.list_user_events(cfg.github_username, per_page=30):
         kind = {"WatchEvent": "star", "ForkEvent": "fork"}.get(ev.get("type"))

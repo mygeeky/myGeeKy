@@ -199,6 +199,17 @@ def mark_seen(seen: dict[str, Any], cid: str, opened: bool, today: str) -> dict[
     return out
 
 
+def interest_kind(card: dict[str, Any]) -> str:
+    """How much an opened card teaches the Model (interests.KIND_WEIGHTS)."""
+    return "repo" if card.get("kind") in ("repo", "rising", "model") else "person" if card.get("kind") == "person" else "news"
+
+
+def interest_text(card: dict[str, Any]) -> str:
+    """What an opened card teaches the Model: its title -- not the authors' names or "closes in 9 days" under it -- and
+    for a person, why they were suggested, never their name."""
+    return str(card.get("sub") or "") if card.get("kind") == "person" else str(card.get("title") or "")
+
+
 # --------------------------------------------------------------------------- the store (feed.json)
 def load() -> dict[str, Any]:
     from . import files

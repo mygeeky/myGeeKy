@@ -282,7 +282,7 @@ function parseEvents(text: string | null): Event[] {
       for (const [t, w] of Object.entries(e.terms).slice(0, 40)) {
         if (typeof w === 'number' && Number.isFinite(w) && t.length <= 60) terms[t] = w;
       }
-      out.push({ at: e.at, kind: typeof e.kind === 'string' ? e.kind : '', terms });
+      out.push({ at: e.at, kind: typeof e.kind === 'string' ? e.kind : '', terms, ...(typeof e.source === 'string' ? { source: e.source.slice(0, 120) } : {}) });
     } catch { /* a half-written line: skip it */ }
   }
   return out;

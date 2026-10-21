@@ -89,17 +89,31 @@ def test_the_phone_arranges_the_same_feed_and_learns_the_same():
     stats = feed.learn(feed.learn({}, "dataset", "open"), "headline", "view", dwell=0.2)
     ctx = {"today": TODAY, "weights": W, "seen": {"p3": {"n": 2}}, "stats": stats}
     said = phone.run("""
-import { arrange, learn, markSeen } from './lib/feed.ts';
+import { arrange, interestKind, interestText, learn, markSeen } from './lib/feed.ts';
 const s1 = learn(learn({}, 'dataset', 'open'), 'headline', 'view', 0.2);
 out({ items: arrange(INPUT.cards, INPUT.ctx), stats: s1, faded: learn(s1, 'job', 'view', 5, 45),
-      seen: markSeen(markSeen({}, 'a', false, '2026-10-21'), 'a', true, '2026-10-21') });
-""", {"cards": CARDS, "ctx": ctx})
+      seen: markSeen(markSeen({}, 'a', false, '2026-10-21'), 'a', true, '2026-10-21'),
+      teach: INPUT.teach.map((c) => [interestKind(c), interestText(c)]) });
+""", {"cards": CARDS, "ctx": ctx, "teach": TEACH})
     py = feed.arrange(CARDS, ctx)
     assert [(x["card"]["id"], x["score"], x["why"], x["explore"], x["seen"]) for x in said["items"]] == \
            [(x["card"]["id"], x["score"], x["why"], x["explore"], x["seen"]) for x in py]
     assert said["stats"] == stats and said["faded"] == feed.learn(stats, "job", "view", 5, 45)
     assert said["seen"] == feed.mark_seen(feed.mark_seen({}, "a", False, TODAY), "a", True, TODAY)
     assert json.dumps(said["items"][0]["card"]) == json.dumps(py[0]["card"])
+    assert said["teach"] == [[feed.interest_kind(c), feed.interest_text(c)] for c in TEACH]
+
+
+TEACH = [{"kind": "person", "title": "JakeWharton", "sub": "works on kotlin compilers"},
+         {"kind": "work", "title": "Fine-mapping GWAS loci", "sub": "Nature · A. Smith, B. Jones"},
+         {"kind": "job", "title": "Postdoc in statistical genetics", "sub": "Broad · closes in 9 days"},
+         {"kind": "model", "title": "org/gwas-bert", "sub": "fill-mask"}]
+
+
+def test_what_an_opened_card_teaches_the_model_has_no_names():
+    assert [feed.interest_text(c) for c in TEACH] == ["works on kotlin compilers", "Fine-mapping GWAS loci",
+                                                      "Postdoc in statistical genetics", "org/gwas-bert"]
+    assert [feed.interest_kind(c) for c in TEACH] == ["person", "news", "news", "repo"]
 
 
 def test_home_is_the_first_page_and_learns_from_what_you_do(qapp_offscreen, monkeypatch):
@@ -133,5 +147,26 @@ def test_home_is_the_first_page_and_learns_from_what_you_do(qapp_offscreen, monk
         p.home_page.dwell["y"] = 5.0
         p.home_page._tell({"id": "y", "kind": "headline"})
         assert feed.load()["stats"]["headline"]["s"] == 0.5 and "y" not in feed.load()["seen"]
+        feed.set_dwell(True)
+        # a card seen for one moment and scrolled past is a skip; leaving Home teaches only what was read
+        page = p.home_page
+        p._switch_tab("home")
+        card = next(w for w in page.findChildren(type(first)) if w.card["id"] not in page.told)
+        cid = card.card["id"]
+        page.dwell.clear()
+        page.verticalScrollBar().setValue(0)
+        page._tick()
+        assert page.dwell.get(cid) == 0.0 or cid not in page.dwell          # first seen counts 0 s
+        page.dwell = {cid: 0.0, "never-read": 2.0}
+        card.hide()                                                          # off screen now
+        card.move(0, 10000)
+        before = feed.load()["stats"].get(card.card["kind"], {"f": 0})["f"]
+        page._tick()
+        assert feed.load()["stats"][card.card["kind"]]["f"] == before + 0.25 and cid in page.told
+        other = next(w for w in page.findChildren(type(first)) if w.card["id"] not in page.told)
+        stats = feed.load()["stats"]
+        page.dwell = {other.card["id"]: 2.0}
+        page._flush()
+        assert page.dwell == {} and feed.load()["stats"] == stats            # dropped, not taught as a skip
     finally:
         p.close()

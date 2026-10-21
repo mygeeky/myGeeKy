@@ -68,7 +68,7 @@ function eventRow(e: Event): Row {
 
 function personRow(p: Person, why = p.why): Row {
   return { id: `p${p.login}`, title: p.login, sub: why, url: profile(p.login), action: 'At a glance', avatar: p.avatar, kind: 'person', login: p.login,
-    learn: { kind: 'person', text: `${p.why} ${p.repo ?? ''}`, source: p.login } };
+    learn: { kind: 'person', text: p.repo?.split('/')[1] ?? '', source: p.login } };   // the repo's own name: never a login
 }
 
 export type Feeds = {

@@ -3,17 +3,23 @@
 // taps, 👍/👎 and -- unless switched off -- time on screen (a quick scroll past counts as "not for me"). Nothing here
 // goes online: the cards come from lib/feed-store.ts, ranked by lib/feed.ts.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useIsFocused } from 'expo-router';
 import { AppState, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GeekLoader } from './geek-loader';
 import { Empty, open } from './ui';
 import { useApp } from '../lib/app-state';
-import { type Item, KINDS, load as loadFeed, record, setDwell } from '../lib/feed';
+import { type Item, interestKind, interestText, KINDS, load as loadFeed, READ_SECONDS, record, setDwell } from '../lib/feed';
 import { buildFeed } from '../lib/feed-store';
 import { recordInterest } from '../lib/model-repo';
 import { C } from '../lib/theme';
 import { opened as wisepOpened } from '../lib/wisep';
 
 const FIRST = 20, MORE = 15, TICK_MS = 1000, VISIBLE = 0.6;
+
+function learn(it: Item, what: 'open' | 'up' | 'down' | 'view', secs = 0) {
+  record(it.card.kind, it.card.id, what, secs).catch(() => undefined);
+  if (what === 'open' && it.card.page) wisepOpened(it.card.page).catch(() => undefined);   // what you enjoy, WISEP keeps fresh
+}
 
 export function FeedView({ onGo, labelOf, colorOf }: { onGo: (page: string) => void; labelOf: (page: string) => string; colorOf: (page: string) => string }) {
   const { profile } = useApp();
@@ -26,24 +32,34 @@ export function FeedView({ onGo, labelOf, colorOf }: { onGo: (page: string) => v
   const told = useRef<Set<string>>(new Set());
   const end = useRef<View | null>(null);
   const active = useRef(AppState.currentState === 'active');
+  const focused = useIsFocused();                       // another screen on top: Home isn't being read
+  const byId = useRef<Record<string, Item>>({});
+
+  // leaving Home (or refreshing it) isn't skipping what's on screen: only a card read long enough teaches
+  const flush = useCallback(() => {
+    for (const [id, secs] of Object.entries(dwell.current)) {
+      if (secs >= READ_SECONDS && byId.current[id] && !told.current.has(id)) { told.current.add(id); learn(byId.current[id], 'view', secs); }
+    }
+    dwell.current = {};
+  }, []);
 
   const rebuild = useCallback(() => {
-    buildFeed(profile?.weights ?? {}).then((it) => { setItems(it); setDrawn(FIRST); dwell.current = {}; told.current = new Set(); }).catch(() => setItems([]));
-  }, [profile?.weights]);
+    buildFeed(profile?.weights ?? {}).then((it) => {
+      flush();
+      byId.current = Object.fromEntries(it.map((x) => [x.card.id, x]));
+      setItems(it); setDrawn(FIRST); told.current = new Set();
+    }).catch(() => setItems([]));
+  }, [profile?.weights, flush]);
   useEffect(() => { rebuild(); }, [rebuild]);
   useEffect(() => { loadFeed().then((s) => setDwellOn(s.dwell)).catch(() => undefined); }, []);
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (s) => { active.current = s === 'active'; });
-    return () => sub.remove();
-  }, []);
-
-  const learn = (it: Item, what: 'open' | 'up' | 'down' | 'view', secs = 0) => {
-    record(it.card.kind, it.card.id, what, secs).catch(() => undefined);
-    if (what === 'open' && it.card.page) wisepOpened(it.card.page).catch(() => undefined);   // what you enjoy, WISEP keeps fresh
-  };
+    const sub = AppState.addEventListener('change', (s) => { active.current = s === 'active'; if (!active.current) flush(); });
+    return () => { sub.remove(); flush(); };
+  }, [flush]);
+  useEffect(() => { if (!focused) flush(); }, [focused, flush]);
   // time on screen: once a second, how much of each card shows; a card that showed and left teaches once
   useEffect(() => {
-    if (!items?.length) return;
+    if (!items?.length || !focused) return;
     const h = Dimensions.get('window').height;
     const timer = setInterval(() => {
       if (!active.current) return;
@@ -53,7 +69,8 @@ export function FeedView({ onGo, labelOf, colorOf }: { onGo: (page: string) => v
         ref.measureInWindow((_x, y, _w, height) => {
           if (!height) return;
           const shown = Math.max(0, Math.min(y + height, h) - Math.max(y, 0));
-          if (shown / height >= VISIBLE) dwell.current[id] = (dwell.current[id] ?? 0) + TICK_MS / 1000;
+          // first seen counts 0 s, so a quick pass is a skip
+          if (shown / height >= VISIBLE) dwell.current[id] = id in dwell.current ? dwell.current[id] + TICK_MS / 1000 : 0;
           else if (id in dwell.current) {
             told.current.add(id);
             learn(it, 'view', dwell.current[id]);
@@ -64,7 +81,7 @@ export function FeedView({ onGo, labelOf, colorOf }: { onGo: (page: string) => v
       end.current?.measureInWindow((_x, y) => { if (y < h + 200 && drawn < items.length) setDrawn((d) => d + MORE); });   // near the end: more
     }, TICK_MS);
     return () => clearInterval(timer);
-  }, [items, drawn]);
+  }, [items, drawn, focused]);
 
   if (items === null) return <GeekLoader text="Gathering what's new for you…" />;
   if (!items.length) return <Empty>Nothing yet: Home fills itself from the other pages as they update. Pull down on any page to refresh it.</Empty>;
@@ -92,8 +109,7 @@ export function FeedView({ onGo, labelOf, colorOf }: { onGo: (page: string) => v
               <Pressable onPress={() => {
                 if (it.card.url) open(it.card.url);
                 learn(it, 'open');
-                recordInterest({ kind: ['repo', 'rising'].includes(it.card.kind) ? 'repo' : it.card.kind === 'person' ? 'person' : 'news',
-                  text: `${it.card.title} ${it.card.sub ?? ''}`, topics: it.card.terms ?? [], source: 'home' }).catch(() => undefined);
+                recordInterest({ kind: interestKind(it.card), text: interestText(it.card), topics: it.card.terms ?? [], source: 'home' }).catch(() => undefined);
               }}>
                 <Text style={st.title}>{it.card.title}</Text>
               </Pressable>

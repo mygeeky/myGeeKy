@@ -71,7 +71,7 @@ class FakeClient:
         self.events, self.repo_calls = events, []
 
     def get_user(self, login):
-        return {"bio": "Single-cell genomics and spatial transcriptomics"}
+        return {"bio": "Single-cell genomics and spatial transcriptomics", "name": "Jake Wharton", "company": "@skylightfamily"}
 
     def list_user_events(self, username, per_page=30):
         return self.events
@@ -94,6 +94,20 @@ def test_learn_from_github_follows_stars_and_forks_once():
     kinds = [e["kind"] for e in interests.load_events()]
     assert kinds == ["follow", "fork"]
     assert "spatial transcriptomics" in interests.load_events()[1]["terms"]
+    assert not {"jake", "wharton", "skylightfamily"} & set(interests.load_events()[0]["terms"])   # the bio, not the name
+    # GitHub sent the list short once, so the same person looks newly followed again: learned from only once
+    assert interests.learn_from_github(FakeClient([]), cfg, ["NewFriend"]) == 0
+    assert [e["kind"] for e in interests.load_events()] == ["follow", "fork"]
+
+
+def test_a_follow_counts_once_and_its_name_is_not_a_topic():
+    cfg = _cfg()
+    jake = {"kind": "follow", "source": "followed JakeWharton", "terms": {"skylightfamily": 0.34, "jake": 0.33, "wharton": 0.33}}
+    for day in range(1, 19):                      # what the old version wrote, again and again
+        interests.append_jsonl(interests.INTEREST_EVENTS_FILE, dict(jake, at=f"2026-10-{day:02d}T12:00:00+00:00"))
+    weights = interests.learned_weights(cfg, datetime(2026, 10, 19, tzinfo=timezone.utc))
+    assert "jake" not in weights and "wharton" not in weights
+    assert weights["skylightfamily"] < interests.MIN_LEARNED_WEIGHT               # counted once: not a learned term
 
 
 def test_panel_clicks_become_interest_events():
@@ -104,6 +118,9 @@ def test_panel_clicks_become_interest_events():
     logic.record_click(cfg, "person", {"username": "ana", "bio": "Protein design", "sources": ["stargazer:a/b"]})
     logic.record_click(cfg, "news", {"id": "arxiv:1", "title": "Graph neural networks for molecules"})
     assert [e["kind"] for e in interests.load_events()] == ["repo", "person", "news"]
+    logic.record_click(cfg, "person", {"username": "JakeArchibald", "bio": "Spatial omics", "sources":
+                                       ["domain_repo_owner:jakea/motifBreakR", "search:followers:>10 repos:>5 type:user"]})
+    assert set(interests.load_events()[-1]["terms"]) == {"spatial", "omics", "motifbreakr"}   # no login, no search words
     assert "ana" == interests.load_events()[1]["source"]
     assert "Deep" not in json.dumps(interests.load_events())   # terms only, never the raw text
 

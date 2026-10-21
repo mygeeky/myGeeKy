@@ -17,7 +17,9 @@ export const KINDS: Record<string, [string, string, number]> = {
   dataset: ['Dataset', '🗂', 30], repo: ['Repo to help', '📦', 14], rising: ['Rising repo', '📈', 7], person: ['Someone to meet', '👥', 14],
   model: ['AI model', '🤗', 7], highlight: ['Highlight', '✨', 30], skill: ['Rising skill', '🧠', 30], quiz: ['Quiz', '🏆', 3650],
 };
-const EXPLORE_EVERY = 5, SAME_KIND_RUN = 2, SOURCE_WINDOW = 10, SOURCE_MAX = 3, STATS_HALF_LIFE = 30, READ_SECONDS = 4, SKIP_SECONDS = 1, SEEN_KEEP = 2000;
+const EXPLORE_EVERY = 5, SAME_KIND_RUN = 2, SOURCE_WINDOW = 10, SOURCE_MAX = 3, STATS_HALF_LIFE = 30;
+export const READ_SECONDS = 4;
+const SKIP_SECONDS = 1, SEEN_KEEP = 2000;
 const KEY = 'mygeeky.feed';
 
 export const r4 = (x: number) => Math.floor(x * 10000 + 0.5) / 10000;
@@ -129,6 +131,11 @@ export function markSeen(seen: Seen, id: string, opened: boolean, today: string)
   return out;
 }
 
+/** How much an opened card teaches the Model (feed.interest_kind). */
+export const interestKind = (c: Card) => (['repo', 'rising', 'model'].includes(c.kind) ? 'repo' : c.kind === 'person' ? 'person' : 'news');
+/** What an opened card teaches the Model (feed.interest_text): its title, and for a person why they were suggested. */
+export const interestText = (c: Card) => String((c.kind === 'person' ? c.sub : c.title) ?? '');
+
 // ---- the store
 export type FeedState = { stats: Stats; seen: Seen; learned_at: string; dwell: boolean };
 export async function load(): Promise<FeedState> {
@@ -142,8 +149,19 @@ export async function load(): Promise<FeedState> {
 }
 const save = (s: FeedState) => AsyncStorage.setItem(KEY, JSON.stringify(s)).catch(() => undefined);
 
+// one change at a time: cards leaving the screen together would each read the same state and undo each other
+let queue: Promise<unknown> = Promise.resolve();
+function inTurn<T>(fn: () => Promise<T>): Promise<T> {
+  const run = queue.then(fn);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
 /** A tap, a vote, or a card leaving the screen after `dwell` seconds (feed.record). */
-export async function record(kind: string, id: string, what: 'open' | 'up' | 'down' | 'view', dwell = 0, today = new Date().toISOString().slice(0, 10)): Promise<FeedState> {
+export function record(kind: string, id: string, what: 'open' | 'up' | 'down' | 'view', dwell = 0, today = new Date().toISOString().slice(0, 10)): Promise<FeedState> {
+  return inTurn(() => recordNow(kind, id, what, dwell, today));
+}
+async function recordNow(kind: string, id: string, what: 'open' | 'up' | 'down' | 'view', dwell: number, today: string): Promise<FeedState> {
   const s = await load();
   if (what === 'view' && !s.dwell) return s;
   const since = s.learned_at ? Math.max(0, Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${s.learned_at}T00:00:00Z`)) / 86400000)) : 0;
@@ -153,4 +171,4 @@ export async function record(kind: string, id: string, what: 'open' | 'up' | 'do
   await save(s);
   return s;
 }
-export async function setDwell(on: boolean): Promise<void> { const s = await load(); s.dwell = on; await save(s); }
+export function setDwell(on: boolean): Promise<void> { return inTurn(async () => { const s = await load(); s.dwell = on; await save(s); }); }
