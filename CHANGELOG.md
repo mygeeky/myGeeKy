@@ -3,6 +3,10 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **Home cards open with a tap** (computer and phone). Tapping anywhere on a card opens the article, paper, repo or job itself, and its button is now a coloured **Open ↗** instead of a small grey arrow. The link to the page the card came from reads **See all in News** (no arrow), so it no longer looks like the way to open the card.
+
 ## 0.35.1 (2026-10-22): delete your data, and a Start over that starts over (phone 1.17.1)
 
 - **Delete your data, step by step**: mygeeky.org/delete.html says how to remove everything myGeeKy keeps, on your phone, your computers and in your own GitHub repos (there is no myGeeKy account or server to delete from). Linked from the privacy policy and the site's footer; it's the deletion link Google Play asks for.

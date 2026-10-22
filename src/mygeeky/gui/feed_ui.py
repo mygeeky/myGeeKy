@@ -63,13 +63,17 @@ def cards_sheet(t: dict[str, Any]) -> str:
         f"{card} QLabel#choice {{ background:{t['btn_bg']}; border:1px solid transparent; border-radius:9px; padding:6px 9px; font-size:12px; }}",
         f"{card} QPushButton {{ background:transparent; color:{t['muted']}; border:none; border-radius:7px; padding:3px 7px; font-size:13px; }}",
         f"{card} QPushButton:hover {{ background:{t['btn_hover']}; color:{t['text']}; }}",
-        f"{card} QPushButton#more {{ color:{t['text']}; font-size:11.5px; }}",
+        f"{card} QPushButton#more {{ color:{t['muted']}; font-size:11px; }}",
+        f"{card} QPushButton#open {{ font-size:12px; font-weight:800; padding:3px 11px; }}",
         f"{card} QPushButton#liked {{ color:{LIKED}; }}",
     ]
     for kind in feed.KINDS:
         c = kind_color(kind, t)
         rules.append(f'{card}[kind="{kind}"] QLabel#kind {{ color:{c.name()}; }}')
         rules.append(f'{card}[kind="{kind}"] QLabel#chip {{ background:rgba({c.red()},{c.green()},{c.blue()},40); }}')
+        rules.append(f'{card}[kind="{kind}"] QPushButton#open {{ color:{c.name()}; '      # Open: the card's one lit button
+                     f'background:rgba({c.red()},{c.green()},{c.blue()},45); border:1px solid {c.name()}; }}')
+        rules.append(f'{card}[kind="{kind}"] QPushButton#open:hover {{ background:rgba({c.red()},{c.green()},{c.blue()},90); }}')
     return "\n".join(rules)
 
 
@@ -145,8 +149,8 @@ class FeedCard(QFrame):
         self.setProperty("hero", "yes" if hero else "no")
         lay.addWidget(_plain(f"{emoji}  {label}", "kind"))
         title = _plain(self.card["title"], "title")
-        title.setCursor(Qt.PointingHandCursor)
-        title.mousePressEvent = lambda e: self.open()          # noqa: ARG005
+        if self._tappable():                                       # a tap anywhere on the card opens it
+            self.setCursor(Qt.PointingHandCursor)
         sub = _plain(self.card["sub"], "sub") if self.card.get("sub") else None
         days = feed.days_left(self.card)
         if days is not None:                                       # a deadline: the ring beside its title
@@ -226,12 +230,12 @@ class FeedCard(QFrame):
         self.like_btn = button("♡", "More like this (Home and your Model learn)", self.like)
         self.save_btn = button("🔖", "Save for later (in 🔖 Saved)", self.save)
         button("✕", "Fewer like this", self.dismiss)
-        if self.card.get("url"):
-            button("↗", "Open", self.open)
         row.addStretch(1)
         more = self.page.page_label(self.card.get("page", ""))
-        if more:
-            button(f"More in {more} ›", f"More in {more}", self.more).setObjectName("more")
+        if more:                                                   # the page it came from: plain words, no arrow
+            button(f"See all in {more.replace('&', '&&')}", f"Go to {more}", self.more).setObjectName("more")   # && shows one &
+        if self.card.get("url"):
+            button("Open ↗", "Open it", self.open).setObjectName("open")
         self._paint_marks()
         return row
 
@@ -244,6 +248,16 @@ class FeedCard(QFrame):
         self.save_btn.setText("🔖✓" if saved else "🔖")
 
     # ---- what you do
+    def _tappable(self) -> bool:
+        """A card with a link opens it; one without (a quiz has its answers on the card) isn't a button."""
+        return bool(self.card.get("url"))
+
+    def mousePressEvent(self, e) -> None:  # noqa: N802
+        if e.button() == Qt.LeftButton and self._tappable():   # buttons and quiz answers take their own clicks
+            self.open()
+        else:
+            super().mousePressEvent(e)
+
     def open(self) -> None:
         self.page.opened(self.item)
 

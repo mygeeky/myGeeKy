@@ -83,12 +83,14 @@ type CardProps = { it: Shown; hero?: boolean; savedAt?: string; liked: boolean; 
 
 function NeonCard({ it, hero, savedAt, liked, saved, onLike, onSave, onDismiss, onOpen, onMore, moreLabel, onQuiz, refFn }: CardProps) {
   const c = it.card, [label, emoji] = KINDS[c.kind] ?? ['', '•'], color = kindColor(c.kind), days = daysLeft(c), chips = factsLine(c);
-  const title = <Pressable onPress={onOpen}><Text style={[st.title, hero && st.heroTitle]}>{c.title}</Text></Pressable>;
+  const title = <Text style={[st.title, hero && st.heroTitle]}>{c.title}</Text>;
   const sub = c.sub ? <Text style={st.sub}>{c.sub}</Text> : null;
+  // a tap anywhere on a card with a link opens it (its buttons and quiz answers take their own taps)
   return (
-    <View ref={refFn} collapsable={false}
-          style={[st.card, { borderColor: alpha(color, C.dark ? 0.8 : 0.65) }, C.dark && { shadowColor: color },
-                  { backgroundColor: mix(C.sheet, color, hero ? 0.14 : 0.03) }]}>
+    <Pressable ref={refFn} collapsable={false} onPress={c.url ? onOpen : undefined} disabled={!c.url}
+               accessibilityRole={c.url ? 'link' : undefined}
+               style={({ pressed }) => [st.card, { borderColor: alpha(color, C.dark ? 0.8 : 0.65) }, C.dark && { shadowColor: color },
+                  { backgroundColor: mix(C.sheet, color, pressed ? 0.12 : hero ? 0.14 : 0.03) }]}>
       <Text style={[st.kind, { color }]}>{emoji}  {label}</Text>
       {days !== null
         ? <View style={st.row}><Ring days={days} color={color} /><View style={{ flex: 1, gap: 2 }}>{title}{sub}</View></View>
@@ -100,11 +102,15 @@ function NeonCard({ it, hero, savedAt, liked, saved, onLike, onSave, onDismiss, 
         <Pressable onPress={onLike} style={st.act} accessibilityLabel="More like this (Home and your Model learn)"><Text style={[st.actText, liked && { color: LIKED }]}>{liked ? '♥' : '♡'}</Text></Pressable>
         <Pressable onPress={onSave} style={st.act} accessibilityLabel={saved ? 'Take out of Saved' : 'Save for later'}><Text style={st.actText}>{saved ? '🔖✓' : '🔖'}</Text></Pressable>
         <Pressable onPress={onDismiss} style={st.act} accessibilityLabel="Fewer like this"><Text style={st.actText}>✕</Text></Pressable>
-        {c.url ? <Pressable onPress={onOpen} style={st.act} accessibilityLabel="Open"><Text style={st.actText}>↗</Text></Pressable> : null}
         <View style={{ flex: 1 }} />
-        {moreLabel ? <Pressable onPress={onMore} style={st.act}><Text style={st.more}>More in {moreLabel} ›</Text></Pressable> : null}
+        {moreLabel ? <Pressable onPress={onMore} style={st.act} accessibilityLabel={`Go to ${moreLabel}`}><Text style={st.more}>See all in {moreLabel}</Text></Pressable> : null}
+        {c.url ? (
+          <Pressable onPress={onOpen} style={[st.open, { borderColor: color, backgroundColor: alpha(color, 0.18) }]} accessibilityLabel="Open it">
+            <Text style={[st.openText, { color }]}>Open ↗</Text>
+          </Pressable>
+        ) : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -290,7 +296,9 @@ const st = StyleSheet.create({
   acts: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
   act: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8 },
   actText: { color: C.muted, fontSize: 16 },
-  more: { color: C.text, fontSize: 12.5, fontWeight: '600' },
+  more: { color: C.muted, fontSize: 12 },
+  open: { borderWidth: 1, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 5, marginLeft: 2 },
+  openText: { fontSize: 13, fontWeight: '800' },
   milestone: { flexDirection: 'row', gap: 10, alignItems: 'center', borderRadius: 14, padding: 12, marginBottom: 12, backgroundColor: 'rgba(255,111,216,0.18)' },
   markEmoji: { fontSize: 24 },
   markTitle: { color: C.text, fontSize: 14, fontWeight: '800' },
