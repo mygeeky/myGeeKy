@@ -394,6 +394,7 @@ class RailHost(QWidget):
         order = [self.content, self.docked, self.strip] if self.side == "right" else [self.strip, self.docked, self.content]
         for w in order:
             self.row.addWidget(w, 1 if w is self.content else 0)
+        self.row.activate()                     # move them now, not on the next pass of the event loop
 
     def set_side(self, side: str) -> None:
         """The rail moves to the other side of the page (⚙ → Menu side, or the panel moved to the other edge)."""
