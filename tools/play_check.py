@@ -42,6 +42,8 @@ FORBIDDEN = {                            # Play refuses these without a declarat
 }
 UNNEEDED = {                             # not refused, but more than myGeeKy needs: block them in app.json
     "android.permission.SYSTEM_ALERT_WINDOW": "draws over other apps; the prebuild template's (blocked in app.json, debug keeps it)",
+    "android.permission.USE_BIOMETRIC": "androidx.biometric, via expo-secure-store; myGeeKy never asks for a fingerprint (blocked in app.json)",
+    "android.permission.USE_FINGERPRINT": "the same, for older Android (blocked in app.json)",
     # READ/WRITE_EXTERNAL_STORAGE come from expo-file-system, capped at Android 12 (maxSdkVersion 32): likely unneeded (files
     # come through the document picker), but only an Android 12 test can show it, and Play doesn't mind them capped.
 }
