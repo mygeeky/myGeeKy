@@ -125,5 +125,6 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     { ...G.chances, icon: 'briefcase-outline', children: [
       leaf('chances', 'seasons', 'Seasons', 'calendar-outline'), leaf('chances', 'jobs', 'Jobs', 'briefcase-outline'),
       leaf('chances', 'funding', 'Funding', 'cash-outline'), leaf('chances', 'conferences', 'Conferences', 'mic-outline')] },
+    { id: 'help', label: 'Help', icon: 'help-circle-outline', tab: 'help', color: '#2dd4bf' },   // ❓ GeeKOc's tours and the answers: the last
   ] });
 }

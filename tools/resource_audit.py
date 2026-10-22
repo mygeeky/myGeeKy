@@ -24,6 +24,8 @@ import time
 import tracemalloc
 from pathlib import Path
 
+os.environ.setdefault("MYGEEKY_NO_TOUR", "1")      # no tour while it measures the panel
+
 # What "efficient" means here, in numbers. A WARN is worth a look; a FAIL is a bug.
 BUDGETS = {
     "data_working_mb": 40,        # files in the synced data folder (your history, settings, CV text)

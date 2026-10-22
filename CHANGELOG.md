@@ -5,6 +5,8 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **GeeKOc shows you around** (computer and phone). The first time myGeeKy opens, GeeKOc asks which language you'd like (English, Français, العربية, 中文) and walks you through the places that fit what you gave at setup: GitHub, ORCID, both, a CV, or just keywords. Every tour visits Seasons and Jobs right after Home; each stop opens the page and points at where it lives in the menu, his arms swimming as he talks. It ends with what more you'd get by adding GitHub, ORCID or a CV, the five things myGeeKy never does, and *Your geeky friend who helps you grow, quietly.* Skip ends it; it comes back by itself only when an update brings new stops, and never under tests or on CI.
+- **❓ Help, a new main** (computer and phone, last in the menu): start any tour again (the one that fits you, Settings, or one for each main), pick the tours' language, and read fourteen questions and answers on how and why myGeeKy works, in the same four languages.
 - **Home cards fit beside a pinned menu** (computer). With the side menu pinned, Home was wider than its space and the right edge of every card, Open ↗ included, was cut off; the "new · updated" line and a long "See all in …" now wrap instead.
 
 ## 0.35.2 (2026-10-22): Home cards that open with a tap, and the phone first (phone 1.17.2)

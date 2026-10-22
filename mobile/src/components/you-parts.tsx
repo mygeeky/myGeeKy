@@ -360,17 +360,17 @@ export function MorePart() {
           interests and your badges (do it again any time to refresh them).</Text>
       </Pressable>
 
-      <Section>📄 YOUR PAPERS (OPENALEX)</Section>
+      <Section tour="settings:papers">📄 YOUR PAPERS (OPENALEX)</Section>
       <View style={{ marginBottom: 6 }}><WhoisSettings /></View>
-      <Section>📝 FROM A CV, THESIS OR ABSTRACT</Section>
+      <Section tour="settings:cv">📝 FROM A CV, THESIS OR ABSTRACT</Section>
       <View style={{ marginBottom: 6 }}><DocSettings /></View>
       <Section>🔔 NOTIFICATIONS</Section>
       <View style={{ marginBottom: 6 }}><NotifySettings full /></View>
-      <Section>🧠 HOW MYGEEKY ASKS THE INTERNET</Section>
+      <Section tour="settings:wisep">🧠 HOW MYGEEKY ASKS THE INTERNET</Section>
       <View style={{ marginBottom: 6 }}><WisepSettings /></View>
-      <Section>📦 PACKS</Section>
+      <Section tour="settings:packs">📦 PACKS</Section>
       <View style={{ marginBottom: 6 }}><PackSettings /></View>
-      <Section>🎨 LOOK</Section>
+      <Section tour="settings:look">🎨 LOOK</Section>
       <Card>
         <Text style={st.setupKey}>Theme</Text>
         <View style={st.choices}>
@@ -395,7 +395,7 @@ export function MorePart() {
           phone equivalent; Start over below is the phone&apos;s uninstall.</Text>
       </Card>
 
-      <Section>⚙️ YOUR SETUP</Section>
+      <Section tour="settings:setup">⚙️ YOUR SETUP</Section>
       <Card>
         {rows.map(([k, v, on]) => (
           <View key={k} style={st.setupRow}>
@@ -419,7 +419,7 @@ export function MorePart() {
         ) : null}
       </Card>
 
-      <Section>☁️ SYNC WITH YOUR COMPUTERS</Section>
+      <Section tour="settings:sync">☁️ SYNC WITH YOUR COMPUTERS</Section>
       <Card>
         <Text style={st.body}>{repo
           ? `Your model, badges and what you open here travel through your private repo ${repo}, like one more computer in sync. Its token is only on this phone, in the secure store.`

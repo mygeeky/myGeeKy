@@ -16,7 +16,7 @@ import { C, BADGES, tint } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
 export type SectionId = 'feed' | 'live' | 'people' | 'researchers' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
-  | 'chances' | 'you' | 'market' | 'discuss';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
+  | 'chances' | 'you' | 'market' | 'discuss' | 'help';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
 
 export type Section = { id: SectionId; label: string; color: string; icon: IconName; about: string };
 
@@ -37,6 +37,7 @@ export const SECTIONS: Record<SectionId, Section> = {
   market: { id: 'market', label: 'Repos', color: '#7fd8ff', icon: 'trending-up-outline', about: 'The popular, active projects your field runs on, ranked by momentum like a market board.' },
   discuss: { id: 'discuss', label: 'News', color: '#eab308', icon: 'chatbubbles-outline', about: 'New preprints and discussions matching your interests: arXiv, bioRxiv and Hacker News.' },
   you: { id: 'you', label: 'You', color: '#ffd24a', icon: 'person-outline', about: 'Your month and rank, your model, your badges and your settings.' },
+  help: { id: 'help', label: 'Help', color: '#2dd4bf', icon: 'help-circle-outline', about: 'Tours with GeeKOc, and answers to how and why myGeeKy works.' },
 };
 
 export const INNER: SectionId[] = ['live', 'people', 'activity', 'signals', 'grow'];

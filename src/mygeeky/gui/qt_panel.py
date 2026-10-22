@@ -1612,6 +1612,7 @@ GROUP_ICONS = {
     "world": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
     "circle": PLANETS["suggestions"][1],
     "feed": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",     # 🏠 Home, the first page
+    "help": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01",   # ❓ Help, the last
 }
 BACK_ICON = "M15 18l-6-6 6-6"
 
@@ -3484,6 +3485,7 @@ TABS = {
     "model": ("\U0001f9e0", "Model"),
     "badges": ("\U0001f3c5", "Badges"),
     "admin": ("\U0001f6e1", "Admin"),
+    "help": ("\u2753", "Help"),
 }
 
 
@@ -3546,6 +3548,7 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
         group("circle", [circle[k] for k in navtree.ordered(list(circle), has_github, NEEDS_GITHUB_TABS)]),
         group("repos", [n("repos", "Help out", tab="repos"), n("market:repos", "Rising", icon="\U0001f4c8", tab="market", part="repos")]),
         group("chances", modes("chances", MyGeekyPanel.CHANCE_MODES)),
+        n("help", "Help", "#2dd4bf", tab="help"),          # ❓ GeeKOc's tours and the answers (help_ui.py): the last
     ]))
 
 
@@ -3677,6 +3680,9 @@ class MyGeekyPanel(QWidget):
         QTimer.singleShot(5_000, self._maybe_auto_refresh_suggestions)
         self._start_seen_tracker()
         QTimer.singleShot(800, lambda: self.home_page.shown() if self.active_tab == "home" else None)
+        self._tour: Any = None
+        self._tour_tries = 0
+        QTimer.singleShot(2500, self._maybe_tour)          # GeeKOc's tour, the first time (never under tests or CI)
 
     # ------------------------------------------------------------------ UI construction
     def _build_ui(self) -> None:
@@ -3847,7 +3853,7 @@ class MyGeekyPanel(QWidget):
                  "researchers": self._build_researchers_tab(),
                  "signals": self._build_signals_tab(), "grow": self._build_grow_tab(),
                  "chances": self._build_chances_tab(), "model": self._build_you_tab(),
-                 "badges": self._build_badges_tab()}
+                 "badges": self._build_badges_tab(), "help": self._build_help_tab()}
         if self._is_admin:
             pages["admin"] = self._build_admin_tab()
         self._tab_order = [name for name in tabs if name in pages]
@@ -3876,6 +3882,127 @@ class MyGeekyPanel(QWidget):
         self.home_page = HomePage(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, logic.open_link, go,
                                   label, color, lambda: self.panel_frame.isVisible() and self.isVisible())
         return self.home_page
+
+    def _build_help_tab(self) -> QWidget:
+        """❓ Help (help_ui.py): GeeKOc's tours again, and the answers to how and why myGeeKy works."""
+        from .help_ui import HelpPage
+
+        def label(main: str) -> str:
+            nd = navtree.find(self.nav_tree, "feed" if main == "home" else main)
+            return nd["label"] if nd else main.capitalize()
+
+        self.help_page = HelpPage(self.cfg, lambda: THEMES[self._theme_name()], self.start_tour, label,
+                                  lambda: logic.save_config(self.cfg))
+        return self.help_page
+
+    # ------------------------------------------------------------------ GeeKOc's tour (tour.py, tour_ui.py)
+    TOUR_SETTINGS = {"look": "Theme", "place": "Place on screen", "papers": "Your papers", "cv": "From a CV",
+                     "wisep": "How myGeeKy asks the internet", "packs": "Packs", "setup": "Your setup", "sync": "Sync"}
+
+    def _maybe_tour(self) -> None:
+        """The tour opens by itself the first time, and after an update with new stops; tour.auto says never under
+        tests, on CI or with MYGEEKY_NO_TOUR. Folded or hidden: try again a little later."""
+        from .. import tour
+        steps = tour.auto(self.cfg.tour_seen, tour.kind_for(self.cfg), "desktop")
+        if not steps or self._tour is not None:
+            return
+        if not (self.isVisible() and self.panel_frame.isVisible()):
+            self._tour_tries += 1
+            if self._tour_tries < 20:
+                QTimer.singleShot(30_000, self._maybe_tour)
+            return
+        self._run_tour(steps, marks_seen=True)
+
+    def start_tour(self, name: str) -> None:
+        """Help's buttons: "start" (the one that fits you), "settings", or a main ("grow")."""
+        from .. import tour
+        self._run_tour(tour.stops(name, tour.kind_for(self.cfg), "desktop"), marks_seen=name == "start")
+
+    def _run_tour(self, steps: list[str], marks_seen: bool) -> None:
+        from .. import tour
+        from .tour_ui import TourOverlay
+        if self._tour is not None or not steps:
+            return
+        self._tour_rail = (self.rail_host.state.open, self.rail_host.state.pinned)
+        self._tour = TourOverlay(self.panel_frame, self.cfg, tour.kind_for(self.cfg), steps, self.tour_go,
+                                 self.tour_rect, self.tour_path, lambda finished: self._tour_done(marks_seen),
+                                 lambda: logic.save_config(self.cfg))
+
+    def _tour_done(self, marks_seen: bool) -> None:
+        from .. import tour
+        self._tour = None
+        if marks_seen:                                    # done or skipped: it doesn't come back by itself
+            self.cfg.tour_seen = max(self.cfg.tour_seen, tour.version())
+            logic.save_config(self.cfg)
+        if self.settings_panel.isVisible():
+            self._toggle_settings()
+        if not self._tour_rail[1]:                        # the rail was folded before: fold it again
+            self.rail_host.fold()
+        if hasattr(self, "help_page"):
+            self.help_page.build()                        # the language may have been picked on the way
+
+    def _tour_widget(self, part: str) -> QWidget | None:
+        return {"look": getattr(self, "_tour_look", None), "place": getattr(self, "place_label", None),
+                "papers": getattr(self, "whois_section", None), "cv": getattr(self, "doc_section", None),
+                "wisep": getattr(self, "wisep_section", None), "packs": getattr(self, "pack_section", None),
+                "setup": getattr(self, "setup_label", None), "sync": getattr(self, "sync_label", None)}.get(part)
+
+    def tour_go(self, target: str) -> None:
+        """Move the app to a stop: ⚙, a part of ⚙ (scrolled into view), or a page, with the rail dropped down to
+        it so the spotlight can sit on its line."""
+        if target == "settings" or target.startswith("settings:"):
+            if not self.settings_panel.isVisible():
+                self._toggle_settings()
+            w = self._tour_widget(target.split(":", 1)[1]) if ":" in target else None
+            if w is not None:                             # up or down only: ⚙ never scrolls sideways
+                box = self.settings_scroll
+                box.horizontalScrollBar().setValue(0)
+                box.verticalScrollBar().setValue(max(0, w.mapTo(box.widget(), QPoint(0, 0)).y() - 60))
+            return
+        nd = navtree.find(self.nav_tree, target)
+        if nd is None:
+            return
+        self._nav_open(navtree.first_leaf(nd))
+        host, trail = self.rail_host, navtree.path(nd)
+        if len(trail) <= 2:                               # Home or Help: the rail open on the groups
+            host.state.open, host.state.open_group, host.state.open_page = True, None, None
+            host.apply()
+        else:
+            host.open_at(trail[1]["id"])
+            if nd["children"]:
+                host.state.open_page = nd["id"]
+                host.apply()
+
+    def tour_rect(self, target: str) -> QRect | None:
+        """Where the spotlight goes, in the panel's coordinates: the page's line in the rail, ⚙, or a part of ⚙."""
+        from .navrail import RailRow
+        frame = self.panel_frame
+
+        def box(w: QWidget, pad: int = 3) -> QRect:
+            return QRect(w.mapTo(frame, QPoint(0, 0)), w.size()).adjusted(-pad, -pad, pad, pad)
+        if target == "settings":
+            return box(self.settings_btn)
+        if target.startswith("settings:"):
+            w = self._tour_widget(target.split(":", 1)[1])
+            if w is None or not w.isVisible():
+                return None
+            view = self.settings_scroll.viewport()
+            area = QRect(view.mapTo(frame, QPoint(0, 0)), view.size())
+            r = box(w)
+            if isinstance(w, QLabel):                     # a heading: the band of settings under it
+                r = QRect(area.left() + 2, r.top(), area.width() - 4, max(r.height() + 34, 44))
+            r = r.intersected(area)
+            return None if r.isEmpty() else r
+        row = next((r for r in frame.findChildren(RailRow) if r.nd["id"] == target and r.isVisible()), None)
+        return box(row, 2) if row is not None else None
+
+    def tour_path(self, target: str) -> str:
+        if target == "settings":
+            return "⚙ Settings"
+        if target.startswith("settings:"):
+            return "⚙ Settings → " + self.TOUR_SETTINGS.get(target.split(":", 1)[1], "")
+        nd = navtree.find(self.nav_tree, target)
+        return " → ".join(n["label"] for n in navtree.path(nd)[1:]) if nd else ""
 
     def _build_researchers_tab(self) -> QWidget:
         """Circle → 📄 Researchers (researchers_ui.py): new work from the people you follow, following, suggestions."""
@@ -6726,6 +6853,7 @@ class MyGeekyPanel(QWidget):
 
         theme_row = QHBoxLayout()
         theme_label = QLabel("Theme")
+        self._tour_look = theme_label                     # where the Settings tour points for "how it looks"
         theme_label.setStyleSheet("font-size:11px; font-weight:600; background:transparent;")
         theme_row.addWidget(theme_label)
         theme_row.addStretch(1)

@@ -74,7 +74,8 @@ def test_the_panel_shows_its_tabs_in_that_order_and_opens_on_home(monkeypatch, u
         from mygeeky import navtree
         bar = panel.tab_bar.layout()
         row = lambda: [bar.itemAt(i).widget() for i in range(bar.count())]   # noqa: E731
-        top = [panel.nav_buttons["feed"]] + [panel.nav_buttons[g["id"]] for g in navtree.GROUPS]
+        top = ([panel.nav_buttons["feed"]] + [panel.nav_buttons[g["id"]] for g in navtree.GROUPS]
+               + [panel.nav_buttons["help"]])
         assert row() == top                                                    # Home, then the six groups
         assert panel.active_tab == "home" and panel.nav_trail.text() == "Home"   # 🏠 the first page
         assert panel.nav_back_text.isHidden()

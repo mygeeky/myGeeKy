@@ -24,6 +24,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 os.environ.setdefault("QT_SCALE_FACTOR", "2")
+os.environ.setdefault("MYGEEKY_NO_TOUR", "1")      # GeeKOc's tour stays out of the pictures
 ROOT = Path(__file__).resolve().parent.parent
 TALL = "--tall" in sys.argv
 SHOTS = ROOT / "launch" / "video" / "intro" / "shots" if TALL else ROOT / "docs" / "screenshots"

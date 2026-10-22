@@ -259,6 +259,8 @@ class MyGeekyConfig:
     gui_expanded_width: int = 460             # the open panel's width; ⚙ or drag its inner edge (360-900)
     gui_rail_pinned: bool = False       # the side rail stays open beside the page (else it opens over it)
     gui_rail_side: str = "auto"               # the side rail: "auto" (the screen-edge side) | "left" | "right"
+    tour_lang: str = ""                       # GeeKOc's tours and Help: "en" | "fr" | "ar" | "zh" ("" = ask first)
+    tour_seen: int = 0                        # the last tour version seen (tour.py): 0 = never, so the tour opens once
     gui_folded_width: int = 76                # folded, the panel is just the app icon on the screen edge
     gui_folded_height: int = 76
     gui_hearts_enabled: bool = True           # folded icon lets a few small hearts drift up now and then

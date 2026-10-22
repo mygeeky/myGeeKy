@@ -1,0 +1,335 @@
+{
+  "version": 1,
+  "about": "GeeKOc's tours and Help (tour.py, mobile/src/lib/tour.ts). The phone has an identical copy (mobile/src/data/tour.json, checked by tests/test_tour.py). A stop opens the page named in 'at' for each app and points at it; a stop with no 'at' for an app is skipped there. 'since' is the tour version a stop arrived in: after an update, only stops newer than the last tour seen are shown. Texts are written by people, never translated at run time.",
+  "langs": {"en": "English", "fr": "Français", "ar": "العربية", "zh": "中文"},
+  "rtl": ["ar"],
+  "ui": {
+    "pick": {"en": "Choose the language for my tour", "fr": "Choisis la langue de la visite", "ar": "اختر لغة الجولة", "zh": "选择导览的语言"},
+    "next": {"en": "Next", "fr": "Suivant", "ar": "التالي", "zh": "下一步"},
+    "back": {"en": "Back", "fr": "Retour", "ar": "السابق", "zh": "上一步"},
+    "skip": {"en": "Skip", "fr": "Passer", "ar": "تخطَّ", "zh": "跳过"},
+    "done": {"en": "Let's go", "fr": "C'est parti", "ar": "هيا بنا", "zh": "开始吧"},
+    "help": {"en": "Help", "fr": "Aide", "ar": "مساعدة", "zh": "帮助"},
+    "help_sub": {"en": "Tours with GeeKOc, and answers to how and why myGeeKy works.", "fr": "Des visites avec GeeKOc, et des réponses sur le comment et le pourquoi de myGeeKy.", "ar": "جولات مع GeeKOc، وإجابات عن كيف ولماذا يعمل myGeeKy.", "zh": "跟着 GeeKOc 导览，以及关于 myGeeKy 如何运作、为何这样做的解答。"},
+    "language": {"en": "Tour language", "fr": "Langue des visites", "ar": "لغة الجولات", "zh": "导览语言"},
+    "tours": {"en": "Tours", "fr": "Visites", "ar": "الجولات", "zh": "导览"},
+    "start_tour": {"en": "The tour: the places that fit you", "fr": "La visite : les endroits faits pour toi", "ar": "الجولة: الأماكن الأنسب لك", "zh": "导览：最适合你的地方"},
+    "settings_tour": {"en": "Settings", "fr": "Réglages (Settings)", "ar": "الإعدادات (Settings)", "zh": "设置（Settings）"},
+    "main_tour": {"en": "A tour of {name}", "fr": "Visite de {name}", "ar": "جولة في {name}", "zh": "{name} 导览"},
+    "faq": {"en": "Questions and answers", "fr": "Questions et réponses", "ar": "أسئلة وأجوبة", "zh": "问与答"}
+  },
+  "stops": {
+    "welcome": {"pose": "wave", "since": 1, "t": {
+      "en": "Hi, I'm GeeKOc! Let me show you the places that fit you best. It takes a minute, and you can skip any time.",
+      "fr": "Salut, je suis GeeKOc ! Je te montre les endroits faits pour toi. Ça prend une minute, et tu peux passer à tout moment.",
+      "ar": "مرحبًا، أنا GeeKOc! دعني أريك الأماكن الأنسب لك. الأمر يستغرق دقيقة، ويمكنك التخطي في أي وقت.",
+      "zh": "你好，我是 GeeKOc！我带你看看最适合你的地方。只需一分钟，随时可以跳过。"}},
+    "welcome_new": {"pose": "wave", "since": 1, "t": {
+      "en": "Welcome back! myGeeKy has something new. Let me show you, it's quick.",
+      "fr": "Bon retour ! myGeeKy a du nouveau. Je te montre, c'est rapide.",
+      "ar": "أهلًا بعودتك! في myGeeKy شيء جديد. دعني أريك، الأمر سريع.",
+      "zh": "欢迎回来！myGeeKy 有新东西了。我很快带你看看。"}},
+    "welcome_part": {"pose": "wave", "since": 1, "t": {
+      "en": "Let's look around this part of myGeeKy together.",
+      "fr": "Faisons le tour de cette partie de myGeeKy ensemble.",
+      "ar": "لنتجول معًا في هذا الجزء من myGeeKy.",
+      "zh": "我们一起看看 myGeeKy 的这一部分。"}},
+    "home": {"at": {"desktop": "feed", "phone": "feed"}, "pose": "point", "since": 1, "t": {
+      "en": "This is Home: new things from every page, picked for you. Tap a card to open it.",
+      "fr": "Voici l'accueil (Home) : les nouveautés de toutes les pages, choisies pour toi. Touche une carte pour l'ouvrir.",
+      "ar": "هذه هي الصفحة الرئيسية (Home): الجديد من كل الصفحات، مختار لك. المس أي بطاقة لفتحها.",
+      "zh": "这是首页（Home）：各个页面的新内容，为你挑选。点一下卡片就能打开。"}},
+    "home_learn": {"at": {"desktop": "feed", "phone": "feed"}, "pose": "think", "since": 1, "t": {
+      "en": "♡ means more like this, 🔖 keeps it for later, ✕ means fewer like it. Home also learns from how long you read a card; you can switch that off at the top.",
+      "fr": "♡ veut dire plus comme ça, 🔖 le garde pour plus tard, ✕ veut dire moins comme ça. Home apprend aussi du temps passé à lire une carte ; tu peux couper ça en haut.",
+      "ar": "♡ تعني المزيد من هذا، و 🔖 تحفظه لوقت لاحق، و ✕ تعني أقل من هذا. تتعلم Home أيضًا من مدة قراءتك للبطاقة، ويمكنك إيقاف ذلك من الأعلى.",
+      "zh": "♡ 表示多来点这样的，🔖 留着以后看，✕ 表示少来点。Home 也会根据你阅读卡片的时长来学习，你可以在顶部关掉它。"}},
+    "seasons": {"at": {"desktop": "chances:seasons", "phone": "chances:seasons"}, "pose": "think", "core": true, "since": 1, "t": {
+      "en": "Scholarships and programmes that come back every year. Preparing takes longer than applying, so Seasons tells you what opens in the coming weeks, while there's still time for letters, transcripts and stamps.",
+      "fr": "Les bourses et programmes qui reviennent chaque année. Préparer prend plus de temps que postuler : Seasons te dit ce qui ouvre dans les semaines à venir, quand il reste du temps pour les lettres, les relevés de notes et les tampons.",
+      "ar": "منح وبرامج تعود كل عام. التحضير يستغرق وقتًا أطول من التقديم، لذلك يخبرك Seasons بما سيفتح في الأسابيع القادمة، ما دام هناك وقت لخطابات التوصية وكشوف الدرجات والتصديقات.",
+      "zh": "每年都会再次开放的奖学金和项目。准备比申请更花时间，所以 Seasons 会提前告诉你接下来几周要开放的机会，让你有时间准备推荐信、成绩单和认证。"}},
+    "jobs": {"at": {"desktop": "chances:jobs", "phone": "chances:jobs"}, "pose": "point", "core": true, "since": 1, "t": {
+      "en": "PhD places, postdocs and research jobs, each one checked to be real before it's shown. Nobody learns what you looked at.",
+      "fr": "Des places de doctorat, des postdocs et des postes de recherche, chacun vérifié avant d'être affiché. Personne ne sait ce que tu as regardé.",
+      "ar": "مقاعد دكتوراه ووظائف ما بعد الدكتوراه ووظائف بحثية، كل واحدة منها يُتحقق من صحتها قبل عرضها. لا أحد يعرف ما الذي اطّلعت عليه.",
+      "zh": "博士名额、博士后和科研职位，每一个都在展示前核实为真实。没有人会知道你看过什么。"}},
+    "funding": {"at": {"desktop": "chances:funding", "phone": "chances:funding"}, "pose": "point", "since": 1, "t": {
+      "en": "Grants and fellowships in your field. A ring counts down the days to each deadline.",
+      "fr": "Bourses et financements dans ton domaine. Un anneau compte les jours jusqu'à chaque date limite.",
+      "ar": "منح وزمالات في مجالك. حلقة تعدّ الأيام المتبقية حتى كل موعد نهائي.",
+      "zh": "你所在领域的资助和奖学金。圆环会倒数每个截止日期。"}},
+    "conferences": {"at": {"desktop": "chances:conferences", "phone": "chances:conferences"}, "pose": "point", "since": 1, "t": {
+      "en": "Conferences in your field, with the abstract deadline and what students get: fee waivers, travel grants.",
+      "fr": "Les conférences de ton domaine, avec la date limite des résumés et ce que reçoivent les étudiants : réductions, bourses de voyage.",
+      "ar": "مؤتمرات في مجالك، مع الموعد النهائي لتقديم الملخصات وما يحصل عليه الطلاب: إعفاءات من الرسوم ومنح سفر.",
+      "zh": "你所在领域的会议，附摘要截止日期和学生福利：减免注册费、差旅资助。"}},
+    "repos": {"at": {"desktop": "repos", "phone": "repos:help"}, "pose": "point", "since": 1, "t": {
+      "en": "Open issues in projects that use your languages: a good place for a first contribution.",
+      "fr": "Des tickets ouverts dans des projets qui utilisent tes langages : idéal pour une première contribution.",
+      "ar": "مشكلات مفتوحة في مشاريع تستخدم لغاتك البرمجية: مكان جيد لأول مساهمة.",
+      "zh": "使用你所用语言的项目里的待解决问题：适合第一次贡献。"}},
+    "rising": {"at": {"desktop": "market:repos", "phone": "repos:rising"}, "pose": "cheer", "since": 1, "t": {
+      "en": "Repositories gaining stars fast in your field, before everyone has heard of them.",
+      "fr": "Les dépôts qui gagnent vite des étoiles dans ton domaine, avant que tout le monde en parle.",
+      "ar": "مستودعات تكسب النجوم بسرعة في مجالك، قبل أن يسمع بها الجميع.",
+      "zh": "你所在领域里星标增长很快的仓库，在大家都听说之前。"}},
+    "people": {"at": {"desktop": "suggestions", "phone": "people"}, "pose": "think", "since": 1, "t": {
+      "en": "Developers who work on what you work on. myGeeKy only suggests: it never follows anyone for you.",
+      "fr": "Des développeurs qui travaillent sur les mêmes sujets que toi. myGeeKy suggère seulement : il ne suit personne à ta place.",
+      "ar": "مطوّرون يعملون على ما تعمل عليه. myGeeKy يقترح فقط: لا يتابع أحدًا نيابةً عنك.",
+      "zh": "和你做同样方向的开发者。myGeeKy 只做建议，从不替你关注任何人。"}},
+    "live": {"at": {"desktop": "live", "phone": "live"}, "pose": "point", "since": 1, "t": {
+      "en": "What the people you follow on GitHub are doing right now.",
+      "fr": "Ce que font en ce moment les personnes que tu suis sur GitHub.",
+      "ar": "ما يفعله الآن الأشخاص الذين تتابعهم على GitHub.",
+      "zh": "你在 GitHub 上关注的人此刻在做什么。"}},
+    "activity": {"at": {"desktop": "activity", "phone": "activity"}, "pose": "think", "since": 1, "t": {
+      "en": "Who starred, forked or followed: the activity around you and your repos.",
+      "fr": "Qui a mis une étoile, forké ou suivi : l'activité autour de toi et de tes dépôts.",
+      "ar": "من أضاف نجمة أو نسخة أو متابعة: النشاط من حولك وحول مستودعاتك.",
+      "zh": "谁加了星、fork 或关注：你和你的仓库周围的动态。"}},
+    "signals": {"at": {"desktop": "signals", "phone": "signals"}, "pose": "cheer", "since": 1, "t": {
+      "en": "Say what you're working on, and find people looking for collaborators.",
+      "fr": "Dis sur quoi tu travailles et trouve des gens qui cherchent des collaborateurs.",
+      "ar": "أخبر الآخرين بما تعمل عليه، وابحث عن أشخاص يبحثون عن متعاونين.",
+      "zh": "告诉大家你在做什么，并找到正在寻找合作者的人。"}},
+    "researchers": {"at": {"desktop": "researchers", "phone": "researchers"}, "pose": "think", "since": 1, "t": {
+      "en": "New work from the people you cite and write with, and your co-author network.",
+      "fr": "Les nouveaux travaux des gens que tu cites et avec qui tu écris, et ton réseau de co-auteurs.",
+      "ar": "أحدث أعمال من تستشهد بهم ومن تكتب معهم، وشبكة المؤلفين المشاركين معك.",
+      "zh": "你引用和合作的学者的新成果，以及你的合著者网络。"}},
+    "skills": {"at": {"desktop": "grow:skills", "phone": "grow:skills"}, "pose": "point", "since": 1, "t": {
+      "en": "The skills rising in your field, next to the ones you already have.",
+      "fr": "Les compétences qui montent dans ton domaine, à côté de celles que tu as déjà.",
+      "ar": "المهارات الصاعدة في مجالك، بجانب المهارات التي لديك بالفعل.",
+      "zh": "你所在领域正在上升的技能，以及你已经掌握的技能。"}},
+    "highlights": {"at": {"desktop": "grow:highlights", "phone": "grow:highlights"}, "pose": "cheer", "since": 1, "t": {
+      "en": "Research articles retold as short news stories in plain words: what they found and why it matters.",
+      "fr": "Des articles de recherche racontés comme de courtes brèves, en mots simples : ce qu'ils ont trouvé et pourquoi c'est important.",
+      "ar": "مقالات بحثية مُعاد سردها كأخبار قصيرة بكلمات بسيطة: ماذا وجدوا ولماذا يهم ذلك.",
+      "zh": "把科研论文改写成简短易懂的新闻：发现了什么，为什么重要。"}},
+    "protocols": {"at": {"desktop": "grow:paths", "phone": "grow:paths"}, "pose": "think", "since": 1, "t": {
+      "en": "Step-by-step paths to a skill. A short check skips what you already know.",
+      "fr": "Des parcours pas à pas vers une compétence. Un petit test saute ce que tu sais déjà.",
+      "ar": "مسارات خطوة بخطوة نحو مهارة. اختبار قصير يتخطى ما تعرفه.",
+      "zh": "通往一项技能的分步路径。一个小测验会跳过你已掌握的部分。"}},
+    "protocols_cv": {"at": {"desktop": "grow:paths", "phone": "grow:paths"}, "pose": "think", "since": 1, "t": {
+      "en": "Step-by-step paths built from the skills in your CV. A short check skips what you already know.",
+      "fr": "Des parcours pas à pas construits à partir des compétences de ton CV. Un petit test saute ce que tu sais déjà.",
+      "ar": "مسارات خطوة بخطوة مبنية على المهارات في سيرتك الذاتية. اختبار قصير يتخطى ما تعرفه.",
+      "zh": "根据你简历中的技能生成的分步学习路径。一个小测验会跳过你已掌握的部分。"}},
+    "quiz": {"at": {"desktop": "grow:quiz", "phone": "grow:quiz"}, "pose": "cheer", "since": 1, "t": {
+      "en": "Ten quick questions to check what you know, with the answer and its source.",
+      "fr": "Dix questions rapides pour tester tes connaissances, avec la réponse et sa source.",
+      "ar": "عشرة أسئلة سريعة لتختبر معرفتك، مع الإجابة ومصدرها.",
+      "zh": "十道快速问答检验你的知识，并附上答案和出处。"}},
+    "learn": {"at": {"desktop": "grow:learn", "phone": "grow:learn"}, "pose": "point", "since": 1, "t": {
+      "en": "Free courses, books and tutorials, matched to you and to the skills rising in your field.",
+      "fr": "Des cours, livres et tutoriels gratuits, choisis pour toi et pour les compétences qui montent dans ton domaine.",
+      "ar": "دورات وكتب ودروس مجانية، مختارة لك وللمهارات الصاعدة في مجالك.",
+      "zh": "免费的课程、书籍和教程，根据你和你所在领域的上升技能挑选。"}},
+    "data": {"at": {"desktop": "grow:data", "phone": "grow:data"}, "pose": "think", "since": 1, "t": {
+      "en": "Public datasets to practise on: open, documented, small enough for a laptop, no login needed.",
+      "fr": "Des jeux de données publics pour t'entraîner : ouverts, documentés, assez petits pour un portable, sans connexion.",
+      "ar": "مجموعات بيانات عامة للتدرّب: مفتوحة وموثّقة وصغيرة بما يكفي لحاسوب محمول، دون الحاجة لتسجيل الدخول.",
+      "zh": "可供练习的公开数据集：开放、有文档、笔记本电脑就能处理，无需登录。"}},
+    "wins": {"at": {"desktop": "grow:wins", "phone": "grow:wins"}, "pose": "present", "since": 1, "t": {
+      "en": "New stars and forks on your repos, and new citations of your papers, checked once a day.",
+      "fr": "Les nouvelles étoiles et forks de tes dépôts, et les nouvelles citations de tes articles, vérifiés une fois par jour.",
+      "ar": "النجوم والنسخ الجديدة على مستودعاتك، والاستشهادات الجديدة بأوراقك، تُفحص مرة يوميًا.",
+      "zh": "你仓库新增的星标和 fork，以及你论文的新引用，每天检查一次。"}},
+    "collab": {"at": {"desktop": "grow:collab", "phone": "grow:collab"}, "pose": "think", "since": 1, "t": {
+      "en": "Other myGeeKy users whose skills complement yours. A 🤝 is sealed: they only see it if they pick you too.",
+      "fr": "D'autres utilisateurs de myGeeKy dont les compétences complètent les tiennes. Un 🤝 reste scellé : ils ne le voient que s'ils te choisissent aussi.",
+      "ar": "مستخدمون آخرون لـ myGeeKy تكمل مهاراتهم مهاراتك. علامة 🤝 مختومة: لا يرونها إلا إذا اختاروك أيضًا.",
+      "zh": "技能与你互补的其他 myGeeKy 用户。🤝 是密封的：只有对方也选了你，才会看到。"}},
+    "news": {"at": {"desktop": "news", "phone": "news"}, "pose": "point", "since": 1, "t": {
+      "en": "Headlines and discussions about your keywords.",
+      "fr": "Les titres et les discussions autour de tes mots-clés.",
+      "ar": "عناوين ونقاشات حول كلماتك المفتاحية.",
+      "zh": "与你的关键词相关的新闻和讨论。"}},
+    "papers": {"at": {"desktop": "market:research", "phone": "papers"}, "pose": "point", "since": 1, "t": {
+      "en": "Papers rising in your field this week.",
+      "fr": "Les articles qui montent dans ton domaine cette semaine.",
+      "ar": "الأوراق البحثية الصاعدة في مجالك هذا الأسبوع.",
+      "zh": "本周你所在领域的热门论文。"}},
+    "models": {"at": {"desktop": "market:models", "phone": "models"}, "pose": "think", "since": 1, "t": {
+      "en": "New open AI models that match your field, from Hugging Face.",
+      "fr": "Les nouveaux modèles d'IA ouverts qui correspondent à ton domaine, depuis Hugging Face.",
+      "ar": "نماذج ذكاء اصطناعي مفتوحة جديدة تناسب مجالك، من Hugging Face.",
+      "zh": "来自 Hugging Face、与你领域相关的新开源 AI 模型。"}},
+    "launches": {"at": {"phone": "launches"}, "pose": "cheer", "since": 1, "t": {
+      "en": "New tools and launches people are talking about.",
+      "fr": "Les nouveaux outils et lancements dont on parle.",
+      "ar": "أدوات وإطلاقات جديدة يتحدث عنها الناس.",
+      "zh": "大家正在讨论的新工具和新发布。"}},
+    "month": {"at": {"desktop": "model:month", "phone": "you:month"}, "pose": "present", "since": 1, "t": {
+      "en": "Your month: your rank, your badges, and a month card you can share.",
+      "fr": "Ton mois : ton grade, tes badges et une carte du mois à partager.",
+      "ar": "شهرك: رتبتك وشاراتك وبطاقة شهرية يمكنك مشاركتها.",
+      "zh": "你的月度：等级、徽章，以及可以分享的月度卡片。"}},
+    "model": {"at": {"desktop": "model:model", "phone": "you:model"}, "pose": "think", "since": 1, "t": {
+      "en": "The words myGeeKy uses to find things for you. Correct them whenever they're wrong.",
+      "fr": "Les mots que myGeeKy utilise pour trouver des choses pour toi. Corrige-les dès qu'ils se trompent.",
+      "ar": "الكلمات التي يستخدمها myGeeKy ليجد لك ما يناسبك. صحّحها متى كانت خاطئة.",
+      "zh": "myGeeKy 用来为你寻找内容的关键词。发现不对时随时修改。"}},
+    "model_none": {"at": {"desktop": "model:model", "phone": "you:model"}, "pose": "think", "since": 1, "t": {
+      "en": "The words myGeeKy uses to find things for you. Add GitHub or ORCID later, and everything gets sharper.",
+      "fr": "Les mots que myGeeKy utilise pour trouver des choses pour toi. Ajoute GitHub ou ORCID plus tard, et tout devient plus précis.",
+      "ar": "الكلمات التي يستخدمها myGeeKy ليجد لك ما يناسبك. أضف GitHub أو ORCID لاحقًا لتصبح النتائج أدق.",
+      "zh": "myGeeKy 用来为你寻找内容的关键词。之后添加 GitHub 或 ORCID，结果会更精准。"}},
+    "cited": {"at": {"desktop": "model:cited", "phone": "you:cited"}, "pose": "present", "since": 1, "t": {
+      "en": "Who cites your papers, as soon as OpenAlex sees it.",
+      "fr": "Qui cite tes articles, dès qu'OpenAlex le voit.",
+      "ar": "من يستشهد بأوراقك البحثية، فور أن يرصد ذلك OpenAlex.",
+      "zh": "谁引用了你的论文，OpenAlex 一收录就能看到。"}},
+    "badges": {"at": {"desktop": "badges", "phone": "you:badges"}, "pose": "cheer", "since": 1, "t": {
+      "en": "Badges you earn by growing: learning, helping, sharing. They're yours, nobody else ranks you on them.",
+      "fr": "Des badges gagnés en progressant : apprendre, aider, partager. Ils sont à toi, personne ne te classe avec.",
+      "ar": "شارات تكسبها وأنت تنمو: بالتعلّم والمساعدة والمشاركة. إنها لك، ولا أحد يرتّبك بها.",
+      "zh": "你在成长中获得的徽章：学习、帮助、分享。它们属于你，没人拿它们给你排名。"}},
+    "settings_page": {"at": {"desktop": "settings", "phone": "you:more"}, "pose": "point", "since": 1, "t": {
+      "en": "Settings: your accounts, your CV, how it looks, and how myGeeKy asks the internet. Help has a tour of it.",
+      "fr": "Les réglages (Settings) : tes comptes, ton CV, l'apparence, et la façon dont myGeeKy interroge internet. Help en propose une visite.",
+      "ar": "الإعدادات (Settings): حساباتك وسيرتك الذاتية والمظهر وطريقة سؤال myGeeKy للإنترنت. في Help جولة خاصة بها.",
+      "zh": "设置（Settings）：你的账号、简历、外观，以及 myGeeKy 如何访问互联网。Help 里有它的导览。"}},
+    "help_page": {"at": {"desktop": "help", "phone": "help"}, "pose": "wave", "since": 1, "t": {
+      "en": "And Help is always here: every tour again, and answers to how and why myGeeKy works.",
+      "fr": "Et Help est toujours là : toutes les visites, et des réponses sur le comment et le pourquoi de myGeeKy.",
+      "ar": "و Help موجود دائمًا: كل الجولات من جديد، وإجابات عن كيف ولماذا يعمل myGeeKy.",
+      "zh": "Help 一直都在：可以重看所有导览，也能找到 myGeeKy 如何运作、为何这样做的解答。"}},
+    "set_look": {"at": {"desktop": "settings:look", "phone": "settings:look"}, "pose": "point", "since": 1, "t": {
+      "en": "How myGeeKy looks: the theme, and on the computer how big and how see-through the panel is.",
+      "fr": "L'apparence de myGeeKy : le thème, et sur l'ordinateur la taille et la transparence du panneau.",
+      "ar": "مظهر myGeeKy: السمة، وعلى الحاسوب حجم اللوحة ودرجة شفافيتها.",
+      "zh": "myGeeKy 的外观：主题，以及电脑上面板的大小和透明度。"}},
+    "set_place": {"at": {"desktop": "settings:place"}, "pose": "point", "since": 1, "t": {
+      "en": "Where the panel lives on your screen, whether it stays on top, and which side the menu is on.",
+      "fr": "Où se place le panneau sur ton écran, s'il reste au premier plan, et de quel côté est le menu.",
+      "ar": "مكان اللوحة على شاشتك، وهل تبقى في المقدمة، وفي أي جانب تكون القائمة.",
+      "zh": "面板在屏幕上的位置、是否置顶，以及菜单在哪一侧。"}},
+    "set_papers": {"at": {"desktop": "settings:papers", "phone": "settings:papers"}, "pose": "think", "since": 1, "t": {
+      "en": "Your papers: who you are on OpenAlex. With no ORCID, find yourself by your name here.",
+      "fr": "Tes articles : qui tu es sur OpenAlex. Sans ORCID, retrouve-toi ici par ton nom.",
+      "ar": "أوراقك: من أنت على OpenAlex. إن لم يكن لديك ORCID، ابحث عن نفسك هنا باسمك.",
+      "zh": "你的论文：你在 OpenAlex 上的身份。没有 ORCID 的话，可以在这里按名字找到自己。"}},
+    "set_cv": {"at": {"desktop": "settings:cv", "phone": "settings:cv"}, "pose": "point", "since": 1, "t": {
+      "en": "Drop a CV, thesis or abstract: it's read on this device, and you tick which words and co-authors to keep.",
+      "fr": "Dépose un CV, une thèse ou un résumé : il est lu sur cet appareil, et tu coches les mots et co-auteurs à garder.",
+      "ar": "أضف سيرة ذاتية أو أطروحة أو ملخصًا: تُقرأ على هذا الجهاز، وتختار الكلمات والمؤلفين المشاركين الذين تريد الاحتفاظ بهم.",
+      "zh": "上传简历、论文或摘要：在本设备上读取，由你勾选要保留的关键词和合著者。"}},
+    "set_wisep": {"at": {"desktop": "settings:wisep", "phone": "settings:wisep"}, "pose": "think", "since": 1, "t": {
+      "en": "How myGeeKy asks the internet: politely, within a daily budget, so open databases stay free for everyone.",
+      "fr": "Comment myGeeKy interroge internet : poliment, dans un budget quotidien, pour que les bases ouvertes restent gratuites pour tous.",
+      "ar": "كيف يسأل myGeeKy الإنترنت: بأدب وضمن حصة يومية، لتبقى قواعد البيانات المفتوحة مجانية للجميع.",
+      "zh": "myGeeKy 如何访问互联网：礼貌地、在每日额度内，让开放数据库对所有人保持免费。"}},
+    "set_packs": {"at": {"desktop": "settings:packs", "phone": "settings:packs"}, "pose": "present", "since": 1, "t": {
+      "en": "Packs: share your model with a friend as QR codes, like a seed. Nothing goes through a server.",
+      "fr": "Les packs : partage ton modèle avec un ami en codes QR, comme une graine. Rien ne passe par un serveur.",
+      "ar": "الحزم: شارك نموذجك مع صديق عبر رموز QR، مثل البذرة. لا شيء يمر عبر خادم.",
+      "zh": "Packs：用二维码把你的模型分享给朋友，就像一颗种子。不经过任何服务器。"}},
+    "set_setup": {"at": {"desktop": "settings:setup", "phone": "settings:setup"}, "pose": "point", "since": 1, "t": {
+      "en": "Your setup: which accounts are connected, and what each token is allowed to do.",
+      "fr": "Ta configuration : quels comptes sont connectés, et ce que chaque jeton a le droit de faire.",
+      "ar": "إعدادك: أي الحسابات متصلة، وما المسموح لكل رمز وصول أن يفعله.",
+      "zh": "你的配置：连接了哪些账号，以及每个令牌被允许做什么。"}},
+    "set_sync": {"at": {"desktop": "settings:sync", "phone": "settings:sync"}, "pose": "think", "since": 1, "t": {
+      "en": "Sync keeps your computers and phone together through a private repo that you own. Off unless you turn it on.",
+      "fr": "La synchronisation relie tes ordinateurs et ton téléphone via un dépôt privé qui t'appartient. Désactivée sauf si tu l'actives.",
+      "ar": "المزامنة تربط حواسيبك وهاتفك عبر مستودع خاص تملكه أنت. متوقفة ما لم تشغّلها.",
+      "zh": "同步通过你自己的私有仓库连接你的电脑和手机。默认关闭，除非你打开。"}},
+    "more": {"pose": "present", "since": 1, "at": {"desktop": "settings", "phone": "you:more"}, "by_kind": {
+      "github": {
+        "en": "Want more? Add your ORCID in Settings and you also get Researchers, Cited by, and papers and funding matched to your exact field.",
+        "fr": "Envie de plus ? Ajoute ton ORCID dans Settings et tu auras aussi Researchers, Cited by, et des articles et financements faits pour ton domaine précis.",
+        "ar": "تريد المزيد؟ أضف ORCID الخاص بك في Settings لتحصل أيضًا على Researchers و Cited by، وأوراق بحثية وتمويل يطابق مجالك بدقة.",
+        "zh": "想要更多？在 Settings 里添加你的 ORCID，还能获得 Researchers、Cited by，以及精准匹配你领域的论文和资助。"},
+      "orcid": {
+        "en": "Want more? Add GitHub in Settings and you also get projects to help, people who build what you build, Signals, and the stars on your repos in Wins.",
+        "fr": "Envie de plus ? Ajoute GitHub dans Settings et tu auras aussi des projets où aider, des gens qui construisent comme toi, Signals, et les étoiles de tes dépôts dans Wins.",
+        "ar": "تريد المزيد؟ أضف GitHub في Settings لتحصل أيضًا على مشاريع تساعد فيها، وأشخاص يبنون ما تبنيه، و Signals، ونجوم مستودعاتك في Wins.",
+        "zh": "想要更多？在 Settings 里添加 GitHub，还能获得可参与的项目、做同样东西的人、Signals，以及 Wins 里你仓库收到的星标。"},
+      "both": {
+        "en": "You gave both GitHub and ORCID, so everything is on. Drop your CV in Settings too, and your skills and jobs get even sharper.",
+        "fr": "Tu as donné GitHub et ORCID : tout est activé. Dépose aussi ton CV dans Settings, et tes compétences et offres seront encore plus précises.",
+        "ar": "أضفت GitHub و ORCID معًا، لذا كل شيء مفعّل. أضف سيرتك الذاتية في Settings أيضًا لتصبح مهاراتك والوظائف أدق.",
+        "zh": "你已提供 GitHub 和 ORCID，所有功能都已开启。再在 Settings 里上传简历，技能和职位会更精准。"},
+      "cv": {
+        "en": "Want more? Add GitHub for projects to help, people and Signals. Add ORCID for researchers, who cites you, and funding in your exact field. Both are in Settings.",
+        "fr": "Envie de plus ? Ajoute GitHub pour des projets où aider, des gens et Signals. Ajoute ORCID pour les chercheurs, qui te cite et les financements de ton domaine précis. Les deux sont dans Settings.",
+        "ar": "تريد المزيد؟ أضف GitHub لمشاريع تساعد فيها وأشخاص و Signals. وأضف ORCID للباحثين ومن يستشهد بك وتمويل مجالك بدقة. كلاهما في Settings.",
+        "zh": "想要更多？添加 GitHub 可获得可参与的项目、同行和 Signals；添加 ORCID 可获得研究者、谁引用了你以及你领域的资助。两者都在 Settings 里。"},
+      "none": {
+        "en": "Want more? Add GitHub for projects to help, people and Signals. Add ORCID for researchers, who cites you, and funding in your exact field. Or drop your CV for skills and jobs that fit. All in Settings.",
+        "fr": "Envie de plus ? Ajoute GitHub pour des projets où aider, des gens et Signals. Ajoute ORCID pour les chercheurs, qui te cite et les financements de ton domaine. Ou dépose ton CV pour des compétences et des offres qui te vont. Tout est dans Settings.",
+        "ar": "تريد المزيد؟ أضف GitHub لمشاريع تساعد فيها وأشخاص و Signals. وأضف ORCID للباحثين ومن يستشهد بك وتمويل مجالك. أو أضف سيرتك الذاتية لمهارات ووظائف تناسبك. كل ذلك في Settings.",
+        "zh": "想要更多？添加 GitHub 可获得可参与的项目、同行和 Signals；添加 ORCID 可获得研究者、引用和你领域的资助；或上传简历，获得适合你的技能和职位。都在 Settings 里。"}}},
+    "never": {"pose": "think", "since": 1, "t": {
+      "en": "Five things I'll never do: act as you (no following, starring or posting), send your data to a server, show your keys, keep your data anywhere but your own devices and repo, or send anything behind your back.",
+      "fr": "Cinq choses que je ne ferai jamais : agir à ta place (ni suivre, ni étoiler, ni publier), envoyer tes données à un serveur, montrer tes clés, garder tes données ailleurs que sur tes appareils et ton dépôt, ou envoyer quoi que ce soit dans ton dos.",
+      "ar": "خمسة أشياء لن أفعلها أبدًا: التصرف نيابةً عنك (لا متابعة ولا نجوم ولا نشر)، إرسال بياناتك إلى خادم، كشف مفاتيحك، حفظ بياناتك في أي مكان غير أجهزتك ومستودعك، أو إرسال أي شيء من وراء ظهرك.",
+      "zh": "我永远不会做的五件事：替你行动（不关注、不加星、不发帖）、把你的数据发到服务器、泄露你的密钥、把你的数据存到你自己的设备和仓库以外的地方、或背着你发送任何东西。"}},
+    "end": {"at": {"desktop": "help", "phone": "help"}, "pose": "cheer", "since": 1, "t": {
+      "en": "That's the tour! Every tour is in Help, any time.",
+      "fr": "Voilà pour la visite ! Toutes les visites sont dans Help, à tout moment.",
+      "ar": "انتهت الجولة! كل الجولات موجودة في Help، في أي وقت.",
+      "zh": "导览结束！所有导览随时都在 Help 里。"}, "phrase": {
+      "en": "Your geeky friend who helps you grow, quietly.",
+      "fr": "Ton ami geek qui t'aide à grandir, discrètement.",
+      "ar": "صديقك المحب للتقنية الذي يساعدك على النمو، بهدوء.",
+      "zh": "你的极客朋友，安静地帮你成长。"}},
+    "end_part": {"pose": "cheer", "since": 1, "t": {
+      "en": "That's it for this part. More tours, and answers, are in Help.",
+      "fr": "C'est tout pour cette partie. D'autres visites, et des réponses, sont dans Help.",
+      "ar": "هذا كل شيء في هذا الجزء. المزيد من الجولات والإجابات في Help.",
+      "zh": "这部分就到这里。更多导览和解答都在 Help 里。"}}
+  },
+  "tours": {
+    "start": {
+      "github": ["welcome", "home", "seasons", "jobs", "repos", "people", "skills", "signals", "month", "more", "never", "end"],
+      "orcid": ["welcome", "home", "seasons", "jobs", "funding", "conferences", "researchers", "cited", "month", "more", "never", "end"],
+      "both": ["welcome", "home", "seasons", "jobs", "funding", "researchers", "cited", "repos", "month", "more", "never", "end"],
+      "cv": ["welcome", "home", "seasons", "jobs", "skills", "protocols_cv", "learn", "data", "month", "more", "never", "end"],
+      "none": ["welcome", "home", "seasons", "jobs", "highlights", "quiz", "data", "model_none", "month", "more", "never", "end"]
+    },
+    "settings": ["welcome_part", "set_look", "set_place", "set_papers", "set_cv", "set_wisep", "set_packs", "set_setup", "set_sync", "end_part"],
+    "home": ["welcome_part", "home", "home_learn", "end_part"],
+    "you": ["welcome_part", "month", "model", "cited", "badges", "settings_page", "end_part"],
+    "grow": ["welcome_part", "highlights", "skills", "protocols", "quiz", "learn", "data", "wins", "collab", "end_part"],
+    "world": ["welcome_part", "news", "papers", "models", "launches", "end_part"],
+    "circle": ["welcome_part", "live", "people", "researchers", "activity", "signals", "end_part"],
+    "repos": ["welcome_part", "repos", "rising", "end_part"],
+    "chances": ["welcome_part", "seasons", "jobs", "funding", "conferences", "end_part"]
+  },
+  "faq": [
+    {"q": {"en": "Why does myGeeKy only suggest, and never act for me?", "fr": "Pourquoi myGeeKy suggère seulement, sans jamais agir à ma place ?", "ar": "لماذا يقترح myGeeKy فقط ولا يتصرف نيابةً عني أبدًا؟", "zh": "为什么 myGeeKy 只做建议，从不替我行动？"},
+     "a": {"en": "Because your name is yours. Following, starring, posting or writing to someone says something about you, so only you should do it. There is no code in myGeeKy that follows, stars, forks, posts or comments.", "fr": "Parce que ton nom t'appartient. Suivre, mettre une étoile, publier ou écrire à quelqu'un dit quelque chose de toi : c'est à toi seul de le faire. Il n'y a aucun code dans myGeeKy qui suit, étoile, forke, publie ou commente.", "ar": "لأن اسمك ملكك. المتابعة أو وضع نجمة أو النشر أو مراسلة أحد تقول شيئًا عنك، لذا يجب أن تفعلها أنت فقط. لا يوجد في myGeeKy أي كود يتابع أو يضع نجمة أو ينسخ أو ينشر أو يعلّق.", "zh": "因为你的名字属于你。关注、加星、发帖或给别人写信都代表你，所以只应由你来做。myGeeKy 里没有任何会关注、加星、fork、发帖或评论的代码。"}},
+    {"q": {"en": "Where is my data kept?", "fr": "Où sont gardées mes données ?", "ar": "أين تُحفظ بياناتي؟", "zh": "我的数据存在哪里？"},
+     "a": {"en": "On your own devices. If you turn on sync, also in a private GitHub repo that you own. There is no myGeeKy account and no myGeeKy server.", "fr": "Sur tes propres appareils. Si tu actives la synchronisation, aussi dans un dépôt GitHub privé qui t'appartient. Il n'y a ni compte myGeeKy ni serveur myGeeKy.", "ar": "على أجهزتك أنت. وإن شغّلت المزامنة، ففي مستودع GitHub خاص تملكه أيضًا. لا يوجد حساب myGeeKy ولا خادم myGeeKy.", "zh": "在你自己的设备上。如果你打开同步，还会存在你自己的私有 GitHub 仓库里。没有 myGeeKy 账号，也没有 myGeeKy 服务器。"}},
+    {"q": {"en": "Does myGeeKy track what I do?", "fr": "myGeeKy suit-il ce que je fais ?", "ar": "هل يتتبع myGeeKy ما أفعله؟", "zh": "myGeeKy 会追踪我的行为吗？"},
+     "a": {"en": "No. There is no telemetry. What you open teaches your own model on your device, and nobody else ever sees it. If myGeeKy crashes, you read the whole report first and decide whether to send it.", "fr": "Non. Il n'y a aucune télémétrie. Ce que tu ouvres entraîne ton propre modèle sur ton appareil, et personne d'autre ne le voit. Si myGeeKy plante, tu lis tout le rapport d'abord et tu décides de l'envoyer ou non.", "ar": "لا. لا يوجد أي قياس عن بُعد. ما تفتحه يعلّم نموذجك الخاص على جهازك، ولا يراه أحد غيرك. وإن تعطّل myGeeKy، تقرأ التقرير كاملًا أولًا وتقرر إن كنت تريد إرساله.", "zh": "不会。没有任何遥测。你打开的内容只在你的设备上训练你自己的模型，别人永远看不到。如果 myGeeKy 崩溃，你会先看到完整报告，再决定是否发送。"}},
+    {"q": {"en": "Do I need a GitHub account?", "fr": "Ai-je besoin d'un compte GitHub ?", "ar": "هل أحتاج إلى حساب GitHub؟", "zh": "我需要 GitHub 账号吗？"},
+     "a": {"en": "No. An ORCID, a CV or a few keywords make a full profile. Only the pages that read your own GitHub account need it: Live, People, Activity and Signals.", "fr": "Non. Un ORCID, un CV ou quelques mots-clés suffisent pour un profil complet. Seules les pages qui lisent ton propre compte GitHub en ont besoin : Live, People, Activity et Signals.", "ar": "لا. يكفي ORCID أو سيرة ذاتية أو بضع كلمات مفتاحية لملف كامل. تحتاجه فقط الصفحات التي تقرأ حسابك على GitHub: Live و People و Activity و Signals.", "zh": "不需要。ORCID、简历或几个关键词就能构成完整的档案。只有读取你自己 GitHub 账号的页面才需要它：Live、People、Activity 和 Signals。"}},
+    {"q": {"en": "What can my GitHub token do?", "fr": "Que peut faire mon jeton GitHub ?", "ar": "ماذا يستطيع رمز GitHub الخاص بي أن يفعل؟", "zh": "我的 GitHub 令牌能做什么？"},
+     "a": {"en": "Read public things only. Setup checks what a token can really do and refuses one that can do more than its job. The only tokens that write are optional: one for your private data repo, one for your Signals beacon, each limited to that single repo. Tokens live in your system's keyring and are never printed.", "fr": "Lire uniquement ce qui est public. La configuration vérifie ce qu'un jeton peut vraiment faire et refuse celui qui peut faire plus que son rôle. Les seuls jetons qui écrivent sont optionnels : un pour ton dépôt de données privé, un pour ta balise Signals, chacun limité à ce seul dépôt. Les jetons restent dans le trousseau de ton système et ne sont jamais affichés.", "ar": "قراءة الأشياء العامة فقط. يتحقق الإعداد مما يستطيع الرمز فعله حقًا ويرفض أي رمز يستطيع أكثر من مهمته. الرموز الوحيدة التي تكتب اختيارية: واحد لمستودع بياناتك الخاص، وواحد لمنارة Signals، وكل منهما محصور في ذلك المستودع وحده. تُحفظ الرموز في سلسلة مفاتيح نظامك ولا تُطبع أبدًا.", "zh": "只能读取公开内容。设置时会检查令牌实际能做什么，拒绝权限超出其用途的令牌。唯一能写入的令牌是可选的：一个用于你的私有数据仓库，一个用于你的 Signals 信标，各自只限于那一个仓库。令牌保存在系统钥匙串中，从不显示。"}},
+    {"q": {"en": "How does myGeeKy decide what to show me?", "fr": "Comment myGeeKy choisit-il ce qu'il me montre ?", "ar": "كيف يقرر myGeeKy ما يعرضه لي؟", "zh": "myGeeKy 如何决定给我看什么？"},
+     "a": {"en": "A small model on your device mixes four things: your field (from GitHub, ORCID, a CV or keywords), what you've been into lately, who is likely to follow you back, and room to explore. A fifth of what you see is always new territory, so you never end up in a bubble. You can see and correct it in You → Model.", "fr": "Un petit modèle sur ton appareil mélange quatre choses : ton domaine (depuis GitHub, ORCID, un CV ou des mots-clés), ce qui t'intéresse ces temps-ci, qui est susceptible de te suivre en retour, et de la place pour explorer. Un cinquième de ce que tu vois est toujours un territoire nouveau, pour ne jamais t'enfermer dans une bulle. Tu peux le voir et le corriger dans You → Model.", "ar": "نموذج صغير على جهازك يمزج أربعة أشياء: مجالك (من GitHub أو ORCID أو سيرة ذاتية أو كلمات مفتاحية)، وما يشغلك مؤخرًا، ومن يُرجّح أن يتابعك بالمقابل، ومساحة للاستكشاف. خُمس ما تراه دائمًا مجال جديد، كي لا تنحبس في فقاعة. يمكنك رؤيته وتصحيحه في You → Model.", "zh": "你设备上的一个小模型综合四点：你的领域（来自 GitHub、ORCID、简历或关键词）、你最近感兴趣的内容、可能回关你的人，以及探索空间。你看到的内容中总有五分之一是新领域，让你不会困在信息茧房里。你可以在 You → Model 里查看和修改。"}},
+    {"q": {"en": "How do ♡, 🔖 and ✕ work?", "fr": "Comment marchent ♡, 🔖 et ✕ ?", "ar": "كيف تعمل ♡ و 🔖 و ✕؟", "zh": "♡、🔖 和 ✕ 怎么用？"},
+     "a": {"en": "♡ asks for more like this and teaches your model. 🔖 keeps a card in Saved and teaches like ♡. ✕ asks for fewer like it, with Undo. Nothing leaves your device.", "fr": "♡ demande plus de choses similaires et entraîne ton modèle. 🔖 garde une carte dans Saved et entraîne comme ♡. ✕ demande moins de choses similaires, avec Annuler. Rien ne quitte ton appareil.", "ar": "♡ تطلب المزيد من هذا وتعلّم نموذجك. 🔖 تحفظ البطاقة في Saved وتعلّم مثل ♡. ✕ تطلب أقل من هذا، مع إمكانية التراجع. لا شيء يغادر جهازك.", "zh": "♡ 表示想看更多类似内容，并训练你的模型。🔖 把卡片存进 Saved，效果和 ♡ 一样。✕ 表示少看类似内容，可以撤销。所有数据都不会离开你的设备。"}},
+    {"q": {"en": "Why do some seasons say \"expected\" instead of a date?", "fr": "Pourquoi certaines saisons disent « attendu » au lieu d'une date ?", "ar": "لماذا تقول بعض المواسم \"متوقع\" بدل تاريخ؟", "zh": "为什么有些 Seasons 显示“预计”而不是日期？"},
+     "a": {"en": "Because myGeeKy never pretends to know next year's date. A window read on a real page says \"open now\"; one that hasn't been announced yet says \"expected\", from the years before, so you can start preparing early.", "fr": "Parce que myGeeKy ne prétend jamais connaître la date de l'an prochain. Une période lue sur une vraie page dit « ouvert » ; une qui n'est pas encore annoncée dit « attendu », d'après les années précédentes, pour que tu puisses te préparer tôt.", "ar": "لأن myGeeKy لا يدّعي أبدًا معرفة تاريخ العام القادم. الفترة المقروءة من صفحة حقيقية تقول \"مفتوح الآن\"، والتي لم تُعلن بعد تقول \"متوقع\" استنادًا إلى السنوات السابقة، لتبدأ التحضير مبكرًا.", "zh": "因为 myGeeKy 从不假装知道明年的日期。从真实页面读到的时间写着“开放中”；尚未公布的则根据往年写“预计”，让你可以提早准备。"}},
+    {"q": {"en": "How do I know a job is real?", "fr": "Comment savoir si une offre est réelle ?", "ar": "كيف أعرف أن الوظيفة حقيقية؟", "zh": "我怎么知道职位是真的？"},
+     "a": {"en": "Every job is checked against its own page before it is shown, and it disappears the moment its deadline passes. If one looks fake, 🚩 tells the maker.", "fr": "Chaque offre est vérifiée sur sa propre page avant d'être affichée, et elle disparaît dès que sa date limite passe. Si une offre semble fausse, 🚩 prévient le créateur.", "ar": "تُفحص كل وظيفة مقابل صفحتها الأصلية قبل عرضها، وتختفي لحظة انتهاء موعدها. وإن بدت إحداها مزيفة، فإن 🚩 تبلّغ صانع التطبيق.", "zh": "每个职位在展示前都会对照其原始页面核实，截止日期一过就会消失。如果某个看起来是假的，点 🚩 告诉开发者。"}},
+    {"q": {"en": "Why isn't a page updating right away?", "fr": "Pourquoi une page ne se met-elle pas à jour tout de suite ?", "ar": "لماذا لا تتحدث الصفحة فورًا؟", "zh": "为什么页面没有马上更新？"},
+     "a": {"en": "myGeeKy asks open databases like OpenAlex and arXiv politely, within a daily budget, and slow-moving numbers are refreshed once a day. That keeps those services free for everyone. Settings shows how much it asked today.", "fr": "myGeeKy interroge poliment les bases ouvertes comme OpenAlex et arXiv, dans un budget quotidien, et les chiffres qui bougent lentement sont actualisés une fois par jour. Ça garde ces services gratuits pour tous. Settings montre combien il a demandé aujourd'hui.", "ar": "يسأل myGeeKy قواعد البيانات المفتوحة مثل OpenAlex و arXiv بأدب وضمن حصة يومية، والأرقام البطيئة التغيّر تُحدَّث مرة يوميًا. هذا يُبقي تلك الخدمات مجانية للجميع. تعرض Settings كم سأل اليوم.", "zh": "myGeeKy 礼貌地在每日额度内访问 OpenAlex、arXiv 等开放数据库，变化缓慢的数据每天只刷新一次。这样这些服务才能对所有人保持免费。Settings 里可以看到今天访问了多少次。"}},
+    {"q": {"en": "How do my phone and computer stay in sync?", "fr": "Comment mon téléphone et mon ordinateur restent-ils synchronisés ?", "ar": "كيف يبقى هاتفي وحاسوبي متزامنين؟", "zh": "我的手机和电脑如何保持同步？"},
+     "a": {"en": "Through a private repo on your own GitHub, if you turn sync on. The computer creates it during setup; the phone connects by scanning a QR code from the computer.", "fr": "Grâce à un dépôt privé sur ton propre GitHub, si tu actives la synchronisation. L'ordinateur le crée pendant la configuration ; le téléphone se connecte en scannant un code QR affiché par l'ordinateur.", "ar": "عبر مستودع خاص على حسابك في GitHub، إن شغّلت المزامنة. ينشئه الحاسوب أثناء الإعداد، ويتصل الهاتف بمسح رمز QR من الحاسوب.", "zh": "如果你打开同步，就通过你自己 GitHub 上的私有仓库。电脑在设置时创建它；手机扫描电脑上的二维码即可连接。"}},
+    {"q": {"en": "What are Signals?", "fr": "Que sont les Signals ?", "ar": "ما هي Signals؟", "zh": "Signals 是什么？"},
+     "a": {"en": "A small public beacon that says what you work on, so people with matching skills can find each other. Signals between people are private and never need a reply. It's optional and needs GitHub.", "fr": "Une petite balise publique qui dit sur quoi tu travailles, pour que les gens aux compétences proches se trouvent. Les signaux entre personnes sont privés et n'attendent jamais de réponse. C'est optionnel et nécessite GitHub.", "ar": "منارة عامة صغيرة تقول ما تعمل عليه، كي يجد أصحاب المهارات المتقاربة بعضهم. الإشارات بين الأشخاص خاصة ولا تتطلب ردًا أبدًا. إنها اختيارية وتحتاج GitHub.", "zh": "一个小小的公开信标，说明你在做什么，让技能相近的人能找到彼此。人与人之间的信号是私密的，从不需要回复。它是可选的，需要 GitHub。"}},
+    {"q": {"en": "How do I delete everything?", "fr": "Comment tout effacer ?", "ar": "كيف أحذف كل شيء؟", "zh": "如何删除所有数据？"},
+     "a": {"en": "On the phone, Settings → Start over erases everything on that phone. On a computer, uninstalling removes it all. If you used sync, delete your private data repo on GitHub. mygeeky.org/delete.html has every step.", "fr": "Sur le téléphone, Settings → Start over efface tout ce qui est sur ce téléphone. Sur un ordinateur, la désinstallation supprime tout. Si tu as utilisé la synchronisation, supprime ton dépôt de données privé sur GitHub. mygeeky.org/delete.html détaille chaque étape.", "ar": "على الهاتف، يمسح Settings → Start over كل شيء على ذلك الهاتف. وعلى الحاسوب، تزيل إزالة التثبيت كل شيء. وإن استخدمت المزامنة، احذف مستودع بياناتك الخاص على GitHub. كل الخطوات في mygeeky.org/delete.html.", "zh": "在手机上，Settings → Start over 会清除该手机上的一切。在电脑上，卸载即可全部删除。如果用过同步，请在 GitHub 上删除你的私有数据仓库。所有步骤见 mygeeky.org/delete.html。"}},
+    {"q": {"en": "Is myGeeKy free? Who makes it?", "fr": "myGeeKy est-il gratuit ? Qui le fait ?", "ar": "هل myGeeKy مجاني؟ ومن يصنعه؟", "zh": "myGeeKy 免费吗？谁在做它？"},
+     "a": {"en": "It's free and open source: anyone can read every line on GitHub. It's made by one maker, with no ads and nothing to sell.", "fr": "Il est gratuit et open source : tout le monde peut lire chaque ligne sur GitHub. Il est fait par un seul créateur, sans publicité et sans rien à vendre.", "ar": "إنه مجاني ومفتوح المصدر: يستطيع أي أحد قراءة كل سطر على GitHub. يصنعه شخص واحد، بلا إعلانات ولا شيء للبيع.", "zh": "它免费且开源：任何人都可以在 GitHub 上阅读每一行代码。它由一位开发者制作，没有广告，也不卖任何东西。"}}
+  ]
+}

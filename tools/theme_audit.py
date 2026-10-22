@@ -14,8 +14,11 @@ after you switched, shows up by name.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
+
+os.environ.setdefault("MYGEEKY_NO_TOUR", "1")      # GeeKOc's tour would sit over every page it reads
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

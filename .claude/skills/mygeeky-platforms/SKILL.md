@@ -84,6 +84,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `word-suggest.ts` | `keywords.py` (`suggest`, `pick`) + `gui/word_suggest.py` |
 | `components/field-map.tsx`, `interest-map.tsx`, `model-plots.tsx` | `gui/signals_ui.py`, `gui/qt_panel.py` |
 | `ideas.ts` (+ `components/idea-sheet.tsx`) | `ideas.py` (+ `IdeaDialog` in `gui/qt_panel.py`) |
+| `tour.ts` (+ `components/tour-overlay.tsx`, `components/help-view.tsx`, `app/home.tsx` `tourGo`) | `tour.py` (+ `gui/tour_ui.py`, `gui/help_ui.py`, `gui/qt_panel.py` `tour_go`/`tour_rect`) |
 | `app/setup.tsx`, `components/setup-steps.tsx`, `signin.tsx` | `gui/setup_wizard.py`, `setup_api.py` |
 
 Phone-only plumbing (no desktop side): `net.ts`, `prefs.ts`, `sections.ts`.
@@ -106,6 +107,8 @@ The desktop file is the source; the phone copy must be identical or generated fr
 | `src/mygeeky/data/token_guides.json` | `mobile/src/data/token-guides.json` (identical) | `tools/token_guides.py` writes both; `test_token_guides.py` |
 | `src/mygeeky/data/ranks.json` | `mobile/src/data/ranks.json` (identical) | `test_phone_month_match_desktop.py` |
 | `src/mygeeky/data/geekoc.json` | `mobile/src/data/geekoc.json` (identical) | `tools/geekoc_poses.py` writes both; `test_phone_month_match_desktop.py` |
+| `src/mygeeky/data/geekoc_moves.json` | `mobile/src/data/geekoc_moves.json` (identical) | `tools/geekoc_poses.py` writes both; `test_tour.py` |
+| `src/mygeeky/data/tour.json` | `mobile/src/data/tour.json` (identical) | `test_tour.py` |
 | `src/mygeeky/data/docread.json` | `mobile/src/data/docread.json` (identical) | `test_docread.py` |
 | `src/mygeeky/data/ai_race.json` | `mobile/src/data/ai_race.json` (identical) | `airace.save()` / `.github/workflows/ai-race.yml` write both; `test_airace.py` |
 | `src/mygeeky/data/datasets.json` | `mobile/src/data/datasets.json` (identical) | `datasets.save()` / `.github/workflows/datasets.yml` write both; `test_datasets.py` |

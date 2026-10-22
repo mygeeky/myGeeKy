@@ -6,6 +6,7 @@
 // doesn't.
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { spot } from './tour-overlay';
 import { level, path, type Node } from '../lib/nav-tree';
 import { DashedOrbit, RING_GAP, useOrbitSpin } from './dashed-orbit';
 import { C, tint } from '../lib/theme';
@@ -77,7 +78,7 @@ export function OrbitZoom({ width, height, at, open, counts, onTap, onJump, youL
         const on = onPath.has(n.id);
         const count = counts[n.id] ?? 0;
         return (
-          <Pressable key={n.id} onPress={() => onTap(n.id)} accessibilityRole="button"
+          <Pressable key={n.id} ref={spot(n.id)} onPress={() => onTap(n.id)} accessibilityRole="button"
                      accessibilityLabel={`${n.label}${count ? `, ${count} new` : ''}${n.children.length ? `, ${n.children.length} parts` : ''}`}
                      style={{ position: 'absolute', left: x - labelW / 2, top: y - p / 2, width: labelW, alignItems: 'center' }}>
             <View style={[st.planet, { width: p, height: p, borderRadius: p / 2, borderColor: n.color, backgroundColor: on ? n.color : C.raised },

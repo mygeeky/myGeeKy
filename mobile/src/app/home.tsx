@@ -15,7 +15,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Polyline } from 'react-native-svg';
 import { darker, OrbitZoom, orbitHeight } from '../components/orbit-zoom';
 import { DashedOrbit, RING_GAP, useOrbitSpin } from '../components/dashed-orbit';
-import { find, leafFor, level, path as navPath, phoneTree, rows as dockRows, tap as navTap, walk } from '../lib/nav-tree';
+import { find, firstLeaf, leafFor, level, path as navPath, phoneTree, rows as dockRows, tap as navTap, walk } from '../lib/nav-tree';
+import { HelpView } from '../components/help-view';
+import { nameSpots, setTourSeen, spotOf, TourOverlay, tourSeen } from '../components/tour-overlay';
+import * as Tour from '../lib/tour';
 import { PersonCard } from '../components/person-card';
 import { type ChanceMode, ChancesView } from '../components/chances-view';
 import { type GrowMode, GrowView } from '../components/grow-view';
@@ -205,6 +208,7 @@ export default function Home() {
     repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market], discuss: [discuss],
     researchers: [],                                  // its own refresh (lib/researchers.ts, through WISEP)
     feed: [],                                         // 🏠 built from the others' saved copies (lib/feed-store.ts)
+    help: [],                                         // ❓ GeeKOc's tours and the answers: nothing to fetch
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
@@ -279,6 +283,54 @@ export default function Home() {
     dockUsed();
     touched();
   };
+  // GeeKOc's tour (lib/tour.ts, components/tour-overlay.tsx): by itself the first time, or from Help
+  const tourKind = Tour.kind(!!user, !!(settings?.orcid || settings?.openalex), settings?.coauthors !== undefined);
+  const [tour, setTour] = useState<{ steps: string[]; marksSeen: boolean } | null>(null);
+  const scroller = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const tourAsked = useRef(false);
+  useEffect(() => {
+    if (!settings || tourAsked.current) return;
+    tourAsked.current = true;
+    let gone = false;
+    tourSeen().then((seen) => {
+      const steps = Tour.auto(seen, tourKind);
+      if (steps.length) setTimeout(() => { if (!gone) setTour({ steps, marksSeen: true }); }, 1500);
+    }).catch(() => undefined);
+    return () => { gone = true; };
+  }, [settings, tourKind]);
+  const startTour = (name: string) => setTour({ steps: Tour.stops(name, tourKind), marksSeen: name === 'start' });
+  const SETTINGS_NAMES: Record<string, string> = { look: 'Look', papers: 'Your papers', cv: 'From a CV', wisep: 'How myGeeKy asks the internet',
+    packs: 'Packs', setup: 'Your setup', sync: 'Sync' };
+  nameSpots((target) => target.startsWith('settings:') ? `You › Settings › ${SETTINGS_NAMES[target.slice(9)] ?? ''}`
+    : navPath(find(tree, target)).slice(1).map((n) => n.label).join(' › '));
+  const tourGo = (target: string) => {
+    if (target.startsWith('settings:')) {                 // a part of Settings: open it, make room, scroll to it
+      openNode('you:more');
+      setNavAt('you');
+      setCollapsed(true);
+      setDockOpen(false);
+      setTimeout(() => {
+        const s = spotOf(target), view = scroller.current as unknown as { measureInWindow?: (cb: (x: number, y: number) => void) => void };
+        if (!s || !view?.measureInWindow) return;
+        view.measureInWindow((_vx, vy) => s.measureInWindow((_x, y) => {
+          scroller.current?.scrollTo({ y: Math.max(0, scrollY.current + y - vy - 40), animated: false });
+        }));
+      }, 350);
+      return;
+    }
+    const n = find(tree, target);
+    if (!n) return;
+    setCollapsed(false);                                  // the orbit open on the page's group: the spotlight's planet
+    openNode(firstLeaf(n).id);
+    const trail = navPath(n);
+    setNavAt(trail.length > 2 ? trail[1].id : 'home');
+  };
+  const tourDone = () => {
+    if (tour?.marksSeen) setTourSeen(Tour.version()).catch(() => undefined);   // done or skipped: not again by itself
+    setTour(null);
+  };
+
   const onJump = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setNavAt(id);
@@ -392,7 +444,8 @@ export default function Home() {
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
-    if (y > 24 && !collapsed) fold();     // reading folds the orbit; only "Orbit" brings it back (never a scroll)
+    scrollY.current = y;
+    if (y > 24 && !collapsed && !tour) fold();     // reading folds the orbit; only "Orbit" brings it back (never a scroll)
   };
   const ringsH = collapsed ? 0 : orbitHeight(width);
   // the folded dock: this level's planets in one or two rows, a back planet first (named after where it goes)
@@ -425,6 +478,7 @@ export default function Home() {
         {error ? <Text style={st.error}>{error}</Text> : null}
 
         <ScrollView
+          ref={scroller}
           onLayout={(e) => setViewH(e.nativeEvent.layout.height)}
           onScroll={onScroll} scrollEventThrottle={32}
           contentContainerStyle={[st.list, { minHeight: viewH + (collapsed ? 0 : 60) }]}
@@ -437,6 +491,8 @@ export default function Home() {
             <View style={{ marginHorizontal: -4 }}>
               {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'cited' ? <CitedByView /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
             </View>
+          ) : sel === 'help' ? (
+            <HelpView onStart={startTour} labelOf={(m) => find(tree, m === 'home' ? 'feed' : m)?.label ?? m} lang={tour ? 'touring' : 'idle'} />
           ) : !user && NEEDS_GITHUB[sel] ? (
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />
           ) : sel === 'news' && newsPart === 'airace' ? (
@@ -517,6 +573,7 @@ export default function Home() {
         </View>
       )}
       <View style={{ height: Math.max(insets.bottom, 12) + 8 }} />
+      {tour ? <TourOverlay steps={tour.steps} kind={tourKind} onGo={tourGo} onDone={tourDone} /> : null}
     </SafeAreaView>
   );
 }

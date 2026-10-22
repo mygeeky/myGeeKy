@@ -252,9 +252,13 @@ Signals; everything else works without one.
 
 <img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/hint.png" width="200" align="right" alt="The myGeeKy phone app: Home, with its orbit of planets">
 
-**Your world in orbit:** Home in the middle, and around it You, Grow, World, Circle, Repos and Chances.
+**Your world in orbit:** Home in the middle, and around it You, Grow, World, Circle, Repos, Chances and Help.
 A planet with a dotted ring opens into more; tap to read and the orbit folds into a slim dock. Set it up with one scan from
 the desktop panel.
+
+**GeeKOc shows you around.** The first time, myGeeKy's octopus walks you through the places that fit what you gave
+(GitHub, ORCID, both, a CV or just keywords), in English, French, Arabic or Chinese. **Help** has every tour again, one
+for Settings and one for each part, and the answers to how and why myGeeKy works. Same on the desktop.
 
 <sub>On Android, coming to Google Play soon.</sub>
 

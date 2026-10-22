@@ -4,6 +4,7 @@ import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { timeAgo } from '../lib/app-state';
 import { logClick } from '../lib/badges';
 import { C, BADGES, tint } from '../lib/theme';
+import { spot } from './tour-overlay';
 
 /** A small switch between the parts of a tab (e.g. Headlines | Papers). */
 // A long name ("Protocols", "Conferences") shrinks to fit its segment instead of being cut to "Protoc…".
@@ -22,8 +23,9 @@ export function Segments<T extends string>({ value, options, onChange }: {
   );
 }
 
-export function Section({ children }: { children: ReactNode }) {
-  return <Text style={s.section}>{children}</Text>;
+/** A heading on a page; `tour` names it for GeeKOc's Settings tour ('settings:cv'), which shines a light on it. */
+export function Section({ children, tour }: { children: ReactNode; tour?: string }) {
+  return <Text ref={tour ? spot(tour) : undefined} style={s.section}>{children}</Text>;
 }
 
 export function Empty({ children }: { children: ReactNode }) {
