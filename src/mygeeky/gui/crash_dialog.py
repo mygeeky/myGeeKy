@@ -1,5 +1,6 @@
 """The "Something went wrong" window: shows a crash report (personal details
-already removed) and opens it as a prefilled GitHub issue you submit yourself.
+already removed) and opens it as a prefilled GitHub issue you submit yourself,
+or, without GitHub, as a ready-made email you send from your own mail app.
 Nothing is sent from here."""
 
 from __future__ import annotations
@@ -9,7 +10,7 @@ import webbrowser
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtWidgets import (QDialog, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
+from PySide6.QtWidgets import (QApplication, QDialog, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
                                QVBoxLayout, QWidget)
 
 from .. import crashreport
@@ -31,15 +32,16 @@ class CrashDialog(QDialog):
         self.setWindowModality(Qt.NonModal)                      # and never locks it
         self.setAttribute(Qt.WA_DeleteOnClose, True)
         self.setWindowTitle("myGeeKy: something went wrong")
-        self.setMinimumSize(520, 420)
+        self.setMinimumSize(620, 420)
         lay = QVBoxLayout(self)
         lay.setSpacing(8)
         n = len(reports)
         intro = QLabel(
             ("myGeeKy hit an error" if n == 1 else f"myGeeKy hit {n} errors")
-            + ". You can send the report to its maker as a GitHub issue so it gets fixed: your browser opens it "
-            "ready to send, and you click <b>Submit</b> there. Below is <b>exactly</b> what it contains: tokens, "
-            "email addresses, your name and your folders are already removed. It's public, so check it first.")
+            + ". You can send the report to its maker so it gets fixed: <b>Email it</b> opens it in your own mail "
+            "app (no GitHub needed), <b>Report on GitHub</b> in your browser; nothing goes until you press Send "
+            "or Submit there. Below is <b>exactly</b> what it contains: tokens, email addresses, your name and your "
+            "folders are already removed. A GitHub issue is public, so check it first.")
         intro.setWordWrap(True)
         lay.addWidget(intro)
         self.note = QPlainTextEdit()
@@ -60,10 +62,14 @@ class CrashDialog(QDialog):
         row.addStretch(1)
         later = QPushButton("Not now")
         later.clicked.connect(self.close)
+        copy = QPushButton("Copy report")
+        copy.clicked.connect(self._copy)
+        self.mail = QPushButton("Email it ✉")
+        self.mail.clicked.connect(self._email)
         self.send = QPushButton("Report on GitHub ↗")
         self.send.clicked.connect(self._send)
-        row.addWidget(later)
-        row.addWidget(self.send)
+        for b in (later, copy, self.mail, self.send):
+            row.addWidget(b)
         lay.addLayout(row)
         self.setStyleSheet(
             f"QDialog {{ background:#17171f; }} QLabel {{ color:{theme['text']}; font-size:11.5px; }}"
@@ -99,6 +105,19 @@ class CrashDialog(QDialog):
         threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
         self.status.setText("✓ Your browser opened it on GitHub: click <b>Submit new issue</b> there to send it. "
                             "Thank you!")
+
+    def _email(self) -> None:
+        url = crashreport.email_url(self._raw(), self.login, self.note.toPlainText())
+        threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
+        self.status.setText(f"✓ Your mail app opened it, addressed to {crashreport.SUPPORT_EMAIL}: press "
+                            "<b>Send</b> there. If it looks cut short, <b>Copy report</b> and paste the whole "
+                            "thing into the email. Thank you!")
+
+    def _copy(self) -> None:
+        note = self.note.toPlainText().strip()
+        QApplication.clipboard().setText((note + "\n\n" if note else "") + self._text())
+        self.status.setText(f"✓ Copied, personal details removed. Paste it into an email to "
+                            f"{crashreport.SUPPORT_EMAIL} or a GitHub issue.")
 
     def _open_folder(self) -> None:
         from PySide6.QtCore import QUrl

@@ -128,7 +128,29 @@ def test_the_crash_window_shows_the_cleaned_report_without_locking(tmp_path, mon
         if t is not threading.current_thread() and t.daemon:
             t.join(2)
     assert opened and "issues/new" in opened[0] and "ghp_" not in opened[0]
+    dlg._email()                                                   # no GitHub: the same, as an email
+    for t in threading.enumerate():
+        if t is not threading.current_thread() and t.daemon:
+            t.join(2)
+    assert opened[-1].startswith("mailto:support@mygeeky.org?") and "ghp_" not in opened[-1] and "jdoe" not in opened[-1]
+    dlg._copy()
+    copied = QApplication.clipboard().text()
+    assert copied == dlg.view.toPlainText(), "the whole cleaned report, as shown"
+    assert "ghp_" not in copied and "jdoe" not in copied
     dlg.close()
+
+
+def test_the_email_is_short_enough_for_mail_apps_and_keeps_the_error():
+    from urllib.parse import unquote
+    home = str(Path.home())
+    report = ("where: panel\nmyGeeKy 1.0 · Python 3.12\n\nTraceback (most recent call last):\n"
+              + f'File "{home}/x.py", line 3, in _render_news\n    x = 1\n' * 400
+              + "ValueError: bad news from jdoe@example.org\n")
+    url = crashreport.email_url(report + "\n\n=====\n\n" + report, login="", note="I clicked News")
+    assert len(url) <= crashreport.MAX_MAILTO + 400 and url.startswith("mailto:support@mygeeky.org?subject=")
+    text = unquote(url)
+    assert "💥 ValueError in _render_news" in text and "I clicked News" in text
+    assert "ValueError: bad news from <email>" in text and "where: panel" in text and f"{home}/x.py" not in text
 
 
 def test_two_errors_in_the_same_instant_are_two_reports(tmp_path, monkeypatch):

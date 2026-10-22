@@ -9,8 +9,10 @@ Every failure is caught and saved as a report in myGeeKy's logs folder:
 
 Nothing is ever sent by itself. myGeeKy offers the report, shows exactly what
 it contains, and "Report on GitHub" opens a prefilled issue that you submit
-yourself (like the 💡). Before it's shown, tokens, email addresses, your
-username and your home folder are removed from it.
+yourself (like the 💡). No GitHub? "Email it" opens the same report as a
+ready-made email to SUPPORT_EMAIL in your own mail app, and you press Send.
+Before it's shown, tokens, email addresses, your username and your home folder
+are removed from it.
 
 Standard library only (the frozen installer can import it too).
 """
@@ -26,12 +28,14 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from .files import write_json
 
 REPO = "mygeeky/myGeeKy"
+SUPPORT_EMAIL = "support@mygeeky.org"   # the same inbox as the 💡's email (ideas.py)
 MAX_URL = 7500                     # browsers and GitHub cope with this length
+MAX_MAILTO = 1800                  # some mail apps cut a mailto: link near 2000 characters
 OFFERED_FILE = "crash-offered.json"
 FATAL_LOG = "fatal.log"
 MAX_PER_RUN = 20
@@ -111,8 +115,8 @@ def headline(report: str) -> str:
 SEPARATOR = "\n\n=====\n\n"        # how a burst of reports arrives here, newest first
 
 
-def issue_url(report: str, login: str = "", note: str = "") -> str:
-    """A prefilled 'new issue' page with the cleaned report (you submit it).
+def _shortened(report: str, login: str, build, limit: int) -> str:
+    """The longest honest link `build(report_text)` makes within `limit`.
 
     Every report is trimmed inside its own boundaries. A burst of errors arrives as several reports
     joined by `=====`; this used to keep the first six lines of the whole lot and the last seventy,
@@ -123,7 +127,6 @@ def issue_url(report: str, login: str = "", note: str = "") -> str:
     whole older report is dropped rather than half of one."""
     clean = redact(report, login)
     blocks = [b.strip() for b in clean.split(SEPARATOR.strip("\n")) if b.strip()] or [clean]
-    intro = (note.strip() + "\n\n") if note.strip() else "**What were you doing when it happened?**\n\n\n"
 
     def trim(block: str) -> str:
         lines = block.splitlines()
@@ -131,18 +134,13 @@ def issue_url(report: str, login: str = "", note: str = "") -> str:
         kept = rest[-70:] if len(rest) > 70 else rest  # the end: the error, or the thread that crashed
         return "\n".join(head + (["…"] if len(kept) < len(rest) else []) + kept)
 
-    def build(body_report: str) -> str:
-        body = f"{intro}**Crash report** (sent from myGeeKy, personal details removed):\n```\n{body_report}\n```"
-        return f"https://github.com/{REPO}/issues/new?" + urlencode(
-            {"title": f"💥 {headline(report)}", "body": body, "labels": "crash"})
-
     newest, others = trim(blocks[0]), [trim(b) for b in blocks[1:]]
     while True:
         left_out = len(blocks) - 1 - len(others)
         tail_note = f"{SEPARATOR}(and {left_out} earlier report(s), left out to keep this link short)" \
             if left_out else ""
         url = build(SEPARATOR.join([newest] + others) + tail_note)
-        if len(url) <= MAX_URL:
+        if len(url) <= limit:
             return url
         if others:
             others.pop()                              # a whole older report goes, never part of one
@@ -152,6 +150,30 @@ def issue_url(report: str, login: str = "", note: str = "") -> str:
             return url                                # as short as this can honestly be made
         head, rest = lines[:6], lines[6:]             # its own header stays with its own traceback
         newest = "\n".join(head + ["…"] + rest[len(rest) // 4:])
+
+
+def issue_url(report: str, login: str = "", note: str = "") -> str:
+    """A prefilled 'new issue' page with the cleaned report (you submit it)."""
+    intro = (note.strip() + "\n\n") if note.strip() else "**What were you doing when it happened?**\n\n\n"
+
+    def build(body_report: str) -> str:
+        body = f"{intro}**Crash report** (sent from myGeeKy, personal details removed):\n```\n{body_report}\n```"
+        return f"https://github.com/{REPO}/issues/new?" + urlencode(
+            {"title": f"💥 {headline(report)}", "body": body, "labels": "crash"})
+    return _shortened(report, login, build, MAX_URL)
+
+
+def email_url(report: str, login: str = "", note: str = "") -> str:
+    """The same cleaned report as a ready-made email to SUPPORT_EMAIL (you send it from your own mail app):
+    for people without GitHub, or who'd rather not post it in public. Plain text, and short enough for
+    mail apps, so it keeps the header and the end of the newest traceback; "Copy report" has the rest."""
+    intro = (note.strip()[:500] + "\n\n") if note.strip() else "What were you doing when it happened?\n\n\n"
+    enc = lambda s: quote(s, safe="!~*'()")  # noqa: E731
+
+    def build(body_report: str) -> str:
+        body = f"{intro}Crash report (sent from myGeeKy, personal details removed):\n\n{body_report}\n"
+        return f"mailto:{SUPPORT_EMAIL}?subject={enc(f'💥 {headline(report)}')}&body={enc(body)}"
+    return _shortened(report, login, build, MAX_MAILTO)
 
 
 # --------------------------------------------------------------------------- which reports to offer
