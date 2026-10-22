@@ -23,6 +23,7 @@ def memory_keyring(monkeypatch):
 
 def _cfg(**kw) -> MyGeekyConfig:
     kw.setdefault("github_username", "me")
+    kw.setdefault("signals_terms", bc.TERMS_VERSION)          # agreed to the Signals terms
     return MyGeekyConfig(beacon_enabled=True, **kw)
 
 
@@ -439,9 +440,10 @@ def test_beacon_init_walks_through_repo_and_token_and_retries_a_bad_token(monkey
     monkeypatch.setattr(keyring, "set_password", lambda *a: stored.append(a))
     monkeypatch.setattr(cli.auth, "get_beacon_token", lambda user: None)
 
-    # open page? y / repo created? (Enter) / open token page? y / bad token / good token
-    result = CliRunner().invoke(cli.main, ["beacon", "init"], input="y\n\ny\nbad\ngood\n")
+    # open page? y / repo created? (Enter) / open token page? y / bad token / agree to the terms? y / good token
+    result = CliRunner().invoke(cli.main, ["beacon", "init"], input="y\n\ny\nbad\ny\ngood\n")
     assert result.exit_code == 0, result.output
+    assert "The Signals terms" in result.output and bc.TERMS_POINTS[0] in result.output   # asked once
     assert "Step 1 of 3" in result.output and "Step 3 of 3" in result.output
     assert "Only select repositories" in result.output and "Read and write" in result.output
     assert "GitHub refused the write" in result.output

@@ -439,6 +439,12 @@ export function MorePart() {
       <Pressable onPress={() => open('https://mygeeky.org')}>
         <Text style={[st.link, { marginTop: 18 }]}>myGeeKy for your computer ↗</Text>
       </Pressable>
+      <Pressable onPress={() => open('https://mygeeky.org/privacy.html')}>
+        <Text style={st.link}>Privacy policy ↗</Text>
+      </Pressable>
+      <Pressable onPress={() => open('https://mygeeky.org/terms.html')}>
+        <Text style={st.link}>Signals terms ↗</Text>
+      </Pressable>
       <Pressable onPress={() => Linking.openURL('mailto:support@mygeeky.org')}>
         <Text style={st.link}>Questions or problems? support@mygeeky.org</Text>
       </Pressable>

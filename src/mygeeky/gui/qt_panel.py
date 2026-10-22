@@ -6903,6 +6903,19 @@ class MyGeekyPanel(QWidget):
             "_pair_dialog", lambda: PairDialog(self, THEMES[self._theme_name()])))
         layout.addWidget(self.pair_btn)
 
+        legal = QHBoxLayout()                              # Play asks for the privacy policy inside the app; the phone has it too
+        self.legal_btns = []
+        for text, url in (("Privacy policy \u2197", "https://mygeeky.org/privacy.html"),
+                          ("Signals terms \u2197", "https://mygeeky.org/terms.html")):
+            b = QPushButton(text)
+            b.setCursor(Qt.PointingHandCursor)
+            b.setToolTip(url)
+            b.clicked.connect(lambda checked=False, u=url: self._open_site(u))
+            legal.addWidget(b)
+            self.legal_btns.append(b)
+        legal.addStretch(1)
+        layout.addLayout(legal)
+
         bottom = QHBoxLayout()
         self.sync_label = QLabel("")
         self.sync_label.setWordWrap(True)
@@ -7161,8 +7174,42 @@ class MyGeekyPanel(QWidget):
             f"QPushButton {{ background:{theme['btn_bg']}; color:{theme['text']}; border:none; border-radius:7px; "
             f"padding:4px 10px; font-size:11px; }} QPushButton:hover {{ background:{theme['btn_hover']}; }}")
 
+    @staticmethod
+    def _open_site(url: str) -> None:
+        """One of myGeeKy's own pages (mygeeky.org), in the browser."""
+        if url.startswith("https://mygeeky.org/"):
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(QUrl(url))
+
+    def _signals_terms_ok(self) -> bool:
+        """The Signals terms, agreed to once (again when they change), before turning Signals on or posting a call."""
+        from .. import beacon as bc
+        if bc.terms_accepted(self.cfg):
+            return True
+        box = QMessageBox(QMessageBox.Question, "Signals terms",
+                          "Before you join Signals or post a call:\n\n" + "\n".join(f"• {p}" for p in bc.TERMS_POINTS)
+                          + f"\n\nThe full terms: {bc.TERMS_URL}", parent=self)
+        box.setTextFormat(Qt.PlainText)
+        box.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        agree = box.addButton("I agree", QMessageBox.AcceptRole)
+        read = box.addButton("Read the terms", QMessageBox.HelpRole)
+        box.addButton("Cancel", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is read:
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(QUrl(bc.TERMS_URL))
+            return False
+        if box.clickedButton() is agree:
+            bc.accept_terms(self.cfg)
+            return True
+        return False
+
     def _on_signals_switch(self) -> None:
         on = not self.cfg.beacon_enabled
+        if on and not self._signals_terms_ok():
+            return
         self.signals_btn.setEnabled(False)
         self.signals_btn.setText("Turning Signals on\u2026" if on else "Turning Signals off\u2026")
 
@@ -7451,6 +7498,9 @@ class MyGeekyPanel(QWidget):
         self.pair_btn.setStyleSheet(f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; "
                                     f"border:none; border-radius:8px; padding:6px 10px; font-size:11.5px; }}"
                                     f"QPushButton:hover {{ background:{theme['btn_hover']}; }}")
+        for b in getattr(self, "legal_btns", []):
+            b.setStyleSheet(f"QPushButton {{ background:transparent; color:{logic.readable(theme['link'], theme)}; border:none; "
+                            "padding:2px 4px; font-size:11px; } QPushButton:hover { text-decoration:underline; }")
         self.uninstall_btn.setStyleSheet(f"QPushButton {{ background:transparent; color:{theme['bad']}; border:none; "
                                          f"padding:4px 6px; font-size:11px; }} QPushButton:hover {{ text-decoration:underline; }}")
         self.quit_btn.setStyleSheet(f"QPushButton {{ background:{theme['btn_bg']}; color:{theme['text']}; border:none; "
@@ -8904,6 +8954,9 @@ class MyGeekyPanel(QWidget):
         self._run_async(lambda: logic.list_repos_for_call(self.cfg), got)
 
     def _on_publish_call(self, win, payload: dict[str, Any]) -> None:
+        if not self._signals_terms_ok():
+            win.set_busy(False, "Agree to the Signals terms to post a call.", error=True)
+            return
         win.set_busy(True, "Publishing in your beacon…")
 
         def done(result: Any) -> None:

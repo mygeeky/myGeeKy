@@ -553,7 +553,8 @@ def test_signals_calls_ruler_and_invite_window(qapp, monkeypatch):
     monkeypatch.setattr(logic, "list_repos_for_call", lambda cfg, login=None: [
         {"name": "gwas-qc", "full_name": "me/gwas-qc", "topics": ["gwas", "plink"], "language": "Python", "description": ""}])
 
-    panel = MyGeekyPanel(MyGeekyConfig(github_username="me"))
+    from mygeeky.beacon import TERMS_VERSION
+    panel = MyGeekyPanel(MyGeekyConfig(github_username="me", signals_terms=TERMS_VERSION))   # agreed to the terms
     try:
         for w in list(panel._workers):
             w.wait(2000)
@@ -647,3 +648,34 @@ def test_remote_text_is_never_rendered_as_html(qapp):
     tip = _tip(HOSTILE)
     assert tip.startswith("<qt>") and "<img" not in tip and "&lt;img" in tip
     assert _tip("") == ""
+
+
+def test_posting_a_call_or_turning_signals_on_asks_for_the_terms_first(qapp, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+    from mygeeky import beacon as bc
+    from mygeeky.config import MyGeekyConfig
+    from mygeeky.gui import app as logic
+    from mygeeky.gui.qt_panel import MyGeekyPanel
+    monkeypatch.setattr(logic, "save_config", lambda cfg: None)
+    monkeypatch.setattr(bc, "accept_terms", lambda cfg: setattr(cfg, "signals_terms", bc.TERMS_VERSION))
+    asked = []
+    monkeypatch.setattr(QMessageBox, "exec", lambda self: asked.append(self.text()) or 0)
+    monkeypatch.setattr(QMessageBox, "clickedButton", lambda self: None)            # closed without agreeing
+    published = []
+    monkeypatch.setattr(logic, "create_call", lambda cfg, **kw: published.append(kw) or {"ok": True})
+    panel = MyGeekyPanel(MyGeekyConfig(github_username="me"))
+    try:
+        said = []
+
+        class Win:
+            def set_busy(self, busy, text, error=False):
+                said.append((busy, text, error))
+        panel._on_publish_call(Win(), {"repo": "me/tool"})
+        assert asked and bc.TERMS_POINTS[0] in asked[0] and not published
+        assert said == [(False, "Agree to the Signals terms to post a call.", True)]
+        monkeypatch.setattr(QMessageBox, "clickedButton", lambda self: self.buttons()[0])  # "I agree"
+        assert panel._signals_terms_ok() and panel.cfg.signals_terms == bc.TERMS_VERSION
+        asked.clear()
+        assert panel._signals_terms_ok() and not asked                               # asked once
+    finally:
+        panel.close()

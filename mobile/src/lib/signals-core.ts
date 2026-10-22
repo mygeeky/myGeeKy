@@ -3,6 +3,19 @@
 // your beacon. See signals.ts for the parts that talk to GitHub and the phone's storage.
 import { BOX_LEN, fromUtf8, openBox, PAD_TO, randomHex, seal, unb64, utf8, validPublicKey } from './signal-crypto';
 
+// The Signals terms (website/terms.html), word for word the desktop's beacon.py: agreed to before turning Signals on
+// here or posting a call. A new date asks everyone again.
+export const TERMS_VERSION = '2026-10-21';
+export const TERMS_URL = 'https://mygeeky.org/terms.html';
+export const TERMS_POINTS = [
+  'Your beacon is public: your status, your interest tags and the calls you post can be read by anyone.',
+  'Be kind and honest: no harassment, hate, threats, spam, scams, sexual content or anything illegal.',
+  "Never post someone else's private information.",
+  'You can block anyone, and report a beacon to GitHub or to support@mygeeky.org.',
+  "A beacon that breaks these rules is hidden from everyone's myGeeKy.",
+];
+export const TERMS_NEEDED = 'Agree to the Signals terms first (mygeeky.org/terms.html).';
+
 export const NAME_RE = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
 export const BEACON_REPO = 'mygeeky-beacon';
 export const TOPIC = 'mygeeky-beacon';

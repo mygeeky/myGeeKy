@@ -53,7 +53,7 @@
 
 <main class="wrap">
   <h1>Privacy <span>policy</span></h1>
-  <p class="meta">Effective 12 October 2026 · applies to the myGeeKy desktop panel, command line, installer and phone app, and to this website</p>
+  <p class="meta">Effective 21 October 2026 · applies to the myGeeKy desktop panel, command line, installer and phone app, and to this website</p>
 
   <div class="tldr">
     <strong>In short</strong>
@@ -122,6 +122,8 @@
       Data: one file, the same for everyone); <strong>Zenodo, NCBI GEO and Figshare</strong>: once a day, a search
       with your keywords for new public datasets (Grow → Data → New: only the search words are sent); and once a day the star and fork counts of
       your own repositories</li>
+    <li><strong>OpenAlex key</strong> (optional): if you ask for your own free OpenAlex key (⚙ → WISEP, or You → Settings on the phone), the email address you type is sent to <strong>OpenAlex only</strong>, so they can email you the key. myGeeKy doesn't keep the address; the key is kept in your device's secure credential store.</li>
+    <li><strong>Your own GitHub activity</strong>: if you're signed in with GitHub, My month reads your public GitHub events (what you pushed, starred or opened) to draw your month. They are read, not changed, and what is drawn stays on your device.</li>
     <li><strong>WISEP</strong>: every request to OpenAlex and the other open databases goes through one gateway on your device, which keeps their answers, learns which pages you open (kept only on your device) and asks again only when a fresh answer is worth it, within a daily budget. Requests to OpenAlex carry myGeeKy's contact address (support@mygeeky.org, not yours), which OpenAlex asks of apps. You see what it asked and what it learned, and can make it forget, in Settings → How myGeeKy asks the internet. If you ask there for a free OpenAlex key, the email address you type is sent to OpenAlex (only then, and only to them) so they can email you the key; the key is kept in your device's secure storage.</li>
     <li><strong>OpenAlex</strong> (again): if you follow researchers (Circle → Researchers), one search for their new work, about as often as they publish, and a search when you look someone up by name; the list of people you follow stays on your device and nobody is told; once a week, two searches to draw your co-author network (Researchers → Network) from your public papers</li>
     <li><strong>OpenAlex</strong> (again): once a day, the citation counts of your papers, and the newest papers citing the ones that gained citations (for Wins and You → Cited by); public data, kept on your device</li>
@@ -153,6 +155,7 @@
   <ul>
     <li><strong>Signals</strong> (optional). Your <code>mygeeky-beacon</code> repository is public. It holds your public encryption keys, your status, whether you are in quiet mode, your interest tags (you can turn this off), and the signals you sent. Each signal is encrypted so that <strong>only its recipient can read it</strong>, including who sent it. Signals expire after 90 days. Each of your devices (computers and, if you turn it on there, your phone) has its <strong>own</strong> key: the private half never leaves that device, and a phone uses its own Signals token, kept in the phone's secure store.</li>
     <li><strong>Calls for contributors</strong> (optional, part of Signals). A call you post goes into your public beacon: the name of one of your own public repositories, the short note you wrote, the skills you asked for, the level and time it takes, and when it closes (at most 90 days). Anyone can read it. Whether a call fits someone is worked out on <em>their</em> device, from their own interests; no one is sent your call or picked for it. When someone answers <em>I'm in</em>, their answer is sealed like any signal: only you can read who they are and which of their skills matched.</li>
+    <li><strong>The Signals terms.</strong> Before you turn Signals on or post a call, myGeeKy asks you to agree to the <a href="terms.html">Signals terms</a> (be kind and honest, never post others' private information). A beacon that breaks them can be hidden from everyone's myGeeKy: the hidden list is part of myGeeKy's public curated lists, so anyone can see it.</li>
     <li><strong>Blocking and reporting.</strong> You can block anyone on Signals: their signals, calls and dot stop showing, and the list stays on your device. <em>Report</em> opens GitHub's own abuse form, because everything a person posts on Signals lives in their GitHub beacon.</li>
     <li><strong>Sync</strong> (optional). Your settings, CV text, scholarly profile and history go to a <strong>private</strong> repository in your own GitHub account, so your other computers see the same. myGeeKy never makes it public.</li>
     <li><strong>The 💡 idea lamp</strong>. It opens a prefilled issue on GitHub in the public <a href="https://github.com/mygeeky/myGeeKy-ideas">myGeeKy-ideas</a> repository. Nothing is sent until you submit it yourself, and you can edit it first.</li>
@@ -163,7 +166,7 @@
   <ul>
     <li>It never follows, unfollows, stars, forks, comments or posts for you. It only suggests, and you act on GitHub yourself.</li>
     <li>It has no analytics, telemetry or advertising, and it never sends a crash report by itself: you see and submit each one. It never sells or shares your data.</li>
-    <li>It does not ask for your contacts, location, camera or microphone. The phone app uses the camera only when you tap <em>Scan from your computer</em> or <em>Receive a pack</em>, to read QR codes; no picture is saved or sent.</li>
+    <li>It never asks for your contacts, location or microphone. The phone app asks for the camera only when you tap <em>Scan from your computer</em> or <em>Receive a pack</em>, and uses it only to read those QR codes: no picture or video is saved or sent, and no sound is recorded.</li>
     <li>📦 Packs (sharing part of your setup as QR codes) go from one screen to another camera only: nothing is uploaded, and a pack holds only what you ticked (keywords, topics, field, researchers you follow, a note), never your account or tokens.</li>
   </ul>
 
@@ -187,7 +190,7 @@
 </main>
 
 <footer>
-  <div class="wrap">© myGeeKy · MIT License · <a href="./">mygeeky.org</a> · <a href="./#code-signing">Code signing policy</a> · <a href="mailto:support@mygeeky.org">support@mygeeky.org</a> · version {{VERSION}}</div>
+  <div class="wrap">© myGeeKy · MIT License · <a href="./">mygeeky.org</a> · <a href="terms.html">Signals terms</a> · <a href="./#code-signing">Code signing policy</a> · <a href="mailto:support@mygeeky.org">support@mygeeky.org</a> · version {{VERSION}}</div>
 </footer>
 </body>
 </html>

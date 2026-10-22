@@ -22,6 +22,8 @@ def memory_keyring(monkeypatch):
 
 
 def _cfg(user="me", **kw) -> MyGeekyConfig:
+    from mygeeky.beacon import TERMS_VERSION
+    kw.setdefault("signals_terms", TERMS_VERSION)              # agreed to the Signals terms
     return MyGeekyConfig(github_username=user, beacon_enabled=True, **kw)
 
 

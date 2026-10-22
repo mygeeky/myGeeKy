@@ -58,6 +58,18 @@ from .files import write_json
 
 BEACON_REPO = "mygeeky-beacon"
 BEACON_TOPIC = "mygeeky-beacon"
+# The Signals terms (website/terms.html): agreed to before turning Signals on or posting a call, on every app (the
+# phone's signals-core.ts says the same words). A new date asks everyone again.
+TERMS_VERSION = "2026-10-21"
+TERMS_URL = "https://mygeeky.org/terms.html"
+TERMS_POINTS = (
+    "Your beacon is public: your status, your interest tags and the calls you post can be read by anyone.",
+    "Be kind and honest: no harassment, hate, threats, spam, scams, sexual content or anything illegal.",
+    "Never post someone else's private information.",
+    "You can block anyone, and report a beacon to GitHub or to support@mygeeky.org.",
+    "A beacon that breaks these rules is hidden from everyone's myGeeKy.",
+)
+TERMS_NEEDED = "Agree to the Signals terms first (mygeeky.org/terms.html)."
 BEACON_PATH = "beacon.json"
 README_PATH = "README.md"
 SCHEMA_VERSION = 2
@@ -709,7 +721,7 @@ def refresh(client: GitHubClient, cfg: MyGeekyConfig, force: bool = False,
 
 
 def _parsed_users(cache: dict[str, Any], cfg: MyGeekyConfig) -> list[dict[str, Any]]:
-    blocked = {u.lower() for u in cfg.beacon_blocked}
+    blocked = {u.lower() for u in cfg.beacon_blocked} | hidden_by_maker()
     out = []
     for login, entry in (cache.get("users") or {}).items():
         if login.lower() in blocked or login.lower() == cfg.github_username.lower():
@@ -878,7 +890,9 @@ def _publish_calls(cfg: MyGeekyConfig, change: Callable[[list[dict[str, Any]]], 
 
 def create_call(cfg: MyGeekyConfig, repo: str, note: str, skills: Iterable[str], level: str, time: str,
                 days: int, writer: BeaconWriter | None = None) -> dict[str, Any]:
-    """Publish a call for one of your own repos (at most MAX_CALLS open at once)."""
+    """Publish a call for one of your own repos (at most MAX_CALLS open at once); needs the terms agreed to."""
+    if not terms_accepted(cfg):
+        raise BeaconError(TERMS_NEEDED)
     call = new_call(repo, note, skills, level, time, days)
 
     def add(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1106,10 +1120,31 @@ def ensure_repo(cfg: MyGeekyConfig, client: GitHubClient, create: bool) -> list[
     return notes
 
 
+def terms_accepted(cfg: MyGeekyConfig) -> bool:
+    return getattr(cfg, "signals_terms", "") == TERMS_VERSION
+
+
+def accept_terms(cfg: MyGeekyConfig) -> None:
+    from .config import save_config
+    cfg.signals_terms = TERMS_VERSION
+    save_config(cfg)
+
+
+def hidden_by_maker() -> set[str]:
+    """Beacons myGeeKy's maker hid from everyone for breaking the terms (the curated lists' "signals_hidden")."""
+    try:
+        from . import curated
+        return {u.lower() for u in curated.load().get("signals_hidden") or []}
+    except Exception:
+        return set()
+
+
 def go_live(cfg: MyGeekyConfig, writer: BeaconWriter | None = None) -> None:
     """Turn beacons on and publish (with `writer`, or the stored beacon token).
-    Saves `beacon_enabled` only once the first publish worked."""
+    Saves `beacon_enabled` only once the first publish worked. Turning on needs the terms agreed to."""
     from .config import save_config
+    if not cfg.beacon_enabled and not terms_accepted(cfg):
+        raise BeaconError(TERMS_NEEDED)
     cfg.beacon_enabled = True
     try:
         writer = writer or writer_for(cfg)

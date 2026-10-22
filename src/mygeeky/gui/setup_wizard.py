@@ -1484,8 +1484,13 @@ class SignalsPage(Page):
                          "your work · 👀 following your work · 🤝 collaborate) and see theirs. Only the "
                          "person you send one to can read it, and no reply is ever expected.")
         self._stage = "none"            # none | partial | live | checking
-        self.enable = QCheckBox("Join Signals. My beacon (status, interests) is public; my signals are private.")
+        self.enable = QCheckBox("Join Signals. I agree to the Signals terms: my beacon (status, interests) is public, "
+                                "my signals are private, and I'll be kind and honest.")
         self.add(self.enable)
+        terms = _label('<a href="https://mygeeky.org/terms.html">Read the Signals terms</a>', "muted")
+        terms.setTextFormat(Qt.RichText)
+        terms.setOpenExternalLinks(True)
+        self.add(terms)
         self.summary = _label("", "muted")
         self.summary.setTextFormat(Qt.RichText)
         self.add(self.summary)
@@ -1641,7 +1646,7 @@ class SignalsPage(Page):
         if not token and not s.get("beacon_token"):
             return lambda wk: {"ok": False, "error": "Paste token 2 (Step 2) first, or untick Join Signals."}
         python = self.w.python
-        return lambda wk: api(python, "beacon_init", {"token": token})
+        return lambda wk: api(python, "beacon_init", {"token": token, "agree": self.enable.isChecked()})
 
     def on_result(self, result):
         if result.get("ok"):

@@ -14,10 +14,12 @@ import { fetchT } from './net';
 import { b64, newKeypair, publicOf, utf8 } from './signal-crypto';
 import {
   addCall, BEACON_REPO, type Call, CALL_LEVELS, CALL_TIMES, callsIn, DAILY_LIMIT, DAY, decodeContent, GESTURES, isoNow,
-  MAX_PER_SENDER, MAX_USERS, mergeIntoBeacon, MUTUAL_TEXT, newCall, openSignals, type Parsed, type Person, parseBeacon,
-  parseTime, type Received, REPEAT_DAYS, SCHEMA, sealSignal, type Sent, TOPIC, TTL_DAYS,
+  MAX_PER_SENDER, MAX_USERS, mergeIntoBeacon, MUTUAL_TEXT, NAME_RE, newCall, openSignals, type Parsed, type Person, parseBeacon,
+  parseTime, type Received, REPEAT_DAYS, SCHEMA, sealSignal, type Sent, TERMS_NEEDED, TERMS_VERSION, TOPIC, TTL_DAYS,
   validLogin, validRepo, WEEKLY_NEW_PEOPLE,
 } from './signals-core';
+import { loadLists } from './curated';
+import { readCache } from './storage';
 
 export {
   BEACON_REPO, type Call, CALL_DAYS, CALL_LEVELS, CALL_TIMES, GESTURES, MAX_CALLS, MAX_CALL_SKILLS, MAX_NOTE, MUTUAL_TEXT,
@@ -29,6 +31,7 @@ const SENT_KEY = 'mygeeky.signals.sent';       // what this phone sent (for the 
 const HIDDEN_KEY = 'mygeeky.signals.hiddenCalls';  // "owner/id" of calls you said aren't for you
 const RECEIVED_KEY = 'mygeeky.signals.received';  // when and what kind of signals reached you (My month), never who
 const BLOCKED_KEY = 'mygeeky.signals.blocked';     // people you blocked: nothing of theirs shows on this phone
+const TERMS_KEY = 'mygeeky.signals.terms';         // the Signals terms agreed to on this phone (TERMS_VERSION)
 const ME = { name: 'myGeeKy', email: 'housekeeping@mygeeky.invalid' };   // never counts as your activity
 
 // ---- this phone's secrets
@@ -159,12 +162,29 @@ export async function loadReceived(): Promise<{ at: string; type: string }[]> {
   }
 }
 
+/** The Signals terms: agreed to on this phone? (beacon.terms_accepted) */
+export async function termsAccepted(): Promise<boolean> {
+  try { return (await AsyncStorage.getItem(TERMS_KEY)) === TERMS_VERSION; } catch { return false; }
+}
+export async function acceptTerms(): Promise<void> { await AsyncStorage.setItem(TERMS_KEY, TERMS_VERSION); }
+
+/** Beacons myGeeKy's maker hid from everyone for breaking the terms (beacon.hidden_by_maker): from the curated lists
+ *  (fetched again when over 6 hours old), else as last kept, else the ones shipped with the app. */
+export async function hiddenByMaker(): Promise<Set<string>> {
+  try {
+    const lists: any = await loadLists().catch(async () => (await readCache<any>('curated'))?.data ?? require('../data/curated.json'));
+    return new Set((lists?.signals_hidden ?? []).filter((u: unknown) => typeof u === 'string' && NAME_RE.test(u)).map((u: string) => u.toLowerCase()));
+  } catch {
+    return new Set();
+  }
+}
+
 export async function signalsData(me: string, weights: Weights, users: Parsed[], mine: Call[], share = 0.2): Promise<SignalsData> {
   const key = await phoneKey();
   const sent = await loadSent();
   const hidden = new Set((await loadHidden()).map((h) => h.toLowerCase()));
   const blocked = await loadBlocked();
-  const isBlocked = new Set(blocked.map((b) => b.toLowerCase()));
+  const isBlocked = new Set([...blocked.map((b) => b.toLowerCase()), ...(await hiddenByMaker())]);
   const sentTo = new Set(sent.map((g) => g.to.toLowerCase()));
   const myCollab = new Set(sent.filter((g) => g.type === 'collab').map((g) => g.to.toLowerCase()));
   const joined = new Set(sent.filter((g) => g.type === 'join').map((g) => `${g.to.toLowerCase()}/${g.call}`));
@@ -302,6 +322,7 @@ export async function setQuiet(me: string, quiet: boolean): Promise<void> {
 
 /** One-time setup: keep this phone's token, make its key, add the key to your beacon. */
 export async function setUp(me: string, token: string): Promise<void> {
+  if (!(await termsAccepted())) throw new Error(TERMS_NEEDED);
   const clean = token.trim();
   if (!/^(github_pat_|ghp_)/.test(clean)) throw new Error('Paste a Signals token: it starts with github_pat_.');
   await readMine(me, clean);                                       // checks the token can read your beacon
@@ -351,6 +372,7 @@ export async function send(me: string, to: Parsed, gesture: string, repo?: strin
 /** Publish a call for one of your own repos (at most MAX_CALLS open at once). */
 export async function createCall(me: string, input: { repo: string; note: string; skills: string[]; level: string;
   time: string; days: number }): Promise<Call> {
+  if (!(await termsAccepted())) throw new Error(TERMS_NEEDED);
   const call = newCall(input.repo, input.note, input.skills, input.level, input.time, input.days);
   await publish(me, [], 'Update myGeeKy beacon', { changeCalls: (current) => addCall(current, call) });
   return call;

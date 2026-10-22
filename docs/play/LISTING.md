@@ -8,11 +8,12 @@ Everything here is a draft to paste into the Play Console. Lines marked **(you d
 |---|---|---|
 | `icon-512.png` | App icon | 512 × 512 |
 | `feature-graphic.png` | Feature graphic | 1024 × 500 |
-| `screenshot-1.png` … `screenshot-6.png` | Phone screenshots (2–8) | 1080 × 1920 |
+| `screenshot-1.png` … `screenshot-4.png` | Phone screenshots (2–8) | 1080 × 1920 |
 
-> **The screenshots are from 12 October and show the app before 🌱 Grow, 🎯 Chances and 🏆 Quiz.**
-> Retake them before the listing goes up: Grow → Protocols, a quiz question mid-attempt, Chances →
-> Funding, Skills, Badges. No device frame around them, or Play rejects them.
+> Taken 21 October 2026 (app 1.16.0, a fresh install as a guest, no device frame): 🏠 Home's Neon cards with a
+> milestone, Chances → Seasons, Chances → Jobs, Repos → Help out. More would help (Grow → Protocols or a quiz
+> question, World → News): set the emulator to 1080 × 1920 first (`adb shell wm size 1080x1920`), as Play wants the
+> long side at most twice the short one.
 
 ## Store listing
 
@@ -105,22 +106,44 @@ No account, no adverts, no tracking. Free and open source.
 - Shares the user's location: No
 - Digital purchases: No
 
-**Data safety** (as accurate as I can make it; you confirm):
-- Does the app collect or share user data? **Yes** (it sends data to GitHub to work, which Play counts as collection even without a myGeeKy server)
-- Is all data encrypted in transit? **Yes** (HTTPS only)
-- Can users ask for their data to be deleted? **Yes**: "Start over" in the app forgets settings and sign-in, uninstalling removes everything on the phone, and the user can delete their own `mygeeky-beacon` repository on GitHub
+**Data safety** (checked against the code and `website/privacy.html` on 2026-10-21; you confirm before entering it):
+- Does the app collect or share user data? **Yes** (it sends data to GitHub, OpenAlex and others to work, which Play
+  counts as collection even without a myGeeKy server). Nothing is **shared** in Play's sense: every transfer is one
+  the user asks for, to a service they chose, and nothing goes to a myGeeKy server (there is none).
+- Is all data encrypted in transit? **Yes** (HTTPS only; plain HTTP is refused by the app and by Android).
+- Can users ask for their data to be deleted? **Yes**. Deletion URL: `https://mygeeky.org/privacy.html` (section
+  *Questions*; or a dedicated page later). In the app: *Start over* forgets settings and sign-in; uninstalling removes
+  everything on the phone; the user can delete their own `mygeeky-beacon` and data repositories on GitHub and revoke
+  myGeeKy's GitHub access in their GitHub settings.
 - Data types:
 
-| Type | Collected | Shared | Required? | Purpose |
-|---|---|---|---|---|
-| Personal info → User IDs (GitHub username, ORCID iD) | Yes | No | Optional (a guest needs neither) | App functionality, Personalization |
-| Personal info → Name (only with *Find my papers*: the name and institution typed, sent to OpenAlex as a search) | Yes | No | Optional | App functionality |
-| App activity → Other user-generated content (Signals, calls for contributors) | Yes | No | Optional | App functionality |
-| App activity → App interactions | **No**: what you open is kept on the phone only | | | |
-| Location, contacts, photos, health, financial | No | | | |
-| Files and docs (*Drop a CV, thesis or abstract*) | **No**: the file is read on the phone and not kept or sent; only the words the user keeps are saved, on the phone | | | |
+| Type | Collected | Shared | Required? | Purpose | Where it goes |
+|---|---|---|---|---|---|
+| Personal info → User IDs (GitHub username, ORCID iD) | Yes | No | Optional (a guest needs neither) | App functionality, Personalization | GitHub, ORCID, OpenAlex (as searches) |
+| Personal info → Name (*Find my papers*: the name and institution typed) | Yes | No | Optional | App functionality | OpenAlex, as a search |
+| Personal info → Email address (only to get a free OpenAlex key) | Yes | No | Optional | App functionality | OpenAlex only; not kept by the app |
+| App activity → App interactions (the interest terms of what you open, and which pages you use) | Yes, **only with a data repo connected** | No | Optional | Personalization | The user's own **private** GitHub repository |
+| App activity → Other user-generated content (Signals status, interest tags, calls for contributors) | Yes | No | Optional | App functionality | The user's own **public** `mygeeky-beacon` repository |
+| Messages (Signals) | **No**: end-to-end encrypted, only the recipient can read them (exempt) | | | | |
+| Files and docs (*Drop a CV, thesis or abstract*) | **No**: read on the phone, not kept or sent; only the words the user keeps are saved | | | | |
+| Location, contacts, photos/videos, audio, health, financial, web history | No | | | | |
 
-Camera: used only to scan QR codes (from the desktop app, or a pack someone shows you); no picture is saved or sent. That's a permission, not data collection.
+Camera: asked only when the user taps *Scan from your computer* or *Receive a pack*, used only to read the QR code; no
+picture or video is saved or sent, the microphone is never used. That's a permission, not data collection.
+
+**User-generated content** (Policy → App content → if asked): users must agree to the Signals terms
+(`https://mygeeky.org/terms.html`) before turning Signals on or posting a call; they can block anyone and report a
+beacon (GitHub's abuse form, or support@mygeeky.org); a beacon that breaks the terms is hidden from every copy of the
+app through the curated lists' `signals_hidden` (within hours).
+
+**App access** (Policy → App content → App access): *All or some functionality is restricted*? **No login needed.**
+Note for the reviewer:
+
+> myGeeKy works without any account. On first launch choose **Continue as guest** (or type a few research keywords,
+> e.g. "genomics, machine learning"): Home, World, Grow and Chances then work fully. Signing in with GitHub is optional
+> and only adds features that read the user's own GitHub account (Live, People, My GitHub, Signals). Signals also
+> needs a second, single-repository GitHub token the user creates themselves, so reviewers are not expected to test it;
+> its terms are at https://mygeeky.org/terms.html.
 
 **Government app / Financial features / Health**: No.
 

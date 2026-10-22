@@ -285,6 +285,9 @@ def clean_item(kind: str, raw: Any) -> dict[str, Any] | None:
     return item
 
 
+_LOGIN = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})")
+
+
 def clean(data: Any) -> dict[str, Any]:
     out: dict[str, Any] = {"version": _text((data or {}).get("version") if isinstance(data, dict) else "", 40)}
     for kind in LISTS:
@@ -297,6 +300,9 @@ def clean(data: Any) -> dict[str, Any]:
                 seen.add(it["id"])
                 items.append(it)
         out[kind] = items
+    hidden = data.get("signals_hidden") if isinstance(data, dict) else None   # beacons hidden from everyone (terms)
+    out["signals_hidden"] = [u for u in (hidden if isinstance(hidden, list) else [])[:500]
+                             if isinstance(u, str) and _LOGIN.fullmatch(u)]
     from .highlight_shape import clean_all as clean_highlights   # the maker's stories (highlight_shape.py)
     out["highlights"] = clean_highlights(data.get("highlights") if isinstance(data, dict) else None)
     from .seasons import clean as clean_seasons   # scholarships that come back every year (seasons.py)

@@ -1866,6 +1866,14 @@ def beacon_init() -> None:
                 click.secho(f"  ✗ {msg}", fg="red")
             token = None
             continue
+        if not bc.terms_accepted(cfg):
+            click.echo("\nThe Signals terms (" + bc.TERMS_URL + "):")
+            for point in bc.TERMS_POINTS:
+                click.echo(f"  • {point}")
+            if not click.confirm("Do you agree?", default=False):
+                click.echo("Signals stays off.")
+                return
+            bc.accept_terms(cfg)
         try:
             bc.go_live(cfg, bc.BeaconWriter(token, user))
         except bc.BeaconError as exc:

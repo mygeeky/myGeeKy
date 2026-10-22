@@ -9,8 +9,9 @@ import { quickProfile, timeAgo, useApp } from '../lib/app-state';
 import {
   blockPerson, type CallForMe, closeCall, createCall, GESTURES, hideCall, isSetUp, joinCall, leaveCall, loadBeacons,
   loadMyCalls, type MyCall, type Parsed, type Person, reportUrl, send, setUp, type SignalsData, signalsData, turnOff,
-  readQuiet, setQuiet as setQuietOn, unblockPerson,
+  readQuiet, setQuiet as setQuietOn, unblockPerson, termsAccepted, acceptTerms,
 } from '../lib/signals';
+import { TERMS_POINTS, TERMS_URL } from '../lib/signals-core';
 import { C } from '../lib/theme';
 import { type Dot, FieldMap } from './field-map';
 import { type CallInput, InviteSheet, SendSheet } from './signals-sheets';
@@ -121,6 +122,7 @@ export function SignalsView() {
   const close = (c: MyCall, filled: boolean) => run(`mine:${c.id}`, () => closeCall(me, c.id, filled),
     filled ? 'Marked as filled. It stops showing to others.' : 'Closed. It left your beacon.');
   const publishCall = async (input: CallInput) => {
+    if (!(await termsAccepted()) && !(await askTerms())) throw new Error('Agree to the Signals terms to post a call.');
     await createCall(me, input);
     load();
   };
@@ -347,14 +349,26 @@ function Btn({ label, onPress, disabled, accent }: { label: string; onPress: () 
   );
 }
 
+/** The Signals terms, once (again when they change), before posting a call (gui/qt_panel.py _signals_terms_ok). */
+function askTerms(): Promise<boolean> {
+  return new Promise((done) => Alert.alert('Signals terms', `${TERMS_POINTS.map((p) => `• ${p}`).join('\n')}`, [
+    { text: 'Read the terms', onPress: () => { open(TERMS_URL); done(false); } },
+    { text: 'Cancel', style: 'cancel', onPress: () => done(false) },
+    { text: 'I agree', onPress: () => { acceptTerms().then(() => done(true), () => done(false)); } },
+  ], { cancelable: true, onDismiss: () => done(false) }));
+}
+
 function SetupCard({ me, onDone }: { me: string; onDone: () => void }) {
   const [value, setValue] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  useEffect(() => { termsAccepted().then(setAgreed).catch(() => undefined); }, []);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const go = async () => {
     setBusy(true);
     setNote('Checking the token and adding this phone to your beacon…');
     try {
+      await acceptTerms();                       // the box below was ticked: that is agreeing
       await setUp(me, value);
       onDone();
     } catch (e) {
@@ -382,7 +396,15 @@ function SetupCard({ me, onDone }: { me: string; onDone: () => void }) {
       <TokenGuide which="signals" />
       <TextInput style={st.input} value={value} onChangeText={setValue} autoCapitalize="none" autoCorrect={false}
                  secureTextEntry placeholder="github_pat_…" placeholderTextColor={C.muted} />
-      <Pressable onPress={go} disabled={busy || !value.trim()} style={[st.button, (busy || !value.trim()) && { opacity: 0.5 }]}>
+      <View style={{ marginTop: 10, gap: 4 }}>
+        {TERMS_POINTS.map((p) => <Text key={p} style={st.small}>• {p}</Text>)}
+        <Pressable onPress={() => open(TERMS_URL)}><Text style={[st.small, { color: C.cyan }]}>Read the Signals terms ↗</Text></Pressable>
+      </View>
+      <Pressable onPress={() => setAgreed((a) => !a)} style={st.agree} accessibilityRole="checkbox" accessibilityState={{ checked: agreed }}>
+        <Ionicons name={agreed ? 'checkbox' : 'square-outline'} size={20} color={agreed ? C.violet : C.muted} />
+        <Text style={[st.small, { flex: 1, color: C.text }]}>I agree to the Signals terms</Text>
+      </Pressable>
+      <Pressable onPress={go} disabled={busy || !value.trim() || !agreed} style={[st.button, (busy || !value.trim() || !agreed) && { opacity: 0.5 }]}>
         <Text style={st.buttonText}>{busy ? 'Turning on…' : 'Turn on Signals here'}</Text>
       </Pressable>
       {note ? <Text style={st.note}>{note}</Text> : null}
@@ -391,6 +413,7 @@ function SetupCard({ me, onDone }: { me: string; onDone: () => void }) {
 }
 
 const st = StyleSheet.create({
+  agree: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   quietRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14, padding: 12, borderRadius: 14, backgroundColor: C.card },
   quietTitle: { color: C.text, fontSize: 14, fontWeight: '700' },
   quietSub: { color: C.muted, fontSize: 12, marginTop: 2, lineHeight: 16 },

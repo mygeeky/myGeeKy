@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>myGeeKy Signals terms</title>
+<meta name="description" content="The rules for Signals and calls for contributors in myGeeKy: what you agree to, what is public, and how blocking, reporting and hiding work.">
+<link rel="icon" type="image/png" href="img/icon_64.png">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root {
+    --bg: #141416; --card: rgba(255, 255, 255, 0.045); --line: rgba(255, 255, 255, 0.10);
+    --text: #f2f2f7; --muted: rgba(242, 242, 247, 0.70); --pink: #ff6fd8; --violet: #7a5cff; --cyan: #7fd8ff;
+    --green: #34d399; --grad: linear-gradient(100deg, var(--pink), var(--violet) 55%, var(--cyan));
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) { --bg: #fafaff; --card: rgba(15, 15, 40, 0.035); --line: rgba(15, 15, 40, 0.12);
+      --text: #17172a; --muted: rgba(23, 23, 42, 0.72); --green: #047857; --cyan: #0e7490; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 Inter, system-ui, sans-serif; }
+  a { color: var(--cyan); } a:hover { color: var(--pink); }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 0 16px; }
+  header { border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; gap: 10px; height: 60px; }
+  header a.brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 800; }
+  header img { width: 30px; height: 30px; }
+  header .back { margin-left: auto; font-size: 14px; }
+  h1 { font-size: clamp(30px, 6vw, 44px); line-height: 1.15; margin: 44px 0 6px; letter-spacing: -0.02em; }
+  h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .meta { color: var(--muted); font-size: 14px; margin: 0 0 26px; }
+  h2 { font-size: 21px; margin: 38px 0 10px; letter-spacing: -0.01em; }
+  p, li { color: var(--text); }
+  .muted { color: var(--muted); }
+  ul { padding-left: 22px; } li { margin: 5px 0; }
+  .tldr { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; }
+  .tldr li::marker { color: var(--green); }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 10px 0; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .table { overflow-x: auto; }
+  code { font-size: 13.5px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; word-break: break-word; }
+  footer { border-top: 1px solid var(--line); margin-top: 56px; padding: 22px 0 40px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="./"><img src="img/icon_64.png" alt="">myGeeKy</a>
+    <a class="back" href="./">← Back to mygeeky.org</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Signals <span>terms</span></h1>
+  <p class="meta">Effective 21 October 2026 · apply to Signals and calls for contributors in the myGeeKy desktop panel, command line and phone app</p>
+
+  <div class="tldr">
+    <strong>In short</strong>
+    <ul>
+      <li>Your beacon is <strong>public</strong>: your status, your interest tags and the calls you post can be read by anyone.</li>
+      <li><strong>Be kind and honest</strong>: no harassment, hate, threats, spam, scams, sexual content or anything illegal.</li>
+      <li><strong>Never post someone else's private information.</strong></li>
+      <li>You can <strong>block</strong> anyone, and <strong>report</strong> a beacon to GitHub or to <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>.</li>
+      <li>A beacon that breaks these rules is <strong>hidden from everyone's myGeeKy</strong>.</li>
+    </ul>
+  </div>
+
+  <h2>What Signals is</h2>
+  <p>Signals lets myGeeKy users send each other small private signals (🙏 thanks, 📚 learned from your work, ⭐ used your
+    work, 👀 following your work, 🤝 let's collaborate) and post <em>calls for contributors</em> for their own public
+    repositories. It is optional. Everything lives in each person's own public GitHub repository, called a
+    <em>beacon</em> (<code>mygeeky-beacon</code>); there is no myGeeKy server. Signals themselves are encrypted so that
+    only the person they're sent to can read them. How this works, and what it stores, is in the
+    <a href="privacy.html">privacy policy</a>.</p>
+
+  <h2>When you agree</h2>
+  <p>myGeeKy asks you to agree to these terms before you turn Signals on (on your computer or your phone) and before you
+    post a call for contributors. If the terms change, the date above changes and myGeeKy asks again. You can stop at any
+    time: turn Signals off, or leave it and withdraw your beacon (⚙ on the computer).</p>
+
+  <h2>What you may not post</h2>
+  <p>This covers your status, your interest tags, the notes in your calls, the names of the repositories you point to,
+    and anything else your beacon carries.</p>
+  <ul>
+    <li>Harassment, bullying, threats, or hate against anyone, including for their race, ethnicity, religion,
+      nationality, disability, sex, gender identity, sexual orientation or age.</li>
+    <li>Sexual content, or anything that sexualises minors.</li>
+    <li>Spam, scams, phishing, malware, or calls that aren't really for contributors (advertising, recruiting for
+      something else).</li>
+    <li>Someone else's private information (an address, a phone number, an ID, private messages), or pretending to be
+      someone else.</li>
+    <li>Anything illegal, or that breaks <a href="https://docs.github.com/en/site-policy/acceptable-use-policies/github-acceptable-use-policies">GitHub's Acceptable Use Policies</a>
+      (your beacon is a GitHub repository, so GitHub's rules apply to it too).</li>
+  </ul>
+
+  <h2>Be a good neighbour</h2>
+  <ul>
+    <li>Signals are small and expect no reply. Don't send many to the same person; myGeeKy limits how many you can send
+      a day and a week.</li>
+    <li>A call for contributors is for one of your own public repositories, with an honest note about what help you
+      need, the level and the time it takes. Close it when it's filled.</li>
+  </ul>
+
+  <h2>Blocking and reporting</h2>
+  <ul>
+    <li><strong>Block</strong> anyone from their card: their signals, calls and dot stop showing to you. The list stays on
+      your device; they are not told.</li>
+    <li><strong>Report</strong> opens GitHub's own abuse form for that person, because what they post lives in their GitHub
+      beacon. You can also write to <a href="mailto:support@mygeeky.org">support@mygeeky.org</a> with their GitHub login
+      and what happened.</li>
+  </ul>
+
+  <h2>What happens when someone breaks these terms</h2>
+  <p>Reports to <a href="mailto:support@mygeeky.org">support@mygeeky.org</a> are read by myGeeKy's maker. A beacon that
+    breaks these terms is added to the <strong>hidden list</strong> in myGeeKy's public curated lists: every copy of
+    myGeeKy then stops showing that person's beacon, signals and calls, usually within a day. We may also report it to
+    GitHub. myGeeKy can't delete anyone's repository: only its owner and GitHub can.</p>
+
+  <h2>Questions</h2>
+  <p>Email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a> or ask in the
+    <a href="https://github.com/mygeeky/myGeeKy/issues">myGeeKy issues</a>.</p>
+</main>
+
+<footer>
+  <div class="wrap">© myGeeKy · MIT License · <a href="./">mygeeky.org</a> · <a href="privacy.html">Privacy policy</a> · <a href="mailto:support@mygeeky.org">support@mygeeky.org</a> · version {{VERSION}}</div>
+</footer>
+</body>
+</html>

@@ -280,6 +280,10 @@ def beacon_init(req: dict[str, Any]) -> dict[str, Any]:
         if not verdict["ok"]:
             return {"ok": False, "error": "\n".join(verdict["errors"])}
         warnings = [f"Token 2 ✓ {verdict['summary']}"] + verdict["warnings"]
+    if req.get("agree"):                            # "Join Signals" ticked: that is agreeing to the terms
+        beacon.accept_terms(cfg)
+    if not beacon.terms_accepted(cfg):
+        return {"ok": False, "error": beacon.TERMS_NEEDED}
     notes = beacon.ensure_repo(cfg, GitHubClient(auth.get_token(user), rate_limit_sleep=0), create=True)
     beacon.go_live(cfg, beacon.BeaconWriter(token, user))   # the real test: publish with it
     if new_token:  # stored only once it has proven it can write

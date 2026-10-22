@@ -206,6 +206,7 @@ class MyGeekyConfig:
     beacon_status: str = ""                 # one of beacon.STATUSES, e.g. "open-to-collab"
     beacon_share_interests: bool = True     # publish your topics/keywords/languages as interest tags
     beacon_blocked: list[str] = field(default_factory=list)  # never show signals from these
+    signals_terms: str = ""                                  # the Signals terms you agreed to (beacon.TERMS_VERSION)
     beacon_daily_limit: int = 10            # signals you can send per day
     beacon_repeat_days: int = 30            # the same signal to the same person at most once in this many days
     beacon_weekly_new_people: int = 5       # people you can start signalling per week
