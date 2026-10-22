@@ -8,8 +8,8 @@ timings come from make_falling.py itself (when each brick lands, when GeekOc swi
 screen appears), so the sound follows the picture, and re-running both keeps them in step.
 
 The opening has no music, only quiet sounds: the kid's footsteps, GeekOc swimming, the bricks landing.
-The music, a simple, playful marimba at 96 bpm, comes in at 0:32 as GeekOc swims off happy, starts to
-fade at 2:30 and is silent by 2:34; after that, nothing.
+The music, a simple, playful marimba at 96 bpm, comes in at 0:32 as GeekOc swims off happy and fades over
+the last few seconds of the video, ending just before the picture does.
 """
 
 from __future__ import annotations
@@ -28,11 +28,22 @@ SR = 44100
 RNG = np.random.default_rng(7)
 
 MUSIC_FROM = 32.0          # the music comes in (video time, seconds)...
-FADE_FROM, SILENT_AT = 150.0, 154.0   # ...starts to fade at 2:30, and everything is silent from 2:34
+FADE_LEN = 4.0             # ...and everything fades out over this long, ending 0.3 s before the picture
 
-# The kid's footsteps, where they fall in his clip (found from its own audio: peaks of the 60-1500 Hz
-# band, every ~0.45 s). He stops after the last one.
-STEPS = [0.41, 0.87, 1.32, 1.77, 2.20, 2.66, 3.13, 3.58, 4.08, 4.58]
+# The kid's footsteps: (video time, loudness, where across the screen). Each one is on a frame where one of
+# his feet LANDS in the picture, not on his clip's own audio (an earlier version used that: ten steps every
+# 0.45 s from 0.4 s to 4.6 s, while he only takes six strides, between 1.2 s and 3.6 s). Found by measuring
+# his shoes in every frame of launch/video/intro/walk-frames/ (30 fps): the dark blobs (luma < 60) in the
+# strip of floor he walks on (y 850-1010), each with its centre across and its lowest pixel. While he walks,
+# the planted shoe stays put and the other swings forward; a landing is the frame where the swinging shoe
+# stops moving forward and its lowest pixel is back on the floor. That gives frames 41, 55, 70, 84 and 98
+# (shoe at x 1194, 1344, 1547, 1726, 1788), plus a small first step as he sets off (frame 36, both shoes
+# side by side after he lifts the back one) and his last shuffle as he turns to face us (frame 108). The
+# first and last are lighter. (The clip repeats each picture for two frames, so a landing is good to one
+# frame, 33 ms.)
+STEPS = [(36 / 30, 0.45, 1060), (41 / 30, 1.0, 1194), (55 / 30, 1.0, 1344), (70 / 30, 1.0, 1547),
+         (84 / 30, 1.0, 1726), (98 / 30, 1.0, 1788), (108 / 30, 0.4, 1720)]
+STEP_GAIN = 0.11           # soft, under GeekOc and the bricks rather than over them (it was 0.30)
 
 
 # --------------------------------------------------------------------------- building blocks
@@ -169,7 +180,7 @@ def main() -> None:
     tunes = [[0, 2, 4, 5, 4, 2, None, 3, 4, None, 2, 0, 1, 2, None, None],
              [4, 5, 6, 5, 4, 2, None, 0, 2, None, 4, 2, 1, 0, None, None]]
     t, k = MUSIC_FROM, 0
-    while t < SILENT_AT:
+    while t < total:
         c = [hz(n) for n in chords[k % 4]]
         arp = [c[1], c[2], c[3], c[2] * 2, c[3], c[2], c[1] * 2, c[3]]
         for j, f in enumerate(arp):
@@ -184,9 +195,9 @@ def main() -> None:
         t += 8 * eighth
         k += 1
 
-    # ---- the kid's footsteps, panned as he walks left to right
-    for i, s in enumerate(STEPS):
-        sfx.add(step(90 + 12 * (i % 2)), s, 0.30 if i < len(STEPS) - 1 else 0.18, pan=-0.2 + 0.07 * i)
+    # ---- the kid's footsteps, each on a landing, panned to where his foot is
+    for i, (at, loud, x) in enumerate(STEPS):
+        sfx.add(step(90 + 12 * (i % 2)), at, STEP_GAIN * loud, pan=(x - v["W"] / 2) / (v["W"] / 2) * 0.7)
 
     # ---- GeekOc swimming: a soft swirl of water on every wing beat, while he is stroking
     beat = 0.85
@@ -227,11 +238,12 @@ def main() -> None:
     sfx.add(tok(300), land + 0.34, 0.25, pan=-0.6)
     sfx.add(tok(320), land + 0.56, 0.1, pan=-0.6)
 
-    # ---- every screen arriving: a swish
-    for i in range(len(v["TOUR"])):
-        sfx.add(swish(), L + v["TOUR_AT"] + i * v["TOUR_EACH"], 0.30)
-    for i in range(len(v["DESK"])):
-        sfx.add(swish(), L + v["DESK_AT"] + i * v["DESK_EACH"], 0.30)
+    # ---- every screen arriving: a swish; each of its details, a softer, shorter one from the left, where
+    # the screen has moved to
+    for at in v["TOUR_STARTS"] + v["DESK_STARTS"]:
+        sfx.add(swish(), L + at, 0.30)
+    for at in v["EXAMPLE_TIMES"]:
+        sfx.add(swish(0.3), L + at, 0.14, pan=-0.2)
     for i in range(len(v["SETUP"])):
         sfx.add(swish(), L + v["INSTALL_AT"] + i * v["INSTALL_EACH"], 0.30)
 
@@ -255,14 +267,15 @@ def main() -> None:
         sfx.add(tok(900 + 120 * i), L + v["PLATFORMS_AT"] + i * 0.3, 0.12, pan=-0.4 + 0.4 * i)
 
     # ---- mix: music in a soft room, effects drier. The music eases in over a second and a half at 0:32;
-    # before that the effects play alone, kept low. Everything fades from 2:30 and is silent from 2:34.
+    # before that the effects play alone, kept low. Everything fades over the last FADE_LEN seconds.
+    silent_at = total - 0.3
     n = int(total * SR)
     tt = np.arange(len(music.buf)) / SR
     music.buf *= np.clip((tt - MUSIC_FROM) / 1.5, 0, 1)[:, None]
     sfx.buf[: int(MUSIC_FROM * SR)] *= 0.7
     mix = (reverb(music.buf, 2.6, 0.30) * 0.9 + reverb(sfx.buf, 1.2, 0.12))[:n]
     tt = np.arange(n) / SR
-    fade = np.clip(tt / 0.4, 0, 1) * np.clip((SILENT_AT - tt) / (SILENT_AT - FADE_FROM), 0, 1) ** 1.5
+    fade = np.clip(tt / 0.4, 0, 1) * np.clip((silent_at - tt) / FADE_LEN, 0, 1) ** 1.5
     mix *= fade[:, None]
     mix *= 0.89 / np.abs(mix).max()                     # peak at about -1 dBFS
     out = HERE / "falling-soundtrack.wav"

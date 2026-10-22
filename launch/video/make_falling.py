@@ -3,13 +3,17 @@ floats there while icons rain into the middle and stack up like bricks into a mo
 land, and the lines are said one by one; he wonders at it, then turns sad. Then the kid and the mountain
 fade, GeekOc swims across to the right, cheering up, the myGeeKy icon drops out of the sky on the left,
 and the phone app's screens follow one at a time in the middle, each under its name (in dark gold) and
-what it offers; then "On your desktop" and the desktop's main screens;
-then how to install it there (the installer's pages, then one pip command in a terminal), GeekOc swims away, the five promises one at a time, each with its icon, and last the myGeeKy icon over "Your
-geeky friend who helps you grow, quietly." and the three places it runs: Google Play, Windows, macOS.
+what it offers. Each screen then shrinks aside while one to three of its details come one after another
+beside it, big and captioned, and grows back before the next. Then "On your desktop" and the desktop's main
+screens, the same way; then how to install it there (the installer's pages, then one pip command in a
+terminal), GeekOc swims away, the five promises one at a time, each with its icon, and last the myGeeKy icon
+over "Your geeky friend who helps you grow, quietly." and the three places it runs: Google Play, Windows,
+macOS. About three minutes in all.
 
-The phone screens are the Play store's (google-play/screenshots/). The desktop screens are retaken taller than
-docs/screenshots for this (`python docs/make_screenshots.py --tall`, into launch/video/intro/shots/, git-ignored)
-so each one shows its content, not just the panel's header.
+The phone screens are taken for this video on the emulator with the app's dock folded, into
+launch/video/intro/phone/ (git-ignored; how, in the comment above TOUR). The desktop screens are retaken
+taller than docs/screenshots (`python docs/make_screenshots.py --tall`, into launch/video/intro/shots/, also
+git-ignored) so each one shows its content, not just the panel's header.
 
     python launch/video/make_falling.py            ->  launch/video/falling.mp4
     python launch/video/make_falling.py --preview  ->  a few still frames only (fast)
@@ -46,8 +50,8 @@ CLEAR = 1.2                    # ...over this long
 SWIM_OUT_AT, SWIM_OUT = OUTRO + 0.6, 4.5   # GeekOc swims across to the right
 HAPPY_FROM = OUTRO + 0.3       # ...cheering up as he goes
 LOGO_AT, LOGO_FALL = OUTRO + 2.0, 1.1      # the myGeeKy icon drops out of the sky on the left
-TOUR_AT, TOUR_EACH = OUTRO + 5.0, 4.2      # then the screens, one at a time
-# (TOUR_END and everything after it is worked out from the TOUR list, further down)
+TOUR_AT = OUTRO + 5.0         # then the screens, one at a time
+# (TOUR_END and everything after it is worked out from the TOUR and DESK lists, further down)
 FALL_FROM, FALL_TO = SWIM_IN + 0.8, SWIM_IN + 15.0  # when pieces start and stop leaving the sky
 ICON_PX = 220                  # the cleaned icon's canvas, before it is scaled per piece
 
@@ -609,38 +613,105 @@ def layout_phrases() -> list[dict]:
 
 
 # --------------------------------------------------------------------------- the end: icon and screens
-# One screen at a time in the middle, under its name in dark gold and what it offers. The phone first (the same
-# seven screens as the Play store listing, google-play/screenshots/), then "On your desktop" and the desktop's main
-# screens (the tall retakes, see the module docstring). Pages full of other
-# people's names (People) or other companies' brands (the AI race) are left out.
-PHONE_SHOTS = ROOT / "google-play" / "screenshots"
+# One screen at a time, under its name in dark gold and what it offers. The phone first, then "On your desktop"
+# and the desktop's main screens. Each screen is a PANEL: it comes in full size in the middle, long enough to
+# read its line; then it shrinks to about a third of its size, off to the left, and its details come one after
+# another beside it, big, each with a short caption under it -- a zoomed crop of the screen itself, or of a
+# second screenshot of the same page (scrolled, or with a question answered). After the last detail the screen
+# grows back to full size, and the next panel takes its place.
+#
+# The phone's screens are taken for this, not the Play store's: on those the app's dock covers the lower third of
+# the page. Here every page is shot with the dock fully folded (only the small ^ handle showing), so the page
+# fills the phone; Home is shown once with the orbit open, as the first screen, because the orbit is how you get
+# around. How they were taken: the myGeeKy release app (1.17.1) on the Android emulator (Pixel 2 AVD, 1080x2400)
+# with test data, the status bar in demo mode (12:00, full battery, no notifications); each page opened from the
+# dock and left alone a few seconds until the dock folds by itself, then `adb exec-out screencap -p`. They live in
+# launch/video/intro/phone/ (git-ignored). Retake them the same way after a big change to the app.
+#
+# Pages full of other people's names and faces (People, Live) or other companies' brands (the AI race) are left
+# out, and so is the GitHub badges row on Badges (GitHub's artwork): the crop starts below it.
+PHONE_SHOTS = OUT / "intro" / "phone"           # the phone's screens, dock folded (see above)
 SHOTS = OUT / "intro" / "shots"                 # the desktop's tall retakes
 SETUP_SHOTS = ROOT / "docs" / "screenshots"     # the installer's pages already show the whole window
 APP_ICON = ROOT / "src" / "mygeeky" / "gui" / "assets" / "icon_256.png"
 GOLD = (156, 112, 24)                           # dark gold: readable on the pale wall
+# (screen, name, what it offers, [(file, crop box in the file's pixels, caption), ...])
 TOUR = [
-    ("1-home.png", "On your phone", "your world in orbit, learning what you enjoy"),
-    ("2-protocols.png", "Protocols", "a step-by-step road map for any skill"),
-    ("3-quiz.png", "Quiz", "every answer quotes the source that proves it"),
-    ("4-jobs.png", "Jobs", "verified positions that match your work"),
-    ("5-skills.png", "Rising Skills", "what to learn next, before everyone else"),
-    ("6-papers.png", "Papers", "rising in your field, gaining citations fastest"),
-    ("7-month.png", "My month", "your month, your rank, your card to share"),
+    ("home-orbit.png", "On your phone", "your world in orbit, learning what you enjoy", [
+        ("home.png", (40, 405, 1040, 1165), "Each card says why it's there"),
+    ]),
+    ("protocols.png", "Protocols", "a step-by-step road map for any skill", [
+        ("protocols.png", (40, 850, 1040, 1420), "Road maps reviewed for your field"),
+        ("protocols-step.png", (40, 590, 1040, 1580), "Each step: what to read, watch and try"),
+    ]),
+    ("quiz.png", "Quiz", "every answer quotes the source that proves it", [
+        ("quiz-question.png", (50, 600, 1030, 1500), "Ten questions from its own sources"),
+        ("quiz.png", (50, 1500, 1030, 2225), "Each answer shows the line that proves it"),
+    ]),
+    ("jobs.png", "Jobs", "verified positions that match your work", [
+        ("jobs.png", (50, 660, 1030, 1460), "Checked by hand, matched to your work"),
+        ("seasons.png", (50, 905, 1030, 1830), "Yearly calls, before they open"),
+    ]),
+    ("skills.png", "Rising Skills", "what to learn next, before everyone else", [
+        ("skills.png", (40, 520, 1040, 1450), "Each rocket launches from a skill you have"),
+        ("skills-more.png", (60, 590, 1020, 1150), "How far each one is from you"),
+        ("skills.png", (60, 1545, 1020, 2040), "Which of your skills leads where"),
+    ]),
+    ("papers.png", "Papers", "rising in your field, gaining citations fastest", [
+        ("papers-open.png", (40, 450, 1040, 1310), "Who wrote it, what it found, and its code"),
+    ]),
+    ("month.png", "My month", "your month, your rank, your card to share", [
+        ("month.png", (30, 390, 1050, 850), "A rank that climbs with what you do"),
+        ("month.png", (40, 960, 1040, 2210), "Your month as a card to share"),
+        ("badges.png", (40, 720, 1040, 1770), "Badges for the habits that help you grow"),
+    ]),
 ]
-TOUR_END = TOUR_AT + len(TOUR) * TOUR_EACH
 
-# Then the desktop: the panel beside your work, and what it adds.
-DESK_HERO_AT = TOUR_END + 0.4                   # where the desktop part starts (a swish in the soundtrack)
+# Then the desktop: the panel beside your work, and what it adds. (Live and Pulse are left out: they are
+# mostly other people's faces and names.)
 DESK = [
-    ("grow-protocols.png", "On your desktop", "a panel beside your work, with even more"),
-    ("market.png", "Pulse", "what's rising in your field this week"),
-    ("research.png", "Research", "the papers behind the code, and who wrote them"),
-    ("live.png", "Live", "your people's activity, as it happens"),
-    ("signals.png", "Signals", "a private thank-you, no reply needed"),
-    ("model.png", "Your Model", "see what myGeeKy knows about you"),
+    ("grow-protocols.png", "On your desktop", "a panel beside your work, with even more", [
+        ("grow-protocols.png", (20, 560, 690, 1190), "The same road maps, beside your code"),
+    ]),
+    ("grow-learn.png", "Learn", "courses, books and tutorials for your skills", [
+        ("grow-learn.png", (20, 595, 690, 955), "What each one teaches, and why it's yours"),
+    ]),
+    ("research.png", "Research", "the papers behind the code, and who wrote them", [
+        ("research.png", (30, 480, 690, 1240), "Rising papers, with the code that uses them"),
+    ]),
+    ("signals.png", "Signals", "a private thank-you, no reply needed", [
+        ("signals.png", (30, 240, 690, 1010), "Your field, and who would welcome a word"),
+    ]),
+    ("model.png", "Your Model", "see what myGeeKy knows about you", [
+        ("model.png", (20, 540, 690, 1320), "Your field, and what you're into lately"),
+    ]),
 ]
-DESK_AT, DESK_EACH = DESK_HERO_AT, 3.8
-DESK_END = DESK_AT + len(DESK) * DESK_EACH
+
+# A panel's timing: the screen alone at full size, then each detail, then the screen grown back.
+P_LEAD, P_MOVE, EX_EACH, P_BACK = 2.0, 0.6, 2.8, 0.9
+
+
+def panel_len(panel: tuple) -> float:
+    return P_LEAD + P_MOVE + len(panel[3]) * EX_EACH + P_BACK
+
+
+def _starts(panels: list, at: float) -> list[float]:
+    out = []
+    for p in panels:
+        out.append(at)
+        at += panel_len(p)
+    return out
+
+
+TOUR_STARTS = _starts(TOUR, TOUR_AT)
+TOUR_END = TOUR_STARTS[-1] + panel_len(TOUR[-1])
+DESK_HERO_AT = TOUR_END + 0.4                   # where the desktop part starts (a swish in the soundtrack)
+DESK_AT = DESK_HERO_AT
+DESK_STARTS = _starts(DESK, DESK_AT)
+DESK_END = DESK_STARTS[-1] + panel_len(DESK[-1])
+# every detail's start, for the soundtrack
+EXAMPLE_TIMES = [s + P_LEAD + P_MOVE + j * EX_EACH for panels, starts in ((TOUR, TOUR_STARTS), (DESK, DESK_STARTS))
+                 for p, s in zip(panels, starts) for j in range(len(p[3]))]
 
 # How to install: the installer's pages, then the one command for any OS.
 SETUP = [
@@ -649,9 +720,9 @@ SETUP = [
     ("setup-signals.png", "Signals", "a second token that can write to one repo only"),
     ("setup-finish.png", "Done", "in your Start menu, and running at startup"),
 ]
-INSTALL_AT, INSTALL_EACH = DESK_END + 0.4, 4.2
+INSTALL_AT, INSTALL_EACH = DESK_END + 0.4, 3.4
 TERM_AT = INSTALL_AT + len(SETUP) * INSTALL_EACH
-TERM_DUR = 6.5
+TERM_DUR = 5.6
 TERM_LINE = ("macOS, Linux or Windows", "one command")
 VERSION = next(line.split('"')[1] for line in (ROOT / "pyproject.toml").read_text(encoding="utf-8").splitlines()
                if line.startswith("version = "))
@@ -672,13 +743,18 @@ PROMISES = [
     ("package-check.svg", "Never takes your data.", "It stays on your computer."),
     ("mail-check.svg", "Never sends anything behind your back.", "You read every report before it goes."),
 ]
-PROMISE_AT, PROMISE_EACH = LEAVE_AT + 1.6, 4.6
+PROMISE_AT, PROMISE_EACH = LEAVE_AT + 1.6, 3.8
 FINALE_AT = PROMISE_AT + len(PROMISES) * PROMISE_EACH + 0.4
 FINALE_TEXT = "Your geeky friend who helps you *grow, quietly.*"
 PLATFORMS_AT = FINALE_AT + 3.4                   # Google Play, Windows, macOS appear under it
 DUR = FINALE_AT + 7.5                            # the whole scene
 
 SHOT_H, SHOT_X, SHOT_TOP = 800, W // 2, 245      # a screen's height, centre and top
+SMALL = 0.3                                      # ...its size while its details show...
+PHONE_SMALL_AT = (330, 895)                      # ...and where it goes: under the icon and its name
+DESK_SMALL_AT = (330, 600)                       # (no icon by then: the desktop's goes higher)
+EX_X, EX_TOP, EX_W, EX_H = 945, 250, 760, 660    # a detail: centre across, top, and the box it fits in
+EX_MAX = 1.25                                    # ...never blown up more than this
 SETUP_H, SETUP_X, SETUP_TOP = 760, 900, 270      # an installer page: a little left, clear of GeekOc
 LINE_SIZE, LINE_Y = 56, 150                      # a "Name: what it offers" line's size and top
 LOGO_SIZE, LOGO_X, LOGO_Y = 250, 330, 470        # the icon's size and where it comes to rest (centre)
@@ -687,6 +763,7 @@ L_TEXT = _font("PlayfairDisplay.ttf", LINE_SIZE, 600)
 NAME = _font("PlayfairDisplay.ttf", 84, 800)
 P_TITLE = _font("PlayfairDisplay.ttf", 80, 750)
 P_SUB = _font("PlayfairDisplay-Italic.ttf", 50, 500)
+EX_CAP = _font("PlayfairDisplay-Italic.ttf", 42, 600)   # a detail's caption
 SUBTLE = (92, 86, 112)
 FIN_PLAIN = _font("PlayfairDisplay.ttf", 76, 700)
 FIN_FANCY = _font("PlayfairDisplay-Italic.ttf", 76, 800)
@@ -712,15 +789,12 @@ def _name_line(name: str, what: str, start: float, end: float | None) -> list[di
 
 def layout_end() -> list[dict]:
     words = []
-    for i, (_shot, name, what) in enumerate(TOUR):
-        start = TOUR_AT + i * TOUR_EACH
-        words += _name_line(name, what, start, start + TOUR_EACH - FADE_OUT)
+    for panels, starts in ((TOUR, TOUR_STARTS), (DESK, DESK_STARTS)):
+        for (_shot, name, what, _ex), start in zip(panels, starts):
+            words += _name_line(name, what, start, start + panel_len((0, 0, 0, _ex)) - FADE_OUT)
     for i, (_shot, name, what) in enumerate(SETUP):
         start = INSTALL_AT + i * INSTALL_EACH
         words += _name_line(name, what, start, start + INSTALL_EACH - FADE_OUT)
-    for i, (_shot, name, what) in enumerate(DESK):
-        start = DESK_AT + i * DESK_EACH
-        words += _name_line(name, what, start, start + DESK_EACH - FADE_OUT)
     words += _name_line(*TERM_LINE, TERM_AT, TERM_AT + TERM_DUR - FADE_OUT)
     for i, (_icon, title, sub) in enumerate(PROMISES):
         start = PROMISE_AT + i * PROMISE_EACH
@@ -738,24 +812,51 @@ QWORDS = layout_phrases() + layout_end()
 _cards: dict[tuple, Image.Image] = {}
 
 
+def rounded(im: Image.Image) -> Image.Image:
+    """A picture with rounded corners and a soft shadow under it."""
+    im = im.convert("RGBA")
+    r, pad = 22, 40
+    mask = Image.new("L", im.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, im.width - 1, im.height - 1), r, fill=255)
+    im.putalpha(mask)
+    out = Image.new("RGBA", (im.width + 2 * pad, im.height + 2 * pad), (0, 0, 0, 0))
+    sh = Image.new("L", out.size, 0)
+    ImageDraw.Draw(sh).rounded_rectangle((pad, pad + 12, pad + im.width, pad + im.height + 12), r, fill=90)
+    shadow = Image.new("RGBA", out.size, (40, 30, 70, 0))
+    shadow.putalpha(sh.filter(ImageFilter.GaussianBlur(18)))
+    out.alpha_composite(shadow)
+    out.alpha_composite(im, (pad, pad))
+    return out
+
+
+_src: dict[str, Image.Image] = {}
+
+
+def source(path: Path) -> Image.Image:
+    if str(path) not in _src:
+        _src[str(path)] = Image.open(path).convert("RGBA")
+    return _src[str(path)]
+
+
 def card(path: Path, height: int) -> Image.Image:
-    """A screen at a height, with rounded corners and a soft shadow under it."""
+    """A screen at a height, with rounded corners and a soft shadow under it. While a screen shrinks or grows
+    it is asked for at every height in between, so the cache is kept small."""
     key = (str(path), height)
     if key not in _cards:
-        im = Image.open(path).convert("RGBA")
-        im = im.resize((int(im.width * height / im.height), height), Image.LANCZOS)
-        r, pad = 22, 40
-        mask = Image.new("L", im.size, 0)
-        ImageDraw.Draw(mask).rounded_rectangle((0, 0, im.width - 1, im.height - 1), r, fill=255)
-        im.putalpha(mask)
-        out = Image.new("RGBA", (im.width + 2 * pad, im.height + 2 * pad), (0, 0, 0, 0))
-        sh = Image.new("L", out.size, 0)
-        ImageDraw.Draw(sh).rounded_rectangle((pad, pad + 12, pad + im.width, pad + im.height + 12), r, fill=90)
-        shadow = Image.new("RGBA", out.size, (40, 30, 70, 0))
-        shadow.putalpha(sh.filter(ImageFilter.GaussianBlur(18)))
-        out.alpha_composite(shadow)
-        out.alpha_composite(im, (pad, pad))
-        _cards[key] = out
+        if len(_cards) > 40:
+            _cards.clear()
+        im = source(path)
+        _cards[key] = rounded(im.resize((max(1, int(im.width * height / im.height)), height), Image.LANCZOS))
+    return _cards[key]
+
+
+def detail(path: Path, box: tuple) -> Image.Image:
+    """A detail: that part of a screenshot, as big as fits the detail box (never blown up past EX_MAX)."""
+    key = (str(path), box)
+    if key not in _cards:
+        im = source(path).crop(box)
+        k = min(EX_W / im.width, EX_H / im.height, EX_MAX)
+        _cards[key] = rounded(im.resize((int(im.width * k), int(im.height * k)), Image.LANCZOS))
     return _cards[key]
 
 
@@ -774,20 +875,73 @@ def window(t: float, start: float, length: float) -> float:
     return ease((t - start) / 0.5) * (1 - ease((t - (start + length - FADE_OUT)) / FADE_OUT))
 
 
+def _caption_lines(text: str) -> list[str]:
+    """A caption on one line, or two if it is wider than the detail box."""
+    if EX_CAP.getlength(text) <= EX_W + 60:           # a caption may run a little wider than its picture
+        return [text]
+    words = text.split()
+    best = min(range(1, len(words)), key=lambda i: max(EX_CAP.getlength(" ".join(words[:i])),
+                                                         EX_CAP.getlength(" ".join(words[i:]))))
+    return [" ".join(words[:best]), " ".join(words[best:])]
+
+
+def panel(im: Image.Image, t: float, p: tuple, folder: Path, start: float, small_at: tuple) -> None:
+    """One screen and its details. The screen comes in full size in the middle; after P_LEAD it shrinks to
+    SMALL, moving to small_at, and its details come one at a time in the space it left; then it grows back."""
+    shot, _name, _what, examples = p
+    length = panel_len(p)
+    a = window(t, start, length)
+    if a <= 0:
+        return
+    u = t - start
+    ex0 = P_LEAD + P_MOVE                              # the details wait until the screen has moved aside
+    ex_end = ex0 + len(examples) * EX_EACH
+    k = ease((u - P_LEAD) / P_MOVE) * (1 - ease((u - (ex_end - 0.4)) / P_MOVE))   # 0 full size .. 1 small
+    h = int(round(SHOT_H * (1 + (SMALL - 1) * k)))
+    c = card(folder / shot, h)
+    # down first, then across: on the phone a straight line would cut through the icon's name on its way
+    cx = SHOT_X + (small_at[0] - SHOT_X) * ease((k - 0.4) / 0.6)
+    cy = (SHOT_TOP + SHOT_H / 2) + (small_at[1] - (SHOT_TOP + SHOT_H / 2)) * ease(k / 0.6)
+    cy = min(cy, H - 40 - h / 2)                       # ...and never off the bottom while still big
+    rise = 34 * (1 - ease(u / 0.6))
+    im.alpha_composite(faded(c, a), (int(cx - c.width / 2), int(cy - c.height / 2 + rise)))
+    for j, (file, box, caption) in enumerate(examples):
+        es = start + ex0 + j * EX_EACH
+        if not es <= t <= es + EX_EACH:
+            continue
+        e = ease((t - es) / 0.35) * (1 - ease((t - (es + EX_EACH - 0.35)) / 0.35))
+        if e <= 0:
+            continue
+        d = detail((PHONE_SHOTS if folder == PHONE_SHOTS else SHOTS) / file, box)
+        lines = _caption_lines(caption)
+        cap_h = 10 + 54 * len(lines)
+        # the picture (d has a 40 px margin for its shadow) and its caption, centred together in the box,
+        # rising a little as they come
+        group = d.height - 80 + cap_h
+        top = EX_TOP + max(0, (EX_H + 64 - group) / 2) + 20 * (1 - ease((t - es) / 0.45))
+        im.alpha_composite(faded(d, e), (int(EX_X - d.width / 2), int(top - 40)))
+        layer = Image.new("RGBA", (EX_W + 200, cap_h + 20), (0, 0, 0, 0))
+        dr = ImageDraw.Draw(layer)
+        for n, line in enumerate(lines):
+            dr.text(((layer.width - EX_CAP.getlength(line)) / 2, n * 54), line, font=EX_CAP,
+                    fill=INK + (int(255 * e),))
+        im.alpha_composite(layer, (int(EX_X - layer.width / 2), int(top + d.height - 80 + 14)))
+
+
 def screens(im: Image.Image, t: float) -> None:
-    """The phone, the desktop, then the installer's pages: one at a time, each rising into place."""
-    for shots, folder, at, each, h, cx, top in ((TOUR, PHONE_SHOTS, TOUR_AT, TOUR_EACH, SHOT_H, SHOT_X, SHOT_TOP),
-                                                (DESK, SHOTS, DESK_AT, DESK_EACH, SHOT_H, SHOT_X, SHOT_TOP),
-                                                (SETUP, SETUP_SHOTS, INSTALL_AT, INSTALL_EACH, SETUP_H,
-                                                 SETUP_X, SETUP_TOP)):
-        for i, (shot, *_rest) in enumerate(shots):
-            start = at + i * each
-            a = window(t, start, each)
-            if a <= 0:
-                continue
-            c = card(folder / shot, h)
-            rise = 34 * (1 - ease((t - start) / 0.6))
-            im.alpha_composite(faded(c, a), (cx - c.width // 2, int(top - 40 + rise)))
+    """The phone's panels, the desktop's, then the installer's pages: one at a time, each rising into place."""
+    for panels, starts, small_at, folder in ((TOUR, TOUR_STARTS, PHONE_SMALL_AT, PHONE_SHOTS),
+                                             (DESK, DESK_STARTS, DESK_SMALL_AT, SHOTS)):
+        for p, start in zip(panels, starts):
+            panel(im, t, p, folder, start, small_at)
+    for i, (shot, *_rest) in enumerate(SETUP):
+        start = INSTALL_AT + i * INSTALL_EACH
+        a = window(t, start, INSTALL_EACH)
+        if a <= 0:
+            continue
+        c = card(SETUP_SHOTS / shot, SETUP_H)
+        rise = 34 * (1 - ease((t - start) / 0.6))
+        im.alpha_composite(faded(c, a), (SETUP_X - c.width // 2, int(SETUP_TOP - 40 + rise)))
 
 
 def terminal(im: Image.Image, t: float) -> None:
@@ -1087,7 +1241,7 @@ def main() -> None:
     pile = plan(len(icons))
     total = KID_LEAD + DUR
     if "--preview" in sys.argv:
-        for sec in (102.0, 106.0, total - 0.5):
+        for sec in (40.0, 80.0, 117.0, total - 0.5):   # a phone detail, a desktop one, the end
             frame(sec, icons, pile).save(OUT / f"falling_{sec:04.1f}.png")
         print("preview frames written")
         return
