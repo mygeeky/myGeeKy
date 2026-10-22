@@ -3,6 +3,12 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **Delete your data, step by step**: mygeeky.org/delete.html says how to remove everything myGeeKy keeps, on your phone, your computers and in your own GitHub repos (there is no myGeeKy account or server to delete from). Linked from the privacy policy and the site's footer; it's the deletion link Google Play asks for.
+- **Start over really starts over** (phone): it now also erases the data-repo token, the Signals token, this phone's Signals key and an OpenAlex key, as uninstalling would; before, they stayed in the phone's secure store.
+- **Turning on sync says what goes there** (computer and phone): the text of your CV from a computer, and from the phone the words and kind of each thing you open.
+
 ## 0.35.0 (2026-10-21): ready for Google Play, and sync that gets through (phone 1.17.0)
 
 - **Sync gets through again** (computer). An older myGeeKy had committed its GitHub cache (up to 432 MB) into syncs that never reached GitHub; the newer version stopped carrying the cache, but those waiting syncs still held it, so every upload -- in setup too -- stalled for a minute and failed with "Operation too slow", and nothing from that computer reached the others. Before uploading, waiting syncs that carry a file too big for GitHub are now folded into one holding exactly today's files (the cache stays on the computer); a file that big that is meant to sync is named instead of stalling.

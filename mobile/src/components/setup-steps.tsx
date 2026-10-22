@@ -36,8 +36,9 @@ export function DataStep({ login, onNext }: { login: string; onNext: () => void 
       <Text style={st.step}>STEP 1 OF 2 · OPTIONAL</Text>
       <Text style={st.ask}>Your myGeeKy data</Text>
       <Text style={st.body}>
-        A private GitHub repo (mygeeky-data) keeps what myGeeKy learns about you: your model, history and settings. Your
-        computer and this phone both read and add to it, so they stay one myGeeKy.
+        A private GitHub repo (mygeeky-data) keeps what myGeeKy learns about you: your model, history, settings and the
+        text of your CV, if your computer has one. Your computer and this phone both read and add to it, so they stay one
+        myGeeKy: this phone adds the words and kind of each thing you open here.
       </Text>
       <View style={st.warn}>
         <Text style={st.warnText}>

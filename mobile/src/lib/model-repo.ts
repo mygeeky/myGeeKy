@@ -23,7 +23,7 @@ import { blendLearned, type Event, extractTerms, KIND_WEIGHTS, learnedTerms, STO
 
 export { blendLearned, extractTerms, learnedTerms } from './learn';
 
-const TOKEN_ITEM = 'mygeeky.model.token';
+const TOKEN_ITEM = 'mygeeky.model.token';                 // (storage.ts SECRET_ITEMS: Start over forgets it)
 const REPO_KEY = 'mygeeky.model.repo';
 const CACHE_KEY = 'modelrepo';
 const QUEUE_KEY = 'mygeeky.model.queue';

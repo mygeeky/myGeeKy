@@ -26,7 +26,7 @@ export {
   type Parsed, type Person, type Received,
 } from './signals-core';
 const KEY_ITEM = 'mygeeky_signals_key';        // this phone's private key (secure store)
-const TOKEN_ITEM = 'mygeeky_signals_token';    // this phone's Signals token (secure store)
+const TOKEN_ITEM = 'mygeeky_signals_token';    // this phone's Signals token (secure store; both in storage.ts SECRET_ITEMS)
 const SENT_KEY = 'mygeeky.signals.sent';       // what this phone sent (for the courtesy limits)
 const HIDDEN_KEY = 'mygeeky.signals.hiddenCalls';  // "owner/id" of calls you said aren't for you
 const RECEIVED_KEY = 'mygeeky.signals.received';  // when and what kind of signals reached you (My month), never who

@@ -168,8 +168,13 @@ export function isStale(at: string | undefined, hours: number): boolean {
   return Date.now() - new Date(at).getTime() > hours * 3600 * 1000;
 }
 
+// every secret the phone keeps (model-repo.ts, signals.ts, here): Start over forgets them all, as uninstalling would
+const SECRET_ITEMS = ['mygeeky.model.token', 'mygeeky_signals_key', 'mygeeky_signals_token', OPENALEX_KEY];
+
+/** Start over: settings, caches, sign-in and every secret on this phone. Nothing on GitHub is touched. */
 export async function clearAll(): Promise<void> {
   const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith('mygeeky.'));
   await AsyncStorage.multiRemove(keys);
   await setToken(null);
+  for (const item of SECRET_ITEMS) await writeSecure(item, null);
 }

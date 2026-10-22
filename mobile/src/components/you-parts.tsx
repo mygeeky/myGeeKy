@@ -159,7 +159,8 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
           they sync to. Give this phone its own token for it:{'\n'}
           1. On GitHub: Fine-grained token → Only select repositories → your data repo → Permissions → Contents → Read and
           write.{'\n'}
-          2. Paste it here and tap Connect. What you open on the phone then teaches your computers too.
+          2. Paste it here and tap Connect. From then on, this phone adds the words and kind of each thing you open here
+          to that repo, so it teaches your computers too.
         </Text>
         <Pressable onPress={() => Linking.openURL(MODEL_TOKEN_PAGE)} style={[st.add, st.tokenButton]}>
           <Text style={st.addText}>Make the token on GitHub ↗</Text>
@@ -333,7 +334,8 @@ export function MorePart() {
       router.replace('/setup');
     };
     if (Platform.OS === 'web') return go();
-    Alert.alert('Start over?', 'This forgets your settings and sign-in on this phone.', [
+    Alert.alert('Start over?', 'This erases everything myGeeKy keeps on this phone: settings, sign-in, tokens and keys. '
+      + 'Your GitHub repos stay (mygeeky.org/delete.html says how to remove them).', [
       { text: 'Cancel', style: 'cancel' }, { text: 'Start over', style: 'destructive', onPress: go },
     ]);
   };

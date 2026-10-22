@@ -1348,8 +1348,8 @@ class TokenPage(Page):
 class SyncPage(Page):
     def __init__(self) -> None:
         super().__init__("Your data, on every computer",
-                         "Keep your settings, history and what the model learned in a PRIVATE GitHub "
-                         "repo, so myGeeKy picks up where you left off on any machine.")
+                         "Keep your settings, CV text, history and what the model learned in a PRIVATE "
+                         "GitHub repo, so myGeeKy picks up where you left off on any machine.")
         self.enable = QCheckBox("Keep my data in a private GitHub repo")
         self.add(self.enable)
         self.repo = QLineEdit()

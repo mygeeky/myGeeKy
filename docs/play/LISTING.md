@@ -111,9 +111,8 @@ No account, no adverts, no tracking. Free and open source.
   counts as collection even without a myGeeKy server). Nothing is **shared** in Play's sense: every transfer is one
   the user asks for, to a service they chose, and nothing goes to a myGeeKy server (there is none).
 - Is all data encrypted in transit? **Yes** (HTTPS only; plain HTTP is refused by the app and by Android).
-- Can users ask for their data to be deleted? **Yes**. Deletion URL: `https://mygeeky.org/privacy.html` (section
-  *Questions*; or a dedicated page later). In the app: *Start over* forgets settings and sign-in; uninstalling removes
-  everything on the phone; the user can delete their own `mygeeky-beacon` and data repositories on GitHub and revoke
+- Can users ask for their data to be deleted? **Yes**. Deletion URL: `https://mygeeky.org/delete.html`. In the app:
+  *Start over* erases everything on the phone (settings, history, sign-in, tokens, the Signals key), as uninstalling does; the user can delete their own `mygeeky-beacon` and data repositories on GitHub and revoke
   myGeeKy's GitHub access in their GitHub settings.
 - Data types:
 

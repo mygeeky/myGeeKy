@@ -52,7 +52,7 @@ def main() -> None:
     (OUT / "img").mkdir(parents=True)
     html = (ROOT / "website/index.html").read_text(encoding="utf-8").replace("{{VERSION}}", version())
     (OUT / "index.html").write_text(html, encoding="utf-8")
-    for page in ("privacy.html", "terms.html", "orcid/index.html"):   # other pages: the privacy policy, the ORCID sign-in relay
+    for page in ("privacy.html", "terms.html", "delete.html", "orcid/index.html"):   # other pages (delete: Play's deletion URL)
         (OUT / page).parent.mkdir(parents=True, exist_ok=True)
         (OUT / page).write_text((ROOT / "website" / page).read_text(encoding="utf-8").replace("{{VERSION}}", version()),
                                 encoding="utf-8")
