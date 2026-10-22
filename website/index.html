@@ -147,6 +147,14 @@
   .feature.flip .copy { order: 2; }
   .feature .pic { display: flex; justify-content: center; position: relative; }
   .feature .pic img { max-width: 380px; width: 100%; border-radius: 24px; box-shadow: 0 40px 100px rgba(0,0,0,.55); }
+  .feature .pic.phone img { max-width: 290px; border-radius: 30px; }
+  .feature .pic { flex-direction: column; align-items: center; }
+  .where { margin-top: 14px; font-size: 13px; color: var(--muted); letter-spacing: .02em; }
+  #phone .pic img { max-width: 620px; border-radius: 18px; }
+  .phones { display: flex; gap: 18px; overflow-x: auto; padding: 8px 4px 22px; margin-top: 46px; scroll-snap-type: x proximity; }
+  .phones figure { flex: 0 0 190px; margin: 0; scroll-snap-align: center; text-align: center; }
+  .phones img { width: 100%; border-radius: 22px; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+  .phones figcaption { margin-top: 10px; font-size: 13.5px; color: var(--muted); }
   .feature h3 { font-size: clamp(22px, 2.6vw, 30px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -.015em; }
   .feature .sub { margin-bottom: 18px; font-size: 16.5px; }
   .ticks { list-style: none; padding: 0; margin: 0; }
@@ -355,10 +363,11 @@
       <h1>Your geeky friend who helps you <span class="g">grow, quietly.</span></h1>
       <p class="lead">myGeeKy reads your CV, your repos and your ORCID &amp; Google Scholar papers, then helps you
         <b>see</b> what is moving in your field, <b>learn</b> what comes next, <b>meet</b> the people working on the
-        same problems and <b>catch</b> opportunities while they are still open. One small panel on the edge of your
-        screen. It only suggests; it never acts for you.</p>
+        same problems and <b>catch</b> opportunities while they are still open. On your phone, and as a small panel on
+        the edge of your desktop. It only suggests; it never acts for you.</p>
       <div class="ctas">
         <a class="btn primary" href="https://github.com/mygeeky/myGeeKy/releases/latest/download/MyGeeKySetup-{{VERSION}}.exe">⬇ Download for Windows</a>
+        <a class="btn" href="#phone">📱 On your phone</a>
         <a class="btn" href="#video">▶ Watch the video</a>
         <a class="btn" href="https://github.com/mygeeky/myGeeKy">★ GitHub</a>
       </div>
@@ -381,12 +390,43 @@
   </div>
 </header>
 
+<!-- ======================================================================= PHONE -->
+<section id="phone">
+  <div class="wrap feature">
+    <div class="copy reveal">
+      <div class="eyebrow">On your phone</div>
+      <h2>Your world, in orbit</h2>
+      <p class="sub">Home in the middle, and around it six planets: You, Grow, World, Circle, Repos and Chances. A planet
+        with a dotted ring opens into more; tap it and its own pages circle around it.</p>
+      <ul class="ticks">
+        <li>Home gathers the best of everything and learns what you enjoy; each planet shows how much new it holds</li>
+        <li>Protocols, quizzes, verified jobs, funding and conferences, rising skills and papers, your month</li>
+        <li>Tap something to read and the orbit folds away into a slim dock</li>
+        <li>Start as a guest, sign in with GitHub or ORCID, or bring your desktop over with one scan</li>
+        <li>For Android, coming to Google Play soon</li>
+      </ul>
+    </div>
+    <div class="pic reveal"><img src="img/phone.png" alt="The myGeeKy phone app: Home with its orbit of planets, verified jobs, and protocols" loading="lazy"></div>
+  </div>
+  <div class="wrap phones reveal" aria-label="More of the phone app">
+    <figure><img src="img/phone-home.png" alt="Home, with its orbit of planets" loading="lazy"><figcaption>Home</figcaption></figure>
+    <figure><img src="img/phone-protocols.png" alt="A protocol: its steps, its quiz and what to learn from" loading="lazy"><figcaption>Protocols</figcaption></figure>
+    <figure><img src="img/phone-quiz.png" alt="A quiz question answered, with the sentence from its source" loading="lazy"><figcaption>Quiz</figcaption></figure>
+    <figure><img src="img/phone-jobs.png" alt="Verified jobs matched to you" loading="lazy"><figcaption>Jobs</figcaption></figure>
+    <figure><img src="img/phone-skills.png" alt="Rising skills in your field, as rockets" loading="lazy"><figcaption>Rising skills</figcaption></figure>
+    <figure><img src="img/phone-papers.png" alt="Papers rising in your field" loading="lazy"><figcaption>Papers</figcaption></figure>
+    <figure><img src="img/phone-month.png" alt="My month: your rank and your month's card" loading="lazy"><figcaption>My month</figcaption></figure>
+  </div>
+</section>
+
 <section id="tour">
   <div class="wrap center reveal">
-    <div class="eyebrow">Take the tour</div>
-    <h2>Lives quietly on the <span class="g">edge of your screen</span></h2>
-    <p class="sub">Always on top, in three glass themes. No window to manage, no dashboard to log into; close it and
-      nothing keeps running. Click a tab, or just watch.</p>
+    <div class="eyebrow">And on your desktop</div>
+    <h2>A panel on the <span class="g">edge of your screen</span>, with even more</h2>
+    <p class="sub">Everything the phone has, with room for more: your field's repos as a daily market, Research with the
+      code and people behind each paper, Live and Activity, Signals, your Model drawn as a map, and the setup that
+      makes your private sync repo and turns on Signals. Always on top, in three glass themes; close it and nothing
+      keeps running. Click a tab, or just watch.</p>
   </div>
   <div class="wrap show reveal">
     <div class="tabs" id="tabs"></div>
@@ -420,7 +460,7 @@
         <p class="sources">It reads <b>OpenAlex, arXiv, bioRxiv, Hacker News, PyPI, Hugging Face, Product Hunt, ORCID,
           Google Scholar</b> and <b>GitHub</b>. GitHub is one of them, not the point.</p>
       </div>
-      <div class="pic reveal"><img src="img/research.png" alt="Research view: papers rising in your field" loading="lazy"></div>
+      <div class="pic reveal"><img src="img/research.png" alt="Research view: papers rising in your field" loading="lazy"><span class="where">🖥 On your desktop</span></div>
     </div>
 
     <div class="feature flip">
@@ -433,7 +473,7 @@
           <li>🔭 items from outside your bubble are marked, on purpose</li>
         </ul>
       </div>
-      <div class="pic reveal"><img src="img/news.png" alt="News tab" loading="lazy"></div>
+      <div class="pic reveal"><img src="img/news.png" alt="News tab" loading="lazy"><span class="where">🖥 On your desktop</span></div>
     </div>
 
     <div class="feature">
@@ -494,7 +534,7 @@
           <li>📚 Free courses, books and tutorials, picked by hand; 🎉 wins: new stars, forks and citations of your work</li>
         </ul>
       </div>
-      <div class="pic reveal"><img src="img/grow-protocols.png" alt="A protocol shown as a road map of steps" loading="lazy"></div>
+      <div class="pic phone reveal"><img src="img/phone-protocols.png" alt="A protocol shown as a road map of steps, with its quiz" loading="lazy"><span class="where">📱 On your phone</span></div>
     </div>
 
     <div class="feature flip">
@@ -513,7 +553,7 @@
             protocol are all the page ever lists</li>
         </ul>
       </div>
-      <div class="pic reveal"><img src="img/quiz-question.png" alt="A quiz question, answered: why that answer is right, and the source it came from" loading="lazy"></div>
+      <div class="pic phone reveal"><img src="img/phone-quiz.png" alt="A quiz question, answered: why that answer is right, and the source it came from" loading="lazy"><span class="where">📱 On your phone</span></div>
     </div>
   </div>
 </section>
@@ -542,7 +582,7 @@
           <li><b>You follow, star and message by hand, always.</b> myGeeKy introduces; it never acts for you</li>
         </ul>
       </div>
-      <div class="pic reveal"><img src="img/live.png" alt="Live tab: what the people near your work did in the last hour" loading="lazy"></div>
+      <div class="pic reveal"><img src="img/live.png" alt="Live tab: what the people near your work did in the last hour" loading="lazy"><span class="where">🖥 On your desktop</span></div>
     </div>
 
     <div class="feature flip">
@@ -560,7 +600,7 @@
             switch, mute and block</li>
         </ul>
       </div>
-      <div class="pic reveal"><img src="img/signals.png" alt="Signals tab (example people)" loading="lazy"></div>
+      <div class="pic reveal"><img src="img/signals.png" alt="Signals tab (example people)" loading="lazy"><span class="where">🖥 On your desktop</span></div>
     </div>
   </div>
 </section>
@@ -589,7 +629,7 @@
           <li>👍 / 👎 teach your model; 🚩 tells the maker one looks fake</li>
         </ul>
       </div>
-      <div class="pic reveal"><img src="img/chances-jobs.png" alt="Chances: verified jobs matched to you" loading="lazy"></div>
+      <div class="pic phone reveal"><img src="img/phone-jobs.png" alt="Chances: verified jobs matched to you" loading="lazy"><span class="where">📱 On your phone</span></div>
     </div>
 
     <div class="feature flip">
@@ -603,7 +643,7 @@
           <li>It never pretends to know next year's date: a window read on a page says <b>open now</b>, anything ahead says <b>expected</b></li>
         </ul>
       </div>
-      <div class="pic reveal"><img src="img/chances-seasons.png" alt="Seasons: a scholarship that comes back every year, with the weeks of preparation it needs" loading="lazy"></div>
+      <div class="pic reveal"><img src="img/chances-seasons.png" alt="Seasons: a scholarship that comes back every year, with the weeks of preparation it needs" loading="lazy"><span class="where">🖥 On your desktop</span></div>
     </div>
   </div>
 </section>
@@ -650,25 +690,6 @@
     <p class="scope">You say which fits you best when you set it up, and change it whenever you like; your model
       learns from what you actually open. <b>Code, data, statistics, figures and pipelines, never laboratory protocols
       or bench instructions</b>: it can't review bench safety or know your lab's rules, so it stays out of it.</p>
-  </div>
-</section>
-
-<!-- ======================================================================= PHONE -->
-<section id="phone">
-  <div class="wrap feature">
-    <div class="copy reveal">
-      <div class="eyebrow">On your phone</div>
-      <h2>Your world, in orbit</h2>
-      <p class="sub">Home in the middle, and around it six planets: You, Grow, World, Circle, Repos and Chances. A planet
-        with a dotted ring opens into more; tap it and its own pages circle around it.</p>
-      <ul class="ticks">
-        <li>Each planet shows how much new it holds; Home gathers the best of all of them</li>
-        <li>Tap something to read and the orbit folds away into a slim dock</li>
-        <li>Set up in one scan (⚙ → Connect your phone on the desktop panel), or sign in with GitHub</li>
-        <li>For Android, coming to Google Play soon</li>
-      </ul>
-    </div>
-    <div class="pic reveal"><img src="img/phone.png" alt="The myGeeKy phone app: Home with its orbit of planets, verified jobs, and protocols" loading="lazy"></div>
   </div>
 </section>
 

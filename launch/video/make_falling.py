@@ -2,13 +2,13 @@
 floats there while icons rain into the middle and stack up like bricks into a mountain, bouncing as they
 land, and the lines are said one by one; he wonders at it, then turns sad. Then the kid and the mountain
 fade, GeekOc swims across to the right, cheering up, the myGeeKy icon drops out of the sky on the left,
-and the app's screens follow one at a time in the middle, each under its name (in dark gold) and what
-it offers. Then the phone app's home screen, how to install it (the installer's pages, then one pip
-command in a terminal), GeekOc
-swims away, the five promises one at a time, each with its icon, and last the myGeeKy icon over "Your
+and the phone app's screens follow one at a time in the middle, each under its name (in dark gold) and
+what it offers; then "On your desktop" and the desktop's main screens;
+then how to install it there (the installer's pages, then one pip command in a terminal), GeekOc swims away, the five promises one at a time, each with its icon, and last the myGeeKy icon over "Your
 geeky friend who helps you grow, quietly." and the three places it runs: Google Play, Windows, macOS.
 
-The screens are retaken taller than docs/screenshots for this (into launch/video/intro/shots/, git-ignored)
+The phone screens are the Play store's (google-play/screenshots/). The desktop screens are retaken taller than
+docs/screenshots for this (`python docs/make_screenshots.py --tall`, into launch/video/intro/shots/, git-ignored)
 so each one shows its content, not just the panel's header.
 
     python launch/video/make_falling.py            ->  launch/video/falling.mp4
@@ -609,37 +609,38 @@ def layout_phrases() -> list[dict]:
 
 
 # --------------------------------------------------------------------------- the end: icon and screens
-# One screen at a time in the middle, under its name in dark gold and what it offers. People and Projects
-# are left out: on this machine both tabs are empty (no cached suggestions), and an empty panel says
-# nothing. Activity is left out too: Live already shows it.
-SHOTS = OUT / "intro" / "shots"                 # the tall retakes (see the module docstring)
+# One screen at a time in the middle, under its name in dark gold and what it offers. The phone first (the same
+# seven screens as the Play store listing, google-play/screenshots/), then "On your desktop" and the desktop's main
+# screens (the tall retakes, see the module docstring). Pages full of other
+# people's names (People) or other companies' brands (the AI race) are left out.
+PHONE_SHOTS = ROOT / "google-play" / "screenshots"
+SHOTS = OUT / "intro" / "shots"                 # the desktop's tall retakes
 SETUP_SHOTS = ROOT / "docs" / "screenshots"     # the installer's pages already show the whole window
 APP_ICON = ROOT / "src" / "mygeeky" / "gui" / "assets" / "icon_256.png"
 GOLD = (156, 112, 24)                           # dark gold: readable on the pale wall
 TOUR = [
-    ("market.png", "Pulse", "what's rising in your field this week"),
-    ("research.png", "Research", "the papers behind the code, and who wrote them"),
-    ("models.png", "AI Models", "what's trending on Hugging Face in your field"),
-    ("news.png", "News", "arXiv, bioRxiv and Hacker News, matched to you"),
-    ("live.png", "Live", "your people's activity, as it happens"),
-    ("signals.png", "Signals", "a private thank-you, no reply needed"),
-    ("grow-skills.png", "Rising Skills", "what to learn next, before everyone else"),
-    ("grow-protocols.png", "Protocols", "a step-by-step road map for any skill"),
-    ("grow-learn.png", "Learn", "free courses, books and tutorials, hand-picked"),
-    ("grow-quiz.png", "Quiz", "test what you know, one skill at a time"),
-    ("chances-jobs.png", "Jobs", "verified positions that match your work"),
-    ("chances-funding.png", "Funding", "grants and fellowships you can apply for"),
-    ("chances-conferences.png", "Conferences", "events in your field, before the deadline"),
-    ("chances-seasons.png", "Seasons", "scholarships and programmes, as each round opens"),
-    ("model.png", "Your Model", "see what myGeeKy knows about you"),
+    ("1-home.png", "On your phone", "your world in orbit, learning what you enjoy"),
+    ("2-protocols.png", "Protocols", "a step-by-step road map for any skill"),
+    ("3-quiz.png", "Quiz", "every answer quotes the source that proves it"),
+    ("4-jobs.png", "Jobs", "verified positions that match your work"),
+    ("5-skills.png", "Rising Skills", "what to learn next, before everyone else"),
+    ("6-papers.png", "Papers", "rising in your field, gaining citations fastest"),
+    ("7-month.png", "My month", "your month, your rank, your card to share"),
 ]
 TOUR_END = TOUR_AT + len(TOUR) * TOUR_EACH
 
-# The phone app, before the desktop install: its home screen, the orbit. Not on Google Play yet (the README
-# says "coming to Google Play soon"), so the line says so.
-PHONE_SHOT = ROOT / "docs" / "screenshots" / "phone" / "hint.png"   # Home, with its orbit of planets
-PHONE_LINE = ("On your phone", "your world in orbit, soon on Google Play")
-PHONE_AT, PHONE_EACH = TOUR_END + 0.6, 4.6
+# Then the desktop: the panel beside your work, and what it adds.
+DESK_HERO_AT = TOUR_END + 0.4                   # where the desktop part starts (a swish in the soundtrack)
+DESK = [
+    ("grow-protocols.png", "On your desktop", "a panel beside your work, with even more"),
+    ("market.png", "Pulse", "what's rising in your field this week"),
+    ("research.png", "Research", "the papers behind the code, and who wrote them"),
+    ("live.png", "Live", "your people's activity, as it happens"),
+    ("signals.png", "Signals", "a private thank-you, no reply needed"),
+    ("model.png", "Your Model", "see what myGeeKy knows about you"),
+]
+DESK_AT, DESK_EACH = DESK_HERO_AT, 3.8
+DESK_END = DESK_AT + len(DESK) * DESK_EACH
 
 # How to install: the installer's pages, then the one command for any OS.
 SETUP = [
@@ -648,15 +649,17 @@ SETUP = [
     ("setup-signals.png", "Signals", "a second token that can write to one repo only"),
     ("setup-finish.png", "Done", "in your Start menu, and running at startup"),
 ]
-INSTALL_AT, INSTALL_EACH = PHONE_AT + PHONE_EACH, 4.2
+INSTALL_AT, INSTALL_EACH = DESK_END + 0.4, 4.2
 TERM_AT = INSTALL_AT + len(SETUP) * INSTALL_EACH
 TERM_DUR = 6.5
 TERM_LINE = ("macOS, Linux or Windows", "one command")
+VERSION = next(line.split('"')[1] for line in (ROOT / "pyproject.toml").read_text(encoding="utf-8").splitlines()
+               if line.startswith("version = "))
 TERM_SCRIPT = [               # (at, kind, text): typed after a prompt, or printed
     (0.5, "cmd", "pip install mygeeky"),
     (1.9, "out", "Collecting mygeeky"),
-    (2.3, "out", "  Downloading mygeeky-0.26.1-py3-none-any.whl"),
-    (3.1, "ok", "Successfully installed mygeeky-0.26.1"),
+    (2.3, "out", f"  Downloading mygeeky-{VERSION}-py3-none-any.whl"),
+    (3.1, "ok", f"Successfully installed mygeeky-{VERSION}"),
     (3.9, "cmd", "mygeeky gui"),
 ]
 LEAVE_AT, LEAVE = TERM_AT + TERM_DUR - 0.6, 3.0   # GeekOc swims off to the right
@@ -715,7 +718,9 @@ def layout_end() -> list[dict]:
     for i, (_shot, name, what) in enumerate(SETUP):
         start = INSTALL_AT + i * INSTALL_EACH
         words += _name_line(name, what, start, start + INSTALL_EACH - FADE_OUT)
-    words += _name_line(*PHONE_LINE, PHONE_AT, PHONE_AT + PHONE_EACH - FADE_OUT)
+    for i, (_shot, name, what) in enumerate(DESK):
+        start = DESK_AT + i * DESK_EACH
+        words += _name_line(name, what, start, start + DESK_EACH - FADE_OUT)
     words += _name_line(*TERM_LINE, TERM_AT, TERM_AT + TERM_DUR - FADE_OUT)
     for i, (_icon, title, sub) in enumerate(PROMISES):
         start = PROMISE_AT + i * PROMISE_EACH
@@ -770,8 +775,9 @@ def window(t: float, start: float, length: float) -> float:
 
 
 def screens(im: Image.Image, t: float) -> None:
-    """The tour, then the installer's pages: one at a time, each rising into place."""
-    for shots, folder, at, each, h, cx, top in ((TOUR, SHOTS, TOUR_AT, TOUR_EACH, SHOT_H, SHOT_X, SHOT_TOP),
+    """The phone, the desktop, then the installer's pages: one at a time, each rising into place."""
+    for shots, folder, at, each, h, cx, top in ((TOUR, PHONE_SHOTS, TOUR_AT, TOUR_EACH, SHOT_H, SHOT_X, SHOT_TOP),
+                                                (DESK, SHOTS, DESK_AT, DESK_EACH, SHOT_H, SHOT_X, SHOT_TOP),
                                                 (SETUP, SETUP_SHOTS, INSTALL_AT, INSTALL_EACH, SETUP_H,
                                                  SETUP_X, SETUP_TOP)):
         for i, (shot, *_rest) in enumerate(shots):
@@ -782,11 +788,6 @@ def screens(im: Image.Image, t: float) -> None:
             c = card(folder / shot, h)
             rise = 34 * (1 - ease((t - start) / 0.6))
             im.alpha_composite(faded(c, a), (cx - c.width // 2, int(top - 40 + rise)))
-    a = window(t, PHONE_AT, PHONE_EACH)                 # the phone app's home screen
-    if a > 0:
-        c = card(PHONE_SHOT, 800)
-        rise = 34 * (1 - ease((t - PHONE_AT) / 0.6))
-        im.alpha_composite(faded(c, a), (SETUP_X - c.width // 2, int(245 - 40 + rise)))
 
 
 def terminal(im: Image.Image, t: float) -> None:

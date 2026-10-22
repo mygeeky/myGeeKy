@@ -230,7 +230,8 @@ def main() -> None:
     # ---- every screen arriving: a swish
     for i in range(len(v["TOUR"])):
         sfx.add(swish(), L + v["TOUR_AT"] + i * v["TOUR_EACH"], 0.30)
-    sfx.add(swish(), L + v["PHONE_AT"], 0.30)
+    for i in range(len(v["DESK"])):
+        sfx.add(swish(), L + v["DESK_AT"] + i * v["DESK_EACH"], 0.30)
     for i in range(len(v["SETUP"])):
         sfx.add(swish(), L + v["INSTALL_AT"] + i * v["INSTALL_EACH"], 0.30)
 
