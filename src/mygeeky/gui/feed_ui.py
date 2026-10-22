@@ -63,7 +63,7 @@ def cards_sheet(t: dict[str, Any]) -> str:
         f"{card} QLabel#choice {{ background:{t['btn_bg']}; border:1px solid transparent; border-radius:9px; padding:6px 9px; font-size:12px; }}",
         f"{card} QPushButton {{ background:transparent; color:{t['muted']}; border:none; border-radius:7px; padding:3px 7px; font-size:13px; }}",
         f"{card} QPushButton:hover {{ background:{t['btn_hover']}; color:{t['text']}; }}",
-        f"{card} QPushButton#more {{ color:{t['muted']}; font-size:11px; }}",
+        f"{card} QLabel#more {{ color:{t['muted']}; font-size:11px; }}",
         f"{card} QPushButton#open {{ font-size:12px; font-weight:800; padding:3px 11px; }}",
         f"{card} QPushButton#liked {{ color:{LIKED}; }}",
     ]
@@ -230,10 +230,16 @@ class FeedCard(QFrame):
         self.like_btn = button("♡", "More like this (Home and your Model learn)", self.like)
         self.save_btn = button("🔖", "Save for later (in 🔖 Saved)", self.save)
         button("✕", "Fewer like this", self.dismiss)
-        row.addStretch(1)
         more = self.page.page_label(self.card.get("page", ""))
-        if more:                                                   # the page it came from: plain words, no arrow
-            button(f"See all in {more.replace('&', '&&')}", f"Go to {more}", self.more).setObjectName("more")   # && shows one &
+        if more:              # the page it came from: plain words, no arrow; a label, so a long name wraps
+            link = _Choice(f"See all in {more}", self.more)
+            link.setObjectName("more")
+            link.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            link.setToolTip(f"Go to {more}")
+            link.setContentsMargins(0, 0, 6, 0)
+            row.addWidget(link, 1)
+        else:
+            row.addStretch(1)
         if self.card.get("url"):
             button("Open ↗", "Open it", self.open).setObjectName("open")
         self._paint_marks()
@@ -343,7 +349,7 @@ class HomePage(QScrollArea):
         self.viewport().setStyleSheet("background:transparent;")
         head = QHBoxLayout()
         self.title = _label("Home", "font-size:15px; font-weight:800;", wrap=False)
-        self.status = _label("", "font-size:10.5px;", wrap=False)
+        self.status = _label("", "font-size:10.5px;")          # wraps, so a narrow Home never cuts its cards
         self.saved_btn = QPushButton("🔖")
         self.saved_btn.setCursor(Qt.PointingHandCursor)
         self.saved_btn.setToolTip("Saved for later")

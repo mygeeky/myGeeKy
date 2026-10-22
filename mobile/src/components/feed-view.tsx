@@ -103,7 +103,7 @@ function NeonCard({ it, hero, savedAt, liked, saved, onLike, onSave, onDismiss, 
         <Pressable onPress={onSave} style={st.act} accessibilityLabel={saved ? 'Take out of Saved' : 'Save for later'}><Text style={st.actText}>{saved ? '🔖✓' : '🔖'}</Text></Pressable>
         <Pressable onPress={onDismiss} style={st.act} accessibilityLabel="Fewer like this"><Text style={st.actText}>✕</Text></Pressable>
         <View style={{ flex: 1 }} />
-        {moreLabel ? <Pressable onPress={onMore} style={st.act} accessibilityLabel={`Go to ${moreLabel}`}><Text style={st.more}>See all in {moreLabel}</Text></Pressable> : null}
+        {moreLabel ? <Pressable onPress={onMore} style={[st.act, { flexShrink: 1 }]} accessibilityLabel={`Go to ${moreLabel}`}><Text style={[st.more, { textAlign: 'right' }]}>See all in {moreLabel}</Text></Pressable> : null}
         {c.url ? (
           <Pressable onPress={onOpen} style={[st.open, { borderColor: color, backgroundColor: alpha(color, 0.18) }]} accessibilityLabel="Open it">
             <Text style={[st.openText, { color }]}>Open ↗</Text>

@@ -3,6 +3,10 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **Home cards fit beside a pinned menu** (computer). With the side menu pinned, Home was wider than its space and the right edge of every card, Open ↗ included, was cut off; the "new · updated" line and a long "See all in …" now wrap instead.
+
 ## 0.35.2 (2026-10-22): Home cards that open with a tap, and the phone first (phone 1.17.2)
 
 - **Home cards open with a tap** (computer and phone). Tapping anywhere on a card opens the article, paper, repo or job itself, and its button is now a coloured **Open ↗** instead of a small grey arrow. The link to the page the card came from reads **See all in News** (no arrow), so it no longer looks like the way to open the card.
