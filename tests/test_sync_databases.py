@@ -124,3 +124,32 @@ def test_a_sync_with_nothing_new_on_either_side_only_checks(two_computers, monke
     calls.clear()
     sync.push()
     assert "fetch" in calls and (new / "notes.md").read_text() == "new there\n"   # ...is fetched and merged
+
+
+def test_local_syncs_carrying_a_file_too_big_for_github_are_folded_and_pushed(two_computers, monkeypatch):
+    """An older myGeeKy committed a 400 MB cache here, never pushed (GitHub refuses it): every push stalled and
+    failed. The unpushed commits become one with today's files, and it goes up."""
+    remote, old, new = two_computers
+    monkeypatch.setattr(sync, "PUSH_FILE_LIMIT_MB", 0.01)                    # 10 KB stands in for GitHub's limit
+    _git(new, "config", "user.email", "t@t")
+    _git(new, "config", "user.name", "t")
+    (new / "github_cache.json").write_bytes(b"x" * 50_000)
+    _git(new, "add", "-f", "github_cache.json")
+    _git(new, "commit", "-q", "-m", "old version carried the cache")
+    (new / "taste.json").write_text('{"a": 3}')
+    _git(new, "commit", "-q", "-am", "and synced again")
+    assert sync._too_big_unpushed() == ["github_cache.json"]
+    sync.push()
+    assert sync._too_big_unpushed() == []
+    assert _git(remote, "log", "-1", "--format=%s", "main").count("too big for GitHub") == 1
+    assert "github_cache.json" not in _git(remote, "ls-tree", "-r", "--name-only", "main")
+    assert _git(remote, "show", "main:taste.json") == '{"a": 3}'                 # the data arrived
+    assert (new / "github_cache.json").exists()                                  # the cache stays on this computer
+
+
+def test_a_tracked_file_too_big_for_github_is_named(two_computers, monkeypatch):
+    remote, old, new = two_computers
+    monkeypatch.setattr(sync, "PUSH_FILE_LIMIT_MB", 0.01)
+    (new / "notes.json").write_bytes(b"y" * 50_000)                              # not ignored: it would be synced
+    with pytest.raises(sync.SyncError, match="notes.json is over"):
+        sync.push()

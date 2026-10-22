@@ -298,6 +298,40 @@ def _in_step_with_remote() -> bool:
     return not _git("rev-list", "--count", "origin/main..HEAD", check=False).stdout.strip().strip("0")
 
 
+PUSH_FILE_LIMIT_MB = 50         # GitHub refuses a file over 100 MB (and warns from 50); a push carrying one never ends
+
+
+def _too_big_unpushed() -> list[str]:
+    """The files over PUSH_FILE_LIMIT_MB in the commits GitHub doesn't have yet (one quick, bitmap-backed listing)."""
+    if not _git("rev-parse", "-q", "--verify", "origin/main", check=False).stdout.strip():
+        return []
+    out = _git("rev-list", "--objects", f"--filter=blob:limit={int(PUSH_FILE_LIMIT_MB * 1024 * 1024)}", "--filter-print-omitted",
+               "origin/main..HEAD", check=False).stdout
+    big = {line[1:].strip() for line in out.splitlines() if line.startswith("~")}
+    if not big:
+        return []
+    named = (line.split(" ", 1) for line in _git("rev-list", "--objects", "origin/main..HEAD", check=False).stdout.splitlines())
+    return sorted({parts[1] for parts in named if len(parts) == 2 and parts[0] in big})
+
+
+def _push() -> None:
+    """Push main. Commits made here by an older myGeeKy may still carry a cache too big for GitHub (later untracked,
+    but still in those commits): the push could only stall and fail, every sync, and nothing would reach the other
+    computers again. Those unpushed commits are folded into one holding exactly today's files (nothing is lost:
+    the files on disk and in the latest commit are the same), and that one goes up."""
+    big = _too_big_unpushed()
+    if big and _git("merge-base", "--is-ancestor", "origin/main", "HEAD", check=False).returncode == 0:
+        count = _git("rev-list", "--count", "origin/main..HEAD", check=False).stdout.strip()
+        _git("reset", "-q", "--soft", "origin/main")
+        _git("commit", "-q", "--allow-empty", "-m",
+             f"myGeeKy sync from {_stamp()} ({count} local syncs in one: they carried {', '.join(big)}, too big for GitHub)")
+        big = _too_big_unpushed()
+    if big:
+        raise SyncError(f"{', '.join(big)} is over {PUSH_FILE_LIMIT_MB} MB, too big for GitHub: move it out of "
+                        f"{DATA_DIR} and sync again.")
+    _git("push", "-q", "-u", "origin", "main")
+
+
 def _remote_has_main() -> bool:
     return bool(_git("ls-remote", "--heads", "origin", "main", check=False).stdout.strip())
 
@@ -368,14 +402,14 @@ def _init(repo: str) -> str:
             merged = merge_logs(backup, DATA_DIR)
             if merged:
                 _commit_local(f"myGeeKy: merged this machine's history ({merged} records) {_stamp()}")
-                _git("push", "-q", "-u", "origin", "main")
+                _push()
                 messages.append(f"Merged {merged} records this machine had learned into your synced data.")
     else:
         _commit_local(f"myGeeKy sync from {_stamp()}")
         if _remote_has_main():
             _merge("--allow-unrelated-histories")
             import_config()
-        _git("push", "-q", "-u", "origin", "main")
+        _push()
         _tidy()
         messages.append("Pushed this machine's data to GitHub.")
     return "\n".join(messages)
@@ -440,7 +474,7 @@ def push() -> str:
         import_config()
         if _apply_admin_log():
             _commit_local(f"myGeeKy sync from {_stamp()}")     # what the phone asked for, applied, goes up too
-    _git("push", "-q", "-u", "origin", "main")
+    _push()
     _tidy()
     return "Pushed to GitHub." if committed else "Nothing new to push (remote is up to date)."
 
