@@ -3,9 +3,11 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.35.2 (2026-10-22): Home cards that open with a tap, and the phone first (phone 1.17.2)
 
 - **Home cards open with a tap** (computer and phone). Tapping anywhere on a card opens the article, paper, repo or job itself, and its button is now a coloured **Open ↗** instead of a small grey arrow. The link to the page the card came from reads **See all in News** (no arrow), so it no longer looks like the way to open the card.
+- **The phone first** on mygeeky.org and in the video: the website now opens with the phone app (seven of its screens), then "And on your desktop" with what the panel adds; the video is a new 3-minute tour, phone then desktop. New pictures from this version for the README, PyPI and the website.
+- **The phone app no longer asks for fingerprint permissions** at all (they came in with the secure store's library and were never used).
 
 ## 0.35.1 (2026-10-22): delete your data, and a Start over that starts over (phone 1.17.1)
 
