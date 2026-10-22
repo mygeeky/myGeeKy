@@ -5,7 +5,7 @@ never committed (`.gitignore`).
 
 | Console asks for | Here | Status |
 |---|---|---|
-| The app bundle (`.aab`), signed with the upload key | `myGeeKy-<version>.aab` | built by EAS (below) |
+| The app bundle (`.aab`), signed with the upload key | `myGeeKy-<version>-<code>.aab` | built here (below) |
 | App icon, 512 × 512 | `icon-512.png` | ✅ |
 | Feature graphic, 1024 × 500 | `feature-graphic.png` | ✅ (22 Oct 2026, the current tagline) |
 | Phone screenshots, 2–8 | `screenshots/1-home.png` … `7-month.png` | ✅ (22 Oct 2026, app 1.17.1, 1080 × 1920) |
@@ -22,13 +22,17 @@ never committed (`.gitignore`).
 ## Build the bundle
 
 ```bash
-cd mobile
-npx eas-cli@latest login                    # once: the Expo account (alsammans-team)
-npx eas-cli@latest build -p android --profile production
+python tools/play_bundle.py                 # about 25 minutes; writes google-play/myGeeKy-<version>-<code>.aab
 ```
 
-The first build asks to create the upload keystore: let EAS create and keep it (losing it means never updating the
-app again). The version code rises by itself. When it finishes, download the `.aab` into this folder.
+Built on this computer, no Expo account needed. It's signed with the **upload key**,
+`~/.config/mygeeky-play/upload-keystore.jks` (alias `upload`), whose password is in the system keyring (service
+`mygeeky-play-upload-key`). **Back up both** (the keystore file, and the password from
+`python -m keyring get mygeeky-play-upload-key upload`) somewhere safe outside this computer. Google signs the app
+for the store (Play App Signing), so a lost upload key can be reset through Play support, but that takes days.
+
+Each upload needs a higher version code: `android.versionCode` in `mobile/app.json`, kept as
+major × 10000 + minor × 100 + patch of the version (1.17.1 → 11701); the script refuses a mismatch.
 
 ## In the Play Console, in this order
 
@@ -37,7 +41,7 @@ app again). The version code rises by itself. When it finishes, download the `.a
    target audience, news app, Data safety, government/financial/health (no). All from `LISTING.md`.
 3. **Store listing**: the texts, the icon, the feature graphic, the seven screenshots.
 4. **Testing → Closed testing**: create a track, upload the `.aab`, add the testers (a Google Group), roll out,
-   send them the opt-in link. Play App Signing: accept (Google signs, EAS keeps the upload key).
+   send them the opt-in link. Play App Signing: accept (Google signs for the store; you keep the upload key).
 5. After **14 days with 12+ testers opted in**: Dashboard → apply for production access, then release to
    production.
 

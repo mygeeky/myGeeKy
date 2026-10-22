@@ -19,6 +19,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "org.mygeeky.app",
+      "versionCode": 11701,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW"
       ]

@@ -5,7 +5,7 @@ description: Use when preparing, checking or submitting the myGeeKy phone app fo
 
 # myGeeKy on Google Play
 
-**Never submit, upload or start an EAS build without the maintainer's go-ahead** (`CLAUDE.md`). This skill is for
+**Never submit or upload a build without the maintainer's go-ahead** (`CLAUDE.md`). This skill is for
 getting the app *ready* and checking it; the build and submit commands are in `mygeeky-release`.
 
 The rules change every year. Each one below carries the date it was checked and its source: before relying on a
@@ -83,4 +83,4 @@ When a gap is closed, move it into the table above and say how it was done.
 3. Build a test APK (`mygeeky-release`), run `tools/play_check.py`, look at the app on the emulator (`mygeeky-phone`).
 4. Anything about data, accounts or permissions also changes `website/privacy.html`, `google-play/LISTING.md`
    (Data safety) and the in-app text: they must say the same thing.
-5. Ask before any build on EAS or submission; say what would go out.
+5. Ask before any submission; say what would go out. The `.aab` is built here (`tools/play_bundle.py`).

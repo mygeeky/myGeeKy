@@ -148,5 +148,5 @@ Note for the reviewer:
 
 1. Create the developer account (play.google.com/console, $25). For a new personal account, Play asks for **a closed test with at least 12 testers for 14 days in a row** before production access.
 2. Build: see `README.md` in this folder (an `.aab`; the version code rises on its own).
-3. Create the app in the Play Console with the package `org.mygeeky.app`. Upload the first `.aab` by hand on a Closed testing track. After that, `eas submit -p android` can upload new builds with a Google service-account key.
-4. Let Google sign the app (Play App Signing, the default). EAS keeps the upload key.
+3. Create the app in the Play Console with the package `org.mygeeky.app`. Upload the `.aab` by hand on a Closed testing track.
+4. Let Google sign the app (Play App Signing, the default). You keep the upload key (`README.md`).

@@ -57,18 +57,18 @@ Say plainly that it is a two-week opt-in and they can leave afterwards.
 ## 3. Then, in this order
 
 1. Create the app in the Console with the package **`org.mygeeky.app`**.
-2. Build the bundle: `cd mobile && eas build --platform android --profile production` (the `production`
-   profile already makes an `.aab`, which is what Play takes — not an APK).
+2. Build the bundle: `python tools/play_bundle.py` (an `.aab`, which is what Play takes, not an APK; see
+   `README.md`).
 3. Upload it to a **Closed testing** track, add the testers' group, send the opt-in link. **The 14 days
    start now.**
 4. While it runs: fill in the Console answers from `LISTING.md` (the screenshots are ready in `screenshots/`).
 5. Day 14: apply for production access, then roll out.
 
-Let Google sign the app (Play App Signing, the default); EAS keeps the upload key. Losing that key means
-never updating the app again.
+Let Google sign the app (Play App Signing, the default); you keep the upload key (`README.md`). Losing it means
+asking Play support for a new one, which takes days: keep a backup.
 
-For later uploads, `eas submit -p android` needs a Play **service account** JSON (Console → Setup → API
-access). That file is a credential: **GitHub Secrets or your password manager only, never the repo.**
+Uploads are by hand in the Console. Automating them later would need a Play **service account** JSON (Console →
+Setup → API access): a credential, so your password manager only, never the repo.
 
 ---
 

@@ -45,10 +45,10 @@ cover new work.
 - **Check it against Play's rules** before sharing or submitting: `.venv/bin/python tools/play_check.py` (the
   `mygeeky-play` skill). A locally built `app-release.apk` is signed with the public Android Debug key and has
   versionCode 1: fine for testing, never for Play (EAS sets the versionCode for Play builds).
-- **Google Play:** needs an `.aab` signed with the upload key, never the test APK:
-  `npx eas-cli@latest build --platform android --profile production`, then
-  `npx eas-cli@latest submit --platform android --profile production` (EAS keeps the keystore; Expo account
-  `alsammans-team`). See `google-play/ACCOUNT.md` and `google-play/LISTING.md`.
+- **Google Play:** needs an `.aab` signed with the upload key, never the test APK: `python tools/play_bundle.py`
+  builds it here into `google-play/` (the key in `~/.config/mygeeky-play/`, its password in the keyring; never
+  print it). Bump `android.versionCode` in `mobile/app.json` with the version (major*10000 + minor*100 + patch).
+  The maintainer uploads it in the Play Console. See `google-play/ACCOUNT.md` and `google-play/LISTING.md`.
 
 ## After a release
 
