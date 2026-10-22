@@ -14,6 +14,7 @@ import { Image, LayoutAnimation, Linking, NativeScrollEvent, NativeSyntheticEven
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline } from 'react-native-svg';
 import { darker, OrbitZoom, orbitHeight } from '../components/orbit-zoom';
+import { DashedOrbit, RING_GAP, useOrbitSpin } from '../components/dashed-orbit';
 import { find, leafFor, level, path as navPath, phoneTree, rows as dockRows, tap as navTap, walk } from '../lib/nav-tree';
 import { PersonCard } from '../components/person-card';
 import { type ChanceMode, ChancesView } from '../components/chances-view';
@@ -366,6 +367,7 @@ export default function Home() {
 
   // the icon dock folds down to a thin handle when you leave it alone; one tap brings it back
   const [dockOpen, setDockOpen] = useState(true);
+  const spin = useOrbitSpin(collapsed && dockOpen);  // the dock's dotted rings (planets that open into more), only while shown
   const [dockTouched, setDockTouched] = useState(0);
   const fold = () => {                                    // the rings fold away: the dock first, then idle
     if (!collapsed) setDockOpen(true);
@@ -395,9 +397,9 @@ export default function Home() {
   const ringsH = collapsed ? 0 : orbitHeight(width);
   // the folded dock: this level's planets in one or two rows, a back planet first (named after where it goes)
   const lvl = level(navNode);
-  const dockItems: { id: string; label: string; color: string; icon: string; back?: boolean }[] = [
+  const dockItems: { id: string; label: string; color: string; icon: string; back?: boolean; more?: boolean }[] = [
     ...(lvl.back ? [{ id: 'back', label: lvl.back.label, color: lvl.back.color, icon: 'chevron-back', back: true }] : []),
-    ...navNode.children.map((n) => ({ id: n.id, label: n.label, color: n.color, icon: n.icon })),
+    ...navNode.children.map((n) => ({ id: n.id, label: n.label, color: n.color, icon: n.icon, more: n.children.length > 0 })),
   ];
   const perRow = dockRows(dockItems.length)[0];
   const dot = Math.min(46, Math.floor((width - 12) / Math.max(perRow, 5)) - 14);
@@ -493,9 +495,10 @@ export default function Home() {
                     <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: it.color,
                                                 backgroundColor: it.back ? darker(it.color) : on ? it.color : C.raised }]}>
                       <Ionicons name={it.icon as never} size={Math.round(dot * 0.46)} color={it.back ? '#fff' : on ? '#0d0d16' : it.color} />
+                      {it.more ? <DashedOrbit size={dot} color={it.color} spin={spin} /> : null}
                       {n && !it.back ? <View style={st.dockCount}><Text style={st.dockCountText}>{n > 99 ? '99+' : n}</Text></View> : null}
                     </View>
-                    <Text style={[st.dockLabel, on && { color: it.color }, it.back && { color: C.text, fontWeight: '800' }]} numberOfLines={1}>
+                    <Text style={[st.dockLabel, on && { color: it.color }, it.back && { color: C.text, fontWeight: '800' }, it.more && { marginTop: 3 + RING_GAP }]} numberOfLines={1}>
                       {it.back ? `‹ ${it.label}` : it.label}
                     </Text>
                   </Pressable>

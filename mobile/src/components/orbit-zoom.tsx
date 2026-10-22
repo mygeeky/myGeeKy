@@ -2,9 +2,12 @@
 // parts and it flies to the centre while its parts circle around it; tap a page to open it. Going back is always
 // clear: a coloured "‹ Back to World" at the top left, the trail beside it (tap any step), and an ↑ on the centre
 // planet, which goes up a level too. The panel's planet row moves the same way (qt_panel.py _nav_tap).
+// A planet that opens into more parts wears a slowly turning dotted ring (components/dashed-orbit.tsx); in the centre it
+// doesn't.
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { level, path, type Node } from '../lib/nav-tree';
+import { DashedOrbit, RING_GAP, useOrbitSpin } from './dashed-orbit';
 import { C, tint } from '../lib/theme';
 
 /** The orbit's height for a screen width: the rings take this share, the rest is for the list. */
@@ -23,6 +26,7 @@ export function OrbitZoom({ width, height, at, open, counts, onTap, onJump, youL
   onTap: (id: string) => void; onJump: (id: string) => void; youLetter: string; hint: boolean;
 }) {
   const lvl = level(at);
+  const spin = useOrbitSpin();
   const onPath = new Set(path(open).map((n) => n.id));
   const trail = path(at);
   const cx = width / 2, cy = height / 2 + 18;
@@ -78,11 +82,11 @@ export function OrbitZoom({ width, height, at, open, counts, onTap, onJump, youL
                      style={{ position: 'absolute', left: x - labelW / 2, top: y - p / 2, width: labelW, alignItems: 'center' }}>
             <View style={[st.planet, { width: p, height: p, borderRadius: p / 2, borderColor: n.color, backgroundColor: on ? n.color : C.raised },
                           on && { shadowColor: n.color, shadowOpacity: 0.8, shadowRadius: 12, elevation: 8 }]}>
+              {n.children.length ? <DashedOrbit size={p} color={n.color} spin={spin} /> : null}
               <Ionicons name={n.icon as never} size={Math.round(p * 0.44)} color={on ? '#0d0d16' : n.color} />
               {count ? <View style={st.count}><Text style={st.countText}>{count > 99 ? '99+' : count}</Text></View> : null}
-              {n.children.length && !on ? <View style={[st.more, { backgroundColor: n.color }]} /> : null}
             </View>
-            <Text style={[st.label, on && { color: C.text }, p < P && { fontSize: 11 }]} numberOfLines={1}>{n.label}</Text>
+            <Text style={[st.label, on && { color: C.text }, p < P && { fontSize: 11 }, n.children.length > 0 && { marginTop: 3 + RING_GAP }]} numberOfLines={1}>{n.label}</Text>
           </Pressable>
         );
       })}
@@ -111,7 +115,6 @@ const st = StyleSheet.create({
   up: { position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: C.text, alignItems: 'center', justifyContent: 'center' },
   centerLabel: { position: 'absolute', width: 120, textAlign: 'center', color: C.text, fontSize: 12, fontWeight: '800' },
   planet: { borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  more: { position: 'absolute', bottom: -3, width: 12, height: 4, borderRadius: 2 },
   count: { position: 'absolute', top: -5, right: -7, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9,
     backgroundColor: C.text, alignItems: 'center', justifyContent: 'center' },
   countText: { color: C.bg, fontSize: 10, fontWeight: '800' },
