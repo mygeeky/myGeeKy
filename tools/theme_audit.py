@@ -34,17 +34,21 @@ def contrast(a, b) -> float:
     return (la + 0.05) / (lb + 0.05)
 
 
-def _behind(img, rect):
-    """The colour behind a text: the commonest colour in its box on the rendered page (letters are the minority)."""
+def _behind(img, rect, fg=None):
+    """The colour behind a text: the commonest colour in its box on the rendered page, leaving out the letters' own
+    colour (on a gradient no colour is common, and the letters would win)."""
     from collections import Counter
     from PySide6.QtGui import QColor
     counts: Counter = Counter()
-    x0, y0 = max(rect.left(), 0), max(rect.top(), 0)
-    x1, y1 = min(rect.right(), img.width() - 1), min(rect.bottom(), img.height() - 1)
+    dpr = img.devicePixelRatio()                          # a Retina grab has 2 pixels per point
+    x0, y0 = max(round(rect.left() * dpr), 0), max(round(rect.top() * dpr), 0)
+    x1, y1 = min(round(rect.right() * dpr), img.width() - 1), min(round(rect.bottom() * dpr), img.height() - 1)
     step = max(1, min(x1 - x0, y1 - y0) // 12)
     for y in range(y0, y1 + 1, step):
         for x in range(x0, x1 + 1, step):
             c = img.pixelColor(x, y)
+            if fg is not None and abs(c.red() - fg.red()) + abs(c.green() - fg.green()) + abs(c.blue() - fg.blue()) < 48:
+                continue
             counts[(c.red() // 8, c.green() // 8, c.blue() // 8)] += 1
     if not counts:
         return None
@@ -74,7 +78,7 @@ def scan(panel, theme_name: str) -> list[dict]:
         fg = w.palette().color(w.foregroundRole())
         if isinstance(w, (QAbstractButton,)) and not isinstance(w, QCheckBox):
             fg = w.palette().color(w.palette().ColorRole.ButtonText) if fg.alpha() == 0 else fg
-        bg = _behind(img, QRect(w.mapTo(panel, seen.topLeft()), seen.size()))
+        bg = _behind(img, QRect(w.mapTo(panel, seen.topLeft()), seen.size()), fg)
         if bg is None:
             continue
         ratio = contrast(fg, bg)
