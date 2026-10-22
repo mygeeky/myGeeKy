@@ -250,11 +250,10 @@ Signals; everything else works without one.
 
 ## 📱 On your phone
 
-<img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/hint.png" width="200" align="right" alt="The myGeeKy phone app: your world in orbit">
+<img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/phone/hint.png" width="200" align="right" alt="The myGeeKy phone app: Home, with its orbit of planets">
 
-**Your world in orbit:** you in the middle, your circle on the inner ring, the world on the outer one.
-
-Spin a ring with your thumb; tap to read and the rings fold into a slim dock. Set it up with one scan from
+**Your world in orbit:** Home in the middle, and around it You, Grow, World, Circle, Repos and Chances.
+A planet with a dotted ring opens into more; tap to read and the orbit folds into a slim dock. Set it up with one scan from
 the desktop panel.
 
 <sub>On Android, coming to Google Play soon.</sub>

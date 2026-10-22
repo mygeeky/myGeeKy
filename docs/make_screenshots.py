@@ -7,6 +7,11 @@ Activity, Model). Signals uses made-up example people, since it shows other
 users. Banners (update, token expiry) are switched off so the shots are clean.
 Also writes docs/screenshots/hero.png (three tabs side by side) and
 docs/tour.gif (every tab, crossfading) for the README.
+
+    python docs/make_screenshots.py --tall
+
+retakes the tabs as tall as the panel goes, into launch/video/intro/shots/ (git-ignored), for the video
+(launch/video/make_falling.py), so each one shows its content, not just the panel's header.
 """
 
 from __future__ import annotations
@@ -20,13 +25,14 @@ from pathlib import Path
 
 os.environ.setdefault("QT_SCALE_FACTOR", "2")
 ROOT = Path(__file__).resolve().parent.parent
-SHOTS = ROOT / "docs" / "screenshots"
+TALL = "--tall" in sys.argv
+SHOTS = ROOT / "launch" / "video" / "intro" / "shots" if TALL else ROOT / "docs" / "screenshots"
 
 TABS = [  # (file, tab, market mode)
     ("live", "live", None), ("suggestions", "suggestions", None), ("repos", "repos", None),
     ("market", "market", "repos"), ("research", "market", "research"), ("models", "market", "models"),
-    ("news", "news", None),
-    ("activity", "activity", None), ("signals", "signals", None), ("model", "model", None),
+    ("news", "news", "headlines"),
+    ("activity", "activity", None), ("signals", "signals", None), ("model", "model", "model"),
     ("grow-skills", "grow", "skills"), ("grow-protocols", "grow", "paths"), ("grow-quiz", "grow", "quiz"),
     ("grow-quiz-question", "grow", "quiz-run"),
     ("grow-learn", "grow", "learn"),
@@ -135,6 +141,13 @@ def render() -> dict[str, Path]:
             answers[1] = (answers[1] + 1) % 4          # one wrong: a real-looking score
         quiz.record(quiz.mark(drawn, answers))
     from mygeeky.gui.qt_panel import MyGeekyPanel
+    from PySide6.QtCore import QRect
+    # one size for every picture, whatever this computer's screen: a share of a small laptop screen at 2x
+    # is too short to show anything, and your own width setting shouldn't change the README
+    size = (500, 700 if TALL else 520)
+    docked = MyGeekyPanel._docked_geometry
+    MyGeekyPanel._docked_geometry = lambda self, folded, screen: (docked(self, folded, screen) if folded
+                                                                  else QRect(0, 0, *size))
 
     def pump(seconds: float) -> None:
         end = time.time() + seconds
@@ -142,7 +155,7 @@ def render() -> dict[str, Path]:
             app.processEvents()
             time.sleep(0.03)
 
-    cfg = dataclasses.replace(load_config(), gui_hearts_enabled=False, gui_panel_height_fraction=0.62,
+    cfg = dataclasses.replace(load_config(), gui_hearts_enabled=False, gui_panel_height_fraction=1.0 if TALL else 0.62,   # 1.0: clamped to the tallest
                               gui_theme="midnight")              # the pictures always show the dark theme
     panel = MyGeekyPanel(cfg)
     panel.setAttribute(Qt.WA_DontShowOnScreen, True)
@@ -170,9 +183,20 @@ def render() -> dict[str, Path]:
             panel._set_grow_mode(mode)
         elif tab == "chances":
             panel._set_chance_mode(mode)
+        elif tab == "news":
+            panel._set_news_mode(mode)
+        elif tab == "model":
+            panel._show_you_part(mode)
         elif mode:
             panel._set_market_mode(mode)
         pump(4.5 if tab in ("grow", "chances") else 2.5)
+        if tab in ("grow", "chances") and mode != "quiz-run":   # each picture starts at the top of its page,
+            area = panel._grow_scroll if tab == "grow" else panel.chances_area.parentWidget()   # not where the last left it
+            while area is not None and not isinstance(area, QScrollArea):
+                area = area.parentWidget()
+            if area is not None:
+                area.verticalScrollBar().setValue(0)
+                pump(0.3)
         if fname == "grow-protocols":  # start the picture at your protocols: the road map and a step
             from mygeeky.gui.growth_ui import ProtocolCard
             cards = [c for c in panel.grow_area.parentWidget().findChildren(ProtocolCard) if c.isVisible()]
@@ -366,6 +390,9 @@ def tour(shots: dict[str, Path]) -> None:
 
 if __name__ == "__main__":
     shots = render()
+    if TALL:
+        sys.stdout.flush()
+        os._exit(0)
     setup_pages()
     hero(shots)
     tour(shots)

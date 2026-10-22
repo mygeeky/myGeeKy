@@ -637,7 +637,7 @@ TOUR_END = TOUR_AT + len(TOUR) * TOUR_EACH
 
 # The phone app, before the desktop install: its home screen, the orbit. Not on Google Play yet (the README
 # says "coming to Google Play soon"), so the line says so.
-PHONE_SHOT = ROOT / "docs" / "screenshots" / "phone" / "hint.png"   # Live, with the first-run hint
+PHONE_SHOT = ROOT / "docs" / "screenshots" / "phone" / "hint.png"   # Home, with its orbit of planets
 PHONE_LINE = ("On your phone", "your world in orbit, soon on Google Play")
 PHONE_AT, PHONE_EACH = TOUR_END + 0.6, 4.6
 
