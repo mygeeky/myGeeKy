@@ -143,7 +143,7 @@ rule that has no such test yet, add a case: same input through both, same answer
 3. **Do both sides in the same change** when it's shared. Same behaviour, same limits, same words.
 4. **Check the user-facing text everywhere:** a changed feature or promise may also need `README.md`,
    `docs/GUIDE.md`, `website/index.html`, `website/privacy.html` (anything about data or accounts), the Play
-   listing (`docs/play/LISTING.md`) and `CHANGELOG.md`.
+   listing (`google-play/LISTING.md`) and `CHANGELOG.md`.
 5. **Verify each side:** desktop `.venv/bin/python -m pytest -q`; phone `cd mobile && npx tsc --noEmit && npx expo lint`;
    website `python website/build.py`. Run the parity tests above.
 6. **Report the parity line** at the end of the work and in the commit message body:

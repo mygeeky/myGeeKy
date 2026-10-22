@@ -48,7 +48,7 @@ cover new work.
 - **Google Play:** needs an `.aab` signed with the upload key, never the test APK:
   `npx eas-cli@latest build --platform android --profile production`, then
   `npx eas-cli@latest submit --platform android --profile production` (EAS keeps the keystore; Expo account
-  `alsammans-team`). See `docs/play/ACCOUNT.md` and `docs/play/LISTING.md`.
+  `alsammans-team`). See `google-play/ACCOUNT.md` and `google-play/LISTING.md`.
 
 ## After a release
 

@@ -1,6 +1,6 @@
 ---
 name: mygeeky-play
-description: Use when preparing, checking or submitting the myGeeKy phone app for Google Play, or changing anything that Play reviews -- Android permissions (mobile/app.json), the target API / Expo SDK, signing, the Data safety answers, the privacy policy, in-app links to it, Signals' user content rules, the store listing (docs/play/), or what data leaves the phone. Holds Play's current rules with dates and sources, where myGeeKy stands on each, the gaps still open, and the automatic check (tools/play_check.py).
+description: Use when preparing, checking or submitting the myGeeKy phone app for Google Play, or changing anything that Play reviews -- Android permissions (mobile/app.json), the target API / Expo SDK, signing, the Data safety answers, the privacy policy, in-app links to it, Signals' user content rules, the store listing (google-play/), or what data leaves the phone. Holds Play's current rules with dates and sources, where myGeeKy stands on each, the gaps still open, and the automatic check (tools/play_check.py).
 ---
 
 # myGeeKy on Google Play
@@ -34,10 +34,10 @@ Run it after any change to `mobile/app.json`, `mobile/package.json` (an Expo or 
 |---|---|
 | **Target API 36** for new apps and updates since **31 Aug 2026** (extension to 1 Nov 2026 on request); API 37 likely by Aug 2027, not announced. [target-sdk](https://developer.android.com/google/play/requirements/target-sdk) | ✅ Expo SDK 57 → compile/target 36, min 24. SDK 58 compiles against 37: move up before Aug 2027. |
 | **16 KB memory pages**: updates that don't support them can't be released from **1 Feb 2027** (targets 35+, 64-bit). LOAD segments aligned ≥ 2¹⁴ and `zipalign -c -P 16` passes. [page-sizes](https://developer.android.com/guide/practices/page-sizes) | ✅ all 56 64-bit `.so` aligned, zipalign passes (AGP 8.12, `useLegacyPackaging=false`). The optional RELRO note (NDK r27) is unresolved: confirm in the Console's report; SDK 58 / NDK r28 should clear it. |
-| **AAB + Play App Signing** for new apps. [9844279](https://support.google.com/googleplay/android-developer/answer/9844279) | ✅ `eas.json` production: `app-bundle`, `autoIncrement`, `appVersionSource: remote`. Let Google keep the signing key (`docs/play/ACCOUNT.md`). |
-| **New personal accounts**: a closed test with **≥12 testers opted in for 14 days** before production. [14151465](https://support.google.com/googleplay/android-developer/answer/14151465) | Documented in `docs/play/ACCOUNT.md` §2. |
+| **AAB + Play App Signing** for new apps. [9844279](https://support.google.com/googleplay/android-developer/answer/9844279) | ✅ `eas.json` production: `app-bundle`, `autoIncrement`, `appVersionSource: remote`. Let Google keep the signing key (`google-play/ACCOUNT.md`). |
+| **New personal accounts**: a closed test with **≥12 testers opted in for 14 days** before production. [14151465](https://support.google.com/googleplay/android-developer/answer/14151465) | Documented in `google-play/ACCOUNT.md` §2. |
 | **Privacy policy**: public URL in the Console **and a link inside the app**, matching the Data safety answers. [User Data](https://support.google.com/googleplay/android-developer/answer/10144311) | ✅ (2026-10-21) *Privacy policy ↗* and *Signals terms ↗* in You → Settings (phone) and ⚙ (computer); the policy's camera sentence corrected. |
-| **Data safety**: anything that leaves the device is "collected" (SDKs included); exempt: on-device only, in-memory only, end-to-end encrypted. [10787469](https://support.google.com/googleplay/android-developer/answer/10787469) | ✅ (2026-10-21) `docs/play/LISTING.md` lists every type with where it goes (OpenAlex email, app interactions to the user's private repo when connected, beacon content, Signals messages exempt as E2E), and `privacy.html` says the same. To re-check after any change to what leaves the phone. |
+| **Data safety**: anything that leaves the device is "collected" (SDKs included); exempt: on-device only, in-memory only, end-to-end encrypted. [10787469](https://support.google.com/googleplay/android-developer/answer/10787469) | ✅ (2026-10-21) `google-play/LISTING.md` lists every type with where it goes (OpenAlex email, app interactions to the user's private repo when connected, beacon content, Signals messages exempt as E2E), and `privacy.html` says the same. To re-check after any change to what leaves the phone. |
 | **Account deletion** applies when the app (or a flow it links to) creates an account. [13327111](https://support.google.com/googleplay/android-developer/answer/13327111) | Probably out of scope (GitHub/ORCID sign-in only), but `app/home.tsx` links to github.com/signup. ✅ (2026-10-22) `mygeeky.org/delete.html` has the steps (Start over, uninstall, delete the beacon and sync repos, revoke the GitHub grant) and is the deletion URL. |
 | **User-generated content**: terms accepted before posting, prohibited content defined, in-app report and block, ongoing moderation. [9876937](https://support.google.com/googleplay/android-developer/answer/9876937) | ✅ (2026-10-21) `website/terms.html`; agreed to (once per terms version) before turning Signals on or posting a call, enforced in the core on both apps (`beacon.go_live`/`create_call`, `signals.ts` `setUp`/`createCall`); block and report; the maker hides a beacon from every copy via the curated lists' `signals_hidden` (`tests/test_signals_terms.py`). |
 | **Prominent disclosure** right before data use a person wouldn't expect, with a way to decline. [11150561](https://support.google.com/googleplay/android-developer/answer/11150561) | ✅ (2026-10-22) data leaves only on the user's action; connecting the data repo says what goes there (the CV text from a computer, and from the phone the words and kind of each thing opened), on both apps. |
@@ -53,8 +53,8 @@ Blockers (or near-certain rejection):
 2. ~~Signals terms~~ done 2026-10-21. To hide a beacon: add the login to `signals_hidden` in
    `src/mygeeky/data/curated.json` (and the identical `mobile/src/data/curated.json`), then push.
 3. ~~Data safety answers~~ done 2026-10-21 (the maintainer enters them in the Console).
-4. ~~Reviewer access~~ done 2026-10-21: the note in `docs/play/LISTING.md` (*Continue as guest*, no account),
-   checked on a fresh install; four new 1080 × 1920 screenshots in `docs/play/` (more would help).
+4. ~~Reviewer access~~ done 2026-10-21: the note in `google-play/LISTING.md` (*Continue as guest*, no account),
+   checked on a fresh install; four new 1080 × 1920 screenshots in `google-play/` (more would help).
 
 Before submitting:
 5. ~~Block unneeded permissions~~ done 2026-10-21: `SYSTEM_ALERT_WINDOW` is blocked in `mobile/app.json` →
@@ -63,7 +63,7 @@ Before submitting:
    only, read-only). READ/WRITE_EXTERNAL_STORAGE (expo-file-system, capped at Android 12) stay until an Android 12
    emulator shows the document picker works without them. Never edit `mobile/android/`: it's regenerated.
 6. ~~A data-deletion page~~ done 2026-10-22: `website/delete.html` (phone, computers, GitHub repos and grants), the
-   Data safety deletion URL in `docs/play/LISTING.md`; the phone's *Start over* now also erases its tokens and Signals key.
+   Data safety deletion URL in `google-play/LISTING.md`; the phone's *Start over* now also erases its tokens and Signals key.
 
 Good practice:
 7. **Test APK signing**: sign the GitHub APK with a private release key (never committed; the keystore outside the
@@ -78,9 +78,9 @@ When a gap is closed, move it into the table above and say how it was done.
 
 ## How to work a Play change
 
-1. Read this file and `docs/play/ACCOUNT.md` / `LISTING.md`; open the sources of any rule you rely on.
+1. Read this file and `google-play/ACCOUNT.md` / `LISTING.md`; open the sources of any rule you rely on.
 2. Change config only through `mobile/app.json` / plugins (`npx expo install` for libraries, `mobile/AGENTS.md`).
 3. Build a test APK (`mygeeky-release`), run `tools/play_check.py`, look at the app on the emulator (`mygeeky-phone`).
-4. Anything about data, accounts or permissions also changes `website/privacy.html`, `docs/play/LISTING.md`
+4. Anything about data, accounts or permissions also changes `website/privacy.html`, `google-play/LISTING.md`
    (Data safety) and the in-app text: they must say the same thing.
 5. Ask before any build on EAS or submission; say what would go out.

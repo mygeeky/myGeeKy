@@ -61,7 +61,7 @@ Say plainly that it is a two-week opt-in and they can leave afterwards.
    profile already makes an `.aab`, which is what Play takes — not an APK).
 3. Upload it to a **Closed testing** track, add the testers' group, send the opt-in link. **The 14 days
    start now.**
-4. While it runs: retake the screenshots, and fill in the Console answers from `LISTING.md`.
+4. While it runs: fill in the Console answers from `LISTING.md` (the screenshots are ready in `screenshots/`).
 5. Day 14: apply for production access, then roll out.
 
 Let Google sign the app (Play App Signing, the default); EAS keeps the upload key. Losing that key means
@@ -74,10 +74,10 @@ access). That file is a credential: **GitHub Secrets or your password manager on
 
 ## The two that get apps rejected
 
-- **App access.** A reviewer cannot sign in with GitHub. Give them a throwaway GitHub account, or use the
-  note in `LISTING.md`: setup accepts any public username (`octocat`) and the token is optional.
-- **Screenshots.** The ones in this folder predate 🌱 Grow, 🎯 Chances and 🏆 Quiz, and Play rejects
-  screenshots with a device frame drawn around them.
+- **App access.** A reviewer cannot sign in with GitHub, and doesn't need to: the note in `LISTING.md` tells
+  them to choose *Continue as guest*, which opens everything but the parts that read their own GitHub account.
+- **Screenshots.** Play rejects screenshots with a device frame drawn around them. The ones in `screenshots/`
+  (22 October 2026, app 1.17.1) have none.
 
 **Data safety:** answer it from `LISTING.md`, which says **yes, data is collected** — because the app
 sends your username to GitHub to work at all, and Play counts that as collection even though myGeeKy has

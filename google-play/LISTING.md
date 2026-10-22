@@ -8,12 +8,13 @@ Everything here is a draft to paste into the Play Console. Lines marked **(you d
 |---|---|---|
 | `icon-512.png` | App icon | 512 × 512 |
 | `feature-graphic.png` | Feature graphic | 1024 × 500 |
-| `screenshot-1.png` … `screenshot-4.png` | Phone screenshots (2–8) | 1080 × 1920 |
+| `screenshots/1-home.png` … `7-month.png` | Phone screenshots (2–8), in this order | 1080 × 1920, no transparency |
 
-> Taken 21 October 2026 (app 1.16.0, a fresh install as a guest, no device frame): 🏠 Home's Neon cards with a
-> milestone, Chances → Seasons, Chances → Jobs, Repos → Help out. More would help (Grow → Protocols or a quiz
-> question, World → News): set the emulator to 1080 × 1920 first (`adb shell wm size 1080x1920`), as Play wants the
-> long side at most twice the short one.
+> Taken 22 October 2026 on app 1.17.1, no device frame, Android's demo status bar (12:00): Home with its orbit of
+> planets, Grow → Protocols (the folded dock), a quiz question answered with its source, Grow → Skills, Chances →
+> Jobs, World → Papers, You → My month. To retake: `adb shell wm size 1080x1920` first (Play wants the long side at
+> most twice the short one), then `adb shell wm size reset`. Leave out pages full of other people's names or other
+> companies' brands (People, Live, the AI race).
 
 ## Store listing
 
@@ -92,9 +93,6 @@ No account, no adverts, no tracking. Free and open source.
 
 **Ads**: No, the app has no ads.
 
-**App access**: All functionality is available without special access, except Signals. Note for reviewers:
-> Setup asks only for a GitHub username. Enter any public username (for example `octocat`) and tap Continue; the token is optional. Signals (the 📡 planet) needs the user's own fine-grained GitHub token, so reviewers can skip it.
-
 **Target audience** (you decide): 18 and over is simplest. Any age under 18 brings in the Families policy.
 
 **News app** (you decide): the app shows headlines but is a research tool, not a publisher. Answering "No" is reasonable. "Yes" adds Google's news-app requirements.
@@ -149,6 +147,6 @@ Note for the reviewer:
 ## Before the first upload
 
 1. Create the developer account (play.google.com/console, $25). For a new personal account, Play asks for **a closed test with at least 12 testers for 14 days in a row** before production access.
-2. Build: `npx eas-cli@latest build -p android --profile production` (an `.aab`; the version code rises on its own).
+2. Build: see `README.md` in this folder (an `.aab`; the version code rises on its own).
 3. Create the app in the Play Console with the package `org.mygeeky.app`. Upload the first `.aab` by hand on a Closed testing track. After that, `eas submit -p android` can upload new builds with a Google service-account key.
 4. Let Google sign the app (Play App Signing, the default). EAS keeps the upload key.
