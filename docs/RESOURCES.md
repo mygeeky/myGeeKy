@@ -45,7 +45,7 @@ on the emulator:
 | System | Startup | RAM, every page visited | Leak (widgets per round) | Idle CPU shown / hidden |
 |---|---|---|---|---|
 | Windows | 0.88 s | 176 MB | 0 | 0.31% / 0.39% |
-| macOS | 0.65 s | 247 MB (close to the 250 MB budget: watch it) | 0 | 0.39% / 0.27% |
+| macOS | 0.65 s | 267 MB (2026-10-21; its own budget, 270 MB: see Budgets) | 0 | 0.39% / 0.27% |
 | Linux | 0.46 s | 205 MB | 0 | 0.09% / 0.06% |
 | Phone (release APK 1.13.0) | | 161 MB at start (PSS) | | Model page idle: 0 frames, 1.9% |
 
@@ -112,6 +112,12 @@ the phone decodes into a whole pack with an independent reader.
 
 The numbers the audit checks are in `tools/resource_audit.py` (`BUDGETS`). Tighten a budget when a fix lands (for
 example `rss_mb` after plan item 6), never loosen one to make a check pass without writing down why here.
+
+- `rss_mb_macos` 270 (2026-10-21, the maintainer's decision): on the same code GitHub's runners measured the panel at
+  266.7 MB on macOS, 211.8 on Linux and 184.0 on Windows (psutil RSS, after every page × 8). macOS counts the larger
+  Qt frameworks and its allocator's reserve in RSS, so it reads ~50 MB higher; nothing in the app differs. Linux and
+  Windows keep `rss_mb` 250. Trimming (cap `ghcache.Store._rows` and `AvatarLoader._memory`, then building pages on
+  first open) would lower all three; if it lands, tighten both.
 
 ## History of this page
 

@@ -40,6 +40,7 @@ BUDGETS = {
     "hidden_cpu_pct": 0.5,        # hidden: animations must stop
     "startup_s": 8.0,
     "rss_mb": 250,                # the panel's RAM after visiting every page (175 MB since scikit-learn loads lazily)
+    "rss_mb_macos": 270,          # the same on macOS, which reads ~50 MB above Linux for the same code (docs/RESOURCES.md)
 }
 
 
@@ -212,7 +213,7 @@ def leak(rounds: int = 8) -> dict:
            "growing_most": top, "rss_mb": rows[-1]["rss_mb"]}
     out["checks"] = {"leak_kb_per_round": _verdict(kb_per, BUDGETS["leak_kb_per_round"]),
                      "leak_widgets_per_round": _verdict(w_per, BUDGETS["leak_widgets_per_round"]),
-                     "rss_mb": _verdict(rows[-1]["rss_mb"], BUDGETS["rss_mb"])}
+                     "rss_mb": _verdict(rows[-1]["rss_mb"], BUDGETS["rss_mb_macos" if sys.platform == "darwin" else "rss_mb"])}
     panel.close()
     return out
 
