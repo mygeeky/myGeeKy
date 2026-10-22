@@ -41,10 +41,9 @@ FORBIDDEN = {                            # Play refuses these without a declarat
     "android.permission.READ_CALL_LOG": "never",
 }
 UNNEEDED = {                             # not refused, but more than myGeeKy needs: block them in app.json
-    "android.permission.SYSTEM_ALERT_WINDOW": "draws over other apps; comes from the prebuild template",
-    "android.permission.USE_FINGERPRINT": "deprecated, unused",
-    "android.permission.WRITE_EXTERNAL_STORAGE": "files come through the document picker",
-    "android.permission.READ_EXTERNAL_STORAGE": "files come through the document picker",
+    "android.permission.SYSTEM_ALERT_WINDOW": "draws over other apps; the prebuild template's (blocked in app.json, debug keeps it)",
+    # READ/WRITE_EXTERNAL_STORAGE come from expo-file-system, capped at Android 12 (maxSdkVersion 32): likely unneeded (files
+    # come through the document picker), but only an Android 12 test can show it, and Play doesn't mind them capped.
 }
 
 

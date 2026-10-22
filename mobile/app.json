@@ -18,7 +18,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "org.mygeeky.app"
+      "package": "org.mygeeky.app",
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -49,12 +52,6 @@
             "backgroundColor": "#12121c",
             "image": "./assets/splash-blank.png"
           }
-        }
-      ],
-      [
-        "expo-local-authentication",
-        {
-          "faceIDPermission": "myGeeKy asks for Face ID only to open the maker's admin part."
         }
       ],
       "expo-sharing",

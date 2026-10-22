@@ -54,7 +54,7 @@ import { retryWhois } from '../lib/whois-store';
 const HINT_KEY = 'mygeeky.orbitHinted';
 type NewsPart = 'airace' | 'headlines' | 'discuss';
 type RepoPart = 'help' | 'rising';
-type YouPart = 'month' | 'model' | 'cited' | 'badges' | 'more' | 'ideas' | 'admin' | `admin:${string}`;
+type YouPart = 'month' | 'model' | 'cited' | 'badges' | 'more' | 'ideas' | 'admin';
 
 const EMPTY: Partial<Record<SectionId, string>> = {
   live: 'Nothing new around you yet. Pull down to check again.',
@@ -435,7 +435,7 @@ export default function Home() {
         >
           {sel === 'you' ? (
             <View style={{ marginHorizontal: -4 }}>
-              {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'cited' ? <CitedByView /> : youPart === 'badges' ? <BadgesPart /> : youPart.startsWith('admin') && admin ? <AdminPart me={admin} section={youPart.slice(6) || 'overview'} /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
+              {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'cited' ? <CitedByView /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
             </View>
           ) : !user && NEEDS_GITHUB[sel] ? (
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />

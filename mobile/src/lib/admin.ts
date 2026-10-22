@@ -1,26 +1,19 @@
-// The maker's admin part, on the phone (src/mygeeky/admin.py): adoption, the ideas inbox and the people who
-// might want myGeeKy, with an invite to copy or send yourself.
+// The maker's admin part, on the phone (src/mygeeky/admin.py): a read-only glance -- downloads, stars, people on
+// Signals and how much waits on the computer (components/admin-part.tsx). Everything you act on is on the computer.
 //
 // What keeps it the maker's:
 //   * it shows only when GitHub says the phone's data-repo token belongs to an ADMINS account that owns
 //     that repo (verifiedOwner) -- a username typed into the app proves nothing;
 //   * everything in it comes from admin_prospects.json in that PRIVATE repo, so a modified copy of this
 //     open-source app that shows the part anyway still has nothing to show;
-//   * the phone's own lock (fingerprint, face or PIN) is asked for every time it opens (admin-part.tsx);
-//   * nothing secret lives here: finding listings, publishing them, writing quizzes and their DeepSeek key
-//     stay on the computer;
-//   * the phone never edits admin_prospects.json or scout.json (whole files every computer writes): what you
-//     do here is one line appended to admin_actions.jsonl, which your computers apply at their next sync
-//     (src/mygeeky/adminlog.py), and which this part shows as done straight away.
+//   * the phone shows numbers only and writes nothing: finding listings, reviewing them, inviting people, writing
+//     quizzes and their DeepSeek key stay on the computer.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Crypto from 'expo-crypto';
 import { bank } from './quiz';
 import type { Lists } from './curated';
-import { flushQueue, modelLink, readRepoFile, verifiedOwner } from './model-repo';
+import { readRepoFile, verifiedOwner } from './model-repo';
 
 export const ADMINS = new Set(['alsammanalsamman']);
-export const INVITE_DAILY_LIMIT = 10;
-const ACTIVE_DAYS = 60;
 const FILE = 'admin_prospects.json';
 
 export type Person = {
@@ -75,58 +68,14 @@ export async function loadAdmin(): Promise<AdminData | null> {
 }
 
 // ---- admin.py, ported
-const isActive = (p: Person) => {
-  const t = Date.parse(p.last_active);
-  return !Number.isNaN(t) && Date.now() - t < ACTIVE_DAYS * 86400000;
-};
-
-/** Only people active on GitHub lately: someone quiet for months won't see an invite. */
-export const prospects = (people: Person[], n = 30) =>
-  people.filter((p) => p.status === 'new' && p.looked_up_at && isActive(p)).sort((a, b) => b.score - a.score).slice(0, n);
-
+/** How many people are at each step of an invite (the numbers on the phone's glance). */
 export function funnel(people: Person[]): Record<'new' | 'invited' | 'joined' | 'declined', number> {
   const count = { new: 0, invited: 0, joined: 0, declined: 0 };
   for (const p of people) if (p.status in count) count[p.status as keyof typeof count] += 1;
   return count;
 }
 
-export const invitedToday = (people: Person[]) => {
-  const today = new Date().toISOString().slice(0, 10);
-  return people.filter((p) => p.invited_at.slice(0, 10) === today).length;
-};
-
-function opening(why: string[]): string {
-  const reasons = why.join(' ');
-  if (reasons.includes('starred myGeeKy')) return 'Thank you for starring myGeeKy on GitHub!';
-  if (reasons.includes('forked myGeeKy')) return 'I saw you forked myGeeKy on GitHub, thank you!';
-  const m = reasons.match(/builds (\S+) \(published\)/);
-  if (m) return `I came across ${m[1]} on GitHub, the tool behind your published paper.`;
-  if (reasons.includes('works in your field')) return "I came across your work on GitHub, and it's close to my own field.";
-  return 'I came across your work on GitHub.';
-}
-
-/** A short, personal invite, word for word the desktop's (and a mailto: when they list an email). */
-export function invite(p: Person, me: string): { subject: string; body: string; mailto?: string } {
-  const first = (p.name || p.login).split(/\s+/)[0] ?? '';
-  const subject = 'A tool for researchers to find each other: would you try it?';
-  const body = `Hi ${first},\n\n${opening(p.why)}\n\n`
-    + "I built myGeeKy because of a problem I kept running into. I'm not on Facebook or LinkedIn (I find "
-    + 'them distracting), but I still want to connect with people in research: people I can learn from, '
-    + 'and who might learn something from me. So I made a tool for researchers in data science and '
-    + 'computer science. It looks at your GitHub, your CV and your papers, groups the people and projects '
-    + "in your field, and shows you who's worth following, what's rising and what's new, in one small "
-    + 'panel on your screen. It only suggests: it never posts or follows anyone for you.\n\n'
-    + 'Would you be willing to install it and give it a try? https://mygeeky.org (a Windows installer, '
-    + "one line on Linux, or pip install mygeeky). Any feedback would mean a lot, and there's a 💡 button "
-    + `in the app for ideas.\n\nBest,\nAlsamman\n(github.com/${me})`;
-  const out: { subject: string; body: string; mailto?: string } = { subject, body };
-  if (p.email) out.mailto = `mailto:${p.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  return out;
-}
-
-export const IDEA_KINDS: Record<string, string> = { idea: '💡', problem: '🐞', question: '❓', keyword: '🔤', report: '🚩', protocol: '🧭' };
-
-// ---- what you do here: one line each in admin_actions.jsonl (adminlog.py applies it on your computers)
+// ---- what earlier versions sent from the phone (admin_actions.jsonl), not yet applied by a computer: counted as done
 const ACTIONS = 'admin_actions.jsonl';
 const APPLIED = 'admin_actions_applied.jsonl';
 const QUEUE_KEY = 'mygeeky.admin.queue';
@@ -146,17 +95,6 @@ export async function pendingActions(): Promise<Action[]> {
   const all = [...lines(sent), ...local].filter((a: any) => typeof a?.id === 'string' && !done.has(a.id)) as Action[];
   const seen = new Set<string>();
   return all.filter((a) => !seen.has(a.id) && !!seen.add(a.id)).sort((x, y) => (x.at < y.at ? -1 : 1));
-}
-
-/** Record one action and send it at once (it stays queued on the phone if the network fails). */
-export async function act(a: Omit<Action, 'id' | 'at'>): Promise<void> {
-  if (!(await adminLogin())) throw new Error('Admin only.');
-  const action: Action = { ...a, id: `phone-${Crypto.randomUUID().replace(/-/g, '').slice(0, 20)}`,
-    at: `${new Date().toISOString().slice(0, 19)}+00:00` };
-  const q = JSON.parse((await AsyncStorage.getItem(QUEUE_KEY)) ?? '[]');
-  await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify([...(Array.isArray(q) ? q : []), action]));
-  const link = await modelLink();
-  if (link) await flushQueue(link.repo, link.token, ACTIONS, QUEUE_KEY, 'admin action');
 }
 
 /** People as they will be once your computers apply what you did here. */
@@ -203,16 +141,6 @@ export async function loadListings(pending: Action[]): Promise<{ toReview: Candi
   return { toReview: all.filter((c) => c.status === 'new' && live(c)).sort(best).slice(0, 40),
     accepted: all.filter((c) => c.status === 'accepted' && live(c)).sort(best) };
 }
-
-export const deadlineText = (days: number | null) => days === null ? '' : days <= 0 ? 'closes today'
-  : days === 1 ? 'closes tomorrow' : days <= 60 ? `closes in ${days} days` : `closes in ${Math.floor(days / 30)} months`;
-
-/** The fields the desktop's "Edit, then accept" offers, by kind. */
-export const EDIT_FIELDS: Record<Candidate['kind'], string[]> = {
-  jobs: ['title', 'org', 'place', 'deadline', 'type', 'url', 'summary', 'keywords'],
-  funding: ['title', 'org', 'place', 'deadline', 'who', 'amount', 'url', 'summary', 'keywords'],
-  conferences: ['title', 'org', 'place', 'deadline', 'starts', 'ends', 'student', 'url', 'summary', 'keywords'],
-};
 
 // ---- 📝 quizzes: how many each reviewed protocol has (app.quizwriter_state), and batches waiting for you
 export const QUIZ_READY = 10;

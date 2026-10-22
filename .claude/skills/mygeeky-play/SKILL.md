@@ -57,9 +57,11 @@ Blockers (or near-certain rejection):
    checked on a fresh install; four new 1080 × 1920 screenshots in `docs/play/` (more would help).
 
 Before submitting:
-5. **Block unneeded permissions** in `mobile/app.json` → `android.blockedPermissions` (never edit `mobile/android/`,
-   it's regenerated): SYSTEM_ALERT_WINDOW, USE_FINGERPRINT, READ/WRITE_EXTERNAL_STORAGE (check the document picker
-   still works), the vendor launcher-badge permissions. `play_check.py` lists them.
+5. ~~Block unneeded permissions~~ done 2026-10-21: `SYSTEM_ALERT_WINDOW` is blocked in `mobile/app.json` →
+   `android.blockedPermissions` (the debug manifest keeps it for the developer menu). `USE_FINGERPRINT`/`USE_BIOMETRIC`
+   left with `expo-local-authentication`, removed when Admin dropped its lock (it opens for the GitHub-verified maker
+   only, read-only). READ/WRITE_EXTERNAL_STORAGE (expo-file-system, capped at Android 12) stay until an Android 12
+   emulator shows the document picker works without them. Never edit `mobile/android/`: it's regenerated.
 6. **A data-deletion page** (`website/delete.html`) for the Data safety deletion question.
 
 Good practice:

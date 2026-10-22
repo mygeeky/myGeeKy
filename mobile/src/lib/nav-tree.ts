@@ -85,9 +85,6 @@ export function ordered(ids: string[], hasGitHub: boolean, needsGitHub: readonly
 // --------------------------------------------------------------------------- the phone's tree
 // A node's `tab` is the section it opens (SectionId), `part` the part within it; `icon` an Ionicons name.
 export const PHONE_NEEDS_GITHUB = ['live', 'people', 'activity', 'signals'];
-/** You → Admin's sections, as planets (the desktop's ADMIN_PARTS in gui/qt_panel.py): [part, label, Ionicons name]. */
-export const ADMIN_PARTS: [string, string, string][] = [['overview', 'Overview', 'stats-chart-outline'], ['review', 'Review', 'file-tray-full-outline'],
-  ['write', 'Write', 'create-outline'], ['inbox', 'Inbox', 'bulb-outline'], ['people', 'People', 'people-outline'], ['settings', 'Settings', 'settings-outline']];
 const G = Object.fromEntries(GROUPS.map((g) => [g.id, g]));
 const leaf = (tab: SectionId, part: string, label: string, icon: string): Raw => ({ id: `${tab}:${part}`, label, icon, tab, part });
 
@@ -107,8 +104,7 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
       leaf('you', 'month', 'My month', 'ribbon-outline'), leaf('you', 'model', 'Model', 'analytics-outline'),
       leaf('you', 'cited', 'Cited by', 'document-attach-outline'),
       leaf('you', 'badges', 'Badges', 'medal-outline'), leaf('you', 'more', 'Settings', 'settings-outline'),
-      leaf('you', 'ideas', 'Ideas', 'bulb-outline'), ...(admin ? [{ id: 'you:admin', label: 'Admin', icon: 'shield-outline', tab: 'you',
-        part: 'admin', children: ADMIN_PARTS.map(([p, label, icon]) => leaf('you', `admin:${p}`, label, icon)) }] : [])] },
+      leaf('you', 'ideas', 'Ideas', 'bulb-outline'), ...(admin ? [leaf('you', 'admin', 'Admin', 'shield-outline')] : [])] },  // a glance: admin-part.tsx
     { ...G.grow, icon: 'leaf-outline', children: [
       leaf('grow', 'highlights', 'Highlights', 'sparkles-outline'), leaf('grow', 'skills', 'Skills', 'trending-up-outline'),
       leaf('grow', 'paths', 'Protocols', 'compass-outline'), leaf('grow', 'quiz', 'Quiz', 'trophy-outline'),
