@@ -3,7 +3,13 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.35.0 (2026-10-21): ready for Google Play, and sync that gets through (phone 1.17.0)
+
+- **Sync gets through again** (computer). An older myGeeKy had committed its GitHub cache (up to 432 MB) into syncs that never reached GitHub; the newer version stopped carrying the cache, but those waiting syncs still held it, so every upload -- in setup too -- stalled for a minute and failed with "Operation too slow", and nothing from that computer reached the others. Before uploading, waiting syncs that carry a file too big for GitHub are now folded into one holding exactly today's files (the cache stays on the computer); a file that big that is meant to sync is named instead of stalling.
+- **Planets that open into more wear a dotted ring** (phone). In the orbit and the folded dock, a planet with pages inside has a dashed ring that turns slowly (once every 14 seconds, only while you can see it, and not at all with reduce motion on); a page has none, and a planet you opened loses it in the centre. It replaces the small bar under the planet.
+- **Admin on the phone is a glance** (phone): downloads, stars, people on Signals and how much is waiting on your computer, as numbers only -- no names, emails or buttons that change anything; reviewing, inviting and publishing are on the computer. It opens for the GitHub account that owns your data repo, with no fingerprint lock, so the app no longer asks for fingerprint or face permissions.
+- **The Play build no longer asks to draw over other apps** (phone; the development build keeps it for its developer menu).
+- Checks: the readability check reads Retina screens right and isn't fooled by gradient buttons; macOS has its own memory budget (270 MB, Linux and Windows keep 250) because it counts ~50 MB more for the same app.
 
 - **Signals terms** (computer and phone). Before you turn Signals on or post a call for contributors, myGeeKy shows the Signals terms in five lines (your beacon is public; be kind and honest; never post someone else's private information; you can block and report; a beacon that breaks the rules is hidden from everyone) and asks you to agree, once (again only if the terms change). The full terms are at mygeeky.org/terms.html. A beacon that breaks them can now be hidden from every copy of myGeeKy through the public curated lists. Beacons already on keep working; the terms are asked at your next call.
 - **Privacy policy and terms links inside the app**: You → Settings on the phone, ⚙ on the computer. The privacy policy now says exactly what leaves your device when you ask for an OpenAlex key (your email, to OpenAlex only) and when My month reads your own GitHub activity, and states plainly that the camera is used only to read a QR code.
