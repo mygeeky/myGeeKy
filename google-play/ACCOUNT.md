@@ -1,5 +1,11 @@
 # Opening the Google Play developer account
 
+> **Where it stands (2026-10-23):** the account is open and verified. The app `org.mygeeky.app` was created, every
+> App content declaration and the store listing filled in (as in `LISTING.md`), and the first closed test
+> (Closed testing – Alpha, 11800 / 1.18.0, 178 countries, the "myGeeKy testers" email list of 16 + the maker, feedback
+> support@mygeeky.org) was **sent for review on 2026-10-23**. Next: once approved, send the opt-in link; 14 days from
+> 12+ opted in; then apply for production.
+
 What `LISTING.md` is for the store page, this is for the account behind it. Only the maker can do these
 steps: Google wants one real person's identity and card.
 
