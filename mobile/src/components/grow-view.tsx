@@ -25,8 +25,9 @@ import { GeekLoader, useHold } from './geek-loader';
 
 export type GrowMode = 'highlights' | 'skills' | 'paths' | 'quiz' | 'learn' | 'data' | `data:${string}` | 'wins' | 'collab';
 type Mode = GrowMode;
-const MODES: [Mode, string][] = [['highlights', 'Highlights'], ['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'], ['data', 'Data'],
-  ['wins', 'Wins'], ['collab', 'People']];
+// Highlights last until there are many; Collaborators ('collab', still drawn) hidden while few use Signals
+const MODES: [Mode, string][] = [['skills', 'Skills'], ['paths', 'Protocols'], ['quiz', 'Quiz'], ['learn', 'Learn'], ['data', 'Data'],
+  ['wins', 'Wins'], ['highlights', 'Highlights']];
 const ABOUT: Record<Mode, string> = {
   highlights: 'Research articles picked by the maker, each retold as a short news article in plain words: what they found, '
     + 'who did it, what they did and with which tools. Tap one to read it in your language.',
@@ -82,7 +83,7 @@ function ResourceCard({ r, onVote }: { r: Ranked; onVote: (up: boolean) => Promi
 export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mode) => void } = {}) {
   const { settings, token, profile } = useApp();
   const me = settings?.username ?? '';
-  const [own, setOwn] = useState<Mode>('highlights');
+  const [own, setOwn] = useState<Mode>('skills');
   const mode = shown ?? own;
   const base = (mode.startsWith('data') ? 'data' : mode) as keyof typeof ABOUT;   // 'data:biology': Data, on one field
   const setMode = (m: Mode) => { setOwn(m); onMode?.(m); };

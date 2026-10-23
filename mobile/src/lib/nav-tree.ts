@@ -106,13 +106,13 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
       leaf('you', 'badges', 'Badges', 'medal-outline'), leaf('you', 'more', 'Settings', 'settings-outline'),
       leaf('you', 'ideas', 'Ideas', 'bulb-outline'), ...(admin ? [leaf('you', 'admin', 'Admin', 'shield-outline')] : [])] },  // a glance: admin-part.tsx
     { ...G.grow, icon: 'leaf-outline', children: [
-      leaf('grow', 'highlights', 'Highlights', 'sparkles-outline'), leaf('grow', 'skills', 'Skills', 'trending-up-outline'),
+      leaf('grow', 'skills', 'Skills', 'trending-up-outline'),
       leaf('grow', 'paths', 'Protocols', 'compass-outline'), leaf('grow', 'quiz', 'Quiz', 'trophy-outline'),
       leaf('grow', 'learn', 'Learn', 'library-outline'),
       { id: 'grow:data', label: 'Data', icon: 'server-outline', tab: 'grow', part: 'data',     // its own level: For you and the fields
         children: FIELD_PARTS.map(([p, label, icon]) => leaf('grow', `data:${p}`, label, icon)) },
       leaf('grow', 'wins', 'Wins', 'happy-outline'),
-      leaf('grow', 'collab', 'People', 'hand-left-outline')] },
+      leaf('grow', 'highlights', 'Highlights', 'sparkles-outline')] },   // Collaborators hidden while few use Signals (as on the computer)
     { ...G.world, icon: 'earth-outline', children: [
       { id: 'news', label: 'News', icon: 'newspaper-outline', tab: 'news', children: [
         leaf('news', 'airace', 'AI race', 'flag-outline'), leaf('news', 'headlines', 'Headlines', 'reader-outline'),

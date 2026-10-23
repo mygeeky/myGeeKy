@@ -4446,8 +4446,9 @@ class MyGeekyPanel(QWidget):
         return scroll
 
     # ------------------------------------------------------------------ 🌱 Grow and 🎯 Chances
-    GROW_MODES = (("highlights", "✨ Highlights"), ("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("quiz", "🏆 Quiz"), ("learn", "📚 Learn"),
-                  ("data", "🗂️ Data"), ("wins", "🎉 Wins"), ("collab", "🤝 Collaborators"))
+    # Highlights last until there are many; 🤝 Collaborators (still drawn by "collab") hidden while few use Signals
+    GROW_MODES = (("skills", "📈 Skills"), ("paths", "🧭 Protocols"), ("quiz", "🏆 Quiz"), ("learn", "📚 Learn"),
+                  ("data", "🗂️ Data"), ("wins", "🎉 Wins"), ("highlights", "✨ Highlights"))
     CHANCE_MODES = (("seasons", "🗓 Seasons"), ("jobs", "💼 Jobs"), ("funding", "💶 Funding"),
                     ("conferences", "🎤 Conferences"))
 
@@ -4500,7 +4501,7 @@ class MyGeekyPanel(QWidget):
         return buttons
 
     def _build_grow_tab(self) -> QScrollArea:
-        self._grow_mode = "highlights"
+        self._grow_mode = "skills"
         self._growth: dict[str, Any] = {}
         self._collabs: dict[str, Any] = {}
         self._growth_running = False

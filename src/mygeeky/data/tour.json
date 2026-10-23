@@ -139,11 +139,6 @@
       "fr": "Les nouvelles étoiles et forks de tes dépôts, et les nouvelles citations de tes articles, vérifiés une fois par jour.",
       "ar": "النجوم والنسخ الجديدة على مستودعاتك، والاستشهادات الجديدة بأوراقك، تُفحص مرة يوميًا.",
       "zh": "你仓库新增的星标和 fork，以及你论文的新引用，每天检查一次。"}},
-    "collab": {"at": {"desktop": "grow:collab", "phone": "grow:collab"}, "pose": "think", "since": 1, "t": {
-      "en": "Other myGeeKy users whose skills complement yours. A 🤝 is sealed: they only see it if they pick you too.",
-      "fr": "D'autres utilisateurs de myGeeKy dont les compétences complètent les tiennes. Un 🤝 reste scellé : ils ne le voient que s'ils te choisissent aussi.",
-      "ar": "مستخدمون آخرون لـ myGeeKy تكمل مهاراتهم مهاراتك. علامة 🤝 مختومة: لا يرونها إلا إذا اختاروك أيضًا.",
-      "zh": "技能与你互补的其他 myGeeKy 用户。🤝 是密封的：只有对方也选了你，才会看到。"}},
     "news": {"at": {"desktop": "news", "phone": "news"}, "pose": "point", "since": 1, "t": {
       "en": "Headlines and discussions about your keywords.",
       "fr": "Les titres et les discussions autour de tes mots-clés.",
@@ -296,7 +291,7 @@
     "settings": ["welcome_part", "set_look", "set_place", "set_papers", "set_cv", "set_wisep", "set_packs", "set_setup", "set_sync", "end_part"],
     "home": ["welcome_part", "home", "home_learn", "end_part"],
     "you": ["welcome_part", "month", "model", "cited", "badges", "settings_page", "end_part"],
-    "grow": ["welcome_part", "highlights", "skills", "protocols", "quiz", "learn", "data", "wins", "collab", "end_part"],
+    "grow": ["welcome_part", "skills", "protocols", "quiz", "learn", "data", "wins", "highlights", "end_part"],
     "world": ["welcome_part", "news", "papers", "models", "launches", "end_part"],
     "circle": ["welcome_part", "live", "people", "researchers", "activity", "signals", "end_part"],
     "repos": ["welcome_part", "repos", "rising", "end_part"],

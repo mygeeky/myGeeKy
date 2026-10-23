@@ -24,12 +24,13 @@ def _settle(qapp, panel, tab):
 def test_the_sections_are_still_written_out_in_one_place():
     """The icon and the name are split from the one label, so there is no second list to keep in step."""
     assert dict(MyGeekyPanel.CHANCE_MODES)["seasons"] == "🗓 Seasons"
-    assert dict(MyGeekyPanel.GROW_MODES)["collab"] == "🤝 Collaborators"
+    assert "collab" not in dict(MyGeekyPanel.GROW_MODES), "🤝 Collaborators hidden while few use Signals"
+    assert MyGeekyPanel.GROW_MODES[-1] == ("highlights", "✨ Highlights"), "Highlights last until there are many"
 
 
 @pytest.mark.parametrize("tab,row,modes,opens", [
     ("chances", "chance_mode_buttons", "CHANCE_MODES", "jobs"),
-    ("grow", "grow_mode_buttons", "GROW_MODES", "highlights"),     # Grow opens on ✨ Highlights
+    ("grow", "grow_mode_buttons", "GROW_MODES", "skills"),         # Grow opens on 📈 Skills
 ])
 def test_only_the_open_section_says_its_name(qapp_offscreen, monkeypatch, tab, row, modes, opens):
     qapp, panel = _panel(monkeypatch)
@@ -92,7 +93,7 @@ def test_the_open_section_takes_the_room_and_the_rest_share_what_is_left(qapp_of
         _settle(qapp, panel, "grow")
         from PySide6.QtWidgets import QSizePolicy
         for mode, b in panel.grow_mode_buttons.items():
-            want = QSizePolicy.Preferred if mode == "highlights" else QSizePolicy.Expanding
+            want = QSizePolicy.Preferred if mode == "skills" else QSizePolicy.Expanding
             assert b.sizePolicy().horizontalPolicy() == want, mode
     finally:
         panel.close()
@@ -108,7 +109,7 @@ def test_the_row_follows_the_theme(qapp_offscreen, monkeypatch):
         holder = next(iter(panel.grow_mode_buttons.values())).parentWidget()
         assert "modeRow" in holder.styleSheet() and theme["card_bg"] in holder.styleSheet()
         assert theme["muted"] in panel.grow_mode_buttons["wins"].styleSheet(), "a closed one is dimmed"
-        assert theme["text"] in panel.grow_mode_buttons["highlights"].styleSheet(), "the open one is not"
+        assert theme["text"] in panel.grow_mode_buttons["skills"].styleSheet(), "the open one is not"
     finally:
         panel.close()
 

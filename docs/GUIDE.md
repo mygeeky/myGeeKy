@@ -56,7 +56,7 @@ suggested: your model still learns from what you open. Change it any time (`work
 
 ### ✨ Highlights
 
-Grow opens on **Highlights**: research articles picked by myGeeKy's maker, each retold as a short science news
+The last part of Grow is **Highlights**: research articles picked by myGeeKy's maker, each retold as a short science news
 article -- a headline, a one-line standfirst and a few paragraphs, each with one idea: what they found, who
 did it and where (and whether it was a collaboration), the problem and what came before, what they did and
 with which tools, the findings and the limits. Tap a language button to read it in Arabic, French, German,
@@ -165,8 +165,8 @@ experiments* and *images into numbers with Fiji* are for.
     scores are never shown at all: [LEADERBOARD.md](LEADERBOARD.md).
 - **📚 Learn**: hand-picked learning resources, matched to you and your rising skills.
 - **🎉 Wins**: new stars, forks and citations. The first check only sets the starting point.
-- **🤝 Collaborators**: fellow myGeeKy users on Signals whose skills complement yours.
-  - **🤝 I'd like to collaborate** sends the sealed, mutual-only collaborate signal.
+- **🤝 Collaborators** (hidden for now, until more people use Signals): fellow myGeeKy users on Signals whose
+  skills complement yours. **🤝 I'd like to collaborate** sends the sealed, mutual-only collaborate signal.
 
 **🎯 Chances** has verified **jobs**, **funding** and **conferences**:
 - each one is checked by hand and disappears after its deadline;

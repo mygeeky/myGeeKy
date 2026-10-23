@@ -3,6 +3,10 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **Grow opens on Skills** (computer and phone). Highlights moved to the end of Grow until there are more of them, and 🤝 Collaborators is hidden for now: it matches you with other myGeeKy users on Signals, and there are still too few for it to find anyone. GeeKOc's Grow tour follows the new order.
+
 ## 0.36.0 (2026-10-23): GeeKOc shows you around, ❓ Help, and crash reports by email (phone 1.18.0)
 
 - **Crash reports without GitHub** (computer). The "Something went wrong" window has **Email it**, which opens the cleaned report as a ready-made email to support@mygeeky.org in your own mail app, and **Copy report** for the whole thing. You still see exactly what goes and press Send yourself; nothing goes through a myGeeKy server.
