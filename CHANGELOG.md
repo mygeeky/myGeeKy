@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.36.0 (2026-10-23): GeeKOc shows you around, ❓ Help, and crash reports by email (phone 1.18.0)
 
 - **Crash reports without GitHub** (computer). The "Something went wrong" window has **Email it**, which opens the cleaned report as a ready-made email to support@mygeeky.org in your own mail app, and **Copy report** for the whole thing. You still see exactly what goes and press Send yourself; nothing goes through a myGeeKy server.
 - **GeeKOc shows you around** (computer and phone). The first time myGeeKy opens, GeeKOc asks which language you'd like (English, Français, العربية, 中文) and walks you through the places that fit what you gave at setup: GitHub, ORCID, both, a CV, or just keywords. Every tour visits Seasons and Jobs right after Home; each stop opens the page and points at where it lives in the menu, his arms swimming as he talks. It ends with what more you'd get by adding GitHub, ORCID or a CV, the five things myGeeKy never does, and *Your geeky friend who helps you grow, quietly.* Skip ends it; it comes back by itself only when an update brings new stops, and never under tests or on CI.
