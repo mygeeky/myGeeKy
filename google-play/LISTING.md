@@ -26,33 +26,24 @@ Everything here is a draft to paste into the Play Console. Lines marked **(you d
 **Full description** (max 4000):
 
 ```
-myGeeKy is a quiet companion for people who work at a computer: developers and computer
-scientists, bioinformaticians and data scientists, and researchers who analyse their own
-experiments.
+myGeeKy is a quiet companion for people who work at a computer: developers and computer scientists, bioinformaticians and data scientists, and researchers who analyse their own experiments.
 
 GROW
-Pick a skill and follow a reviewed protocol: a short path of steps, each pointing at a real
-tutorial, repository, paper or course that somebody checked by hand. Fourteen of them so far,
-from Git and GitHub teamwork to statistics for experiments, from a first web app to
-single-cell RNA-seq, from algorithms for interviews to turning images into numbers.
+Pick a skill and follow a reviewed protocol: a short path of steps, each pointing at a real tutorial, repository, paper or course that somebody checked by hand. Fourteen of them so far, from Git and GitHub teamwork to statistics for experiments, from a first web app to single-cell RNA-seq, from algorithms for interviews to turning images into numbers.
 
 PROVE IT
-Every protocol has a quiz. Each question quotes a sentence that is really on one of that
-protocol's own sources, so any answer can be checked against the page it came from. Ten
-questions an attempt, a mix of easy, applied and the real pitfalls. Only your best score
-counts, one attempt a day, and you can flag a question you think is wrong.
+Every protocol has a quiz. Each question quotes a sentence that is really on one of that protocol's own sources, so any answer can be checked against the page it came from. Ten questions an attempt, a mix of easy, applied and the real pitfalls. Only your best score counts, one attempt a day, and you can flag a question you think is wrong.
 
 FIND YOUR CHANCES
-Jobs, funding calls and conferences, each one read and verified before it is listed, ranked
-by how well it fits what you actually work on. Deadlines are checked, and anything past its
-date disappears by itself.
+Seasons tell you when the yearly calls open (scholarships, fellowships, research programmes and grants), so you can prepare before the deadline, not after it. Jobs, funding calls and conferences, each one read and verified before it is listed, ranked by how well it fits what you actually work on. Deadlines are checked, and anything past its date disappears by itself.
 
 KEEP UP WITHOUT THE NOISE
-Rising papers in your field, the tools your field runs on, trending AI models, new launches,
-and who builds what. Badges for the things you got done.
+Rising papers in your field, the tools your field runs on, trending AI models, new launches, and who builds what. Badges for the things you got done.
 
-Signals (optional): private thank-yous between myGeeKy users. Each one is encrypted so only
-the person it is for can read it, and no reply is ever expected.
+Signals (optional): private thank-yous between myGeeKy users. Each one is encrypted so only the person it is for can read it, and no reply is ever expected.
+
+A FRIENDLY START
+GeeKOc, myGeeKy's octopus, shows you around the first time, in English, French, Arabic or Chinese, and Help answers how and why myGeeKy works.
 
 PRIVATE BY DESIGN
 • No myGeeKy account and no myGeeKy server: sign in with GitHub or ORCID, drop in your CV, or just give a few keywords
@@ -63,9 +54,7 @@ PRIVATE BY DESIGN
 
 Pair it with the desktop app by scanning a QR code, and the two show the same things.
 
-myGeeKy is free and open source (MIT). The code, the reviewed protocols and every quiz
-question are public at github.com/mygeeky/myGeeKy. It also runs on Windows, macOS and
-Linux: mygeeky.org
+myGeeKy is free and open source (MIT). The code, the reviewed protocols and every quiz question are public at github.com/mygeeky/myGeeKy. It also runs on Windows, macOS and Linux: mygeeky.org
 ```
 
 **What's new** (max 500), for the first release:
@@ -81,7 +70,7 @@ Pair with the desktop app by scanning a QR code.
 No account, no adverts, no tracking. Free and open source.
 ```
 
-**App category** (you decide): Productivity (or Education)
+**App category**: Education (entered 2026-10-23)
 **Tags**: Research, Productivity
 **Website**: https://mygeeky.org
 **Privacy policy**: https://mygeeky.org/privacy.html
