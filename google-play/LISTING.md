@@ -105,6 +105,7 @@ No account, no adverts, no tracking. Free and open source.
 - Digital purchases: No
 
 **Data safety** (checked against the code and `website/privacy.html` on 2026-10-21; you confirm before entering it):
+- Account creation: **OAuth** (Sign in with GitHub / ORCID, and a link to github.com/signup); no myGeeKy account. Entered 2026-10-23.
 - Does the app collect or share user data? **Yes** (it sends data to GitHub, OpenAlex and others to work, which Play
   counts as collection even without a myGeeKy server). Nothing is **shared** in Play's sense: every transfer is one
   the user asks for, to a service they chose, and nothing goes to a myGeeKy server (there is none).
@@ -120,6 +121,7 @@ No account, no adverts, no tracking. Free and open source.
 | Personal info → Name (*Find my papers*: the name and institution typed) | Yes | No | Optional | App functionality | OpenAlex, as a search |
 | Personal info → Email address (only to get a free OpenAlex key) | Yes | No | Optional | App functionality | OpenAlex only; not kept by the app |
 | App activity → App interactions (the interest terms of what you open, and which pages you use) | Yes, **only with a data repo connected** | No | Optional | Personalization | The user's own **private** GitHub repository |
+| App activity → In-app search history (what's typed in a search box: a researcher's name, a field word, Find my papers) | Yes | No | Optional | App functionality | OpenAlex or GitHub, as the search itself; not stored by the app, and not ephemeral in Play's sense (the service may log it) |
 | App activity → Other user-generated content (Signals status, interest tags, calls for contributors) | Yes | No | Optional | App functionality | The user's own **public** `mygeeky-beacon` repository |
 | Messages (Signals) | **No**: end-to-end encrypted, only the recipient can read them (exempt) | | | | |
 | Files and docs (*Drop a CV, thesis or abstract*) | **No**: read on the phone, not kept or sent; only the words the user keeps are saved | | | | |
