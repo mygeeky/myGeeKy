@@ -9,7 +9,7 @@ import * as P from '../lib/packs';
 import { follow, load as loadResearchers } from '../lib/researchers';
 import { C, tint } from '../lib/theme';
 
-// Receive a pack (You → Settings → 📦 Packs): the first code says how many there are, then it counts them in any
+// Receive a pack (More → Settings → 📦 Packs): the first code says how many there are, then it counts them in any
 // order, shows which it has (✓ 1  ○ 2  ○ 3), asks for the next, and when all are in, shows what the pack holds
 // before anything changes: Merge into mine, or Start from it.
 export default function PackScan() {
@@ -71,7 +71,7 @@ export default function PackScan() {
           <Pressable style={[st.button, { backgroundColor: C.card }]} onPress={() => take('start')}>
             <Text style={[st.buttonText, { color: C.text }]}>Start from it (its keywords, topics and field replace yours)</Text>
           </Pressable>
-          <Text style={[st.body, { color: C.muted }]}>Either way you can undo it in You → Settings → 📦 Packs.</Text>
+          <Text style={[st.body, { color: C.muted }]}>Either way you can undo it in More → Settings → 📦 Packs.</Text>
           <Pressable onPress={() => router.back()}><Text style={st.link}>Cancel</Text></Pressable>
         </ScrollView>
       </SafeAreaView>

@@ -65,7 +65,7 @@ const EMPTY: Partial<Record<SectionId, string>> = {
   activity: "The people you follow haven't done anything public lately.",
   people: 'No one found for your keywords yet: add a few in You → Your model.',
   news: 'No headlines yet. Pull down to load them.',
-  papers: 'No rising papers found yet. Connecting your data repo (You → Model) or adding your ORCID (You → Settings → Start over) finds your exact field.',
+  papers: 'No rising papers found yet. Connecting your data repo (You → Model) or adding your ORCID (More → Settings → Start over) finds your exact field.',
   repos: 'No repos yet: your computer finds them (Repos tab there), and they arrive with its next sync.',
   models: 'No trending models yet. Pull down to load them.',
   launches: 'No launches yet. Pull down to load them.',
@@ -227,7 +227,7 @@ export default function Home() {
   useEffect(() => { checkNow().catch(() => undefined); }, []);
   // a pending "Is this you?" search (OpenAlex was busy): tried again quietly; when it works, say so
   useEffect(() => {
-    retryWhois().then((found) => found.length && toast('📄 We found your papers on OpenAlex: is this you? See You → Settings.'))
+    retryWhois().then((found) => found.length && toast('📄 We found your papers on OpenAlex: is this you? See More → Settings.'))
       .catch(() => undefined);
   }, [toast]);
   const [collapsed, setCollapsed] = useState(params.fold === '1');
@@ -308,7 +308,7 @@ export default function Home() {
   const tourGo = (target: string) => {
     if (target.startsWith('settings:')) {                 // a part of Settings: open it, make room, scroll to it
       openNode('you:more');
-      setNavAt('you');
+      setNavAt('settings');                              // Settings lives in the ••• More main
       setCollapsed(true);
       setDockOpen(false);
       setTimeout(() => {
@@ -404,6 +404,10 @@ export default function Home() {
   // the heading is the page you're on (a part, if it has one); beside it, where it lives: WORLD › NEWS
   const title = leaf && leaf.part ? leaf.label : section.label;
   const ring = (leaf ? navPath(leaf).slice(1, -1).map((n) => n.label).join(' › ') || navPath(leaf)[1]?.label || '' : '').toUpperCase();
+  // Settings lives in the ••• More main now (its page is still You's "more" part): its own words and colour
+  const inSettings = leaf?.id === 'you:more';
+  const about = inSettings ? 'How myGeeKy looks, your papers and CV, how it asks the internet, packs and sync.' : section.about;
+  const ringColor = inSettings ? (leaf?.color ?? section.color) : section.color;
   const fs = feedsOf[view];
   const loading = fs.some((f) => f.loading);
   const holdLoading = useHold(loading);
@@ -482,9 +486,9 @@ export default function Home() {
       <View style={st.panel}>
         <View style={st.head}>
           <Text style={st.h1} numberOfLines={1}>{title}</Text>
-          <Text style={[st.ring, { color: section.color }]}>{ring}</Text>
+          <Text style={[st.ring, { color: ringColor }]}>{ring}</Text>
         </View>
-        <Text style={st.about}>{section.about}</Text>
+        <Text style={st.about}>{about}</Text>
         {tokenWarn ? (
           <Pressable onPress={() => open(SETTINGS_URL)} style={st.warn} accessibilityRole="button">
             <Text style={st.warnText}>⚠ {tokenWarn.message}</Text>

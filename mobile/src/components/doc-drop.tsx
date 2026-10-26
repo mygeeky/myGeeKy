@@ -1,6 +1,6 @@
 // Drop a CV, thesis or abstract: pick a file (PDF, Word, text) or paste the text, see what myGeeKy found -- your
 // field's keywords, your methods and tools, your co-authors -- untick what's wrong, and keep the rest. In setup and
-// in You → Settings (the desktop's setup page and ⚙ → From a document, gui/docread_ui.py). Read on this phone:
+// in More → Settings (the desktop's setup page and ⚙ → From a document, gui/docread_ui.py). Read on this phone:
 // the file isn't sent anywhere or kept (lib/doc-text.ts, lib/doc-read.ts).
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -137,7 +137,7 @@ export function DocDrop({ ownName = '', onKeep, keepLabel = 'Keep these' }:
   );
 }
 
-/** You → Settings: add what a document says to your profile, and see the co-authors you kept. */
+/** More → Settings: add what a document says to your profile, and see the co-authors you kept. */
 export function DocSettings() {
   const { settings, save } = useApp();
   const [done, setDone] = useState('');

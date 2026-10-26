@@ -104,7 +104,7 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     { ...G.you, icon: 'person-outline', children: [
       leaf('you', 'month', 'My month', 'ribbon-outline'), leaf('you', 'model', 'Model', 'analytics-outline'),
       leaf('you', 'cited', 'Cited by', 'document-attach-outline'),
-      leaf('you', 'badges', 'Badges', 'medal-outline'), leaf('you', 'more', 'Settings', 'settings-outline'),
+      leaf('you', 'badges', 'Badges', 'medal-outline'),
       leaf('you', 'ideas', 'Ideas', 'bulb-outline'), ...(admin ? [leaf('you', 'admin', 'Admin', 'shield-outline')] : [])] },  // a glance: admin-part.tsx
     { ...G.grow, icon: 'leaf-outline', children: [
       leaf('grow', 'skills', 'Skills', 'trending-up-outline'),
@@ -126,6 +126,9 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     { ...G.chances, icon: 'briefcase-outline', children: [
       leaf('chances', 'seasons', 'Seasons', 'calendar-outline'), leaf('chances', 'jobs', 'Jobs', 'briefcase-outline'),
       leaf('chances', 'funding', 'Funding', 'cash-outline'), leaf('chances', 'conferences', 'Conferences', 'mic-outline')] },
-    { id: 'help', label: 'Help', icon: 'help-circle-outline', tab: 'help', color: '#2dd4bf' },   // ❓ GeeKOc's tours and the answers: the last
+    // ••• More, the last: ⚙ Settings and ❓ Help (GeeKOc's tours and the answers), as on the computer
+    { id: 'settings', label: 'More', icon: 'ellipsis-horizontal-circle-outline', color: '#2dd4bf', children: [
+      leaf('you', 'more', 'Settings', 'settings-outline'),
+      { id: 'help', label: 'Help', icon: 'help-circle-outline', tab: 'help' }] },
   ] });
 }

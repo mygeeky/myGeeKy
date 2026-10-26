@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **••• More, the last main** (computer and phone): it holds ⚙ Settings and ❓ Help. Settings left You on the phone (the ⚙ button stays on the computer, as a shortcut); the Settings page says what it holds.
 - **Start over starts empty** (phone). It erased what was stored, but the running app kept its copy of your settings, and the new start filled itself from it (your old ORCID showed up again). Start over now forgets both, and the start is always empty.
 - **GeeKOc's eyes stay white** (phone). Now and then, as his frames changed, an eye drew black; each frame is now a fresh drawing, with no clip paths.
 - **A new start on the phone, one question a screen.** GeeKOc welcomes you, swimming (a tap makes him cheer; "Tap me" in five languages beneath him), with **Start** and **Scan from your computer**. Then link GitHub or **Skip for now**, sign in with ORCID (or find your papers by name) or skip, and last *Can you give me one of these?*: three keywords, your CV, or your ORCID iD, each a row that unfolds, or **Continue without**, and myGeeKy learns your field from what you open and like. Back (and Android's Back) goes to the step before. The data repo and Signals are no longer asked here: You → Model, the Signals page and scanning the computer's code have them.

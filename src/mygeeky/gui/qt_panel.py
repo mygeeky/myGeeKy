@@ -1612,7 +1612,7 @@ GROUP_ICONS = {
     "world": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
     "circle": PLANETS["suggestions"][1],
     "feed": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",     # 🏠 Home, the first page
-    "help": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01",   # ❓ Help, the last
+    "settings": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 12h.01M12 12h.01M16 12h.01",   # ••• More (Settings, Help), the last
 }
 BACK_ICON = "M15 18l-6-6 6-6"
 
@@ -3548,7 +3548,9 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
         group("circle", [circle[k] for k in navtree.ordered(list(circle), has_github, NEEDS_GITHUB_TABS)]),
         group("repos", [n("repos", "Help out", tab="repos"), n("market:repos", "Rising", icon="\U0001f4c8", tab="market", part="repos")]),
         group("chances", modes("chances", MyGeekyPanel.CHANCE_MODES)),
-        n("help", "Help", "#2dd4bf", tab="help"),          # ❓ GeeKOc's tours and the answers (help_ui.py): the last
+        # ••• More, the last: ⚙ Settings (the ⚙ panel) and ❓ Help (GeeKOc's tours and the answers)
+        n("settings", "More", "#2dd4bf", children=[n("settings:panel", "Settings", icon="\u2699", tab="settings"),
+                                                       n("help", "Help", icon="\u2753", tab="help")]),
     ]))
 
 
@@ -3799,7 +3801,7 @@ class MyGeekyPanel(QWidget):
             btn.setCursor(Qt.PointingHandCursor)
             btn.clicked.connect(lambda checked=False, i=nd["id"]: self._nav_tap(i))
             self.nav_buttons[nd["id"]] = btn
-            if nd["tab"] and nd["tab"] not in self.tab_buttons:
+            if nd["tab"] in TABS and nd["tab"] not in self.tab_buttons:   # ("settings" opens the ⚙ panel: not a tab)
                 self.tab_buttons[nd["tab"]] = btn          # the planet that carries the tab's count and dots
         self.nav_back = PlanetButton("#ff6fd8", BACK_ICON, solid=True)
         self.nav_back.setMinimumWidth(1)
@@ -7711,6 +7713,10 @@ class MyGeekyPanel(QWidget):
     def _nav_open(self, nd: dict[str, Any] | None) -> None:
         """Open a page: its part first (so the row doesn't jump to where the tab's old part lives), then its tab."""
         if not nd or not nd["tab"]:
+            return
+        if nd["tab"] == "settings":                       # ⚙ Settings → Settings: the ⚙ panel, not a page
+            if not self.settings_panel.isVisible():
+                self._toggle_settings()
             return
         tab, part = nd["tab"], nd["part"]
         if part:

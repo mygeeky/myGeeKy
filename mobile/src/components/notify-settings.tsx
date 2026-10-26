@@ -1,4 +1,4 @@
-// 🔔 Notifications: one switch per kind, all off until you switch one on -- in setup (short) and in You → Settings
+// 🔔 Notifications: one switch per kind, all off until you switch one on -- in setup (short) and in More → Settings
 // (full: what you agreed to in one line, how often, quiet hours, and "Turn all off"). The desktop has the same in
 // setup and ⚙ Settings (gui/notify_ui.py). Each change is saved at once (lib/notify-store.ts).
 import { useEffect, useState } from 'react';
@@ -36,7 +36,7 @@ export function NotifySettings({ full = false }: { full?: boolean }) {
       {full ? <Text style={[st.summary, on && { color: C.green }]}>{N.describe(s)}</Text> : (
         <Text style={st.lead}>
           myGeeKy can tell you, at most once a day, when something important fits you. All off unless you switch it
-          on; you can change it any time in You → Settings.
+          on; you can change it any time in More → Settings.
         </Text>
       )}
       {blocked ? (

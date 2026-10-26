@@ -85,7 +85,7 @@ This is enforced in code (`src/mygeeky/safety.py`), not only in words:
 experiments* and *images into numbers with Fiji* are for.
 
 **🌱 Grow** has five parts:
-- **🧠 How myGeeKy asks the internet** (⚙ on the computer, You → Settings on the phone): papers, citations and
+- **🧠 How myGeeKy asks the internet** (⚙ on the computer, More → Settings on the phone): papers, citations and
   datasets come from open databases. myGeeKy keeps their answers and asks again only when a fresh one is worth it --
   when it has probably changed and you're likely to look -- within a daily budget and kindly to the databases (WISEP).
   It learns which pages you open and when, on your device only; it spends what's left of the day's budget in the
@@ -312,12 +312,12 @@ appears.
 Setting myGeeKy up well takes a while. A pack lets someone start from your setup instead of from zero: the lab's
 GitHub-savvy person sets it up once, or a teacher hands one pack to a whole class.
 
-- **Make one:** ⚙ Settings → 📦 Packs (computer) or You → Settings → 📦 Packs (phone). Tick what goes in:
+- **Make one:** ⚙ Settings → 📦 Packs (computer) or More → Settings → 📦 Packs (phone). Tick what goes in:
   keywords and topics, your research field, the researchers you follow, and add a note ("Plant genomics lab, 2026").
   Nothing else ever goes in: no account, no tokens, no Model.
 - **Show it:** it appears as one to three QR codes, one at a time: "Code 1 of 3", then **Next code**. A full pack
   (40 keywords, 40 topics, a field and 30 researchers) usually needs two.
-- **Receive it (on a phone):** You → Settings → 📦 Packs → **Receive a pack**, then point the camera at any code.
+- **Receive it (on a phone):** More → Settings → 📦 Packs → **Receive a pack**, then point the camera at any code.
   The first scan tells how many codes the pack has; the screen shows which ones you have (✓ 1 ○ 2 ○ 3) and says
   which to show next, in any order. A code from a different pack starts over; a damaged set is never imported.
 - **Choose:** you see what the pack holds before anything changes, then **Merge into mine** (only adds) or **Start
@@ -420,12 +420,12 @@ mygeeky profile show        # what myGeeKy knows about you (no network)
 ```
 
 - **CV**: PDF, Word (.docx), txt or md, converted to text.
-- **Drop a CV, thesis or abstract** (setup, or ⚙ on the computer and You → Settings on the phone): myGeeKy picks
+- **Drop a CV, thesis or abstract** (setup, or ⚙ on the computer and More → Settings on the phone): myGeeKy picks
   out your field's keywords (from the keyword dictionary), your methods and tools, and the people you've written
   with, and you untick anything that isn't you. A first-year student with only a thesis proposal still gets a full
   profile. The file is read on the device and not kept: only the words you keep are saved, in your keywords and
   co-authors. Scanned PDFs have no text to read; paste the text instead.
-- **No ORCID? "Find my papers"** (setup, ⚙ → Your papers, You → Settings): type your name and institution (or
+- **No ORCID? "Find my papers"** (setup, ⚙ → Your papers, More → Settings): type your name and institution (or
   institutional email, or a co-author's name) and pick yourself among the researchers OpenAlex knows; your papers
   then shape your profile as an ORCID would. If OpenAlex is busy, setup carries on with keywords and the search is
   tried again later by itself, asking "Is this you?" when it works.
@@ -704,7 +704,7 @@ once a week; if GitHub changes that page, they just don't show.
 ## 🔔 Notifications (off unless you switch them on)
 
 myGeeKy never notifies you unless you ask it to. In setup (the last step) or in Settings (⚙ on the computer,
-You → Settings on the phone), switch on only the kinds you want: 🗓 a Season opening, 💼 a job, 💶 funding or
+More → Settings on the phone), switch on only the kinds you want: 🗓 a Season opening, 💼 a job, 💶 funding or
 🎤 a conference that fits you very well, 📄 an important new paper in your field, ✨ a new Highlight. Choose
 "at most once a day" or "at most once a week", and quiet hours (22:00-08:00 to start with).
 

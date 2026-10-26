@@ -243,7 +243,7 @@ export function GrowView({ mode: shown, onMode }: { mode?: Mode; onMode?: (m: Mo
       ) : null}
 
       {mode === 'collab' ? (
-        !me ? <Empty>Collaborator matching uses Signals, which needs GitHub: add it in You → Settings.</Empty>
+        !me ? <Empty>Collaborator matching uses Signals, which needs GitHub: add it in More → Settings.</Empty>
         : signals === false ? <Empty>Collaborator matching uses Signals: turn it on in the Signals planet, and people who complement you show up here.</Empty>
         : holdPeople || !people ? <GeekLoader text="Finding people…" />
         : (

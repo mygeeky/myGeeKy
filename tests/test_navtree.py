@@ -55,9 +55,10 @@ def test_rows_and_order():
 def test_the_panel_tree_has_every_tab():
     from mygeeky.gui.qt_panel import TABS, panel_tree
     t = panel_tree(True, True)
-    tabs = {n["tab"] for n in nt.walk(t) if n["tab"]}
+    tabs = {n["tab"] for n in nt.walk(t) if n["tab"]} - {"settings"}          # ⚙ Settings → Settings: the ⚙ panel
     assert tabs == set(TABS), "every tab is somewhere under a group"
-    assert [g["id"] for g in t["children"]] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["help"]   # 🏠 Home, the groups, ❓ Help
+    assert [g["id"] for g in t["children"]] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["settings"]   # 🏠 Home, the groups, ••• More
+    assert [c["id"] for c in nt.find(t, "settings")["children"]] == ["settings:panel", "help"], "••• More: Settings and Help"
     assert "admin" not in {n["tab"] for n in nt.walk(panel_tree(False, False))}
     circle = [c["tab"] for c in nt.find(panel_tree(False, False), "circle")["children"]]
     assert circle[-2:] == ["activity", "signals"], "without GitHub, what needs it goes last"
@@ -89,7 +90,7 @@ out({ groups: N.GROUPS, root: N.ROOT_LABEL, levels: ids.map((id: string) => N.le
     assert said["taps"] == [nt.tap(t, *x) for x in taps]
     assert said["rows"] == [nt.rows(n) for n in (2, 6, 7, 8)]
     assert said["leaf"] == ["repos:rising", "news:airace", None]
-    assert said["phoneGroups"] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["help"]   # 🏠 Home first, ❓ Help last, as on the computer
+    assert said["phoneGroups"] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["settings"]   # 🏠 Home first, ••• More last, as on the computer
     assert said["phoneCircle"] == ["researchers", "live", "people", "activity", "signals"]   # no GitHub: what works first
     assert said["phoneTabs"] == sorted(["you", "grow", "news", "papers", "models", "launches", "live", "people", "activity",
                                         "signals", "repos", "chances", "researchers", "feed", "help"])
