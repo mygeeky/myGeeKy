@@ -191,7 +191,7 @@ export default function Setup() {
             <Text style={[st.need, ready && { color: C.green }]}>
               {ready ? 'Great, that is enough to start.'
                 : words.length ? `Add ${3 - words.length} more keyword${3 - words.length === 1 ? '' : 's'}, or your CV, or your ORCID iD. Or continue without: myGeeKy learns your field from what you open, like and save.`
-                  : 'Pick one of the three, or continue without: myGeeKy learns your field from what you open, like and save.'}
+                  : 'Pick one of the three, or continue without: myGeeKy then finds your field from what you open, like and save, on this phone only.'}
             </Text>
             <Pressable style={({ pressed }) => [ready ? st.primary : st.without, pressed && { opacity: 0.85 }]} onPress={finish} disabled={busy}
                        accessibilityRole="button">
