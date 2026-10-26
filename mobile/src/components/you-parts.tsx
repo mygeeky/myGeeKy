@@ -18,7 +18,6 @@ import { badgeCounts, type Brain, cachedBrain, connectModel, disconnectModel, lo
 import { loadDictionary } from '../lib/profile';
 import { signalsToken } from '../lib/signals';
 import { checkTokens, type TokenState } from '../lib/tokens';
-import { clearAll } from '../lib/storage';
 import { C, setTheme, THEME, THEME_LABELS, type ThemeName } from '../lib/theme';
 import { DOCK_IDLE_CHOICES, DOCK_IDLE_DEFAULT, dockIdleMs, setDockIdleMs } from '../lib/prefs';
 import { NotifySettings } from './notify-settings';
@@ -308,7 +307,7 @@ export function BadgesPart() {
 // ⚙ Settings: what the desktop's ⚙ holds that means something on a phone -- your setup, sync with your data
 // repo, Signals, the 💡 -- and none of its window controls (transparency, panel height, place on screen).
 export function MorePart() {
-  const { settings, token, save } = useApp();
+  const { settings, token, save, forget } = useApp();
   const [repo, setRepo] = useState<string | null>(null);
   const [signals, setSignals] = useState(false);
   useEffect(() => {
@@ -330,8 +329,8 @@ export function MorePart() {
   const pickDock = async (ms: number) => { setDockIdle(ms); await setDockIdleMs(ms); };
   const reset = async () => {
     const go = async () => {
-      await clearAll();
-      router.replace('/setup');
+      router.replace('/setup');                    // first leave Home (it needs settings to draw)...
+      await forget();                              // ...then forget what's stored and the running app's copy
     };
     if (Platform.OS === 'web') return go();
     Alert.alert('Start over?', 'This erases everything myGeeKy keeps on this phone: settings, sign-in, tokens and keys. '

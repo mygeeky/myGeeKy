@@ -39,8 +39,10 @@ export function GeekMover({ pose, size }: { pose: string; size: number }) {
     const t = setInterval(() => setN((k) => (k + 1) % frames.length), 1000 / m.fps);
     return () => clearInterval(t);
   }, [frames.length, m.fps, still]);
-  // keyed by pose: a new pose gets a fresh drawing (updating one in place kept the old pose's eye clip, and the eyes went black)
-  return <SvgXml key={pose} xml={frames[still ? 0 : n % frames.length]} width={size} height={size} />;
+  // a fresh drawing for every frame: updating one in place matches its pieces by position, frames differ in how many
+  // they have, and an eye could take on a neighbour's settings for a moment and show black
+  const k = still ? 0 : n % frames.length;
+  return <SvgXml key={`${pose}:${k}`} xml={frames[k]} width={size} height={size} />;
 }
 
 type Hole = { x: number; y: number; w: number; h: number };

@@ -11,6 +11,7 @@ viewBox="0 0 620 620" drawing. Needs Node (node --version) to run geekoc.js.
 from __future__ import annotations
 
 import json
+import math
 import re
 import subprocess
 from pathlib import Path
@@ -60,7 +61,7 @@ for (const [name, face] of Object.entries(poses)) {
     const a = (f / frames) * 2 * Math.PI;
     const pose = { ...p, swing: p.swing.map((s, i) => s + k(i) * 13 * Math.sin(a + i * 0.9)),
                    curl: p.curl.map((c, i) => c + k(i) * 34 * Math.sin(a + i * 0.9 + 1.2)) };
-    out[name].push(G.markup(G.build({ pose, face, still: true }), { id: 'gm' + name }));
+    out[name].push(G.markup(G.build({ pose, face, still: true }), { id: 'gm' + name + f }));   // ids per frame: the phone drops a frame's clip after adding the next one's, and a shared id went with it (black eyes)
   }
 }
 // The phone's welcome: GeekOc jet-swims. The mantle fills (arms open like an umbrella, he drifts down), squeezes
@@ -104,6 +105,32 @@ def _thin(m: re.Match) -> str:
     return 'd="M' + "L".join(keep) + ("Z" if closed else "") + '"'
 
 
+def _unclip(markup: str) -> str:
+    """The eyes without clip paths. An eye is a group clipped to its circle, so that the eyelid (a rectangle) only
+    covers the eye; react-native-svg on Android sometimes loses a clip while frames change, and the eyes show black.
+    So the eyelid becomes exactly the part of the circle it covers (gone when the eye is open), and the clips go."""
+    clips = {m.group(1): (float(m.group(2)), float(m.group(3)), float(m.group(4))) for m in re.finditer(
+        r'<clipPath id="([^"]+)"><circle cx="([-\d.]+)" cy="([-\d.]+)" r="([-\d.]+)"/></clipPath>', markup)}
+
+    def eye(m: re.Match) -> str:
+        cx, cy, r = clips[m.group(1)]
+
+        def lid(rm: re.Match) -> str:
+            y, h, fill = float(rm.group(2)), float(rm.group(4)), rm.group(5)
+            low = min(y + h, cy + r)
+            if low <= cy - r + 0.5:
+                return ""                                        # the eye is open: the lid is above it
+            if low >= cy + r - 0.5:
+                return f'<circle cx="{cx:g}" cy="{cy:g}" r="{r:g}" fill="{fill}"/>'
+            dx = math.sqrt(max(0.0, r * r - (low - cy) ** 2))
+            return (f'<path d="M{cx - dx:.0f} {low:.0f}A{r:g} {r:g} 0 {1 if low > cy else 0} 1 {cx + dx:.0f} {low:.0f}Z" '
+                    f'fill="{fill}"/>')
+        return "<g>" + re.sub(r'<rect x="([-\d.]+)" y="([-\d.]+)" width="([-\d.]+)" height="([-\d.]+)" fill="([^"]+)"/>',
+                              lid, m.group(2)) + "</g>"
+    markup = re.sub(r'<g clip-path="url\(#([^)]+)\)">(.*?)</g>', lambda m: eye(m) if m.group(1) in clips else m.group(0), markup)
+    return re.sub(r'<clipPath id="[^"]+"><circle [^>]*/></clipPath>', "", markup)
+
+
 def moves() -> dict[str, object]:
     """Each pose as its pieces (one SVG element each, coordinates in whole units: plenty at the size he's drawn)
     and its frames as lists of pieces: the body, face and glasses are the same in every frame, so they're kept
@@ -120,6 +147,7 @@ def moves() -> dict[str, object]:
                                                        else m.group()), markup)   # gradient stops stay as they are
             if name == "jet":                       # the welcome's loop: every other point of an arm's outline is plenty
                 markup = re.sub(r'd="M([^"]+)"', _thin, markup)
+            markup = _unclip(markup)
             row = []
             for piece in re.split(r"(?=<)", markup):
                 if piece:

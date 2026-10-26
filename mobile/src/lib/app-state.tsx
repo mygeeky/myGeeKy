@@ -6,7 +6,7 @@ import { logOpenToday } from './badges';
 import { Profile } from './interests';
 import { type Brain, syncModel, withLocalLearning } from './model-repo';
 import { buildProfile, loadDictionary } from './profile';
-import { getToken, isStale, loadSettings, onTokenRejected, readCache, saveSettings, setToken, Settings, writeCache } from './storage';
+import { clearAll, getToken, isStale, loadSettings, onTokenRejected, readCache, saveSettings, setToken, Settings, writeCache } from './storage';
 
 type AppState = {
   ready: boolean;
@@ -15,6 +15,7 @@ type AppState = {
   profile: Profile | null;
   save: (s: Settings, token?: string | null) => Promise<void>;
   refreshProfile: () => Promise<Profile | null>;
+  forget: () => Promise<void>;
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -106,7 +107,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [settings, token]);
 
-  return <Ctx.Provider value={{ ready, settings, token, profile, save, refreshProfile }}>{children}</Ctx.Provider>;
+  // Start over: what's stored AND what this running app holds (else setup filled itself from the old settings)
+  const forget = useCallback(async () => {
+    await clearAll();
+    setSettings(null);
+    setTok(null);
+    setProfile(null);
+  }, []);
+
+  return <Ctx.Provider value={{ ready, settings, token, profile, save, refreshProfile, forget }}>{children}</Ctx.Provider>;
 }
 
 export function useApp(): AppState {

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, BackHandler, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text,
   TextInput, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
@@ -31,17 +31,17 @@ const HINTS: [string, 'ltr' | 'rtl'][] = [['Tap me', 'ltr'], ['اضغط عليّ
 export default function Setup() {
   const { settings, save } = useApp();
   const [step, setStep] = useState<Step>('welcome');
-  const [username, setUsername] = useState(settings?.username ?? '');
+  const [username, setUsername] = useState('');          // always empty: only someone new, or starting over, comes here
   const [token, setToken] = useState('');
   const [signedIn, setSignedIn] = useState('');
   const [byHand, setByHand] = useState(false);
-  const [orcid, setOrcid] = useState(settings?.orcid ?? '');
+  const [orcid, setOrcid] = useState('');
   const [orcidName, setOrcidName] = useState('');
   const [finding, setFinding] = useState(false);
-  const [openalex, setOpenalex] = useState(settings?.openalex ?? '');    // "Is this you?": the author you picked
+  const [openalex, setOpenalex] = useState('');           // "Is this you?": the author you picked
   const [papersNote, setPapersNote] = useState('');
-  const [keywords, setKeywords] = useState(settings?.keywords.join(', ') ?? '');
-  const [coauthors, setCoauthors] = useState<string[]>(settings?.coauthors ?? []);   // from a dropped CV
+  const [keywords, setKeywords] = useState('');
+  const [coauthors, setCoauthors] = useState<string[]>([]);   // from a dropped CV
   const [cvNote, setCvNote] = useState('');
   const [typedOrcid, setTypedOrcid] = useState('');
   const [open, setOpen] = useState<0 | 1 | 2 | 3>(0);
@@ -49,6 +49,14 @@ export default function Setup() {
   const [busy, setBusy] = useState(false);
 
   const at = ORDER.indexOf(step);
+  // Continue (without) sits where Skip was on the step before: a quick double tap must not skip the last question
+  const armed = useRef(false);
+  useEffect(() => {
+    armed.current = false;
+    if (step !== 'field') return;
+    const t = setTimeout(() => { armed.current = true; }, 600);
+    return () => clearTimeout(t);
+  }, [step]);
   const back = () => { setError(''); setStep(ORDER[Math.max(0, at - 1)]); };
   useEffect(() => {                                       // Android's Back: the step before, not out of the app
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -66,6 +74,7 @@ export default function Setup() {
   const ready = kwDone || cvDone || orcidOk || !!openalex;
 
   const finish = async () => {
+    if (!armed.current) return;
     const u = username.trim().replace(/^@/, '');
     if (u && !/^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/.test(u)) { setStep('github'); return setError('That isn\'t a GitHub username.'); }
     if (typed && !orcid && !orcidOk) { setOpen(3); return setError(`${typed} isn't a valid ORCID iD: a digit is probably mistyped.`); }
