@@ -5,6 +5,8 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Android's Back goes up a level** (phone). It ended the app from anywhere; now it closes a tour or an open card, then climbs the menu (Leading lights → Researchers → Circle → all sections) showing where you are, then goes Home; only on Home does it leave.
+- **The folded menu says it opens** (phone): a "Sections" pill with the app's pink-to-violet edge and what's new in it, whose arrow lifts three times when it appears (then stays still, to spare the battery; still with reduce motion).
 - **⚙ has the panel to itself** (computer). On a short screen (1366 × 768) ⚙ got about 300 px, with "Signed in as", the badges and where you are still taking room under it; now they step aside while ⚙ is open and come back when it closes.
 - **Long names fit in the side menu** (computer). "Researchers" and "Leading lights" were cut to "Research…"; the menu is a little wider (140 px) and a long name shrinks slightly before it's ever cut.
 - **🌟 Leading lights** (computer and phone, Circle → Researchers). Living people who lead your field — Nobel and other prize winners, the most cited on a topic, the people behind famous tools — four at a time, picked by your Model, a new set every three days. Each shows why they're here, their latest papers, Follow and their Scholar / ORCID link; a tap opens their report (numbers, the last ten years, topics you share, most cited papers). A first sample list of 112 people (Nobel Medicine and Chemistry, Turing Award, lupus, GWAS, and the people behind scikit-learn, Seurat, PLINK and Bioconductor), drafted from Wikidata and OpenAlex by `tools/lights_build.py`.

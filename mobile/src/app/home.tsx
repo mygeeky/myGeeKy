@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, LayoutAnimation, Linking, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, StyleSheet, Text,
+import { BackHandler, Image, LayoutAnimation, Linking, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, StyleSheet, Text,
          useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline } from 'react-native-svg';
@@ -17,6 +17,7 @@ import { darker, OrbitZoom, orbitHeight } from '../components/orbit-zoom';
 import { DashedOrbit, RING_GAP, useOrbitSpin } from '../components/dashed-orbit';
 import { find, firstLeaf, leafFor, level, path as navPath, phoneTree, rows as dockRows, tap as navTap, walk } from '../lib/nav-tree';
 import { HelpView } from '../components/help-view';
+import { UnfoldHandle } from '../components/unfold-handle';
 import { nameSpots, setTourSeen, spotOf, TourOverlay, tourSeen } from '../components/tour-overlay';
 import * as Tour from '../lib/tour';
 import { PersonCard } from '../components/person-card';
@@ -47,7 +48,7 @@ import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
 import { fetchPeople } from '../lib/people';
 import { fetchResearch } from '../lib/research';
 import { INNER, OUTER, Row, rowsFor, SECTIONS, SectionId } from '../lib/sections';
-import { C, ink, tint } from '../lib/theme';
+import { C, tint } from '../lib/theme';
 import { GeekLoader, useHold } from '../components/geek-loader';
 import { checkNow } from '../lib/notify-store';
 import { retryWhois } from '../lib/whois-store';
@@ -442,6 +443,24 @@ export default function Home() {
     dockUsed();
   };
 
+  // Android's Back: up one level, as the back planet does (a tour ends, an open card closes, then the menu climbs
+  // to its group and to all sections, then Home); only on Home does it leave the app.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (tour) { tourDone(); return true; }
+      if (openId) { setOpenId(null); return true; }
+      if (navNode.parent) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setNavAt(navTap(tree, navAt, 'back', leaf?.id ?? '').at);
+        if (collapsed) { setDockOpen(true); dockUsed(); }       // show the menu, so you see where you went
+        return true;
+      }
+      if (sel !== 'feed') { openNode('feed'); return true; }
+      return false;
+    });
+    return () => sub.remove();
+  });
+
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
     scrollY.current = y;
@@ -525,10 +544,7 @@ export default function Home() {
       </View>
 
       {collapsed && !dockOpen ? (
-        <Pressable onPress={showDock} style={st.handle} accessibilityRole="button" accessibilityLabel="Show the sections">
-          <View style={st.handleBar} />
-          <Ionicons name="chevron-up" size={14} color={C.muted} />
-        </Pressable>
+        <UnfoldHandle onPress={showDock} count={tree.children.reduce((n, g) => n + (nodeCounts[g.id] ?? 0), 0)} />
       ) : collapsed ? (
         <View style={st.dock}>
           <View style={st.unfold}>
@@ -618,8 +634,6 @@ const st = StyleSheet.create({
   close: { width: 44, minHeight: 44, borderRadius: 12, backgroundColor: tint(0.08), alignItems: 'center', justifyContent: 'center' },
   closeText: { color: C.text, fontSize: 20 },
   dock: { paddingHorizontal: 6, paddingTop: 2 },
-  handle: { height: 34, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  handleBar: { width: 44, height: 4, borderRadius: 2, backgroundColor: ink(0.28) },
   unfold: { height: 32, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10 },
   trail: { flex: 1, color: C.muted, fontSize: 12, fontWeight: '700' },
   orbitBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: tint(0.08) },
