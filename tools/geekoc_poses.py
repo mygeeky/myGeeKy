@@ -78,7 +78,7 @@ for (let f = 0; f < J; f++) {
   else if (u < 0.68) { const k = ease((u - 0.55) / 0.13); fill = lerp(1, -0.7, k); arms = 1 - k; y = lerp(12, -30, k); puff = k * 0.4; }
   else { const k = (u - 0.68) / 0.32; fill = lerp(-0.7, 0, ease(k)); arms = 0.15 * ease(k); y = lerp(-30, 0, ease(k)); puff = 0.4 + k * 0.6; }
   let svg = G.markup(G.build({ pose: G.mix(shut, open, arms), face: 'happy', still: true, head: 0.98 * (1 + 0.07 * fill), at: [0, y] }),
-                     { id: 'gmjet' });
+                     { id: 'gmjet' + f });   // an id per frame: his face moves, and the phone keeps a reused clip where it first was
   if (puff >= 0) {
     const by = 520 + y;
     svg += '<g fill="none" stroke="#9fe6ff" stroke-width="6" opacity="' + (1 - puff).toFixed(2) + '">' +
