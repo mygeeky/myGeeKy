@@ -53,13 +53,13 @@
 
 <main class="wrap">
   <h1>Privacy <span>policy</span></h1>
-  <p class="meta">Effective 21 October 2026 · applies to the myGeeKy desktop panel, command line, installer and phone app, and to this website</p>
+  <p class="meta">Effective 26 October 2026 · applies to the myGeeKy desktop panel, command line, installer and phone app, and to this website</p>
 
   <div class="tldr">
     <strong>In short</strong>
     <ul>
       <li>myGeeKy runs on your computer and your phone. <strong>There is no myGeeKy server</strong>, no account with us, and no database of users.</li>
-      <li>Your CV, your settings and what myGeeKy learns about you <strong>stay on your devices</strong>, unless you turn on sync, which uses <strong>your own private GitHub repository</strong>.</li>
+      <li>Your CV, your settings and what myGeeKy learns about you <strong>stay on your devices</strong>, unless you turn on sync, which uses <strong>your own private GitHub repository</strong> or, if you choose, <strong>a hidden folder in your own Google Drive</strong>.</li>
       <li>Your GitHub tokens are kept in your system's <strong>secure credential store</strong>, never in files, logs or messages.</li>
       <li>myGeeKy <strong>only reads</strong> public data. It never follows, stars, posts or writes anything on your behalf.</li>
       <li><strong>No analytics, no tracking, no ads</strong>, and nothing is sold or shared.</li>
@@ -107,11 +107,37 @@
       (on a computer, to myGeeKy on that same computer). It stores nothing and sends nothing anywhere else.</li>
   </ul>
 
+  <h2>Google Drive (optional)</h2>
+  <p>You can choose to keep your myGeeKy data in your own Google Drive instead of a GitHub repository, so your computers and
+    phone share it. This option is being added: until it appears in your app, myGeeKy does not connect to Google at all.</p>
+  <ul>
+    <li><strong>What myGeeKy asks Google for.</strong> Only the <code>drive.appdata</code> permission: <em>"See, create and
+      delete its own configuration data in your Google Drive"</em>. This is a hidden folder that belongs to myGeeKy alone.
+      myGeeKy <strong>cannot see, open or change any of your other Drive files</strong>, and does not ask for your contacts,
+      email or anything else in your Google account.</li>
+    <li><strong>What it keeps there.</strong> The same data the GitHub sync keeps (your settings, the interests myGeeKy learned,
+      your badges and history, and, from a computer, your CV text), <strong>encrypted on your device before it is sent</strong>.
+      The key stays on your devices (it travels between them by the QR code you scan), so Google cannot read the files,
+      and neither can anyone else.</li>
+    <li><strong>How it is used.</strong> Only to save your data and bring it back on your other devices. It is never sent to
+      myGeeKy (there is no myGeeKy server), never shared, sold or used for advertising, and never used to train any model.
+      No person reads it.</li>
+    <li><strong>Where it is stored.</strong> In your Google Drive, under Google's privacy policy; it counts toward your own
+      Drive storage. Google's sign-in token is kept in your device's secure credential store, never in files or logs.</li>
+    <li><strong>Stopping and deleting.</strong> Turn it off in Settings → Accounts at any time. To delete the data, open
+      Google Drive on the web → ⚙ Settings → <em>Manage apps</em> → myGeeKy → <em>Delete hidden app data</em>, and remove
+      myGeeKy's access in your Google Account → <em>Security</em> → <em>Third-party connections</em>.</li>
+    <li><strong>Google's rules.</strong> myGeeKy's use and transfer of information received from Google APIs will adhere to the
+      <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
+      including the Limited Use requirements.</li>
+  </ul>
+
   <h2>Who myGeeKy talks to</h2>
   <p>myGeeKy fetches public information directly from these services. They see an ordinary request from your computer or
     phone (your IP address and what was asked for), under their own privacy policies:</p>
   <ul>
     <li><strong>GitHub</strong>: profiles, repositories, followers, public activity, and your own beacon and sync repositories</li>
+    <li><strong>Google Drive</strong>: only if you choose to keep your data there, your own hidden myGeeKy folder (see <em>Google Drive</em> above)</li>
     <li><strong>OpenAlex</strong> and <strong>ORCID</strong>: research topics and papers, and <em>Sign in with ORCID</em> if you use it; with <em>Find my papers</em>, the name and institution you type, as a search; <strong>Google Scholar</strong>: your public profile, if you give one</li>
     <li><strong>arXiv</strong>, <strong>bioRxiv</strong>, <strong>Hacker News</strong> and public news feeds (AI labs, journals, the tech press): headlines</li>
     <li><strong>Hugging Face</strong>, <strong>Product Hunt</strong> and <strong>pypistats</strong>: trending models, launches and download counts</li>
