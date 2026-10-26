@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.37.0 (2026-10-26): save your data in Google Drive, encrypted on your devices (phone 1.19.0)
 
 - **Save your data in Google Drive, encrypted** (computer and phone). Saving your settings and progress now asks one question: **Google Drive** (recommended: one sign-in, nothing to renew) or **a GitHub repo**, never both, and you can switch later. myGeeKy asks Google for one thing only, its own hidden folder in your Drive; it can't see your other files. The computer's setup and the phone's start ask it too (the phone's start has a fourth step, *Where should I save your settings and progress?*), and Settings → Accounts has it on the Saving card: Sync now, Switch to GitHub / Google Drive, and your recovery code.
 - **Everything you save is encrypted on your devices** (computer and phone), in Google Drive and in a new GitHub repo alike, so the storage only ever holds unreadable files: not Google, not GitHub, nobody but your devices can read them. The key is made on your first device and reaches the others by the Connect your phone QR code or by a **recovery code** shown once (keep it safe: lose every device and the code, and nobody can read the data). An older repo stays as it was until you click **Encrypt it** on a computer, which also drops its readable history from GitHub; your other computers follow by themselves.
