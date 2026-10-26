@@ -98,7 +98,7 @@ export default function Setup() {
             <Text style={st.body}>It adds what moves around you: who follows you, what your circle pushes, your own repos and Signals.</Text>
             <Text style={st.promise}>✓  Read-only: myGeeKy never posts, stars or follows</Text>
             <Text style={st.promise}>✓  Your token stays on this phone</Text>
-            <View style={st.push} />
+            <View style={st.push}><GeekMover pose="wave" size={150} /></View>
             <SignInButton signedInAs={signedIn} onSignedIn={(login, t) => { setToken(t); setUsername(login); setSignedIn(login); setStep('orcid'); }} />
             {signedIn ? (
               <Pressable style={st.primary} onPress={() => setStep('orcid')} accessibilityRole="button"><Text style={st.primaryText}>Continue</Text></Pressable>
@@ -127,7 +127,7 @@ export default function Setup() {
                 onBusy={() => { setFinding(false); setPapersNote('OpenAlex is busy right now. myGeeKy will look again later by itself and ask "Is this you?" (You → Settings).'); }} />
             ) : null}
             {papersNote ? <Text style={st.ok}>{papersNote}</Text> : null}
-            <View style={st.push} />
+            <View style={st.push}>{finding ? null : <GeekMover pose="point" size={150} />}</View>
             <OrcidSignInButton signedInAs={orcidName} onSignedIn={(me) => { setOrcid(me.orcid); setOrcidName(me.name || me.orcid); setStep('field'); }} />
             {orcidName || openalex ? (
               <Pressable style={st.primary} onPress={() => setStep('field')} accessibilityRole="button"><Text style={st.primaryText}>Continue</Text></Pressable>
@@ -135,7 +135,10 @@ export default function Setup() {
           </> : null}
 
           {step === 'field' ? <>
-            <Text style={st.ask}>Can you give me one of these?</Text>
+            <View style={st.askRow}>
+              <Text style={[st.ask, { flex: 1 }]}>Can you give me one of these?</Text>
+              <GeekMover pose="think" size={78} />
+            </View>
             <Text style={st.body}>Any one helps me start right. Tap one to open it. No time now? Continue without, and I&apos;ll learn from what you open and like.</Text>
 
             <Option n={1} title="Three keywords" done={kwDone} open={open === 1} onToggle={() => setOpen(open === 1 ? 0 : 1)}
@@ -336,5 +339,6 @@ const st = StyleSheet.create({
   chip: { backgroundColor: C.bg, borderColor: C.line, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   chipText: { color: C.text, fontSize: 14 },
   foot: { color: C.muted, fontSize: 12, textAlign: 'center', marginTop: 22 },
-  push: { flexGrow: 1, minHeight: 24 },                // the buttons sit at the bottom, where the thumb is
+  push: { flexGrow: 1, minHeight: 24, alignItems: 'center', justifyContent: 'center' },   // the buttons sit at the bottom; GeeKOc keeps you company in between
+  askRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });
