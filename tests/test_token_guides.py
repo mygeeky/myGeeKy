@@ -94,7 +94,7 @@ def test_setup_shows_the_guides_where_a_token_is_made():
 
 def test_the_phone_shows_them_in_its_token_places():
     src = ROOT / "mobile" / "src"
-    places = {"components/you-parts.tsx": "data",                # the data repo: connected from You → Model (no longer in setup)
+    places = {"components/settings-parts.tsx": "data",           # the data repo: Settings → Accounts, and the start's save step
               "components/signals-view.tsx": "signals", "app/setup.tsx": "read"}
     for f, key in places.items():
         assert f'<TokenGuide which="{key}" />' in (src / f).read_text(encoding="utf-8"), f

@@ -9,7 +9,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { cards, todo, todoText, type AccountCard } from '../lib/accounts';
 import { useApp } from '../lib/app-state';
-import { connectModel, disconnectModel, modelLink } from '../lib/model-repo';
+import * as Clipboard from 'expo-clipboard';
+import { disconnectModel, savingLink, type SavingLink } from '../lib/model-repo';
+import { enterCode, recoveryCode, savingProblem, saveInDrive, saveInGithub } from '../lib/saving';
+import { signInWithGoogle } from '../lib/google-drive-auth';
 import { orcidChecksumOk } from '../lib/orcid-login';
 import { DOCK_IDLE_CHOICES, DOCK_IDLE_DEFAULT, dockIdleMs, setDockIdleMs } from '../lib/prefs';
 import { isSetUp } from '../lib/signals';
@@ -32,12 +35,14 @@ const ICONS: Record<AccountCard['key'], string> = { github: 'logo-github', orcid
 /** Settings → Accounts: GitHub and ORCID, then saving your data and Signals, then your computer. `go` opens a page. */
 export function AccountsPart({ go }: { go: (id: string) => void }) {
   const { settings, token, save } = useApp();
-  const [repo, setRepo] = useState<string | null>(null);
+  const [saving, setSaving] = useState<SavingLink | null>(null);
+  const [problem, setProblem] = useState<'' | 'key' | 'google' | 'moved'>('');
   const [beacon, setBeacon] = useState(false);
   const [warn, setWarn] = useState<{ data: boolean; signals: boolean }>({ data: false, signals: false });
   const [openKey, setOpenKey] = useState<string | null>(null);
   const reload = useCallback(() => {
-    modelLink().then((l) => setRepo(l?.repo ?? null)).catch(() => setRepo(null));
+    savingLink().then(setSaving).catch(() => setSaving(null));
+    savingProblem().then(setProblem).catch(() => setProblem(''));
     isSetUp().then(setBeacon).catch(() => setBeacon(false));
     checkTokens().then((t) => setWarn({ data: t.some((x) => x.name === 'data' && x.warn), signals: t.some((x) => x.name === 'signals' && x.warn) }))
       .catch(() => undefined);
@@ -46,9 +51,11 @@ export function AccountsPart({ go }: { go: (id: string) => void }) {
   if (!settings) return null;
   const items = cards({
     github: token ? 'on' : 'off', orcid: settings.orcid ? 'on' : 'off',
-    data: repo ? (warn.data ? 'bad' : 'on') : 'off', beacon: beacon ? (warn.signals ? 'bad' : 'on') : 'off',
+    data: saving ? (warn.data || problem ? 'bad' : 'on') : 'off', beacon: beacon ? (warn.signals ? 'bad' : 'on') : 'off',
     device: Object.keys(settings.interests ?? {}).length ? 'on' : 'off',
-  }, 'phone', { user: settings.username, orcid: settings.orcid, repo: repo ?? '' });
+  }, 'phone', { user: settings.username, orcid: settings.orcid, repo: saving?.repo ?? '', where: saving?.where ?? '',
+    problem: problem === 'key' ? 'key' : '' }).map((c) => (c.key === 'data' && saving && c.state === 'on'
+    ? { ...c, title: `Saving your data · ${saving.where === 'drive' ? 'Google Drive' : 'GitHub'}` } : c));
   const n = todo(items);
   return (
     <>
@@ -76,18 +83,25 @@ export function AccountsPart({ go }: { go: (id: string) => void }) {
                 { text: 'Cancel', style: 'cancel' }, { text: 'Unlink', style: 'destructive', onPress: () => save({ ...settings, orcid: '' }) }])}
                          style={st.ghost}><Text style={st.ghostText}>Unlink</Text></Pressable>
             ) : null}
-            {c.key === 'data' && c.state === 'off' ? <DataConnect onConnected={reload} /> : null}
+            {c.key === 'data' && c.state === 'off' ? <SaveChoice onDone={reload} /> : null}
             {c.key === 'data' && c.state === 'bad' ? (
-              <>
-                <Pressable onPress={() => Linking.openURL(SETTINGS_URL)} style={[st.primary, st.bad]}><Text style={st.badText}>Renew on GitHub ↗</Text></Pressable>
-                <DataConnect initialRepo={repo ?? ''} onConnected={reload} renewing />
-              </>
+              problem === 'key' ? <CodeEntry onDone={reload} />
+                : problem === 'moved' ? (
+                  <>
+                    <Text style={st.note}>Your data moved on another device. Choose where it is now:</Text>
+                    <SaveChoice onDone={reload} />
+                  </>
+                ) : saving?.where === 'drive' ? (
+                  <Pressable onPress={() => signInWithGoogle().then(reload, (e) => Alert.alert('Google', e instanceof Error ? e.message : String(e)))}
+                             style={[st.primary, st.bad]}><Text style={st.badText}>Sign in with Google again</Text></Pressable>
+                ) : (
+                  <>
+                    <Pressable onPress={() => Linking.openURL(SETTINGS_URL)} style={[st.primary, st.bad]}><Text style={st.badText}>Renew on GitHub ↗</Text></Pressable>
+                    <DataConnect initialRepo={saving?.repo ?? ''} onConnected={reload} renewing />
+                  </>
+                )
             ) : null}
-            {c.key === 'data' && c.state === 'on' ? (
-              <Pressable onPress={() => Alert.alert('Stop saving to your data repo?', 'The phone forgets its token. Your repo is not touched.', [
-                { text: 'Cancel', style: 'cancel' }, { text: 'Disconnect', style: 'destructive', onPress: async () => { await disconnectModel(); reload(); } }])}
-                         style={st.ghost}><Text style={st.ghostText}>Disconnect</Text></Pressable>
-            ) : null}
+            {c.key === 'data' && c.state === 'on' && saving ? <SavingOn saving={saving} onChanged={reload} /> : null}
             {c.key === 'beacon' && c.state !== 'on' ? (
               settings.username ? <SetupCard me={settings.username} onDone={reload} />
                 : <Text style={st.note}>Signals goes through GitHub: link GitHub above first.</Text>
@@ -156,7 +170,7 @@ function OrcidLink({ onLinked }: { onLinked: (orcid: string) => void }) {
 }
 
 /** The data repo and its token: the picture steps, then repo + token, checked before it's kept. */
-function DataConnect({ initialRepo = '', onConnected, renewing = false }: { initialRepo?: string; onConnected: () => void; renewing?: boolean }) {
+export function DataConnect({ initialRepo = '', onConnected, renewing = false }: { initialRepo?: string; onConnected: () => void; renewing?: boolean }) {
   const [repo, setRepo] = useState(initialRepo);
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
@@ -165,9 +179,10 @@ function DataConnect({ initialRepo = '', onConnected, renewing = false }: { init
     setBusy(true);
     setNote('Checking the token…');
     try {
-      await connectModel(repo, token);
+      const said = await saveInGithub(repo, token);
       setToken('');
       setNote('');
+      Alert.alert('Saving your data', said);
       onConnected();
     } catch (e) {
       setNote(e instanceof Error ? e.message : "That didn't work. Try again.");
@@ -190,6 +205,89 @@ function DataConnect({ initialRepo = '', onConnected, renewing = false }: { init
       <Pressable onPress={connect} disabled={busy || !token.trim()} style={[st.primary, (busy || !token.trim()) && { opacity: 0.5 }]}>
         <Text style={st.primaryText}>{busy ? 'Connecting…' : renewing ? 'Use the new token' : 'Connect'}</Text>
       </Pressable>
+      {note ? <Text style={[st.note, { color: C.red }]}>{note}</Text> : null}
+    </>
+  );
+}
+
+/** Not saving yet: Google Drive (one tap) or a GitHub repo, one or the other. */
+function SaveChoice({ onDone }: { onDone: () => void }) {
+  const [github, setGithub] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [needsCode, setNeedsCode] = useState(false);
+  const drive = async () => {
+    setBusy(true);
+    try {
+      Alert.alert('Saving your data', await saveInDrive());
+      onDone();
+    } catch (e) {
+      if (e instanceof Error && /recovery code/.test(e.message)) setNeedsCode(true);
+      else Alert.alert('Google Drive', e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (needsCode) return <CodeEntry onDone={() => { setNeedsCode(false); drive(); }} />;
+  return (
+    <>
+      <Pressable onPress={drive} disabled={busy} style={[st.primary, busy && { opacity: 0.5 }]} accessibilityRole="button">
+        <Text style={st.primaryText}>{busy ? 'Waiting for Google…' : 'Continue with Google'}</Text>
+      </Pressable>
+      <Text style={st.note}>Google Drive is recommended: one tap, nothing to renew. myGeeKy only gets its own hidden folder there, never your files.</Text>
+      {github ? <DataConnect onConnected={onDone} /> : (
+        <Pressable onPress={() => setGithub(true)} style={st.ghost}><Text style={st.ghostText}>Use a GitHub repo instead</Text></Pressable>
+      )}
+    </>
+  );
+}
+
+/** Saving is on: switch to the other place, see the recovery code, or stop saving from this phone. */
+function SavingOn({ saving, onChanged }: { saving: SavingLink; onChanged: () => void }) {
+  const [switching, setSwitching] = useState(false);
+  const [code, setCode] = useState<string | null>(null);
+  const toDrive = async () => {
+    try { Alert.alert('Saving your data', await saveInDrive()); onChanged(); } catch (e) { Alert.alert('Google Drive', e instanceof Error ? e.message : String(e)); }
+  };
+  return (
+    <>
+      {saving.where === 'github-plain' ? <Text style={st.note}>Encrypt it from your computer: Settings → Accounts → Encrypt it.</Text> : (
+        <Pressable onPress={async () => setCode(code ? null : await recoveryCode())} style={st.ghost}>
+          <Text style={st.ghostText}>{code ? 'Hide the recovery code' : 'Show the recovery code'}</Text>
+        </Pressable>
+      )}
+      {code ? (
+        <View style={st.codeBox}>
+          <Text selectable style={st.code}>{code}</Text>
+          <Text style={st.note}>Keep it somewhere safe (on paper, or in a password manager). With it, a new phone or computer can read your saved data. Lose every device and this code, and nobody can read it, not even you.</Text>
+          <Pressable onPress={() => Clipboard.setStringAsync(code)} style={st.ghost}><Text style={st.ghostText}>Copy</Text></Pressable>
+        </View>
+      ) : null}
+      {saving.where === 'drive' ? (switching ? <DataConnect onConnected={() => { setSwitching(false); onChanged(); }} /> : (
+        <Pressable onPress={() => setSwitching(true)} style={st.ghost}><Text style={st.ghostText}>Switch to GitHub</Text></Pressable>
+      )) : (
+        <Pressable onPress={toDrive} style={st.ghost}><Text style={st.ghostText}>Switch to Google Drive</Text></Pressable>
+      )}
+      <Pressable onPress={() => Alert.alert('Stop saving from this phone?', 'The phone forgets where your data is saved. Nothing saved there is touched.', [
+        { text: 'Cancel', style: 'cancel' }, { text: 'Stop', style: 'destructive', onPress: async () => { await disconnectModel(); onChanged(); } }])}
+                 style={st.ghost}><Text style={st.ghostText}>Stop saving from this phone</Text></Pressable>
+    </>
+  );
+}
+
+/** The recovery code, typed: the key your saved data is encrypted with. */
+function CodeEntry({ onDone }: { onDone: () => void }) {
+  const [code, setCode] = useState('');
+  const [note, setNote] = useState('');
+  const go = async () => {
+    try { await enterCode(code); setCode(''); onDone(); } catch (e) { setNote(e instanceof Error ? e.message : String(e)); }
+  };
+  return (
+    <>
+      <Text style={st.note}>Type the recovery code from where you saved it (56 letters and digits, in groups of four), or scan the QR code your computer shows (Connect your phone).</Text>
+      <TextInput style={[st.input, st.field]} value={code} onChangeText={setCode} autoCapitalize="characters" autoCorrect={false}
+                 placeholder="XXXX-XXXX-…" placeholderTextColor={C.muted} accessibilityLabel="Your recovery code" multiline />
+      <Pressable onPress={go} disabled={!code.trim()} style={[st.primary, !code.trim() && { opacity: 0.5 }]}><Text style={st.primaryText}>Use this code</Text></Pressable>
+      <Pressable onPress={() => router.push('/scan')} style={st.ghost}><Text style={st.ghostText}>Scan from your computer</Text></Pressable>
       {note ? <Text style={[st.note, { color: C.red }]}>{note}</Text> : null}
     </>
   );
@@ -312,6 +410,8 @@ const st = StyleSheet.create({
   pillBad: { color: C.red, backgroundColor: 'rgba(248,113,113,0.2)' },
   why: { color: C.text, fontSize: 13, lineHeight: 19, marginTop: 8 },
   note: { color: C.muted, fontSize: 12.5, lineHeight: 18, marginTop: 6 },
+  codeBox: { marginTop: 8, padding: 10, borderRadius: 12, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line },
+  code: { color: C.text, fontSize: 15, fontWeight: '800', letterSpacing: 1, fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo' },
   primary: { alignSelf: 'flex-start', marginTop: 10, paddingHorizontal: 16, minHeight: 40, borderRadius: 20, justifyContent: 'center', backgroundColor: C.violet },
   primaryText: { color: '#fff', fontSize: 13.5, fontWeight: '800' },
   bad: { backgroundColor: C.red },

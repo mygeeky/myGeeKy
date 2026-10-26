@@ -18,9 +18,10 @@ TIPS = {
                "bad": "Your GitHub sign-in stopped working. Sign in again in Settings → Accounts."},
     "orcid": {"on": "ORCID is linked: your papers shape what you see.",
               "off": "ORCID isn't linked. Add it in Settings → Accounts for your papers and who cites you."},
-    "data": {"on": "Saving to your private data repo: your computers and phone share your settings and progress.",
+    "data": {"on": "Saving your settings and progress: your computers and phone share them.",
              "off": "Not saving anywhere yet: your settings and progress are only on this device.",
-             "bad": "myGeeKy can't save to your data repo any more: its access expired or stopped working. Renew it."},
+             "bad": "myGeeKy can't save any more: its access to your storage stopped working, or it needs your "
+                    "recovery code. See Settings → Accounts."},
     "beacon": {"on": "Your Signals beacon is on.",
                "off": "Signals is off.",
                "bad": "Your Signals token expired or stopped working: renew it to keep Signals on."},

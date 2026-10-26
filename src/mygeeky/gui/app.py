@@ -349,8 +349,71 @@ def setup_overview(cfg: MyGeekyConfig) -> dict[str, Any]:
         "signals": cfg.beacon_enabled,
         "beacon_token": bool(cfg.github_username and auth.get_beacon_token(cfg.github_username)),
         "sync": cfg.sync_repo, "orcid": cfg.orcid_id, "scholar": cfg.scholar_id,
+        "saving": _saving_summary(cfg),
         "cv": Path(cfg.cv_path).name if cfg.cv_path else "", "keywords": list(cfg.keywords),
     }
+
+
+def _saving_summary(cfg: MyGeekyConfig) -> dict[str, Any]:
+    from .. import saving, storesync
+    w = saving.where(cfg)
+    return {"where": w, "label": saving.label(cfg), "ready": saving.ready(cfg) if w in ("drive", "github") else bool(w),
+            "has_key": storesync.get_key() is not None}
+
+
+def _saving_call(fn: Any, *args: Any) -> dict[str, Any]:
+    """Run a saving.py step for a button: {"ok": True, ...} or {"ok": False, "error", "needs_key"?}."""
+    from .. import google_login, storesync, sync
+    try:
+        return fn(*args)
+    except storesync.NeedsKey as exc:
+        return {"ok": False, "needs_key": True, "error": str(exc)}
+    except (storesync.StoreError, sync.SyncError, google_login.GoogleLoginError) as exc:
+        return {"ok": False, "error": str(exc)}
+    except Exception as exc:  # noqa: BLE001
+        from ..errors import describe
+        return {"ok": False, "error": describe(exc)}
+
+
+def saving_use_drive(cfg: MyGeekyConfig, sign_in: bool = True) -> dict[str, Any]:
+    """"Keep it in Google Drive": Google's sign-in in the browser (unless signed in already), then the data moves
+    there, encrypted."""
+    from .. import google_login, saving
+
+    def go() -> dict[str, Any]:
+        if sign_in or not google_login.signed_in():
+            google_login.sign_in()
+        return saving.use_drive()
+    return _saving_call(go)
+
+
+def saving_where(cfg: MyGeekyConfig) -> str:
+    from .. import saving
+    return saving.where(cfg)
+
+
+def saving_use_github(cfg: MyGeekyConfig, repo: str) -> dict[str, Any]:
+    from .. import saving
+    return _saving_call(saving.use_github, repo)
+
+
+def saving_lock(cfg: MyGeekyConfig) -> dict[str, Any]:
+    from .. import saving
+    return _saving_call(saving.lock_github)
+
+
+def saving_enter_code(cfg: MyGeekyConfig, code: str) -> dict[str, Any]:
+    from .. import saving
+    return _saving_call(saving.enter_code, code)
+
+
+def saving_stop(cfg: MyGeekyConfig) -> dict[str, Any]:
+    from .. import saving
+
+    def go() -> dict[str, Any]:
+        saving.stop()
+        return {"ok": True, "message": "Your data is kept on this computer only now. Nothing was deleted."}
+    return _saving_call(go)
 
 
 def set_signals_enabled(cfg: MyGeekyConfig, on: bool) -> dict[str, Any]:
@@ -405,8 +468,10 @@ def sync_access_error(result: dict[str, Any]) -> str:
     was taken away), not when you were just offline: that turns the Saving sign red."""
     err = str(result.get("error") or "")
     low = err.lower()
+    if result.get("needs_key") or result.get("moved"):
+        return err or "needs the recovery code"
     return err if any(w in low for w in ("401", "403", "auth", "denied", "permission", "credential", "revoked",
-                                         "expired", "not found")) else ""
+                                         "expired", "not found", "sign in with google")) else ""
 
 
 def status_signs(cfg: MyGeekyConfig, warnings: list[dict[str, Any]], sync_error: str = "") -> list[dict[str, str]]:
@@ -587,9 +652,12 @@ def phone_pairing(cfg: MyGeekyConfig, include_token: bool = True) -> dict[str, A
     """The "Connect your phone" QR code: your profile, plus your token only if
     it's strictly read-only. Checks the token with GitHub (a few seconds)."""
     from .. import pairing
+    if not profile_ready(cfg):
+        return {"ok": False, "error": "Set up myGeeKy here first (your GitHub username, ORCID or keywords)."}
     if not cfg.github_username:
-        return {"ok": False, "error": "Set up myGeeKy here first (your GitHub username)."}
-    token, why = pairing.shareable_token(cfg) if include_token else (None, "Without your token.")
+        token, why = None, "No GitHub here, so none goes along."
+    else:
+        token, why = pairing.shareable_token(cfg) if include_token else (None, "Without your token.")
     text = pairing.payload(cfg, token)
     return {"ok": True, "text": text, "matrix": pairing.matrix(text), "with_token": bool(token), "why": why,
             "seconds": pairing.SHOW_SECONDS}
@@ -1223,25 +1291,37 @@ def refresh_news(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
 
 
 def sync_enabled(cfg: MyGeekyConfig) -> bool:
-    if not cfg.sync_repo or not cfg.sync_auto:
+    if not cfg.sync_auto:
         return False
     try:
-        from .. import sync
-        return sync.is_initialized() and sync.git_exe() is not None
+        from .. import saving, sync
+        if saving.where(cfg) in ("drive", "github"):
+            return saving.ready(cfg)
+        return bool(cfg.sync_repo) and sync.is_initialized() and sync.git_exe() is not None
     except Exception:
         return False
 
 
 def sync_now(cfg: MyGeekyConfig) -> dict[str, Any]:
-    """Two-way sync with your private data repo: this computer's changes go up,
-    the other computers' come down. Returns whether anything came down."""
-    from .. import sync
+    """Two-way sync with your storage (Google Drive or your private repo): this computer's changes go up, the other
+    devices' come down. Returns whether anything came down; "needs_key" when the recovery code is wanted."""
+    from .. import saving, storesync, sync
     if not sync_enabled(cfg):
         return {"ok": False, "skipped": True}
     try:
+        if saving.follow_if_locked(cfg):          # another computer encrypted the repo: follow it
+            cfg = load_config()
+        if saving.where(cfg) in ("drive", "github"):
+            result = saving.sync_now(cfg)
+            return {"ok": True, "changed": bool(result["down"]),
+                    "message": f"Synced ({len(result['down'])} down, {len(result['up'])} up)."}
         before = sync._git("rev-parse", "HEAD", check=False).stdout.strip()
         message = sync.push()
         after = sync._git("rev-parse", "HEAD", check=False).stdout.strip()
+    except storesync.NeedsKey as exc:
+        return {"ok": False, "needs_key": True, "error": str(exc)}
+    except storesync.StoreError as exc:
+        return {"ok": False, "error": str(exc), "moved": isinstance(exc, storesync.Moved)}
     except Exception as exc:
         from ..errors import describe
         return {"ok": False, "error": describe(exc)}

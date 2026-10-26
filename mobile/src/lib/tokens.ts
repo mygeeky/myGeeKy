@@ -4,6 +4,7 @@
 // the tokens. From WARN_DAYS before, the phone says so, before Signals or your model quietly stop working.
 // (The GitHub sign-in renews itself, so it is not checked here.)
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { savedWhere } from './data-store';
 import { modelLink } from './model-repo';
 import { fetchT } from './net';
 import { signalsToken } from './signals';
@@ -61,7 +62,8 @@ export async function checkTokens(force = false): Promise<TokenState[]> {
       return cached.found.map((f: any) => describe(f.name, f));      // the dates again, the days left fresh
     }
   } catch { /* check again */ }
-  const [sig, link] = await Promise.all([signalsToken().catch(() => null), modelLink().catch(() => null)]);
+  const [sig, link] = await Promise.all([signalsToken().catch(() => null),
+    savedWhere().then((w) => (w === 'drive' ? null : modelLink())).catch(() => null)]);   // Google Drive has no token to renew
   const found: (Pick<TokenState, 'state' | 'expiresAt'> & { name: TokenState['name'] })[] = [];
   if (sig) found.push({ name: 'signals', ...(await probe(sig)) });
   if (link) found.push({ name: 'data', ...(await probe(link.token)) });

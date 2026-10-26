@@ -3,9 +3,9 @@
 Plain uninstalling keeps your data and tokens, so a reinstall picks up where
 you left off. Erasing also removes:
   * the data folder (settings, history, CV text, caches, the sync clone) and the local databases beside it;
-  * from the OS keyring: your GitHub tokens, the Product Hunt token and this
-    computer's Signals key.
-Nothing on GitHub is touched: your private sync repo and your public
+  * from the OS keyring: your GitHub tokens, the Product Hunt token, this
+    computer's Signals key, your saved data's encryption key and the Google Drive sign-in.
+Nothing on GitHub or Google Drive is touched: your saved data and your public
 mygeeky-beacon repo stay until you delete them there yourself.
 """
 
@@ -19,21 +19,22 @@ from pathlib import Path
 # every keyring entry myGeeKy writes, all keyed by your GitHub username
 KEYRING_SERVICES = ("mygeeky-github-token", "mygeeky-github-refresh", "mygeeky-beacon-token",
                     "mygeeky-producthunt-token", "mygeeky-signals-key")
+# and the ones that aren't: your saved data's encryption key, and the Google Drive sign-in
+FIXED_ENTRIES = (("mygeeky-data-key", "default"), ("mygeeky-google-drive", "refresh"))
 
 
 def erase_tokens(username: str) -> int:
     """Remove myGeeKy's entries from the OS keyring. Returns how many were there."""
-    if not username:
-        return 0
     try:
         import keyring
     except Exception:
         return 0
     removed = 0
-    for service in KEYRING_SERVICES:
+    entries = [(service, username) for service in KEYRING_SERVICES if username] + list(FIXED_ENTRIES)
+    for service, user in entries:
         try:
-            if keyring.get_password(service, username) is not None:
-                keyring.delete_password(service, username)
+            if keyring.get_password(service, user) is not None:
+                keyring.delete_password(service, user)
                 removed += 1
         except Exception:
             pass

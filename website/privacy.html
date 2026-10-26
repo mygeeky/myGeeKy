@@ -53,13 +53,13 @@
 
 <main class="wrap">
   <h1>Privacy <span>policy</span></h1>
-  <p class="meta">Effective 26 October 2026 · applies to the myGeeKy desktop panel, command line, installer and phone app, and to this website</p>
+  <p class="meta">Effective 27 October 2026 · applies to the myGeeKy desktop panel, command line, installer and phone app, and to this website</p>
 
   <div class="tldr">
     <strong>In short</strong>
     <ul>
       <li>myGeeKy runs on your computer and your phone. <strong>There is no myGeeKy server</strong>, no account with us, and no database of users.</li>
-      <li>Your CV, your settings and what myGeeKy learns about you <strong>stay on your devices</strong>, unless you turn on sync, which uses <strong>your own private GitHub repository</strong> or, if you choose, <strong>a hidden folder in your own Google Drive</strong>.</li>
+      <li>Your CV, your settings and your progress <strong>stay on your devices</strong>, unless you choose to save them in <strong>a hidden folder in your own Google Drive</strong> or <strong>your own private GitHub repository</strong>, <strong>encrypted on your devices first</strong>, so only your devices can read them.</li>
       <li>Your GitHub tokens are kept in your system's <strong>secure credential store</strong>, never in files, logs or messages.</li>
       <li>myGeeKy <strong>only reads</strong> public data. It never follows, stars, posts or writes anything on your behalf.</li>
       <li><strong>No analytics, no tracking, no ads</strong>, and nothing is sold or shared.</li>
@@ -94,7 +94,7 @@
     <li><strong>Read-only by design.</strong> The main token (or <em>Sign in with GitHub</em>, which asks for no permissions at all) can only read public data. Setup checks this and refuses a token that can follow people or change repositories.</li>
     <li>To tell the two tokens apart, setup asks GitHub what a token can do, with checks that change nothing you can see. One of them creates a small unreferenced file object in one of your repositories, which never appears in it and which GitHub removes automatically.</li>
     <li>The optional Signals token can write to <strong>one</strong> repository only: your <code>mygeeky-beacon</code>.</li>
-    <li>Tokens are never written to files or logs and never sent anywhere except to GitHub. <em>Connect your phone</em> shows a QR code containing your read-only token only if it is strictly read-only, only when you ask, and only for two minutes. The Signals token never goes into a QR code.</li>
+    <li>Tokens are never written to files or logs and never sent anywhere except to GitHub. <em>Connect your phone</em> shows a QR code containing your read-only token only if it is strictly read-only (and, if your saved data is encrypted, its key), only when you ask, and only for two minutes. The Signals token never goes into a QR code.</li>
     <li>You can revoke a token, or <em>Sign in with GitHub</em>, at any time in your GitHub settings.</li>
   </ul>
 
@@ -109,27 +109,41 @@
 
   <h2>Google Drive (optional)</h2>
   <p>You can choose to keep your myGeeKy data in your own Google Drive instead of a GitHub repository, so your computers and
-    phone share it. This option is being added: until it appears in your app, myGeeKy does not connect to Google at all.</p>
+    phone share it. If you don't choose it, myGeeKy never connects to Google.</p>
   <ul>
     <li><strong>What myGeeKy asks Google for.</strong> Only the <code>drive.appdata</code> permission: <em>"See, create and
       delete its own configuration data in your Google Drive"</em>. This is a hidden folder that belongs to myGeeKy alone.
       myGeeKy <strong>cannot see, open or change any of your other Drive files</strong>, and does not ask for your contacts,
       email or anything else in your Google account.</li>
     <li><strong>What it keeps there.</strong> The same data the GitHub sync keeps (your settings, the interests myGeeKy learned,
-      your badges and history, and, from a computer, your CV text), <strong>encrypted on your device before it is sent</strong>.
-      The key stays on your devices (it travels between them by the QR code you scan), so Google cannot read the files,
-      and neither can anyone else.</li>
+      your badges and history, and, from a computer, your CV text), <strong>encrypted on your device before it is sent</strong>
+      (see <em>Encryption</em> below), so Google cannot read the files, and neither can anyone else.</li>
     <li><strong>How it is used.</strong> Only to save your data and bring it back on your other devices. It is never sent to
       myGeeKy (there is no myGeeKy server), never shared, sold or used for advertising, and never used to train any model.
       No person reads it.</li>
     <li><strong>Where it is stored.</strong> In your Google Drive, under Google's privacy policy; it counts toward your own
-      Drive storage. Google's sign-in token is kept in your device's secure credential store, never in files or logs.</li>
+      Drive storage. On a computer, Google's sign-in is kept in your system's credential store, never in files or logs; on
+      the phone, Google Play services keeps it, and myGeeKy holds only a one-hour access token, in memory.</li>
     <li><strong>Stopping and deleting.</strong> Turn it off in Settings → Accounts at any time. To delete the data, open
       Google Drive on the web → ⚙ Settings → <em>Manage apps</em> → myGeeKy → <em>Delete hidden app data</em>, and remove
       myGeeKy's access in your Google Account → <em>Security</em> → <em>Third-party connections</em>.</li>
     <li><strong>Google's rules.</strong> myGeeKy's use and transfer of information received from Google APIs will adhere to the
       <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
       including the Limited Use requirements.</li>
+  </ul>
+
+  <h2>Encryption of your saved data</h2>
+  <ul>
+    <li><strong>Encrypted on your devices.</strong> Whether you save in Google Drive or in your own private GitHub repository,
+      every file is encrypted on your computer or phone before it leaves it (ChaCha20-Poly1305, with a 256-bit key). The
+      storage only ever holds unreadable files; their names say what kind of file each is (for example your settings, or a
+      month of your activity log), not what is in it.</li>
+    <li><strong>The key stays with you.</strong> It is made on your first device and kept in its secure credential store. It
+      reaches your other devices only by the <em>Connect your phone</em> QR code (shown when you ask, for two minutes) or by
+      the <em>recovery code</em> myGeeKy shows you once, to write down or keep in a password manager. myGeeKy never sends it
+      anywhere else. If you lose every device and the recovery code, nobody can read the saved data, not even you.</li>
+    <li><strong>Older GitHub repositories.</strong> A repository set up by an older myGeeKy holds plain files until you choose
+      <em>Encrypt it</em> (Settings → Accounts) on a computer; its old, readable history is then dropped from GitHub.</li>
   </ul>
 
   <h2>Who myGeeKy talks to</h2>

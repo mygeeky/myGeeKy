@@ -7,10 +7,11 @@
 //   * what you open on the phone becomes interest events (interests.record: terms only, never
 //     the item's text), queued here and appended to interest_events.jsonl, so your computers
 //     learn from the phone too. The desktop merges .jsonl files line by line (git's union driver).
-// It uses its OWN fine-grained token -- that one repo only, Contents: Read and write -- kept in
-// the phone's secure store, like the Signals token. The only file it ever writes is
-// interest_events.jsonl. What comes back is your own data, but it arrives over the network,
-// so every field is type-checked and capped before it is used.
+// Your data is in Google Drive or that repo, encrypted (lib/data-store.ts, data-lock.ts); an older repo may still be
+// plain. The repo needs its OWN fine-grained token -- that one repo only, Contents: Read and write -- kept in the
+// phone's secure store, like the Signals token. The phone only ever adds to the logs of what you open and use here.
+// What comes back is your own data, but it arrives over the network, so every field is type-checked and capped
+// before it is used.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
@@ -20,6 +21,9 @@ import { wiseFetch } from './wisep';
 import { b64, utf8 } from './signal-crypto';
 import { readCache, writeCache } from './storage';
 import { blendLearned, type Event, extractTerms, KIND_WEIGHTS, learnedTerms, STOPWORDS } from './learn';
+import { driveStore, getKey, githubStore, openLocked, savedWhere, setWhere } from './data-store';
+import { forgetGoogle } from './google-drive-auth';
+import { FORMAT_FILE } from './data-lock';
 
 export { blendLearned, extractTerms, learnedTerms } from './learn';
 
@@ -123,12 +127,58 @@ export async function connectModel(repo: string, token: string): Promise<void> {
   // anything else but 201 (e.g. 409: the repo is still empty) can't tell -- as on the desktop, don't refuse
   await secureSet(TOKEN_ITEM, token);
   await AsyncStorage.setItem(REPO_KEY, repo);
-  flushInterests(repo, token).catch(() => undefined);   // what this phone learned before: into the repo now
+  flushInterests().catch(() => undefined);   // what this phone learned before: into the repo now
 }
 
 export async function disconnectModel(): Promise<void> {
   await secureSet(TOKEN_ITEM, null);
-  await AsyncStorage.multiRemove([REPO_KEY, QUEUE_KEY, USAGE_QUEUE_KEY, `mygeeky.cache.${CACHE_KEY}`]);
+  await setWhere(null);
+  await forgetGoogle();
+  await AsyncStorage.multiRemove([REPO_KEY, `mygeeky.cache.${CACHE_KEY}`]);   // what you did here stays queued
+}
+
+/** Where your data is saved, as far as this phone knows: Google Drive, your repo (encrypted or an older plain one). */
+export type SavingLink = { where: 'drive' | 'github' | 'github-plain'; repo: string; label: string };
+export async function savingLink(): Promise<SavingLink | null> {
+  const where = await savedWhere();
+  if (where === 'drive') return { where, repo: '', label: 'Google Drive' };
+  const link = await modelLink();
+  if (!link) return null;
+  return where === 'github' ? { where, repo: link.repo, label: link.repo } : { where: 'github-plain', repo: link.repo, label: link.repo };
+}
+
+/** Reading and adding to your saved data, wherever it is. */
+export type Source = {
+  label: string;
+  read(file: string): Promise<string | null>;
+  append(file: string, lines: string[], what: string): Promise<void>;
+  syncedAt(): Promise<string | null>;
+};
+
+export async function currentSource(): Promise<Source | null> {
+  const where = await savedWhere();
+  if (where === 'drive') {
+    const locked = await openLocked(driveStore(), await getKey());
+    return { label: 'Google Drive', read: locked.read, append: (f, lines) => locked.append(f, lines),
+      syncedAt: async () => new Date().toISOString() };
+  }
+  const link = await modelLink();
+  if (!link) return null;
+  const store = githubStore(link.repo, link.token);
+  const commits = async () => {
+    const r = await api(`/repos/${link.repo}/commits?per_page=1`, link.token).catch(() => null);
+    const j = r?.ok ? await r.json() : [];
+    return Array.isArray(j) && typeof j[0]?.commit?.committer?.date === 'string' ? j[0].commit.committer.date as string : null;
+  };
+  // an older plain repo another device has since encrypted: from now on it's read encrypted
+  const names = where === 'github' ? null : await store.list();
+  if (where === 'github' || (names && FORMAT_FILE in names)) {
+    if (where !== 'github') await setWhere('github');
+    const locked = await openLocked(store, await getKey());
+    return { label: link.repo, read: locked.read, append: (f, lines) => locked.append(f, lines), syncedAt: commits };
+  }
+  return { label: link.repo, read: (f) => raw(link.repo, link.token, f),
+    append: (f, lines, what) => appendPlain(link.repo, link.token, f, lines, what), syncedAt: commits };
 }
 
 export async function cachedBrain(): Promise<{ at: string; data: Brain } | null> {
@@ -394,7 +444,7 @@ export async function localEvents(): Promise<Event[]> {
  *  (interests.profile_terms) and sharpens your weights. Once a repo is connected, your computers' model
  *  (withRepoProfile) does that instead, with these events in it. */
 export async function withLocalLearning<P extends { weights: Record<string, number> }>(p: P): Promise<P> {
-  if (await modelLink()) return p;
+  if (await savingLink()) return p;
   const learned = learnedTerms(await localEvents(), { interest_learning: true, interest_half_life_days: 30 } as SyncedConfig, 15);
   return learned.length ? { ...p, weights: blendLearned(p.weights, learned) } : p;
 }
@@ -466,12 +516,11 @@ export function exploreTerms(known: Set<string>, k: number, ordinal = todayOrdin
 }
 
 // ---- the whole map
-export async function fetchBrain(repo: string, token: string, dict: Dict | null): Promise<Brain> {
-  const [cfgText, eventsText, scholarText, cvText, usageText, beaconText, historyText, trainingText, commits] = await Promise.all([
-    raw(repo, token, 'config.synced.json'), raw(repo, token, EVENTS_FILE), raw(repo, token, 'scholar_profile.json'),
-    raw(repo, token, 'cv_text.txt'), raw(repo, token, USAGE_FILE), raw(repo, token, 'beacon.json'),
-    raw(repo, token, 'model_history.jsonl'), raw(repo, token, 'training_data.jsonl'),
-    api(`/repos/${repo}/commits?per_page=1`, token).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+export async function fetchBrain(src: Source, dict: Dict | null): Promise<Brain> {
+  const [cfgText, eventsText, scholarText, cvText, usageText, beaconText, historyText, trainingText, syncedAt] = await Promise.all([
+    src.read('config.synced.json'), src.read(EVENTS_FILE), src.read('scholar_profile.json'),
+    src.read('cv_text.txt'), src.read(USAGE_FILE), src.read('beacon.json'),
+    src.read('model_history.jsonl'), src.read('training_data.jsonl'), src.syncedAt().catch(() => null),
   ]);
   const cfg = parseConfig(cfgText);
   const events = parseEvents(eventsText);
@@ -518,8 +567,7 @@ export async function fetchBrain(repo: string, token: string, dict: Dict | null)
   const topics = await yourTopics(scholarText, cfg, learned);
   const fieldNow = topics.length ? topics : [...cfg.topics, ...scholarTopics(scholarText)];
   const brain: Brain = {
-    repo, user: cfg.github_username,
-    syncedAt: Array.isArray(commits) && typeof commits[0]?.commit?.committer?.date === 'string' ? commits[0].commit.committer.date : null,
+    repo: src.label, user: cfg.github_username, syncedAt,
     field: fieldNow.slice(0, 6), learned,
     explore: cfg.explore_share > 0 ? exploreTerms(known, 3) : [],
     taught, learning: cfg.interest_learning, halfLife: cfg.interest_half_life_days, exploreShare: cfg.explore_share,
@@ -547,7 +595,7 @@ const LEARN_CAP = 500;           // what you opened, kept on the phone: enough f
 export async function recordInterest(item: Learn): Promise<void> {
   try {
     if (!KIND_WEIGHTS[item.kind]) return;
-    const link = await modelLink();
+    const link = await savingLink();
     const cached = link ? await cachedBrain() : null;
     if (cached?.data && !cached.data.learning) return;                 // learning is off on your computer
     const terms = extractTerms(item.text, item.topics);
@@ -558,30 +606,40 @@ export async function recordInterest(item: Learn): Promise<void> {
     const next = [...(Array.isArray(queue) ? queue : []), event].slice(-LEARN_CAP);
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(next));
     if (link && next.length >= 5) {                      // every few, quietly; the rest go when you open Your model
-      flushInterests(link.repo, link.token).catch(() => undefined);
+      flushInterests().catch(() => undefined);
     }
   } catch { /* learning never gets in the way of opening something */ }
 }
 
-/** Append the queued events to interest_events.jsonl; once more if a computer pushed in between. */
-export async function flushInterests(repo: string, token: string): Promise<number> {
+/** Add the queued events and usage lines to your saved data (`src`: where; found here when not given). */
+export async function flushInterests(src?: Source | null): Promise<number> {
   if (flushing) return 0;                                // one at a time, so nothing is sent twice
   flushing = true;
   try {
+    const to = src ?? await currentSource();
+    if (!to) return 0;
     await migrateLocalUsage();
-    const sent = await flushQueue(repo, token, EVENTS_FILE, QUEUE_KEY, 'interest event');
-    await flushQueue(repo, token, USAGE_FILE, USAGE_QUEUE_KEY, 'usage line');
+    const sent = await flushQueue(to, EVENTS_FILE, QUEUE_KEY, 'interest event');
+    await flushQueue(to, USAGE_FILE, USAGE_QUEUE_KEY, 'usage line');
     return sent;
   } finally {
     flushing = false;
   }
 }
 
-/** Append one queue's lines to its .jsonl file; once more if a computer pushed in between. */
-export async function flushQueue(repo: string, token: string, file: string, key: string, what: string): Promise<number> {
+/** Add one queue's lines to its log; what you did while it was on its way stays queued. */
+export async function flushQueue(src: Source, file: string, key: string, what: string): Promise<number> {
   const queue = JSON.parse((await AsyncStorage.getItem(key)) ?? '[]');
   if (!Array.isArray(queue) || !queue.length) return 0;
-  const lines = queue.map((e) => JSON.stringify(e)).join('\n') + '\n';
+  await src.append(file, queue.map((e) => JSON.stringify(e)), what);
+  const now = JSON.parse((await AsyncStorage.getItem(key)) ?? '[]');
+  await AsyncStorage.setItem(key, JSON.stringify(Array.isArray(now) ? now.slice(queue.length) : []));
+  return queue.length;
+}
+
+/** An older, plain repo: append to the .jsonl file itself; once more if a computer pushed in between. */
+async function appendPlain(repo: string, token: string, file: string, add: string[], what: string): Promise<void> {
+  const lines = add.join('\n') + '\n';
   for (let attempt = 0; attempt < 2; attempt++) {
     const meta = await api(`/repos/${repo}/contents/${file}`, token);
     if (meta.status === 401 || meta.status === 403) throw new Error('The model token no longer works. Make a new one and connect again.');
@@ -597,15 +655,10 @@ export async function flushQueue(repo: string, token: string, file: string, key:
     const put = await fetchT(`https://api.github.com/repos/${repo}/contents/${file}`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `myGeeKy phone: ${queue.length} ${what}${queue.length === 1 ? '' : 's'}`,
+      body: JSON.stringify({ message: `myGeeKy phone: ${add.length} ${what}${add.length === 1 ? '' : 's'}`,
         sha, author: ME, committer: ME, content: b64(utf8(current + lines)) }),
     });
-    if (put.ok) {
-      // keep anything you did while this was on its way
-      const now = JSON.parse((await AsyncStorage.getItem(key)) ?? '[]');
-      await AsyncStorage.setItem(key, JSON.stringify(Array.isArray(now) ? now.slice(queue.length) : []));
-      return queue.length;
-    }
+    if (put.ok) return;
     if (put.status !== 409 && put.status !== 422) throw new Error(`GitHub answered ${put.status} when saving ${file}.`);
   }
   throw new Error('Your computer was syncing at the same moment. Try again in a minute.');
@@ -665,17 +718,17 @@ async function migrateLocalUsage(): Promise<void> {
 
 /** Send what you opened here, then read the map back (so it includes the phone's own clicks). */
 export async function syncModel(dict: Dict | null): Promise<{ brain: Brain; sent: number } | null> {
-  const link = await modelLink();
-  if (!link) return null;
-  const sent = await flushInterests(link.repo, link.token);
-  return { brain: await fetchBrain(link.repo, link.token, dict), sent };
+  const src = await currentSource();
+  if (!src) return null;
+  const sent = await flushInterests(src);
+  return { brain: await fetchBrain(src, dict), sent };
 }
 
 // ---- for the maker's admin part (admin.ts): one file from your data repo, and who the token belongs to
-/** A file from your data repo, read with this phone's token; null when not connected or not synced. */
+/** A file from your saved data (Google Drive or your repo); null when not connected or not synced. */
 export async function readRepoFile(file: string): Promise<string | null> {
-  const link = await modelLink();
-  return link ? raw(link.repo, link.token, file) : null;
+  const src = await currentSource();
+  return src ? src.read(file) : null;
 }
 
 /** The GitHub account the phone's data-repo token belongs to, as GitHub itself says -- not a name typed

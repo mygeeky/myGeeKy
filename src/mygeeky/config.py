@@ -198,6 +198,11 @@ class MyGeekyConfig:
     # myGeeKy's read-only token, and never syncs any secret.
     sync_repo: str = ""                    # "owner/name", set by `mygeeky sync init`
     sync_auto: bool = True                 # `pipeline` pulls first and pushes last when sync is set up
+    # Where your data is saved, encrypted (storesync.py, saving.py): "drive" (Google Drive's hidden app folder) or ""
+    # (the GitHub repo above, if any). sync_locked: that repo holds only encrypted files (older ones are plain git).
+    sync_store: str = ""
+    sync_locked: bool = False
+    recovery_shown: bool = False           # the recovery code was shown once after encryption was set up
 
     # Beacons (`mygeeky beacon init`): non-verbal signals between myGeeKy users
     # (wave, learn-from, collab, watching, kudos) through a PUBLIC repo,
@@ -415,7 +420,7 @@ def _migrate(values: dict[str, Any], version: int) -> dict[str, Any]:
 
 
 # settings that are painful to lose: a save that drops any of them keeps a backup first
-_PRECIOUS = ("beacon_enabled", "sync_repo", "orcid_id", "openalex_id", "scholar_id", "cv_path", "keywords",
+_PRECIOUS = ("beacon_enabled", "sync_repo", "sync_store", "orcid_id", "openalex_id", "scholar_id", "cv_path", "keywords",
              "coauthors", "field_started_at")
 
 

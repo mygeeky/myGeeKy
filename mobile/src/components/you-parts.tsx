@@ -1,15 +1,14 @@
 // You, in the centre of the orbit: your model (keywords), your badges, and the rest.
 import { useEffect, useState } from 'react';
-import { Alert, Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { InterestMap, MAP_EXPLORE, MAP_FIELD, MAP_LEARNED } from './interest-map';
 import { AucGauge, aucVerdict, ExploreDonut, StatTiles, TrendChart, WeightBars } from './model-plots';
-import { TokenGuide } from './token-guide';
 
 import { Card, Empty, open, s, Section, timeAgo } from './ui';
 import { useApp, withRepoProfile } from '../lib/app-state';
 import { Achievement, earned, Earned, githubAchievements, TIER_COLORS, TIERS } from '../lib/badges';
 import { Dict, lookup } from '../lib/interests';
-import { badgeCounts, type Brain, cachedBrain, connectModel, disconnectModel, localEvents, MODEL_TOKEN_PAGE, modelLink, queuedUsage, syncModel } from '../lib/model-repo';
+import { badgeCounts, type Brain, cachedBrain, disconnectModel, localEvents, queuedUsage, savingLink, syncModel } from '../lib/model-repo';
 import { loadDictionary } from '../lib/profile';
 import { C } from '../lib/theme';
 
@@ -79,8 +78,6 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
-  const [repo, setRepo] = useState(username ? `${username}/mygeeky-data` : '');
-  const [token, setToken] = useState('');
 
   const refresh = async () => {
     setBusy(true);
@@ -99,10 +96,9 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
   };
   useEffect(() => {
     (async () => {
-      const link = await modelLink();
+      const link = await savingLink();
       setLinked(!!link);
       if (!link) return;
-      setRepo(link.repo);
       const cached = await cachedBrain();
       if (cached?.data) setBrain(cached.data);
       if (dict) refresh();
@@ -113,22 +109,7 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
   const [kept, setKept] = useState(0);                       // what this phone learned with no repo yet
   useEffect(() => { if (linked === false) localEvents().then((e) => setKept(e.length)).catch(() => undefined); }, [linked]);
 
-  const connect = async () => {
-    setBusy(true);
-    setNote('Checking the token…');
-    try {
-      await connectModel(repo, token);
-      setToken('');
-      setLinked(true);
-      setNote('');
-      await refresh();
-    } catch (e) {
-      setNote(e instanceof Error ? e.message : 'That didn\'t work. Try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
-  const disconnect = () => Alert.alert('Disconnect your data repo?', 'The phone forgets its token and the map. Your repo is not touched.', [
+  const disconnect = () => Alert.alert('Stop saving from this phone?', 'The phone forgets where your data is saved, and the map. Nothing saved there is touched.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Disconnect', style: 'destructive', onPress: async () => { await disconnectModel(); setBrain(null); setLinked(false); setNote(''); } },
   ]);
@@ -137,30 +118,15 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
   if (!linked) {
     return (
       <View style={st.scan}>
-        <Text style={st.scanTitle}>Your map lives in your private data repo</Text>
+        <Text style={st.scanTitle}>Your map lives where your data is saved</Text>
         <Text style={[st.scanSub, { color: C.amber }]}>
-          📱 Learning on this phone only{kept ? `: ${kept} thing${kept === 1 ? '' : 's'} you opened so far` : ''}. Connect a
-          data repo to keep it and share it with your computer: what this phone learned goes there too.
+          📱 Learning on this phone only{kept ? `: ${kept} thing${kept === 1 ? '' : 's'} you opened so far` : ''}. Save your
+          data to keep it and share it with your computer: what this phone learned goes there too.
         </Text>
         <Text style={st.scanSub}>
-          It&apos;s what myGeeKy learned on your computers (every click, follow, star and fork), kept in the private repo
-          they sync to. Give this phone its own token for it:{'\n'}
-          1. On GitHub: Fine-grained token → Only select repositories → your data repo → Permissions → Contents → Read and
-          write.{'\n'}
-          2. Paste it here and tap Connect. From then on, this phone adds the words and kind of each thing you open here
-          to that repo, so it teaches your computers too.
+          Choose Google Drive (recommended) or a private GitHub repo in Settings → Accounts → Saving your data. Either works
+          the same, encrypted on your devices: your computers&apos; map comes here, and what you open here teaches them too.
         </Text>
-        <Pressable onPress={() => Linking.openURL(MODEL_TOKEN_PAGE)} style={[st.add, st.tokenButton]}>
-          <Text style={st.addText}>Make the token on GitHub ↗</Text>
-        </Pressable>
-        <TokenGuide which="data" />
-        <TextInput style={[st.input, st.field]} value={repo} onChangeText={setRepo} autoCapitalize="none" autoCorrect={false}
-                   placeholder="you/mygeeky-data" placeholderTextColor={C.muted} />
-        <TextInput style={[st.input, st.field]} value={token} onChangeText={setToken} autoCapitalize="none" autoCorrect={false}
-                   secureTextEntry placeholder="github_pat_…" placeholderTextColor={C.muted} />
-        <Pressable onPress={connect} disabled={busy || !token.trim()} style={[st.add, st.tokenButton, (busy || !token.trim()) && { opacity: 0.5 }]}>
-          <Text style={st.addText}>{busy ? 'Connecting…' : 'Connect'}</Text>
-        </Pressable>
         {note ? <Text style={[st.scanSub, { color: C.red }]}>{note}</Text> : null}
       </View>
     );
@@ -248,7 +214,7 @@ export function BadgesPart() {
       };
       const cached = await cachedBrain();
       await show(cached?.data);
-      if (await modelLink()) {                          // then fresh from your data repo
+      if (await savingLink()) {                         // then fresh from where your data is saved
         try {
           const r = await syncModel(await loadDictionary());
           if (r) await show(r.brain);

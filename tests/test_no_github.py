@@ -157,7 +157,9 @@ def test_with_an_account_both_lists_are_computed(monkeypatch):
 def test_the_parts_that_read_your_account_still_say_no():
     cfg = MyGeekyConfig(keywords=["metagenomics"])          # a field, but no account
     assert logic.get_activity(cfg)["events"] == []
-    assert not logic.phone_pairing(cfg)["ok"]
+    pairing = logic.phone_pairing(cfg)                       # the phone can still take your field (and saved data)
+    assert pairing["ok"] and not pairing["with_token"]
+    assert not logic.phone_pairing(MyGeekyConfig())["ok"]    # nothing to give it yet
     assert logic.get_token_warnings(cfg) == []
 
 

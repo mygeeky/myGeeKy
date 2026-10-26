@@ -15,19 +15,23 @@ import { WhoisFind } from '../components/whois-find';
 import { DocDrop } from '../components/doc-drop';
 import { mergeWords } from '../lib/doc-read';
 import { GeekMover } from '../components/tour-overlay';
+import { DataConnect } from '../components/settings-parts';
+import * as Clipboard from 'expo-clipboard';
+import { recoveryCode, saveInDrive } from '../lib/saving';
 
 const split = (v: string) => v.split(',').map((x) => x.trim()).filter(Boolean);
 const ORCID = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
-type Step = 'welcome' | 'github' | 'orcid' | 'field';
-const ORDER: Step[] = ['welcome', 'github', 'orcid', 'field'];
+type Step = 'welcome' | 'github' | 'orcid' | 'field' | 'save';
+const ORDER: Step[] = ['welcome', 'github', 'orcid', 'field', 'save'];
 // "Tap me" in the five languages the hint cycles through, one after another
 const HINTS: [string, 'ltr' | 'rtl'][] = [['Tap me', 'ltr'], ['اضغط عليّ', 'rtl'], ['Touche-moi', 'ltr'], ['Tipp mich an', 'ltr'], ['点我', 'ltr']];
 
 // The start, one question a screen: GeeKOc welcomes you (Start, or scan the code of myGeeKy on your computer); link
 // GitHub, or skip; sign in with ORCID (or find your papers by name), or skip; then "Can you give me one of these?":
 // three keywords, a CV, or an ORCID iD, each a row that unfolds, or Continue without (myGeeKy then learns your field
-// from what you open and like). The data repo and Signals are not asked here: Settings and the Signals page have them,
-// and scanning the computer's code brings both at once. A token stays on this phone.
+// from what you open and like); then where to save your settings and progress: Google Drive (recommended), a GitHub
+// repo, or not now (the desktop's setup wizard asks the same, SyncPage). Signals is not asked here: the Signals page
+// has it, and scanning the computer's code brings everything at once. A token stays on this phone.
 export default function Setup() {
   const { settings, save } = useApp();
   const [step, setStep] = useState<Step>('welcome');
@@ -47,6 +51,8 @@ export default function Setup() {
   const [open, setOpen] = useState<0 | 1 | 2 | 3>(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [github, setGithub] = useState(false);
+  const [saved, setSaved] = useState<{ note: string; code: string | null } | null>(null);
 
   const at = ORDER.indexOf(step);
   // Continue (without) sits where Skip was on the step before: a quick double tap must not skip the last question
@@ -73,17 +79,42 @@ export default function Setup() {
   const kwDone = words.length >= 3, cvDone = !!cvNote;
   const ready = kwDone || cvDone || orcidOk || !!openalex;
 
-  const finish = async () => {
-    if (!armed.current) return;
+  const checked = () => {
     const u = username.trim().replace(/^@/, '');
-    if (u && !/^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/.test(u)) { setStep('github'); return setError('That isn\'t a GitHub username.'); }
-    if (typed && !orcid && !orcidOk) { setOpen(3); return setError(`${typed} isn't a valid ORCID iD: a digit is probably mistyped.`); }
-    setBusy(true);
+    if (u && !/^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/.test(u)) { setStep('github'); setError('That isn\'t a GitHub username.'); return false; }
+    if (typed && !orcid && !orcidOk) { setStep('field'); setOpen(3); setError(`${typed} isn't a valid ORCID iD: a digit is probably mistyped.`); return false; }
+    return true;
+  };
+  const toSave = () => {
+    if (!armed.current || !checked()) return;
     setError('');
+    setStep('save');
+  };
+  const keep = async () => {                             // your answers, kept on this phone
+    const u = username.trim().replace(/^@/, '');
     await save({ ...(settings ?? DEFAULT_SETTINGS), username: u, orcid: orcid || (orcidOk ? typed : ''), openalex, keywords: words, coauthors,
                  started: true }, token.trim() || undefined);
+  };
+  const finish = async () => {
+    if (!checked()) return;
+    setBusy(true);
+    setError('');
+    await keep();
     setBusy(false);
     router.replace('/home');
+  };
+  const drive = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await keep();
+      const note = await saveInDrive();
+      setSaved({ note, code: await recoveryCode() });
+    } catch (e) {
+      setError(`${e instanceof Error ? e.message : String(e)} You can do it later in Settings → Accounts.`);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -94,8 +125,8 @@ export default function Setup() {
             <Pressable onPress={back} style={st.backBtn} accessibilityRole="button" accessibilityLabel="Back">
               <Svg width={18} height={18} viewBox="0 0 24 24"><Path d="M15 5l-7 7 7 7" stroke={C.text} strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round" /></Svg>
             </Pressable>
-            <View style={st.dots}>{[1, 2, 3].map((i) => <View key={i} style={[st.dot, i === at && st.dotOn, i < at && st.dotDone]} />)}</View>
-            <Text style={st.of}>{at} of 3</Text>
+            <View style={st.dots}>{[1, 2, 3, 4].map((i) => <View key={i} style={[st.dot, i === at && st.dotOn, i < at && st.dotDone]} />)}</View>
+            <Text style={st.of}>{at} of 4</Text>
           </View>
         ) : null}
         <ScrollView contentContainerStyle={[st.wrap, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
@@ -193,13 +224,50 @@ export default function Setup() {
                 : words.length ? `Add ${3 - words.length} more keyword${3 - words.length === 1 ? '' : 's'}, or your CV, or your ORCID iD. Or continue without: myGeeKy learns your field from what you open, like and save.`
                   : 'Pick one of the three, or continue without: myGeeKy then finds your field from what you open, like and save, on this phone only.'}
             </Text>
-            <Pressable style={({ pressed }) => [ready ? st.primary : st.without, pressed && { opacity: 0.85 }]} onPress={finish} disabled={busy}
+            <Pressable style={({ pressed }) => [ready ? st.primary : st.without, pressed && { opacity: 0.85 }]} onPress={toSave} disabled={busy}
                        accessibilityRole="button">
-              <Text style={ready ? st.primaryText : st.withoutText}>{busy ? 'Getting ready…' : ready ? 'Continue' : 'Continue without'}</Text>
+              <Text style={ready ? st.primaryText : st.withoutText}>{ready ? 'Continue' : 'Continue without'}</Text>
             </Pressable>
           </> : null}
 
-          {step !== 'welcome' && step !== 'field' && error ? <Text style={st.error}>{error}</Text> : null}
+          {step === 'save' && saved ? <>
+            <Text style={st.ask}>Saved, and encrypted</Text>
+            <Text style={st.body}>{saved.note}</Text>
+            {saved.code ? <>
+              <Text style={st.body}>Your recovery code: keep it somewhere safe (on paper, or in a password manager). With it, a new phone or computer can read your saved data. Lose every device and this code, and nobody can read it, not even you.</Text>
+              <Text selectable style={st.code}>{saved.code}</Text>
+              <Pressable style={st.scan} onPress={() => Clipboard.setStringAsync(saved.code ?? '')} accessibilityRole="button"><Text style={st.scanTitle}>Copy the code</Text></Pressable>
+            </> : null}
+            <View style={st.push} />
+            <Pressable style={({ pressed }) => [st.primary, pressed && { opacity: 0.85 }]} onPress={() => router.replace('/home')} accessibilityRole="button">
+              <Text style={st.primaryText}>{saved.code ? 'I\'ve saved it' : 'Continue'}</Text>
+            </Pressable>
+          </> : null}
+
+          {step === 'save' && !saved ? <>
+            <View style={st.askRow}>
+              <Text style={[st.ask, { flex: 1 }]}>Where should I save your settings and progress?</Text>
+              <GeekMover pose="think" size={78} />
+            </View>
+            <Text style={st.body}>Choose one. Either works the same, and you can switch later. It&apos;s encrypted on your phone first, so only your devices can read it.</Text>
+            <Pressable style={({ pressed }) => [st.choice, st.choiceOn, pressed && { opacity: 0.85 }]} onPress={drive} disabled={busy} accessibilityRole="button">
+              <Text style={st.choiceTitle}>Google Drive  <Text style={st.reco}>RECOMMENDED</Text></Text>
+              <Text style={st.hint}>One tap, nothing to renew. myGeeKy only gets its own hidden folder, never your files.</Text>
+              <Text style={st.choiceGo}>{busy ? 'Waiting for Google…' : 'Continue with Google'}</Text>
+            </Pressable>
+            <Pressable style={({ pressed }) => [st.choice, pressed && { opacity: 0.85 }]} onPress={() => setGithub(!github)} accessibilityRole="button">
+              <Text style={st.choiceTitle}>A GitHub repository</Text>
+              <Text style={st.hint}>If you already use GitHub: a private repo and a token for it, with the picture steps.</Text>
+            </Pressable>
+            {github ? <DataConnect onConnected={async () => { await keep(); router.replace('/home'); }} /> : null}
+            {error ? <Text style={st.error}>{error}</Text> : null}
+            <View style={st.push} />
+            <Pressable style={({ pressed }) => [st.notNow, pressed && { opacity: 0.85 }]} onPress={finish} disabled={busy} accessibilityRole="button">
+              <Text style={st.notNowText}>Not now: keep it on this phone</Text>
+            </Pressable>
+          </> : null}
+
+          {step !== 'welcome' && step !== 'field' && step !== 'save' && error ? <Text style={st.error}>{error}</Text> : null}
           <Text style={st.foot}>myGeeKy only suggests. It never follows, stars or posts for you.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -329,6 +397,14 @@ const st = StyleSheet.create({
   primaryText: { color: '#fff', fontSize: 17, fontWeight: '800' },
   skip: { borderWidth: 1.5, borderColor: C.muted, backgroundColor: C.card, borderRadius: 16, height: 52, marginTop: 10, alignItems: 'center', justifyContent: 'center' },
   skipText: { color: C.text, fontSize: 16, fontWeight: '800' },
+  choice: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1.5, borderColor: C.line, padding: 14, marginTop: 12 },
+  choiceOn: { borderColor: C.green },
+  choiceTitle: { color: C.text, fontSize: 15.5, fontWeight: '800' },
+  choiceGo: { color: C.green, fontSize: 14, fontWeight: '800', marginTop: 10 },
+  reco: { color: C.green, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  code: { color: C.text, fontSize: 16, fontWeight: '800', letterSpacing: 1, marginTop: 12, fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo' },
+  notNow: { backgroundColor: '#fca5a5', borderRadius: 16, height: 54, marginTop: 12, alignItems: 'center', justifyContent: 'center' },
+  notNowText: { color: '#1a1013', fontSize: 16, fontWeight: '800' },
   without: { backgroundColor: '#fca5a5', borderRadius: 16, height: 54, marginTop: 12, alignItems: 'center', justifyContent: 'center' },
   withoutText: { color: '#1a1013', fontSize: 17, fontWeight: '800' },
   need: { color: C.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 18 },

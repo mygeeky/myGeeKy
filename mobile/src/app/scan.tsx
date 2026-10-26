@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../lib/app-state';
 import { parsePairing } from '../lib/pairing';
+import { fromPairing } from '../lib/saving';
 import { C, tint } from '../lib/theme';
 
 // Scan the QR code from myGeeKy on your computer (⚙ → Connect your phone).
@@ -23,8 +24,9 @@ export default function Scan() {
       setTimeout(() => (busy.current = false), 1500);
       return;
     }
-    setMessage(`Connected as @${result.settings.username}…`);
+    setMessage(result.settings.username ? `Connected as @${result.settings.username}…` : 'Connected…');
     await save(result.settings, result.token ?? undefined);
+    if (result.saving) await fromPairing(result.saving.where, result.saving.key).catch(() => undefined);
     router.replace('/home');
   };
 

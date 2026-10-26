@@ -1231,17 +1231,19 @@ def learn() -> None:
 @main.command()
 def pipeline() -> None:
     """Sync pull, `learn`, `run`, `contribute`, sync push -- intended for the weekly scheduled task."""
+    from . import saving
     from . import sync as sync_mod
     cfg = load_config()
-    syncing = bool(cfg.sync_repo and cfg.sync_auto and sync_mod.is_initialized())
+    locked = saving.where(cfg) in ("drive", "github") and cfg.sync_auto and saving.ready(cfg)
+    syncing = locked or bool(cfg.sync_repo and cfg.sync_auto and sync_mod.is_initialized())
     ctx = click.get_current_context()
     if syncing:
         try:
-            msg = sync_mod.pull()
+            msg = _locked_sync() if locked else sync_mod.pull()
             click.echo(msg)
             if msg.startswith("Pulled"):
                 _retrain_and_report(load_config())
-        except sync_mod.SyncError as exc:
+        except Exception as exc:  # noqa: BLE001 - sync never stops the weekly run
             click.echo(f"[mygeeky] sync pull failed, continuing with local data: {exc}", err=True)
     ctx.invoke(learn)
     click.echo("")
@@ -1250,9 +1252,16 @@ def pipeline() -> None:
     ctx.invoke(contribute, as_json=False, last=False)
     if syncing:
         try:
-            click.echo(sync_mod.push())
-        except sync_mod.SyncError as exc:
+            click.echo(_locked_sync() if locked else sync_mod.push())
+        except Exception as exc:  # noqa: BLE001
             click.echo(f"[mygeeky] sync push failed (will retry next run): {exc}", err=True)
+
+
+def _locked_sync() -> str:
+    """One sync with Google Drive or an encrypted repo; says "Pulled" when anything came down (as sync.pull)."""
+    from . import saving
+    r = saving.sync_now()
+    return f"Pulled {len(r['down'])} file(s), saved {len(r['up'])}." if r["down"] else f"Saved {len(r['up'])} file(s)."
 
 
 # --------------------------------------------------------------------------- contribute
@@ -1774,18 +1783,30 @@ def _retrain_quietly() -> None:
         _retrain_and_report(load_config())
 
 
+def _locked_here() -> bool:
+    from . import saving
+    return saving.where(load_config()) in ("drive", "github")
+
+
+def _locked_call() -> str:
+    try:
+        return _locked_sync()
+    except Exception as exc:  # noqa: BLE001 - a sync error, a Google sign-in that ended: said plainly
+        raise click.ClickException(str(exc)) from exc
+
+
 @sync.command("push")
 def sync_push() -> None:
     """Commit and push this machine's data."""
     from . import sync as sync_mod
-    click.echo(_sync_call(sync_mod.push))
+    click.echo(_locked_call() if _locked_here() else _sync_call(sync_mod.push))
 
 
 @sync.command("pull")
 def sync_pull() -> None:
     """Fetch data from your other machines (then retrain the model locally)."""
     from . import sync as sync_mod
-    msg = _sync_call(sync_mod.pull)
+    msg = _locked_call() if _locked_here() else _sync_call(sync_mod.pull)
     click.echo(msg)
     if msg.startswith("Pulled"):
         _retrain_and_report(load_config())
@@ -1793,7 +1814,12 @@ def sync_pull() -> None:
 
 @sync.command("status")
 def sync_status() -> None:
+    from . import saving
     from . import sync as sync_mod
+    cfg = load_config()
+    if _locked_here():
+        click.echo(f"Saved in {saving.label(cfg)}, encrypted. Ready here: {'yes' if saving.ready(cfg) else 'no'}.")
+        return
     click.echo(sync_mod.status())
 
 

@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
@@ -1134,7 +1135,7 @@ class ProfilePage(Page):
 
     def nextId(self) -> int:  # noqa: N802
         if self.mode in ("guest", "orcid", "papers", "doc"):
-            return self.w.finish_id             # GitHub's token, the data repo and Signals are for GitHub accounts
+            return self.w.sync_id               # GitHub's token and Signals are for GitHub accounts; saving isn't
         return super().nextId()
 
     # ---- Sign in with ORCID
@@ -1284,10 +1285,7 @@ class TokenPage(Page):
         python = self.w.python
         return lambda wk: api(python, "store_token", {"token": token})
 
-    def nextId(self) -> int:  # noqa: N802
-        if not self.w.state.get("github_username"):
-            return self.w.finish_id         # Sync and Signals run on GitHub: nothing to set up yet
-        return super().nextId()
+
 
     # ---- Sign in with GitHub
     def _sign_in(self) -> None:
@@ -1346,19 +1344,35 @@ class TokenPage(Page):
 
 
 class SyncPage(Page):
+    """Where your settings and progress are saved: Google Drive (recommended), a GitHub repo, or this computer only --
+    one or the other, never both, encrypted either way (as the phone's start, components/setup-steps.tsx)."""
+
     def __init__(self) -> None:
-        super().__init__("Your data, on every computer",
-                         "Keep your settings, CV text, history and what the model learned in a PRIVATE "
-                         "GitHub repo, so myGeeKy picks up where you left off on any machine.")
-        self.enable = QCheckBox("Keep my data in a private GitHub repo")
-        self.add(self.enable)
+        super().__init__("Where should I save your settings and progress?",
+                         "Choose one. Either works the same, and you can switch later in Settings → Accounts. "
+                         "It's encrypted on your devices first, so only your devices can read it.")
+        from PySide6.QtWidgets import QButtonGroup, QRadioButton
+        self.drive = QRadioButton("Google Drive  (recommended: one sign-in, nothing to renew)")
+        self.github = QRadioButton("A GitHub repository  (if you already use GitHub)")
+        self.none = QRadioButton("Not now: keep it on this computer")
+        self.group = QButtonGroup(self)
+        for b in (self.drive, self.github, self.none):
+            self.group.addButton(b)
+            self.add(b)
+            b.toggled.connect(lambda _on: self._show())
+        self.drive_note = self.add(_label("Next opens Google's sign-in in your browser. myGeeKy asks for one thing "
+                                          "only: its own hidden folder in your Drive. It can't see your other files.",
+                                          "muted"))
+        self.code = QLineEdit()
+        self.code.setPlaceholderText("Your recovery code (from the device that set it up)")
+        self.add(self.code)
         self.repo = QLineEdit()
         self.add(self.repo)
         self.note = self.add(_label("", "muted"))
-        # as on the phone (components/setup-steps.tsx): skipping it is fine, but say plainly what that means
+        # as on the phone: skipping it is fine, but say plainly what that means
         self.alone = self.add(_label("Without it, everything stays on this computer only: your phone and your other "
-                                     "computers won't share anything with it, and if this computer is lost, what "
-                                     "myGeeKy learned is gone.", "muted"))
+                                     "computers won't share anything with it, and if this computer is lost, your "
+                                     "settings and progress are gone.", "muted"))
         self.alone.setStyleSheet("color:#ffc457;")
         self.steps = self.add(_label("", "muted"))
         self.steps.setTextFormat(Qt.RichText)
@@ -1368,33 +1382,43 @@ class SyncPage(Page):
     def initializePage(self) -> None:  # noqa: N802
         super().initializePage()
         s = self.w.state
-        self.repo.setText(s.get("sync_repo") or f"{s.get('github_username', 'you')}/mygeeky-data")
-        already = bool(s.get("sync_repo") and s.get("sync_initialized"))
-        self.alone.setVisible(not already)
+        self.repo.setText(s.get("sync_repo") or f"{s.get('github_username') or 'you'}/mygeeky-data")
         self.note.setTextFormat(Qt.RichText)
-        self._show_steps(already)
-        self.repo.textChanged.connect(lambda: self._show_steps(already))
-        # optional: on by default only where it can actually work
-        self.enable.setChecked(already or bool(s.get("git") and s.get("gh")))
-        if already:
-            self.note.setText(f"✓ Already syncing with {s['sync_repo']}. Next re-connects and pulls the latest.")
-        elif not s.get("git") and not WINDOWS:
-            self.note.setText("<b>Optional.</b> Sync needs <b>Git</b>, which isn't installed yet. Install it with your "
-                              "package manager (for example <code>sudo apt install git</code>), then come back to "
-                              "this page. Everything else works without it.")
-        elif not s.get("git"):
-            self.note.setText("<b>Optional.</b> Sync needs <b>Git</b>, which isn't on this PC yet. Tick the box and "
-                              "setup <b>installs Git for you</b> (just for you, no admin, a minute or two), then "
-                              "sets up sync. Everything else works without it.")
-        elif not s.get("gh"):
-            self.note.setText("<b>Optional.</b> Your settings, CV text and history then follow you to every "
-                              "computer you use myGeeKy on. Your tokens never go there.")
-        else:
-            self.note.setText("It's created as private if it doesn't exist. Tokens are never synced.")
+        self.code.setVisible(False)
+        where = s.get("saving") or ""
+        self.github.setEnabled(bool(s.get("github_username")) or where.startswith("github"))
+        if not self.github.isEnabled():
+            self.github.setText("A GitHub repository  (sign in with GitHub first, on the page before)")
+        (self.drive if where in ("", "drive") else self.github).setChecked(True)
+        if where == "drive":
+            self.say("✓ Already saving in Google Drive. Next checks it and brings the latest.", "ok")
+        elif where:
+            self.say(f"✓ Already saving in {s.get('sync_repo')}. Next re-connects and brings the latest.", "ok")
+        self.repo.textChanged.connect(self._show)
+        self._show()
 
-    def _show_steps(self, already: bool) -> None:
-        """Create the private repo first: myGeeKy can only do it for you when the GitHub CLI is signed in."""
-        if already or self.w.state.get("gh"):
+    def _show(self) -> None:
+        s = self.w.state
+        drive, github = self.drive.isChecked(), self.github.isChecked()
+        self.drive_note.setVisible(drive)
+        self.repo.setVisible(github)
+        self.note.setVisible(github)
+        self.alone.setVisible(self.none.isChecked())
+        if self.code.isVisible() and not drive:
+            self.code.setVisible(False)
+        if not github:
+            self.steps.setText("")
+            return
+        if not s.get("git") and not WINDOWS:
+            self.note.setText("A GitHub repo needs <b>Git</b>, which isn't installed yet. Install it with your package "
+                              "manager (for example <code>sudo apt install git</code>), then come back to this page, "
+                              "or choose Google Drive.")
+        elif not s.get("git"):
+            self.note.setText("A GitHub repo needs <b>Git</b>, which isn't on this PC yet: setup <b>installs it for "
+                              "you</b> (just for you, no admin, a minute or two).")
+        else:
+            self.note.setText("It's created as private if it doesn't exist. Tokens are never saved there.")
+        if s.get("gh") or (s.get("saving") or "").startswith("github"):
             self.steps.setText("")
             return
         from ..sync import new_repo_url
@@ -1407,41 +1431,72 @@ class SyncPage(Page):
             f"(the name <b>{name}</b> is filled in).</li>"
             "<li>Choose <b>Private</b>. Don't add a README, .gitignore or license: it must start empty.</li>"
             "<li>Click <b>Create repository</b>, then come back here and click Next.</li></ol>"
-            "Only you can see it. myGeeKy writes your data there with your own Git login (the first time, Git "
-            "asks you to sign in to GitHub in your browser); your read-only token is never used for it. "
-            "A public repo is refused.")
+            "Only you can see it. myGeeKy writes there with your own Git login (the first time, Git asks you to sign "
+            "in to GitHub in your browser); your read-only token is never used for it. A public repo is refused.")
 
     def job(self):
-        if not self.enable.isChecked():
-            return None
-        repo = self.repo.text().strip()
         python = self.w.python
+        if self.none.isChecked():
+            return None
+        if self.drive.isChecked():
+            code = self.code.text().strip() if self.code.isVisible() else ""
+            return lambda wk: api(python, "saving_drive", {"code": code}, timeout=900)
+        repo = self.repo.text().strip()
         needs_git = not self.w.state.get("git")
 
         def run(wk):
             if needs_git and not WINDOWS:
                 if not find_git():
-                    return {"ok": False, "error": "Sync needs Git: install it (e.g. `sudo apt install git`) and click "
-                                                  "Next again, or untick this to skip sync."}
+                    return {"ok": False, "error": "A GitHub repo needs Git: install it (e.g. `sudo apt install git`) "
+                                                  "and click Next again, or choose Google Drive."}
             elif needs_git:
                 git = find_git() or install_git(lambda m: log(m))
                 if not git:
-                    return {"ok": False, "error": "Git couldn't be installed. Untick this to skip sync, or install "
-                                                  "Git from https://git-scm.com/download/win and run setup again."}
+                    return {"ok": False, "error": "Git couldn't be installed. Choose Google Drive, or install Git "
+                                                  "from https://git-scm.com/download/win and run setup again."}
                 put_on_path(git)
             return api(python, "sync_init", {"repo": repo}, timeout=900)
         return run
 
     def busy_text(self) -> str:
+        if self.drive.isChecked():
+            return "Waiting for Google's sign-in in your browser, then saving (encrypted)…"
         if not self.w.state.get("git"):
-            return "Installing Git, then setting up sync (a minute or two)…"
-        return "Setting up sync…"
+            return "Installing Git, then setting up your repo (a minute or two)…"
+        return "Setting up your repo…"
 
     def on_result(self, result):
+        if result.get("needs_key"):
+            self.code.setVisible(True)
+            self.code.setFocus()
+            self.say("Your saved data is already there, encrypted by another of your devices. Type your recovery "
+                     "code above and click Next.", "err")
+            return False
         if result.get("ok"):
             self.w.notes.append(result.get("message", ""))
+            if result.get("recovery"):
+                self._show_code(result["recovery"])
             self.w.refresh_state()
         return bool(result.get("ok"))
+
+    def _show_code(self, code: str) -> None:
+        box = QMessageBox(self)
+        box.setWindowTitle("Your recovery code")
+        box.setTextFormat(Qt.PlainText)
+        box.setText("Your settings and progress are encrypted. Keep this code somewhere safe (on paper, or in a "
+                    f"password manager):\n\n{code}\n\nWith it, a new computer or phone can read your saved data. "
+                    "Lose every device and this code, and nobody can read it, not even you.")
+        box.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        copy = box.addButton("Copy", QMessageBox.ActionRole)
+        box.addButton("I've saved it", QMessageBox.AcceptRole)
+        box.exec()
+        if box.clickedButton() is copy:
+            QApplication.clipboard().setText(code)
+
+    def nextId(self) -> int:  # noqa: N802
+        if not self.w.state.get("github_username"):
+            return self.w.finish_id         # Signals runs on GitHub: nothing more to set up yet
+        return super().nextId()
 
 
 LINK = 'style="color:#7fd8ff"'
@@ -1733,7 +1788,9 @@ class SetupWizard(QWizard):
         self.notes: list[str] = []
         self.restart_panel = False
         for page in (WelcomePage(), InstallPage(), ProfilePage(), TokenPage(), SyncPage(), SignalsPage()):
-            self.addPage(page)
+            pid = self.addPage(page)
+            if isinstance(page, SyncPage):
+                self.sync_id = pid
         self.finish_id = self.addPage(FinishPage())
         self.resize(700, 620)
 

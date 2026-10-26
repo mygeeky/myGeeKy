@@ -47,7 +47,7 @@ def _split(value: Any) -> list[str]:
 
 
 def status(req: dict[str, Any]) -> dict[str, Any]:
-    from . import auth, orcid_login, sync
+    from . import auth, orcid_login, saving, sync
     from .config import CONFIG_FILE, load_config, profile_ready
     cfg = load_config()
     user = cfg.github_username
@@ -68,6 +68,7 @@ def status(req: dict[str, Any]) -> dict[str, Any]:
         "sync_repo": cfg.sync_repo,
         "git": sync.git_exe() is not None,
         "sync_initialized": sync.is_initialized(),
+        "saving": saving.where(cfg),
         "beacon_enabled": cfg.beacon_enabled,
         "beacon_token": bool(user and auth.get_beacon_token(user)),
     }
@@ -244,21 +245,59 @@ def token_report(req: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def sync_init(req: dict[str, Any]) -> dict[str, Any]:
-    from . import sync
+def _saving(fn: Any, *args: Any) -> dict[str, Any]:
+    """A saving.py step for setup: its answer, plus the recovery code the first time encryption is set up here."""
+    from . import google_login, saving, storesync, sync
     from .config import load_config, save_config
+    try:
+        out = fn(*args)
+    except storesync.NeedsKey as exc:
+        return {"ok": False, "needs_key": True, "error": str(exc)}
+    except (storesync.StoreError, sync.SyncError, google_login.GoogleLoginError) as exc:
+        return {"ok": False, "error": str(exc)}
+    cfg = load_config()
+    if saving.where(cfg) in ("drive", "github") and not cfg.recovery_shown and saving.recovery_code():
+        out["recovery"] = saving.recovery_code()
+        cfg.recovery_shown = True
+        save_config(cfg)
+    return out
+
+
+def sync_init(req: dict[str, Any]) -> dict[str, Any]:
+    """Save in a private GitHub repo, encrypted (an older plain repo with data is joined as it is)."""
+    from . import saving
+    from .config import load_config
     _ensure_gh_on_path()
     cfg = load_config()
     repo = str(req.get("repo") or f"{cfg.github_username}/mygeeky-data").strip()
-    message = sync.init(repo)
-    cfg = load_config()  # init may have pulled a synced config
-    cfg.sync_repo = repo
-    save_config(cfg)
-    try:
-        sync.push()
-    except sync.SyncError as exc:
-        message += f"\n(First push will retry later: {exc})"
-    return {"ok": True, "message": message}
+    return _saving(saving.use_github, repo)
+
+
+def saving_drive(req: dict[str, Any]) -> dict[str, Any]:
+    """Save in Google Drive: Google's sign-in in the browser, then the data goes there, encrypted. A recovery code
+    typed in setup (the Drive already holds data another device encrypted) is kept first."""
+    from . import google_login, saving, storesync
+
+    def go() -> dict[str, Any]:
+        code = str(req.get("code") or "").strip()
+        if code:
+            from . import datalock
+            key = datalock.key_from_code(code)
+            if key is None:
+                raise storesync.StoreError("That recovery code isn't right: check each group of four.")
+            previous = storesync.get_key()
+            storesync.set_key(key)
+        if not google_login.signed_in():
+            google_login.sign_in()
+        try:
+            return saving.use_drive()
+        except storesync.NeedsKey:
+            if code:
+                storesync.set_key(previous)
+                raise storesync.StoreError("That's a real recovery code, but not the one your data in Google Drive "
+                                           "is encrypted with.") from None
+            raise
+    return _saving(go)
 
 
 def beacon_init(req: dict[str, Any]) -> dict[str, Any]:
@@ -359,6 +398,7 @@ ACTIONS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "orcid_login": orcid_login,
     "token_report": token_report,
     "sync_init": sync_init,
+    "saving_drive": saving_drive,
     "beacon_init": beacon_init,
     "beacon_check": beacon_check,
     "beacon_create_repo": beacon_create_repo,

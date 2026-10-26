@@ -40,6 +40,10 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `live.ts` | `activity.py` |
 | `market.ts`, `board.ts` | `market.py` |
 | `model-repo.ts` | `sync.py`, `gui/app.py` (the data repo, the model) |
+| `data-lock.ts` | `datalock.py` (the encrypted format, recovery code, stored names; `docs/STORAGE.md`) |
+| `data-store.ts` | `storesync.py` (Google Drive and GitHub stores, reading and adding to locked data) |
+| `saving.ts` (+ the Saving card in `components/settings-parts.tsx`, the start's save step in `app/setup.tsx`) | `saving.py` (+ `gui/qt_panel.py` `_account_cards`/`_account_action`, `gui/setup_wizard.py` `SyncPage`, `setup_api.py` `saving_drive`) |
+| `google-drive-auth.ts` (+ `modules/google-drive-auth`, native) | `google_login.py` |
 | `models.ts` | `hfmodels.py` |
 | `people.ts` | `cli.py` (`_run_suggestions`), `matcher.py` (people to follow) |
 | `profile.ts` | `profile_builder.py`, `interests.py` (`profile_terms`) |

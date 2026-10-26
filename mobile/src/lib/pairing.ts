@@ -2,7 +2,8 @@
 // profile (and, only if it's strictly read-only, your GitHub token), so the
 // phone needs no typing at all. The format is `mygeeky:1:<base64url JSON>`:
 //   { u: username, o: ORCID, k: [keywords], t: [topics], w: {interest: weight},
-//     f: [research field], b: ["badge:tier"], tok?: read-only token }
+//     f: [research field], b: ["badge:tier"], tok?: read-only token,
+//     ds?: where your data is saved ("drive" | "github:owner/name"), dk?: the key it's encrypted with (base64url) }
 // A QR code is untrusted input: every field is checked before anything is saved.
 import type { Settings } from './storage';
 
@@ -13,7 +14,7 @@ const ORCID = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 // characters are checked, as the desktop does (auth.py); the cap only stops nonsense, not real tokens.
 const TOKEN = /^(github_pat_[A-Za-z0-9_]{20,2000}|gh[opu]_[A-Za-z0-9._-]{20,2000})$/;
 
-export type Pairing = { settings: Settings; token: string | null };
+export type Pairing = { settings: Settings; token: string | null; saving?: { where: string; key: Uint8Array } };
 
 function fromBase64Url(s: string): string {
   const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4);
@@ -39,7 +40,7 @@ export function parsePairing(data: string): Pairing | { error: string } {
     return { error: "That code couldn't be read. Try scanning it again." };
   }
   const u = typeof raw.u === 'string' ? raw.u : '';
-  if (!LOGIN.test(u)) return { error: "That code doesn't contain a GitHub username." };
+  if (u && !LOGIN.test(u)) return { error: "That code's GitHub username isn't valid." };
   const o = typeof raw.o === 'string' && ORCID.test(raw.o) ? raw.o : '';
   const a = typeof raw.a === 'string' && /^A\d{2,12}$/.test(raw.a) ? raw.a : '';    // "Is this you?" author id
   const tok = typeof raw.tok === 'string' && TOKEN.test(raw.tok) ? raw.tok : null;
@@ -51,7 +52,11 @@ export function parsePairing(data: string): Pairing | { error: string } {
     }
   }
   const badges = words(raw.b, 30).filter((b) => /^[a-z]{2,20}:(bronze|silver|gold)$/.test(b));
+  const ds = typeof raw.ds === 'string' && /^(drive|github:[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100})$/.test(raw.ds) ? raw.ds : '';
+  const dkText = typeof raw.dk === 'string' && /^[A-Za-z0-9_-]{43}$/.test(raw.dk) ? raw.dk : '';
+  const dk = dkText ? Uint8Array.from(fromBase64Url(dkText), (c) => c.charCodeAt(0)) : null;
   return {
+    ...(ds && dk && dk.length === 32 ? { saving: { where: ds, key: dk } } : {}),
     settings: {
       exploreShare: 0.2, username: u, orcid: o, openalex: a, keywords: words(raw.k), topics: words(raw.t),
       interests, field: words(raw.f, 8).map((x) => x.slice(0, 80)), desktopBadges: badges,

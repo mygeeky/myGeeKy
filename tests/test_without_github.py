@@ -46,7 +46,7 @@ def test_setup_without_github_skips_the_github_pages(qapp, monkeypatch):
     profile.initializePage()
     assert not profile.orcid_btn.isHidden() and not profile.isComplete()      # first choose a way in
     profile.guest_btn.click()                                                 # no account at all
-    assert profile.isComplete() and profile.nextId() == w.finish_id          # straight to Finish
+    assert profile.isComplete() and profile.nextId() == w.sync_id            # straight to where to save (Drive needs no GitHub)
     assert "Give a few keywords" in profile.job()(None)["error"]              # a guest needs their field
     profile.topics.setText("gwas, single cell")
     monkeypatch.setattr(sw, "api", lambda python, action, payload=None, timeout=600: {"ok": True, "got": payload})
@@ -55,7 +55,8 @@ def test_setup_without_github_skips_the_github_pages(qapp, monkeypatch):
     assert profile.nextId() == token.nextId() or profile.nextId() == w.pageIds()[3]
     token.initializePage()
     assert token.job() is None and "skip" in token.status.text()
-    assert token.nextId() == w.finish_id                                      # past Sync and Signals
+    assert token.nextId() == w.sync_id                                        # where to save, then (no GitHub) Finish
+    assert w.page(w.sync_id).nextId() == w.finish_id                          # past Signals
     w.state = {"github_username": "me", "orcid_signin": False, "token_source": "none"}
     profile.initializePage()
     assert profile.orcid_btn.isHidden()                                       # no ORCID client id in this build
@@ -64,7 +65,7 @@ def test_setup_without_github_skips_the_github_pages(qapp, monkeypatch):
                         {"ok": True, "orcid": "0000-0002-1825-0097", "name": "Josiah Carberry"})
     profile._orcid_done(sw.api(None, "orcid_login"))
     assert profile.orcid.text() == "0000-0002-1825-0097" and "Josiah Carberry" in profile.orcid_note.text()
-    assert profile.mode == "orcid" and profile.nextId() == w.finish_id      # ORCID: field, then Finish
+    assert profile.mode == "orcid" and profile.nextId() == w.sync_id        # ORCID: field, where to save, Finish
 
 
 def test_the_field_half_of_people_draws_without_an_account(qapp, monkeypatch, no_save):

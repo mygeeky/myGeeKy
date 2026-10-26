@@ -39,7 +39,9 @@ to push or publish it, saying what would go out. A "yes" covers only what was as
 
 - myGeeKy only suggests: it never follows, stars, posts or writes for the user. GitHub access is read-only,
   except the data repo and the Signals beacon, each through its own single-repo token.
-- No telemetry, no myGeeKy server: data stays on the device or in the user's own GitHub repos.
+- No telemetry, no myGeeKy server: data stays on the device or in the user's own storage (a hidden folder in their
+  Google Drive, `drive.appdata` only, or their own GitHub repos), encrypted on the device before it leaves
+  (`docs/STORAGE.md`). Never ask Google for another scope.
 - Works without a GitHub account (ORCID or keywords are a full profile); only what reads the user's own account
   needs GitHub.
 - Text from the internet is untrusted: never render it as HTML (Qt labels use plain text), never run code from

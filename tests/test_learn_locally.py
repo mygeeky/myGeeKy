@@ -72,7 +72,7 @@ def test_the_phone_keeps_what_you_open_with_no_repo_and_sends_it_on_connecting()
     usage = re.search(r"export async function queueUsage\(.*?\n}\n", repo, re.S).group(0)
     assert "if (!(await modelLink())) return" not in usage
     connect = re.search(r"export async function connectModel\(.*?\n}\n", repo, re.S).group(0)
-    assert "flushInterests(repo, token)" in connect                       # what it learned goes to the repo now
+    assert "flushInterests()" in connect                                  # what it learned goes to the repo now
     state = (MOBILE / "src" / "lib" / "app-state.tsx").read_text(encoding="utf-8")
     assert state.count("withLocalLearning(") >= 4                           # every way the profile is built
 

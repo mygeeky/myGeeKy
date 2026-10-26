@@ -182,6 +182,20 @@ def _no_real_deepseek_key(monkeypatch):
     monkeypatch.setattr(scout, "get_key", lambda: None)
 
 
+@pytest.fixture(autouse=True)
+def _no_real_data_key(monkeypatch):
+    """The encryption key of the maker's saved data and their Google sign-in (both in the system keyring) are never
+    seen or changed by a test: each test gets an empty in-memory keyring for them."""
+    import mygeeky.google_login as google_login
+    import mygeeky.storesync as storesync
+    kept: dict[str, bytes | str | None] = {}
+    monkeypatch.setattr(storesync, "get_key", lambda: kept.get("key"))
+    monkeypatch.setattr(storesync, "set_key", lambda key: kept.__setitem__("key", key))
+    monkeypatch.setattr(google_login, "_get_refresh", lambda: kept.get("refresh"))
+    monkeypatch.setattr(google_login, "_set_refresh", lambda value: kept.__setitem__("refresh", value))
+    monkeypatch.setattr(google_login, "_access", {})
+
+
 @pytest.fixture(scope="session")
 def qapp_offscreen():
     """A Qt application with no screen, for widget tests (skipped when PySide6 isn't installed)."""

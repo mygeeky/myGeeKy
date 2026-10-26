@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'org.mygeeky'
+version = '1.0.0'
+
+android {
+  namespace "org.mygeeky.drive"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  // Google Identity Services: AuthorizationClient (asks for drive.appdata), and GoogleAuthUtil to drop an ended token
+  implementation "com.google.android.gms:play-services-auth:21.3.0"
+}

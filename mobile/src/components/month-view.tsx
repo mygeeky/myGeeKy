@@ -12,7 +12,7 @@ import geekocData from '../data/geekoc.json';
 import { useApp } from '../lib/app-state';
 import { earned, TIERS } from '../lib/badges';
 import { loadLists } from '../lib/curated';
-import { cachedBrain, localEvents, modelLink, queuedUsage } from '../lib/model-repo';
+import { cachedBrain, localEvents, queuedUsage, savingLink } from '../lib/model-repo';
 import * as M from '../lib/month';
 import * as MV from '../lib/month-viz';
 import { myGitHub, refreshMyGitHub } from '../lib/my-github';
@@ -32,7 +32,7 @@ type Records = { usage: unknown[]; events: unknown[]; wins: unknown[]; terms: un
 /** What this phone knows you did: your computers' usage, follows and interest terms once your data repo is
  *  connected, plus this phone's own lines not yet sent; and your wins. */
 async function records(): Promise<Records> {
-  const brain = (await modelLink()) ? (await cachedBrain())?.data : null;
+  const brain = (await savingLink()) ? (await cachedBrain())?.data : null;
   const [queued, wins, local] = await Promise.all([queuedUsage(), loadWins().catch(() => null), localEvents().catch(() => [])]);
   return {
     usage: [...(brain?.usage ?? []), ...queued], events: brain?.eventKinds ?? [], wins: wins?.wins ?? [],

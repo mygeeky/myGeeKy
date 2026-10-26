@@ -7333,11 +7333,15 @@ class MyGeekyPanel(QWidget):
         if result.get("skipped"):
             return
         self._sync_error = logic.sync_access_error(result)
+        was = getattr(self, "_sync_needs_key", False)
+        self._sync_needs_key = bool(result.get("needs_key"))
         self._render_signs()
+        if was != self._sync_needs_key and getattr(self, "_setup", None):
+            self._render_setup(self._setup)
         if result.get("error"):
             self.sync_label.setText(f"Sync: {result['error'][:120]}")
             return
-        self.sync_label.setText("Synced with your other computers " + datetime.now().strftime("%H:%M"))
+        self.sync_label.setText("Synced with your other devices " + datetime.now().strftime("%H:%M"))
         if result.get("changed"):
             self._apply_synced_data()
 
@@ -7463,7 +7467,7 @@ class MyGeekyPanel(QWidget):
             self._toast("The setup window is opening: sign in or set it up there, then come back.")
         elif action == "sync":
             self._sync_now()
-            self._toast("Saving to your data repo…")
+            self._toast("Saving…")
         elif action == "signals_on":
             if info.get("beacon_token"):
                 self._on_signals_switch()
@@ -7483,20 +7487,115 @@ class MyGeekyPanel(QWidget):
                                 lambda r: (self._toast(r.get("message", "") if isinstance(r, dict) else str(r)), self._load_setup()))
         elif action == "pair":
             self._show_dialog("_pair_dialog", lambda: PairDialog(self, THEMES[self._theme_name()]))
+        elif action in ("drive", "to_drive"):
+            self._toast("Google's sign-in is opening in your browser: choose your account and allow myGeeKy's own "
+                        "folder, then come back.")
+            self._run_async(lambda: logic.saving_use_drive(self.cfg), self._on_saving_done)
+        elif action in ("github", "to_github"):
+            default = self.cfg.sync_repo or (f"{self.cfg.github_username}/mygeeky-data" if self.cfg.github_username else "")
+            repo = self._ask_text("Save in a GitHub repo",
+                                  "Your private repo, as owner/name (made for you if it doesn't exist yet):", default)
+            if repo:
+                self._toast("Setting up your repo… Git may ask you to sign in to GitHub once.")
+                self._run_async(lambda: logic.saving_use_github(self.cfg, repo), self._on_saving_done)
+        elif action == "encrypt":
+            box = self._box("Encrypt your data repo?",
+                            f"{self.cfg.sync_repo} will hold only encrypted files: only your devices can read them. "
+                            "Its old history is dropped from GitHub (it's kept on this computer).\n\nUpdate myGeeKy "
+                            "on your other computers and phone first: older versions can't read it.")
+            yes = box.addButton("Encrypt it", QMessageBox.AcceptRole)
+            box.addButton(QMessageBox.Cancel)
+            box.exec()
+            if box.clickedButton() is yes:
+                self._toast("Encrypting your data repo…")
+                self._run_async(lambda: logic.saving_lock(self.cfg), self._on_saving_done)
+        elif action == "code":
+            self._show_recovery_code()
+        elif action == "code_enter":
+            value = self._ask_text("Your recovery code", "Type the recovery code (56 letters and digits, in groups "
+                                                         "of four) from where you saved it:")
+            if value:
+                self._run_async(lambda: logic.saving_enter_code(self.cfg, value), self._on_saving_done)
+
+    def _on_saving_done(self, result: Any) -> None:
+        result = result if isinstance(result, dict) else {"ok": False, "error": str(result)}
+        self.cfg = logic.load_config()
+        if result.get("needs_key"):
+            self._sync_needs_key = True
+            self._toast(result.get("error", "Type your recovery code."))
+        elif not result.get("ok"):
+            self._toast(result.get("error") or "That didn't work. Try again.")
+        else:
+            self._sync_needs_key = False
+            self._sync_error = ""
+            self._toast(result.get("message") or "Done.")
+            if result.get("down"):
+                self._apply_synced_data()
+            from .. import storesync
+            if storesync.get_key() and not self.cfg.recovery_shown and logic.saving_where(self.cfg) in ("drive", "github"):
+                self._show_recovery_code(first=True)
+        self._render_signs()
+        self._load_setup()
+
+    def _show_recovery_code(self, first: bool = False) -> None:
+        """The recovery code, to write down or keep in a password manager: with it, any new device reads your data."""
+        from .. import saving
+        code = saving.recovery_code()
+        if not code:
+            self._toast("There's no encryption key on this computer yet.")
+            return
+        box = self._box("Your recovery code", "")
+        box.setTextFormat(Qt.PlainText)
+        box.setText(("Your data is encrypted. Keep this code somewhere safe (on paper, or in a password manager):\n\n"
+                     if first else "") + code + "\n\nWith it, a new computer or phone can read your saved data. "
+                    "Lose every device and this code, and nobody can read it, not even you.")
+        box.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        copy = box.addButton("Copy", QMessageBox.ActionRole)
+        box.addButton("I've saved it" if first else "Close", QMessageBox.AcceptRole)
+        box.exec()
+        if box.clickedButton() is copy:
+            QApplication.clipboard().setText(code)
+            self._toast("Copied. Paste it somewhere safe.")
+        if first:
+            self.cfg.recovery_shown = True
+            logic.save_config(self.cfg)
 
     def _account_cards(self, info: dict[str, Any]) -> list[dict]:
         """The Accounts cards from the setup summary (what's stored, each token's state) and the last sync."""
         from .. import accounts
         toks = {t["name"]: t["state"] for t in info.get("tokens", [])}
         broken = lambda name: toks.get(name) in ("expired", "invalid")              # noqa: E731
+        saving = info.get("saving") or {}
+        where = saving.get("where", "")
+        needs_key = bool(getattr(self, "_sync_needs_key", False))
         states = {
             "github": "off" if not (info.get("user") and "read" in toks) else "bad" if broken("read") else "on",
             "orcid": "on" if info.get("orcid") else "off",
-            "data": "off" if not info.get("sync") else "bad" if getattr(self, "_sync_error", "") else "on",
+            "data": "off" if not where else "bad" if (getattr(self, "_sync_error", "") or needs_key
+                                                      or not saving.get("ready", True)) else "on",
             "beacon": "off" if not info.get("signals") else "bad" if broken("beacon") else "on",
         }
-        return accounts.cards(states, "desktop", {"user": info.get("user") or "", "orcid": info.get("orcid") or "",
-                                                  "repo": info.get("sync") or ""})
+        items = accounts.cards(states, "desktop", {"user": info.get("user") or "", "orcid": info.get("orcid") or "",
+                                                   "repo": info.get("sync") or "", "where": where,
+                                                   "problem": "key" if needs_key else ""})
+        data = next(c for c in items if c["key"] == "data")
+        if data["state"] == "on":
+            other = ("Switch to GitHub", "to_github") if where == "drive" else ("Switch to Google Drive", "to_drive")
+            data["title"] = f"Saving your data · {'Google Drive' if where == 'drive' else 'GitHub'}"
+            data["actions"] = [("Sync now", "sync", "ghost"), (other[0], other[1], "ghost")]
+            if where == "github-plain":
+                data["actions"].insert(0, ("Encrypt it", "encrypt", "primary"))
+            else:
+                data["actions"].append(("Recovery code", "code", "ghost"))
+        elif data["state"] == "bad" and "moved to" in getattr(self, "_sync_error", ""):
+            data["why"] = self._sync_error           # another device switched: follow it
+            data["actions"] = [("Switch to GitHub", "to_github", "bad") if where == "drive" else
+                               ("Switch to Google Drive", "to_drive", "bad")]
+        elif data["state"] == "bad":
+            data["actions"] = ([("Type recovery code", "code_enter", "bad")] if needs_key else
+                               [("Sign in with Google again", "drive", "bad")] if where == "drive" else
+                               [("Open the setup window", "setup", "bad")])
+        return items
 
     # ------------------------------------------------------------------ your setup (in ⚙)
     def _load_setup(self) -> None:

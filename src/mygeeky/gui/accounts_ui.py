@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from . import app as logic
 
@@ -18,7 +18,7 @@ ACTIONS: dict[tuple[str, str], list[tuple[str, str, str]]] = {
     ("github", "off"): [("Sign in with GitHub", "setup", "primary")],
     ("github", "bad"): [("Sign in again", "setup", "bad")],
     ("orcid", "off"): [("Link ORCID", "setup", "primary")],
-    ("data", "off"): [("Set up saving", "setup", "primary")],
+    ("data", "off"): [("Keep it in Google Drive", "drive", "primary"), ("Use a GitHub repo", "github", "ghost")],
     ("data", "bad"): [("Open the setup window", "setup", "bad")],
     ("data", "on"): [("Sync now", "sync", "ghost")],
     ("beacon", "off"): [("Set up Signals", "signals_on", "primary")],
@@ -123,11 +123,13 @@ class AccountsSection(QWidget):
             col.addLayout(head)
             if not on or c["key"] in self.unfolded:
                 col.addWidget(self._label(c["why"], f"color:{t['text']}; font-size:11px; background:transparent;"))
-                row = QHBoxLayout()
-                row.setSpacing(6)
-                for label, action, kind in ACTIONS.get((c["key"], c["state"]), []):
-                    row.addWidget(self._button(label, kind, lambda a=action: self.act(a)))
-                row.addStretch(1)
-                if row.count() > 1:
-                    col.addLayout(row)
+                buttons = c.get("actions") or ACTIONS.get((c["key"], c["state"]), [])
+                grid = QGridLayout()                 # two to a row: a 360px panel never grows wider for them
+                grid.setSpacing(6)
+                for i, (label, action, kind) in enumerate(buttons):
+                    grid.addWidget(self._button(label, kind, lambda a=action: self.act(a)), i // 2, i % 2)
+                if len(buttons) == 1:
+                    grid.setColumnStretch(1, 1)
+                if buttons:
+                    col.addLayout(grid)
             self.lay.addWidget(card)

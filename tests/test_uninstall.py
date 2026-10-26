@@ -7,10 +7,11 @@ from mygeeky.config import MyGeekyConfig, save_config
 def test_erase_removes_every_keyring_entry_and_the_data_folder(monkeypatch, tmp_path):
     keyring = pytest.importorskip("keyring")
     store = {(s, "me"): "secret" for s in un.KEYRING_SERVICES}
+    store.update({entry: "secret" for entry in un.FIXED_ENTRIES})          # the data key, the Google sign-in
     store[("something-else", "me")] = "not ours"
     monkeypatch.setattr(keyring, "get_password", lambda s, u: store.get((s, u)))
     monkeypatch.setattr(keyring, "delete_password", lambda s, u: store.pop((s, u)))
-    assert un.erase_tokens("me") == len(un.KEYRING_SERVICES) and store == {("something-else", "me"): "not ours"}
+    assert un.erase_tokens("me") == len(un.KEYRING_SERVICES) + 2 and store == {("something-else", "me"): "not ours"}
 
     data = tmp_path / "data"
     (data / ".git" / "objects").mkdir(parents=True)

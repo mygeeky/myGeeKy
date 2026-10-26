@@ -28,7 +28,7 @@ def test_each_sign_is_on_faint_or_red():
 
 def test_a_red_sign_reminds_at_most_once_a_day():
     red = signs.signs("on", "on", "bad", "on")
-    assert "data repo" in signs.reminder(red, "", NOW)
+    assert "your storage" in signs.reminder(red, "", NOW)
     assert signs.reminder(red, (NOW - timedelta(hours=3)).isoformat(), NOW) == ""
     assert signs.reminder(red, (NOW - timedelta(hours=25)).isoformat(), NOW)
     assert signs.reminder(signs.signs("on", "on", "on", "off"), "", NOW) == ""

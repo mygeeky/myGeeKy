@@ -57,6 +57,7 @@ export const randomUUID = () => crypto.randomUUID();
     "expo-web-browser": "export const openAuthSessionAsync = async () => ({ type: 'cancel' });\n"
                         "export const openBrowserAsync = async () => ({ type: 'cancel' });\n",
     "expo-constants": "export default { expoConfig: { version: 'test' } };\n",
+    "expo": "export const requireOptionalNativeModule = () => null;\n",       # native modules (Google sign-in): none here
 }
 _IMPORT = re.compile(r"""(from\s+|import\s+|import\()(['"])([^'"]+)\2""")
 

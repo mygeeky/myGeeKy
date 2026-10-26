@@ -1,0 +1,7 @@
+{
+  "name": "google-drive-auth",
+  "version": "1.0.0",
+  "description": "Google Drive sign-in (drive.appdata only) for the myGeeKy phone app, through Google Identity Services",
+  "main": "index.ts",
+  "private": true
+}
