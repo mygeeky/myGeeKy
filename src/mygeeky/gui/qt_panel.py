@@ -7146,8 +7146,8 @@ class MyGeekyPanel(QWidget):
         box.addButton("Cancel", QMessageBox.RejectRole)
         box.exec()
         if box.clickedButton() is hide:
-            self.settings_panel.hide()
-            self.rail_host.show()
+            if self.settings_panel.isVisible():
+                self._settings_mode(False)
             self.hearts.hide()
             self.hide()
 
@@ -7251,12 +7251,26 @@ class MyGeekyPanel(QWidget):
 
     def _toggle_settings(self) -> None:
         opening = not self.settings_panel.isVisible()
-        self.settings_panel.setVisible(opening)
-        self.rail_host.setVisible(not opening)             # ⚙ open: it has the panel to itself
+        self._settings_mode(opening)
         if opening:
             self.settings_scroll.verticalScrollBar().setValue(0)
             self._load_setup()
             self.wisep_section.refresh()                  # today's numbers, as of now
+
+    def _settings_mode(self, opening: bool) -> None:
+        """⚙ open: it has the panel to itself, the page and the rows above it (who's signed in, the badges, where
+        you are) step aside, so a short screen still shows the settings; closed, they come back as they were."""
+        self.settings_panel.setVisible(opening)
+        self.rail_host.setVisible(not opening)
+        rows = (self.status_label, self.start_holder, self.badge_strip, self.nav_head, self.tab_bar)
+        if opening:
+            self._before_settings = {w: w.isVisibleTo(self) for w in rows}
+            for w in rows:
+                w.hide()
+        else:
+            for w, shown in (getattr(self, "_before_settings", None) or {}).items():
+                w.setVisible(shown)
+            self._before_settings = {}
 
     # ------------------------------------------------------------------ your setup (in ⚙)
     def _load_setup(self) -> None:

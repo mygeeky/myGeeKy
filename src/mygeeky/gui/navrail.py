@@ -23,7 +23,7 @@ from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QToolButton, QVBoxLayout
 from .. import navtree
 
 FOLDED_W = 46
-OPEN_W = 128
+OPEN_W = 140                     # rows are 12px narrower (scroll bar): "Researchers" and "Leading lights" fit
 DARK_INK = QColor("#0d0d16")
 
 
@@ -153,6 +153,9 @@ class RailRow(_Clickable):
             muted.setAlpha(165)
         p.setPen(muted)
         text_rect = QRectF(tile.right() + 9, tile.top() - 4, max(0.0, right - tile.right() - 9), side + 8)
+        while p.fontMetrics().horizontalAdvance(nd["label"]) > text_rect.width() and f.pixelSize() > 10:
+            f.setPixelSize(f.pixelSize() - 1)              # a long name ("Researchers") shrinks a little before it's cut
+            p.setFont(f)
         p.drawText(text_rect, Qt.AlignVCenter | Qt.AlignLeft,
                    p.fontMetrics().elidedText(nd["label"], Qt.ElideRight, int(text_rect.width())))
         if has_kids:
