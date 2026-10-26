@@ -138,6 +138,8 @@ def busy(status: int) -> bool:
 
 def search(name: str, hint: str = "", session: Any = None) -> dict[str, Any]:
     """{"status": "found" | "none" | "busy", "candidates": [...], "retry_after": seconds}."""
+    import requests
+
     from . import wisep
     get = (session or wisep.session("you:whois", force=True)).get         # a search you typed: asked now, counted
     hint = domain_hint(hint) if "@" in (hint or "") else hint

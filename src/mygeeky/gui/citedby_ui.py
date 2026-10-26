@@ -5,6 +5,7 @@ Titles and names come from OpenAlex, so they're shown as plain text.
 
 from __future__ import annotations
 
+import html
 from typing import Any, Callable
 
 from PySide6.QtCore import Qt, QTimer, QUrl
@@ -131,7 +132,7 @@ class CitedByPage(QWidget):
                 rl.addWidget(_label(f"{p.get('count', 0)}×", muted, wrap=False))
                 self.lay.addWidget(row)
                 if p.get("institution"):
-                    rl.parentWidget().setToolTip(p["institution"])
+                    rl.parentWidget().setToolTip("<qt>" + html.escape(str(p["institution"])[:300]) + "</qt>")
 
         countries = s.get("countries") or []
         if countries:

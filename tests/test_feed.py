@@ -48,7 +48,6 @@ def test_fresh_things_first_and_each_kind_fades_at_its_own_pace():
 def test_the_feed_has_variety_and_new_territory_and_puts_what_you_saw_last():
     seen = {"p3": {"n": 2}}
     items = feed.arrange(CARDS, {"today": TODAY, "weights": W, "seen": seen})
-    kinds = [x["card"]["kind"] for x in items]
     fresh = [x["card"]["kind"] for x in items if not x["seen"]]
     assert all(max(fresh[i:i + 4].count(k) for k in fresh[i:i + 4]) <= 2 for i in range(len(fresh) - 3) if len(set(fresh)) > 2), fresh
     assert items[4]["explore"] and "new territory" in items[4]["why"]                          # the fifth: 🔭

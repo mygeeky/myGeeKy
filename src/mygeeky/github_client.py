@@ -93,7 +93,6 @@ class GitHubClient:
         # what GitHub already told us, and what this client did with it
         self.cache = (cache or ghcache.store()) if use_cache else None
         self.stats = ghcache.Stats()
-        self._poll_until = 0.0        # GitHub's X-Poll-Interval for the events endpoints
         # GitHub's /search/* endpoints have their own, much tighter rate limit
         # (~30 requests/min) independent of the main 5000/hour REST limit, so
         # they need their own, longer pacing regardless of X-RateLimit-Remaining.

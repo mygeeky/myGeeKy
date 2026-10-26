@@ -714,8 +714,8 @@ The last main on both apps (⚙ at the top of the panel on the computer opens it
   folded green line (click it for details); GitHub, ORCID and Signals say **Optional** with a short reason to link them;
   one whose access stopped working turns red with what to do. A yellow line counts what needs you: saving your data
   when it isn't set up, or anything gone red. The picture steps for a token are right on the card.
-  **Saving your data**: Google Drive (recommended) or a private GitHub repo, one or the other, encrypted on your devices
-  (see *Where your data is saved* below). On: Sync now, Switch to the other one, and your recovery code.
+  **Saving your data**: Google Drive (recommended) or a private GitHub repo, one or the other (see *Where your data is
+  saved* below). On: Sync now, and Switch to the other one.
 - **Your profile**: your papers (OpenAlex) and a CV, thesis or abstract.
 - **Look** (on the computer **Look and window**: also transparency, size, place on screen, stay on top, menu side).
 - **Notifications**.
@@ -735,16 +735,11 @@ devices:
 - **A private GitHub repo**, if you already use GitHub (a computer uses your own Git login; the phone needs a token for
   that one repo, with the picture steps).
 
-Either way **everything is encrypted on your device first**, so the storage holds only unreadable files. The key is
-made on your first device. Your phone gets it from the **Connect your phone** QR code; any device can also take the
-**recovery code** myGeeKy shows you once (Settings → Accounts → Saving your data → Recovery code shows it again).
-Write it down or keep it in a password manager: lose every device and the code, and nobody can read your saved data,
-not even you.
+Both hold the same files, and only you (and myGeeKy, on your devices) can open them. The **Connect your phone** QR code
+tells your phone where your computer saves.
 
 **Switch** to the other place at any time: the data is copied there, and the old place is marked "moved", so your other
-devices tell you to switch them too. A repo set up by an older myGeeKy holds plain files until you click **Encrypt
-it** on a computer (it drops the readable history from GitHub; update myGeeKy on your other devices first). How it
-works: [docs/STORAGE.md](STORAGE.md).
+devices tell you to switch them too. How it works: [docs/STORAGE.md](STORAGE.md).
 
 ## 🔔 Notifications (off unless you switch them on)
 

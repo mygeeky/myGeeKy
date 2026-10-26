@@ -1,59 +1,17 @@
-// Your saved data, locked, on the phone: the same storage and files as the desktop (src/mygeeky/storesync.py) --
-// Google Drive's hidden app folder or a private GitHub repo -- encrypted with your key (lib/data-lock.ts).
-// The phone reads your computers' files and adds what you do here to its own log files only (one per month), so it
-// never writes a file another device writes. Every file read is opened with your key; one that doesn't open is
-// skipped, never trusted.
+// Your saved data, on the phone: the same storage and files as the desktop (src/mygeeky/storesync.py, sync.py) --
+// Google Drive's hidden app folder or a private GitHub repo, the same plain files in either. The phone reads your
+// computers' files and adds what you do here to the logs (*.jsonl); your computers merge them line by line.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
-import * as L from './data-lock';
 import { driveToken } from './google-drive-auth';
 import { fetchT } from './net';
 import { b64, fromUtf8, unb64, utf8 } from './signal-crypto';
 
-const KEY_ITEM = 'mygeeky.data.key';                     // (storage.ts SECRET_ITEMS: Start over forgets it)
-const DEVICE_KEY = 'mygeeky.device';
-const WHERE_KEY = 'mygeeky.saving.where';                // 'drive' | 'github' (locked) | absent
+const WHERE_KEY = 'mygeeky.saving.where';                // 'drive' | 'github' | absent
+const FORMAT = 'mygeeky.json';                           // {"format": 3}, plus "moved_to" once a device switched away
 const ME = { name: 'myGeeKy', email: 'housekeeping@mygeeky.invalid' };
 
-export class NeedsKey extends Error {
-  constructor() {
-    super('Your saved data is encrypted with a key this phone doesn\'t have yet. Type your recovery code, or scan the QR code your computer shows.');
-  }
-}
-
 export class Moved extends Error {}
-
-// ---- the key and this phone's id
-async function secureGet(item: string): Promise<string | null> {
-  if (Platform.OS === 'web') return globalThis.localStorage?.getItem(item) ?? null;
-  try { return await SecureStore.getItemAsync(item); } catch { return null; }
-}
-
-async function secureSet(item: string, value: string | null): Promise<void> {
-  if (Platform.OS === 'web') {
-    if (value) globalThis.localStorage?.setItem(item, value);
-    else globalThis.localStorage?.removeItem(item);
-  } else if (value) await SecureStore.setItemAsync(item, value);
-  else await SecureStore.deleteItemAsync(item).catch(() => undefined);
-}
-
-export async function getKey(): Promise<Uint8Array | null> {
-  const k = unb64(await secureGet(KEY_ITEM));
-  return k && k.length === 32 ? k : null;
-}
-
-export async function setKey(key: Uint8Array | null): Promise<void> {
-  await secureSet(KEY_ITEM, key ? b64(key) : null);
-}
-
-export async function deviceId(): Promise<string> {
-  const have = await AsyncStorage.getItem(DEVICE_KEY);
-  if (have && /^[0-9a-f]{8}$/.test(have)) return have;
-  const id = L.newDeviceId();
-  await AsyncStorage.setItem(DEVICE_KEY, id);
-  return id;
-}
+class Conflict extends Error {}
 
 export type Where = 'drive' | 'github';
 export async function savedWhere(): Promise<Where | null> {
@@ -69,8 +27,8 @@ export async function setWhere(w: Where | null): Promise<void> {
 export type Store = {
   label: string;
   list(): Promise<Record<string, string>>;
-  read(name: string): Promise<Uint8Array | null>;
-  write(name: string, data: Uint8Array): Promise<void>;
+  read(name: string): Promise<string | null>;
+  write(name: string, text: string): Promise<void>;
 };
 
 export function githubStore(repo: string, token: string): Store {
@@ -99,39 +57,19 @@ export function githubStore(repo: string, token: string): Store {
       const r = await fetchT(`https://api.github.com/repos/${repo}/git/blobs/${sha}`, { headers }, 60000);
       if (!r.ok) throw fail(r.status, name);
       const j = await r.json();
-      return unb64(String(j?.content ?? '').replace(/\s/g, ''));
+      return fromUtf8(unb64(String(j?.content ?? '').replace(/\s/g, '')) ?? new Uint8Array(0));
     },
-    async write(name, data) {
+    async write(name, text) {
       const r = await fetchT(`https://api.github.com/repos/${repo}/contents/${name}`, {
         method: 'PUT', headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `myGeeKy phone: ${name}`, sha: shas[name], author: ME, committer: ME, content: b64(data) }),
+        body: JSON.stringify({ message: `myGeeKy phone: ${name}`, sha: shas[name], author: ME, committer: ME, content: b64(utf8(text)) }),
       }, 60000);
-      if (r.status === 409 || r.status === 422) throw new Error('Another device was saving at the same moment. Try again in a minute.');
+      if (r.status === 409 || r.status === 422) throw new Conflict('Another device was saving at the same moment. Try again in a minute.');
       if (!r.ok) throw fail(r.status, name);
       const j = await r.json();
       if (typeof j?.content?.sha === 'string') shas[name] = j.content.sha;
     },
   };
-}
-
-/** Raw bytes over HTTP. React Native's fetch turns a byte body into a Blob, which it can't build from bytes, and
- *  reads bytes back through a Blob too; its XMLHttpRequest carries an ArrayBuffer both ways. */
-function bytesCall(method: string, url: string, headers: Record<string, string>, body?: Uint8Array, ms = 60000):
-  Promise<{ status: number; bytes: Uint8Array; text: () => string }> {
-  return new Promise((resolve, reject) => {
-    const x = new XMLHttpRequest();
-    x.open(method, url);
-    x.responseType = 'arraybuffer';
-    x.timeout = ms;
-    for (const [k, v] of Object.entries(headers)) x.setRequestHeader(k, v);
-    x.onload = () => {
-      const bytes = new Uint8Array((x.response as ArrayBuffer | null) ?? new ArrayBuffer(0));
-      resolve({ status: x.status, bytes, text: () => fromUtf8(bytes) ?? '' });
-    };
-    x.onerror = () => reject(new Error(`Couldn't reach ${new URL(url).hostname}. Check your connection.`));
-    x.ontimeout = () => reject(new Error(`${new URL(url).hostname} didn't answer in ${ms / 1000} s. Check your connection.`));
-    x.send(body ? body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer : null);
-  });
 }
 
 export function driveStore(token: (fresh: boolean) => Promise<string> = driveToken): Store {
@@ -145,19 +83,6 @@ export function driveStore(token: (fresh: boolean) => Promise<string> = driveTok
       if (r.status === 401) throw new Error('Google Drive needs you to sign in with Google again (Settings → Accounts).');
       if (r.status === 403 && (await r.clone().text()).includes('storageQuota')) throw new Error('Your Google Drive is full, so your data can\'t be saved there.');
       if (!r.ok) throw new Error(`Google Drive answered ${r.status}.`);
-      return r;
-    }
-    throw new Error('unreachable');
-  };
-  const media = async (method: string, url: string, body?: Uint8Array) => {
-    for (const fresh of [false, true]) {
-      const headers: Record<string, string> = { Authorization: `Bearer ${await token(fresh)}` };
-      if (body) headers['Content-Type'] = 'application/octet-stream';
-      const r = await bytesCall(method, url, headers, body);
-      if (r.status === 401 && !fresh) continue;
-      if (r.status === 401) throw new Error('Google Drive needs you to sign in with Google again (Settings → Accounts).');
-      if (r.status === 403 && r.text().includes('storageQuota')) throw new Error('Your Google Drive is full, so your data can\'t be saved there.');
-      if (r.status < 200 || r.status >= 300) throw new Error(`Google Drive answered ${r.status}.`);
       return r;
     }
     throw new Error('unreachable');
@@ -188,9 +113,9 @@ export function driveStore(token: (fresh: boolean) => Promise<string> = driveTok
     async read(name) {
       const id = ids[name];
       if (!id) return null;
-      return (await media('GET', `${API}/${id}?alt=media`)).bytes;
+      return (await call(`${API}/${id}?alt=media`, {}, 60000)).text();
     },
-    async write(name, data) {
+    async write(name, text) {
       let id = ids[name];
       if (!id) {
         const made = await (await call(`${API}?fields=id`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -199,87 +124,18 @@ export function driveStore(token: (fresh: boolean) => Promise<string> = driveTok
         if (!id) throw new Error('Google Drive didn\'t make the file.');
         ids[name] = id;
       }
-      await media('PATCH', `${UPLOAD}/${id}?uploadType=media&fields=id`, data);
+      await call(`${UPLOAD}/${id}?uploadType=media&fields=id`, { method: 'PATCH',
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }, body: text }, 60000);
     },
   };
 }
 
-// ---- reading and adding to locked data
-export type Locked = {
-  store: Store; key: Uint8Array; names: Record<string, string>;
+// ---- reading and adding to your saved data
+export type Opened = {
+  store: Store;
   read(file: string): Promise<string | null>;
   append(file: string, lines: string[]): Promise<void>;
 };
-
-const timeOf = (line: string) => {
-  try {
-    const rec = JSON.parse(line);
-    for (const k of ['at', 'timestamp', 'time', 'date', 'ts']) if (typeof rec?.[k] === 'string') return rec[k] as string;
-  } catch { /* undated */ }
-  return '';
-};
-
-/** Open a store with this phone's key. A new, empty store is made ours (mygeeky.json); one locked with another key
- *  throws NeedsKey; one another device moved away from throws Moved. */
-export async function openLocked(store: Store, key: Uint8Array | null, claim = false): Promise<Locked> {
-  const names = await store.list();
-  const fmt = FORMAT in names ? await store.read(FORMAT) : null;
-  const text = fmt ? fromUtf8(fmt) : null;
-  const kid = L.formatKeyId(text);
-  if (kid === null && claim) {
-    key = key ?? L.newKey();
-    await store.write(FORMAT, utf8(L.formatDoc(key)));
-    names[FORMAT] = '';
-  } else if (kid === null) {
-    throw new Error(`There's no myGeeKy data in ${store.label} yet. Save from your computer first, or choose it here to start.`);
-  } else if (!key || L.keyId(key) !== kid) {
-    throw new NeedsKey();
-  }
-  const moved = movedTo(text);
-  if (moved && claim && key) {                       // chosen again after another device moved away: it's the place again
-    await store.write(FORMAT, utf8(L.formatDoc(key)));
-  } else if (moved) throw new Moved(`Your data moved to ${moved === 'drive' ? 'Google Drive' : moved.replace(/^github:/, '')} on another device. Switch this phone too, in Settings → Accounts.`);
-  const k = key as Uint8Array;
-  const device = await deviceId();
-  return {
-    store, key: k, names,
-    async read(file) {
-      if (!file.endsWith('.jsonl')) {
-        const blob = await store.read(file + L.SUFFIX);
-        return blob ? L.openText(k, file, blob) : null;
-      }
-      const stem = file.slice(0, -'.jsonl'.length);
-      const chunks = Object.keys(names).map(L.parseStored).filter((p) => p?.kind === 'log' && p.stem === stem) as Extract<L.Stored, { kind: 'log' }>[];
-      if (!chunks.length) return null;
-      const seen = new Set<string>();
-      const lines: string[] = [];
-      for (const c of chunks.sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0))) {
-        const blob = await store.read(c.name + L.SUFFIX);
-        const t = blob ? L.openText(k, c.name, blob) : null;
-        for (const line of L.linesOf(t ?? '')) if (!seen.has(line)) { seen.add(line); lines.push(line); }
-      }
-      const order = lines.map((line, i) => ({ line, i, t: timeOf(line) }));
-      order.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : a.i - b.i));
-      return order.map((x) => x.line).join('\n') + '\n';
-    },
-    async append(file, lines) {
-      const stem = file.slice(0, -'.jsonl'.length);
-      const byMonth: Record<string, string[]> = {};
-      for (const line of lines) (byMonth[L.monthOf(line)] ??= []).push(line);
-      for (const [month, add] of Object.entries(byMonth)) {
-        const chunk = L.logChunk(stem, month, device);
-        const stored = chunk + L.SUFFIX;
-        const blob = stored in names ? await store.read(stored) : null;
-        const have = blob ? L.openText(k, chunk, blob) ?? '' : '';
-        const body = `${have}${have && !have.endsWith('\n') ? '\n' : ''}${add.join('\n')}\n`;
-        await store.write(stored, L.sealText(k, chunk, body));
-        names[stored] = '';
-      }
-    },
-  };
-}
-
-const FORMAT = L.FORMAT_FILE;
 
 function movedTo(text: string | null): string | null {
   try {
@@ -290,16 +146,47 @@ function movedTo(text: string | null): string | null {
   }
 }
 
-/** Copy everything from one store to another (the files stay locked: nothing is opened), then mark the old one moved. */
-export async function moveStore(from: Store, to: Store, key: Uint8Array, toLabel: 'drive' | `github:${string}`): Promise<number> {
+/** A storage's mygeeky.json that says another device moved the data away: throws Moved, saying where. */
+export function throwIfMoved(format: string | null): void {
+  const moved = movedTo(format);
+  if (moved) throw new Moved(`Your data moved to ${moved === 'drive' ? 'Google Drive' : moved.replace(/^github:/, '')} on another device. Switch this phone too, in Settings → Accounts.`);
+}
+
+/** Open a store: one another device moved away from throws Moved, unless it's being chosen again (`claim`), when it
+ *  becomes the place again. */
+export async function openStore(store: Store, claim = false): Promise<Opened> {
+  const names = await store.list();
+  const format = FORMAT in names ? await store.read(FORMAT) : null;
+  if (claim && movedTo(format)) await store.write(FORMAT, JSON.stringify({ format: 3 }, null, 1));
+  else throwIfMoved(format);
+  return { store, read: (file) => store.read(file), append: (file, lines) => appendTo(store, file, lines) };
+}
+
+/** Add lines to a log: the newest copy, plus them; once more if a computer saved it at that very moment. */
+export async function appendTo(store: Store, file: string, lines: string[]): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    await store.list();
+    const have = (await store.read(file)) ?? '';
+    try {
+      await store.write(file, `${have}${have && !have.endsWith('\n') ? '\n' : ''}${lines.join('\n')}\n`);
+      return;
+    } catch (e) {
+      if (attempt || !(e instanceof Conflict)) throw e;
+    }
+  }
+}
+
+/** Copy every file from one store to another as it is, then mark the old one moved. How many files went. */
+export async function moveStore(from: Store, to: Store, toLabel: 'drive' | `github:${string}`): Promise<number> {
   const src = await from.list();
   await to.list();
   let n = 0;
   for (const name of Object.keys(src)) {
-    if (name !== FORMAT && !L.parseStored(name)) continue;
-    const blob = await from.read(name);
-    if (blob) { await to.write(name, blob); n++; }
+    if (name === FORMAT || name.endsWith('.mgk') || name.startsWith('.')) continue;
+    const text = await from.read(name);
+    if (text !== null) { await to.write(name, text); n++; }
   }
-  await from.write(FORMAT, utf8(JSON.stringify({ ...JSON.parse(L.formatDoc(key)), moved_to: toLabel }, null, 1)));
+  await to.write(FORMAT, JSON.stringify({ format: 3 }, null, 1));
+  await from.write(FORMAT, JSON.stringify({ format: 3, moved_to: toLabel }, null, 1));
   return n;
 }

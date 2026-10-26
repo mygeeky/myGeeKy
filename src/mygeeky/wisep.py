@@ -43,9 +43,9 @@ import re
 import sqlite3
 import threading
 import time
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 from urllib.parse import unquote, urlencode, urlsplit
 
 import requests
@@ -851,12 +851,3 @@ def simulate(policy: str, seed: int = 1, days: int = 30) -> dict[str, float]:
     return {"calls": calls, "stale_share": stale / max(looks, 1), "looks": looks}
 
 
-def json_of(resp: requests.Response) -> Any:
-    try:
-        return resp.json()
-    except ValueError:
-        return json.loads(resp.content or b"{}")
-
-
-def iter_sources() -> Iterable[str]:
-    return iter(SOURCES)

@@ -315,7 +315,7 @@ for Settings and one for each part, and the answers to how and why myGeeKy works
   no server.
 - 🔑 **Never holds your keys.** Tokens live in your operating system's keyring, checked for least privilege,
   **never logged and never printed.**
-- 📦 **Never takes your data.** It stays on your devices, plus, if you want them shared, **your own Google Drive or a private repo you own**, encrypted on your devices first.
+- 📦 **Never takes your data.** It stays on your devices, plus, if you want them shared, **your own Google Drive or a private repo you own**.
 - 📨 **Never sends anything behind your back.** If it breaks, you read the whole report first, with your name,
   email, tokens and folders already stripped out, and **you** decide whether it goes.
 

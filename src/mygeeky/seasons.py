@@ -280,12 +280,6 @@ def prepare_now(season: dict[str, Any], today: date | None = None) -> bool:
     return days is not None and days <= state["notice"]
 
 
-def next_dates(season: dict[str, Any], today: date | None = None) -> tuple[str, str]:
-    """(opens, closes) expected next, as plain YYYY-MM-DD, for anything that wants to show a calendar."""
-    state = when(season, today)
-    return state.get("opens", ""), state.get("closes", "")
-
-
 def clean(raw: Any) -> list[dict[str, Any]]:
     """Every usable season in a list, with duplicates by id dropped."""
     seen_ids: set[str] = set()

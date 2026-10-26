@@ -4,7 +4,7 @@ Plain uninstalling keeps your data and tokens, so a reinstall picks up where
 you left off. Erasing also removes:
   * the data folder (settings, history, CV text, caches, the sync clone) and the local databases beside it;
   * from the OS keyring: your GitHub tokens, the Product Hunt token, this
-    computer's Signals key, your saved data's encryption key and the Google Drive sign-in.
+    computer's Signals key and the Google Drive sign-in.
 Nothing on GitHub or Google Drive is touched: your saved data and your public
 mygeeky-beacon repo stay until you delete them there yourself.
 """
@@ -19,8 +19,8 @@ from pathlib import Path
 # every keyring entry myGeeKy writes, all keyed by your GitHub username
 KEYRING_SERVICES = ("mygeeky-github-token", "mygeeky-github-refresh", "mygeeky-beacon-token",
                     "mygeeky-producthunt-token", "mygeeky-signals-key")
-# and the ones that aren't: your saved data's encryption key, and the Google Drive sign-in
-FIXED_ENTRIES = (("mygeeky-data-key", "default"), ("mygeeky-google-drive", "refresh"))
+# and the ones that aren't: the Google Drive sign-in (and 0.37.0's data key)
+FIXED_ENTRIES = (("mygeeky-google-drive", "refresh"), ("mygeeky-data-key", "default"))
 
 
 def erase_tokens(username: str) -> int:

@@ -38,7 +38,6 @@ from .files import write_json
 UA = {"User-Agent": "mygeeky-headlines (https://github.com/mygeeky/myGeeKy)"}
 MAX_FEED_BYTES = 3 * 1024 * 1024
 PER_FEED = 40
-CATEGORIES = {"ai": "AI", "science": "Science", "tech": "Tech"}
 
 # (id, label, category, url, hosts its links may point to)
 FEEDS: list[tuple[str, str, str, str, tuple[str, ...]]] = [

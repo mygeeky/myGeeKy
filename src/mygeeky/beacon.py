@@ -94,7 +94,6 @@ GESTURES: dict[str, tuple[str, str]] = {
 REPO_GESTURES = {"used"}
 MUTUAL_ONLY = {"collab"}
 MUTUAL_TEXT = "🤝 you both want to collaborate"
-NO_REPLY = "no reply needed"
 # how signals from older myGeeKy versions (schema 1) read
 LEGACY_GESTURES: dict[str, tuple[str, str]] = {
     "wave": ("👋", "said hello"),

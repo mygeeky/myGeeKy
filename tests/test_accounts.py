@@ -47,8 +47,7 @@ out(INPUT.cases.flatMap((c) => ['phone', 'desktop'].map((p) => { const x = cards
             want.append({"x": x, "n": accounts.todo(x), "t": accounts.todo_text(accounts.todo(x))})
     assert said == want
     # where the data is saved, and what went wrong, read the same on both
-    variants = [{"where": w, "problem": pr, "repo": "ada/d"} for w in ("drive", "github", "github-plain", "")
-                for pr in ("", "key")]
+    variants = [{"where": w, "repo": "ada/d"} for w in ("drive", "github", "")]
     said = phone.run("""
 import { cards } from './lib/accounts.ts';
 out(INPUT.v.flatMap((d) => ['on', 'bad', 'off'].flatMap((s) => ['phone', 'desktop'].map((p) => cards({ data: s }, p, d)[2].why))));
@@ -59,11 +58,9 @@ out(INPUT.v.flatMap((d) => ['on', 'bad', 'off'].flatMap((s) => ['phone', 'deskto
 
 def test_the_saving_card_names_the_place_and_never_both():
     off = accounts.cards({}, "desktop")[2]["why"]
-    assert "Google Drive (recommended)" in off and "choose one" in off and "encrypted" in off
+    assert "Google Drive (recommended)" in off and "choose one" in off and "encrypt" not in off
     drive = accounts.cards({"data": "on"}, "phone", {"where": "drive"})[2]["why"]
-    assert drive.startswith("Saving to Google Drive, encrypted")
-    plain = accounts.cards({"data": "on"}, "desktop", {"where": "github-plain", "repo": "ada/d"})[2]["why"]
-    assert "isn't encrypted yet" in plain
-    key = accounts.cards({"data": "bad"}, "phone", {"where": "drive", "problem": "key"})[2]["why"]
-    assert "recovery code" in key and "scan" in key
+    assert drive.startswith("Saving to Google Drive.")
+    repo = accounts.cards({"data": "on"}, "desktop", {"where": "github", "repo": "ada/d"})[2]["why"]
+    assert repo.startswith("Saving to ada/d.")
     assert "Sign in with Google again" in accounts.cards({"data": "bad"}, "desktop", {"where": "drive"})[2]["why"]

@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 
-DOCUMENT_TYPES = ("pdf", "docx", "txt", "md", "tex")
 MAX_PAGES = 80            # a thesis's field shows long before page 80 (the phone reads as many: lib/doc-text.ts)
 
 

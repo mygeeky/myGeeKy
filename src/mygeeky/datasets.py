@@ -648,7 +648,6 @@ def radar_seen(ids: Iterable[str]) -> None:
 def radar_refresh(keywords: Iterable[str], weights: dict[str, float], session=None, force: bool = False,
                   now: datetime | None = None) -> dict[str, Any]:
     """Search for new datasets on your keywords, at most once a day. Returns the radar's state."""
-    import requests
     now = now or datetime.now(timezone.utc)
     state = radar_load()
     try:

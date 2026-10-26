@@ -16,8 +16,7 @@ import { DocDrop } from '../components/doc-drop';
 import { mergeWords } from '../lib/doc-read';
 import { GeekMover } from '../components/tour-overlay';
 import { DataConnect } from '../components/settings-parts';
-import * as Clipboard from 'expo-clipboard';
-import { recoveryCode, saveInDrive } from '../lib/saving';
+import { saveInDrive } from '../lib/saving';
 
 const split = (v: string) => v.split(',').map((x) => x.trim()).filter(Boolean);
 const ORCID = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
@@ -52,7 +51,7 @@ export default function Setup() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [github, setGithub] = useState(false);
-  const [saved, setSaved] = useState<{ note: string; code: string | null } | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
 
   const at = ORDER.indexOf(step);
   // Continue (without) sits where Skip was on the step before: a quick double tap must not skip the last question
@@ -99,9 +98,14 @@ export default function Setup() {
     if (!checked()) return;
     setBusy(true);
     setError('');
-    await keep();
-    setBusy(false);
-    router.replace('/home');
+    try {
+      await keep();
+      router.replace('/home');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
   };
   const drive = async () => {
     setBusy(true);
@@ -109,7 +113,7 @@ export default function Setup() {
     try {
       await keep();
       const note = await saveInDrive();
-      setSaved({ note, code: await recoveryCode() });
+      setSaved(note);
     } catch (e) {
       setError(`${e instanceof Error ? e.message : String(e)} You can do it later in Settings → Accounts.`);
     } finally {
@@ -231,16 +235,11 @@ export default function Setup() {
           </> : null}
 
           {step === 'save' && saved ? <>
-            <Text style={st.ask}>Saved, and encrypted</Text>
-            <Text style={st.body}>{saved.note}</Text>
-            {saved.code ? <>
-              <Text style={st.body}>Your recovery code: keep it somewhere safe (on paper, or in a password manager). With it, a new phone or computer can read your saved data. Lose every device and this code, and nobody can read it, not even you.</Text>
-              <Text selectable style={st.code}>{saved.code}</Text>
-              <Pressable style={st.scan} onPress={() => Clipboard.setStringAsync(saved.code ?? '')} accessibilityRole="button"><Text style={st.scanTitle}>Copy the code</Text></Pressable>
-            </> : null}
+            <Text style={st.ask}>Saved</Text>
+            <Text style={st.body}>{saved}</Text>
             <View style={st.push} />
             <Pressable style={({ pressed }) => [st.primary, pressed && { opacity: 0.85 }]} onPress={() => router.replace('/home')} accessibilityRole="button">
-              <Text style={st.primaryText}>{saved.code ? 'I\'ve saved it' : 'Continue'}</Text>
+              <Text style={st.primaryText}>Continue</Text>
             </Pressable>
           </> : null}
 
@@ -249,7 +248,7 @@ export default function Setup() {
               <Text style={[st.ask, { flex: 1 }]}>Where should I save your settings and progress?</Text>
               <GeekMover pose="think" size={78} />
             </View>
-            <Text style={st.body}>Choose one. Either works the same, and you can switch later. It&apos;s encrypted on your phone first, so only your devices can read it.</Text>
+            <Text style={st.body}>Choose one. Either works the same, and you can switch later.</Text>
             <Pressable style={({ pressed }) => [st.choice, st.choiceOn, pressed && { opacity: 0.85 }]} onPress={drive} disabled={busy} accessibilityRole="button">
               <Text style={st.choiceTitle}>Google Drive  <Text style={st.reco}>RECOMMENDED</Text></Text>
               <Text style={st.hint}>One tap, nothing to renew. myGeeKy only gets its own hidden folder, never your files.</Text>
@@ -402,7 +401,6 @@ const st = StyleSheet.create({
   choiceTitle: { color: C.text, fontSize: 15.5, fontWeight: '800' },
   choiceGo: { color: C.green, fontSize: 14, fontWeight: '800', marginTop: 10 },
   reco: { color: C.green, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  code: { color: C.text, fontSize: 16, fontWeight: '800', letterSpacing: 1, marginTop: 12, fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo' },
   notNow: { backgroundColor: '#fca5a5', borderRadius: 16, height: 54, marginTop: 12, alignItems: 'center', justifyContent: 'center' },
   notNowText: { color: '#1a1013', fontSize: 16, fontWeight: '800' },
   without: { backgroundColor: '#fca5a5', borderRadius: 16, height: 54, marginTop: 12, alignItems: 'center', justifyContent: 'center' },

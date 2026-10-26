@@ -9,16 +9,11 @@ import threading
 import webbrowser
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QApplication, QDialog, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
                                QVBoxLayout, QWidget)
 
 from .. import crashreport
-
-
-class CrashRelay(QObject):
-    """Errors can happen on any thread; the window must open on the main one."""
-    reported = Signal(str)
 
 
 class CrashDialog(QDialog):

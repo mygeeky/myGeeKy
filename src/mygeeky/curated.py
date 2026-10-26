@@ -52,7 +52,6 @@ LEVELS = ("beginner", "intermediate", "advanced")
 _ID = re.compile(r"^[a-z0-9][a-z0-9-]{2,79}$")
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 REPORT_EMAIL = "support@mygeeky.org"
-REPORT_REPO = "mygeeky/myGeeKy-ideas"
 
 _loaded: dict[str, Any] | None = None
 

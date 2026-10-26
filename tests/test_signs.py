@@ -13,7 +13,8 @@ from mygeeky.gui import app as logic
 
 NOW = datetime(2026, 10, 26, 12, tzinfo=timezone.utc)
 CASES = [("on", "on", "on", "on"), ("off", "off", "off", "off"), ("on", "off", "bad", "bad"),
-         ("bad", "on", "off", "on")]
+         ("bad", "on", "off", "on"), ("on", "on", "on", "off", "drive"), ("off", "on", "bad", "on", "drive"),
+         ("on", "on", "off", "on", "drive"), ("on", "on", "on", "on", "github")]
 LASTS = ["", (NOW - timedelta(hours=3)).isoformat(), (NOW - timedelta(hours=30)).isoformat(), "garbage"]
 
 
@@ -24,6 +25,14 @@ def test_each_sign_is_on_faint_or_red():
     assert [s["key"] for s in items] == ["github", "orcid", "data", "beacon"]
     assert [s["state"] for s in items] == ["on", "on", "bad", "off"]  # ORCID doesn't expire: never red
     assert all(s["tip"] for s in items)
+
+
+def test_saving_in_google_drive_shows_its_logo():
+    data = lambda *a: signs.signs(*a)[2]                              # noqa: E731
+    assert data("on", "on", "on", "on", "drive")["icon"] == "drive"
+    assert "Google Drive" in data("on", "on", "bad", "on", "drive")["tip"]
+    assert data("on", "on", "off", "on", "drive")["icon"] == ""       # not saving: no logo
+    assert data("on", "on", "on", "on", "github")["icon"] == "" and data("on", "on", "on", "on")["icon"] == ""
 
 
 def test_a_red_sign_reminds_at_most_once_a_day():

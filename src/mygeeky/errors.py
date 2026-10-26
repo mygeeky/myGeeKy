@@ -43,6 +43,12 @@ def failed_program(exc: BaseException) -> str | None:
     return None
 
 
+def expected(exc: BaseException) -> bool:
+    """A condition, not a bug: GitHub's limit, no internet. Said in one sentence, never saved as a crash report."""
+    return type(exc).__name__ in ("RateLimited", "NotGitHub", "ConnectionError", "Timeout", "ConnectTimeout",
+                                  "ReadTimeout")
+
+
 def describe(exc: BaseException) -> str:
     """One sentence that says what went wrong, naming the file or program."""
     if type(exc).__module__.startswith("mygeeky.") and not isinstance(exc, OSError) and str(exc):

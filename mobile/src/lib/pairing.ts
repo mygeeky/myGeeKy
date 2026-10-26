@@ -3,7 +3,7 @@
 // phone needs no typing at all. The format is `mygeeky:1:<base64url JSON>`:
 //   { u: username, o: ORCID, k: [keywords], t: [topics], w: {interest: weight},
 //     f: [research field], b: ["badge:tier"], tok?: read-only token,
-//     ds?: where your data is saved ("drive" | "github:owner/name"), dk?: the key it's encrypted with (base64url) }
+//     ds?: where your data is saved ("drive" | "github:owner/name") }
 // A QR code is untrusted input: every field is checked before anything is saved.
 import type { Settings } from './storage';
 
@@ -14,7 +14,7 @@ const ORCID = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 // characters are checked, as the desktop does (auth.py); the cap only stops nonsense, not real tokens.
 const TOKEN = /^(github_pat_[A-Za-z0-9_]{20,2000}|gh[opu]_[A-Za-z0-9._-]{20,2000})$/;
 
-export type Pairing = { settings: Settings; token: string | null; saving?: { where: string; key: Uint8Array } };
+export type Pairing = { settings: Settings; token: string | null; saving?: string };
 
 function fromBase64Url(s: string): string {
   const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4);
@@ -53,10 +53,8 @@ export function parsePairing(data: string): Pairing | { error: string } {
   }
   const badges = words(raw.b, 30).filter((b) => /^[a-z]{2,20}:(bronze|silver|gold)$/.test(b));
   const ds = typeof raw.ds === 'string' && /^(drive|github:[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100})$/.test(raw.ds) ? raw.ds : '';
-  const dkText = typeof raw.dk === 'string' && /^[A-Za-z0-9_-]{43}$/.test(raw.dk) ? raw.dk : '';
-  const dk = dkText ? Uint8Array.from(fromBase64Url(dkText), (c) => c.charCodeAt(0)) : null;
   return {
-    ...(ds && dk && dk.length === 32 ? { saving: { where: ds, key: dk } } : {}),
+    ...(ds ? { saving: ds } : {}),
     settings: {
       exploreShare: 0.2, username: u, orcid: o, openalex: a, keywords: words(raw.k), topics: words(raw.t),
       interests, field: words(raw.f, 8).map((x) => x.slice(0, 80)), desktopBadges: badges,

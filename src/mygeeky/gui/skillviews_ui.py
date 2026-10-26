@@ -339,7 +339,7 @@ def _legend(items: list[tuple[str, str]], theme: dict[str, Any]) -> QWidget:
     row.setContentsMargins(0, 0, 0, 0)
     row.setSpacing(10)
     for color, text in items:
-        row.addWidget(_label(f"●", f"color:{color}; font-size:10px;"))
+        row.addWidget(_label("●", f"color:{color}; font-size:10px;"))
         row.addWidget(_label(text, f"color:{theme['muted']}; font-size:10px;"))
     row.addStretch(1)
     return w

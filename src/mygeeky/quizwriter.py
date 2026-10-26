@@ -39,7 +39,6 @@ from __future__ import annotations
 import json
 import random
 import re
-import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
@@ -48,7 +47,7 @@ from typing import Any, Callable
 
 import requests
 
-from . import curated, quiz, safety, scout
+from . import quiz, safety, scout
 from .config import DATA_DIR, ensure_dirs
 from .files import read_json, write_json
 

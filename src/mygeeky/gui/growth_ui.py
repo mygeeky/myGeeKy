@@ -57,13 +57,6 @@ def deadline_text(days: int | None) -> str:
     return f"closes in {days // 30} months"
 
 
-def mode_style(theme: dict[str, Any], active: bool) -> str:
-    """A written-out section pill. Kept for rows that still name every section, such as 🛒 Market's three."""
-    return (f"QPushButton {{ background:{theme['tab_active'] if active else theme['card_bg']}; "
-            f"color:{theme['text']}; border:none; border-radius:8px; padding:4px 10px; "
-            f"font-size:11px; font-weight:{'700' if active else '400'}; }}")
-
-
 def segment_track(theme: dict[str, Any]) -> str:
     """The sunken strip the sections sit in, so the row reads as one control rather than loose buttons."""
     return f"QWidget#modeRow {{ background:{theme['card_bg']}; border-radius:11px; }}"
@@ -785,8 +778,6 @@ class QuizCard(QFrame):
         outer.setSpacing(10)
         score = float(row.get("score") or 0.0)
         got = bool(row.get("best"))
-        colour = theme["good"] if score >= 1.0 else (theme["good"] if score >= row.get("pass_mark", 0.75)
-                                                     else theme["accent"])
         if got:
             ring = ScoreRing(score, theme, score >= row.get("pass_mark", 0.75), size=58)
             outer.addWidget(ring, 0, Qt.AlignTop)

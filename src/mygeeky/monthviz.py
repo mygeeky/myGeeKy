@@ -391,7 +391,7 @@ def habits_svg(s: dict[str, Any], gk: dict[str, str]) -> str:
     out += [_text(cx - 152, cy + 16, "0h", 10, FAINT, 400, "middle"), _text(cx, cy - 158, "12h", 10, FAINT, 400, "middle"),
             _text(cx + 152, cy + 16, "24h", 10, FAINT, 400, "middle"), _geek(gk.get("sleep", ""), cx - 31, cy - 64, "0.1")]
     out.append(_text(cx, cy + 18, f"mostly {_when(hrs)}" if any(hrs) else "no visits yet", 12, INK, 700, "middle"))
-    out.append(f'<line x1="40" y1="198" x2="280" y2="198" stroke="#ffffff" stroke-opacity="0.1" stroke-dasharray="2 5"/>')
+    out.append('<line x1="40" y1="198" x2="280" y2="198" stroke="#ffffff" stroke-opacity="0.1" stroke-dasharray="2 5"/>')
     if not badges:
         out.append(_text(cx, 290, "Your badges hang here as you earn them", 11, MUTED, 400, "middle"))
     for i, (icon, name, tier) in enumerate(badges):

@@ -49,10 +49,6 @@ SERVICE_NAME = "mygeeky-github-token"
 ENV_VAR = "MYGEEKY_GITHUB_TOKEN"
 
 
-class TokenNotFoundError(RuntimeError):
-    pass
-
-
 def _gh_cli_token() -> str | None:
     """The token of a logged-in GitHub CLI (`gh auth login`), if any -- so
     myGeeKy works on any of your machines where `gh` is already set up,
@@ -180,14 +176,6 @@ def get_beacon_token(username: str) -> str | None:
         return None
 
 
-def delete_beacon_token(username: str) -> bool:
-    try:
-        keyring.delete_password(BEACON_SERVICE_NAME, username)
-        return True
-    except Exception:
-        return False
-
-
 PRODUCTHUNT_SERVICE_NAME = "mygeeky-producthunt-token"
 PRODUCTHUNT_ENV_VAR = "MYGEEKY_PRODUCTHUNT_TOKEN"
 
@@ -223,11 +211,3 @@ def prompt_and_store_producthunt_token(username: str) -> None:
     print("Product Hunt token stored securely in your OS keyring.")
 
 
-def require_token(username: str) -> str:
-    token = get_token(username)
-    if not token:
-        raise TokenNotFoundError(
-            "No GitHub token found. Run `mygeeky auth login` first, or set the "
-            f"{ENV_VAR} environment variable."
-        )
-    return token

@@ -225,11 +225,21 @@ def export_config() -> None:
         write_text_atomic(SYNCED_CONFIG_FILE, CONFIG_FILE.read_text(encoding="utf-8-sig"))
 
 
+# where each computer saves is its own choice: another device's settings never change it
+LOCAL_ONLY = ("sync_store", "sync_repo")
+
+
 def import_config() -> bool:
+    import json
+
     from .config import _readable
-    if not SYNCED_CONFIG_FILE.exists() or not _readable(SYNCED_CONFIG_FILE):
+    theirs = _readable(SYNCED_CONFIG_FILE) if SYNCED_CONFIG_FILE.exists() else None
+    if theirs is None:
         return False                      # a damaged synced copy never replaces a good local one
-    write_text_atomic(CONFIG_FILE, SYNCED_CONFIG_FILE.read_text(encoding="utf-8-sig"))
+    mine = _readable(CONFIG_FILE) if CONFIG_FILE.exists() else None
+    if mine is not None:
+        theirs.update({k: mine[k] for k in LOCAL_ONLY if k in mine})
+    write_text_atomic(CONFIG_FILE, json.dumps(theirs, indent=2))
     return True
 
 

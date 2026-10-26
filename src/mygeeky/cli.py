@@ -232,7 +232,13 @@ def entry() -> None:
             _give_up_on_output()       # normal: `| head`, or a panel that stopped listening
             raise SystemExit(0)
         from .config import LOG_DIR
-        from .errors import ISSUES_URL, describe, save_crash_report
+        from .errors import ISSUES_URL, describe, expected, save_crash_report
+        if expected(exc):
+            try:
+                click.secho(f"myGeeKy: {describe(exc)}", fg="yellow", err=True)
+            except Exception:
+                _give_up_on_output()
+            raise SystemExit(1)
         report = save_crash_report(exc, LOG_DIR, "command line")
         try:
             click.secho(f"myGeeKy hit a problem: {describe(exc)}", fg="red", err=True)
@@ -1234,34 +1240,49 @@ def pipeline() -> None:
     from . import saving
     from . import sync as sync_mod
     cfg = load_config()
-    locked = saving.where(cfg) in ("drive", "github") and cfg.sync_auto and saving.ready(cfg)
-    syncing = locked or bool(cfg.sync_repo and cfg.sync_auto and sync_mod.is_initialized())
+    drive = saving.where(cfg) == "drive" and cfg.sync_auto and saving.ready(cfg)
+    syncing = drive or bool(cfg.sync_repo and cfg.sync_auto and sync_mod.is_initialized())
     ctx = click.get_current_context()
     if syncing:
         try:
-            msg = _locked_sync() if locked else sync_mod.pull()
+            msg = _drive_sync() if drive else _git_pull()
             click.echo(msg)
             if msg.startswith("Pulled"):
                 _retrain_and_report(load_config())
         except Exception as exc:  # noqa: BLE001 - sync never stops the weekly run
             click.echo(f"[mygeeky] sync pull failed, continuing with local data: {exc}", err=True)
-    ctx.invoke(learn)
-    click.echo("")
-    ctx.invoke(run, as_json=False)
-    click.echo("")
-    ctx.invoke(contribute, as_json=False, last=False)
+    from .errors import describe, expected
+    for step, kwargs in ((learn, {}), (run, {"as_json": False}), (contribute, {"as_json": False, "last": False})):
+        try:
+            ctx.invoke(step, **kwargs)
+        except Exception as exc:                  # GitHub's limit or no internet skips a step, not the whole run
+            if not expected(exc):
+                raise
+            click.echo(f"[mygeeky] {step.name} skipped: {describe(exc)}", err=True)
+        click.echo("")
     if syncing:
         try:
-            click.echo(_locked_sync() if locked else sync_mod.push())
+            click.echo(_drive_sync() if drive else sync_mod.push())
         except Exception as exc:  # noqa: BLE001
             click.echo(f"[mygeeky] sync push failed (will retry next run): {exc}", err=True)
 
 
-def _locked_sync() -> str:
-    """One sync with Google Drive or an encrypted repo; says "Pulled" when anything came down (as sync.pull)."""
+def _drive_sync() -> str:
+    """One sync with Google Drive; says "Pulled" when anything came down (as sync.pull)."""
     from . import saving
     r = saving.sync_now()
     return f"Pulled {len(r['down'])} file(s), saved {len(r['up'])}." if r["down"] else f"Saved {len(r['up'])} file(s)."
+
+
+def _git_pull() -> str:
+    """sync.pull, then the repo's "moved" mark: another device took the data elsewhere."""
+    from . import saving, storesync
+    from . import sync as sync_mod
+    msg = sync_mod.pull()
+    moved = saving.repo_moved()
+    if moved:
+        raise storesync.Moved(moved)
+    return msg
 
 
 # --------------------------------------------------------------------------- contribute
@@ -1729,7 +1750,6 @@ def keywords_suggest(word: str) -> None:
 @keywords_cmd.command("update")
 def keywords_update() -> None:
     """Fetch the newest keyword dictionary now."""
-    from .config import DATA_DIR  # noqa: F401
     cached = keywords.CACHE_FILE
     if cached.exists():
         cached.unlink()
@@ -1744,10 +1764,11 @@ def sync() -> None:
 
 
 def _sync_call(fn, *args) -> str:
+    from . import google_login, storesync
     from . import sync as sync_mod
     try:
         return fn(*args)
-    except sync_mod.SyncError as exc:
+    except (sync_mod.SyncError, storesync.StoreError, google_login.GoogleLoginError) as exc:
         raise click.ClickException(str(exc)) from exc
 
 
@@ -1769,10 +1790,8 @@ def sync_init(repo: str | None) -> None:
         click.echo("\nmyGeeKy writes your data there with your own Git login (Git may ask you to sign in to GitHub\n"
                    "the first time). Your read-only myGeeKy token is never used for it.")
         click.pause("\nPress any key once you've created it...")
-    click.echo(_sync_call(sync_mod.init, repo))
-    cfg = load_config()  # may have just been replaced by the synced config
-    cfg.sync_repo = repo
-    save_config(cfg)
+    from . import saving
+    click.echo(_sync_call(lambda: saving.use_github(repo)["message"]))   # moved from Google Drive if it was there
     _retrain_quietly()
     _sync_call(sync_mod.push)
 
@@ -1783,14 +1802,14 @@ def _retrain_quietly() -> None:
         _retrain_and_report(load_config())
 
 
-def _locked_here() -> bool:
+def _on_drive() -> bool:
     from . import saving
-    return saving.where(load_config()) in ("drive", "github")
+    return saving.where(load_config()) == "drive"
 
 
-def _locked_call() -> str:
+def _drive_call() -> str:
     try:
-        return _locked_sync()
+        return _drive_sync()
     except Exception as exc:  # noqa: BLE001 - a sync error, a Google sign-in that ended: said plainly
         raise click.ClickException(str(exc)) from exc
 
@@ -1799,14 +1818,13 @@ def _locked_call() -> str:
 def sync_push() -> None:
     """Commit and push this machine's data."""
     from . import sync as sync_mod
-    click.echo(_locked_call() if _locked_here() else _sync_call(sync_mod.push))
+    click.echo(_drive_call() if _on_drive() else _sync_call(sync_mod.push))
 
 
 @sync.command("pull")
 def sync_pull() -> None:
     """Fetch data from your other machines (then retrain the model locally)."""
-    from . import sync as sync_mod
-    msg = _locked_call() if _locked_here() else _sync_call(sync_mod.pull)
+    msg = _drive_call() if _on_drive() else _sync_call(_git_pull)
     click.echo(msg)
     if msg.startswith("Pulled"):
         _retrain_and_report(load_config())
@@ -1817,8 +1835,8 @@ def sync_status() -> None:
     from . import saving
     from . import sync as sync_mod
     cfg = load_config()
-    if _locked_here():
-        click.echo(f"Saved in {saving.label(cfg)}, encrypted. Ready here: {'yes' if saving.ready(cfg) else 'no'}.")
+    if _on_drive():
+        click.echo(f"Saved in {saving.label(cfg)}. Ready here: {'yes' if saving.ready(cfg) else 'no'}.")
         return
     click.echo(sync_mod.status())
 

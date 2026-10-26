@@ -26,7 +26,7 @@ export default function Scan() {
     }
     setMessage(result.settings.username ? `Connected as @${result.settings.username}…` : 'Connected…');
     await save(result.settings, result.token ?? undefined);
-    if (result.saving) await fromPairing(result.saving.where, result.saving.key).catch(() => undefined);
+    if (result.saving) await fromPairing(result.saving).catch(() => undefined);
     router.replace('/home');
   };
 

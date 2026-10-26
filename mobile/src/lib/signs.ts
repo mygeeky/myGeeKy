@@ -3,7 +3,7 @@
 // (red: its access stopped working, or is about to); a bad one reminds you, at most once a day, to renew it. Only what
 // the app knows already (the daily token check): no request. tests/test_signs.py checks both apps agree.
 export type SignState = 'on' | 'off' | 'bad';
-export type Sign = { key: 'github' | 'orcid' | 'data' | 'beacon'; label: string; state: SignState; tip: string };
+export type Sign = { key: 'github' | 'orcid' | 'data' | 'beacon'; label: string; state: SignState; icon: '' | 'drive'; tip: string };
 
 export const ORDER = ['github', 'orcid', 'data', 'beacon'] as const;
 export const LABELS: Record<Sign['key'], string> = { github: 'GitHub', orcid: 'ORCID', data: 'Saving', beacon: 'Beacon' };
@@ -15,20 +15,25 @@ export const TIPS: Record<Sign['key'], Partial<Record<SignState, string>>> = {
     off: "ORCID isn't linked. Add it in Settings → Accounts for your papers and who cites you." },
   data: { on: 'Saving your settings and progress: your computers and phone share them.',
     off: 'Not saving anywhere yet: your settings and progress are only on this device.',
-    bad: "myGeeKy can't save any more: its access to your storage stopped working, or it needs your recovery code. See Settings → Accounts." },
+    bad: "myGeeKy can't save any more: its access to your storage stopped working. See Settings → Accounts." },
   beacon: { on: 'Your Signals beacon is on.', off: 'Signals is off.',
     bad: 'Your Signals token expired or stopped working: renew it to keep Signals on.' },
 };
+export const DRIVE_TIPS: Partial<Record<SignState, string>> = {
+  on: 'Saving your settings and progress in Google Drive: your computers and phone share them.',
+  bad: "myGeeKy can't save to Google Drive any more: sign in with Google again in Settings → Accounts." };
 export const REMIND_HOURS = 24;
 
 /** signs.state: 'off' never set up, 'bad' set up but its access stopped (or is about to), else 'on'. */
 export const state = (present: boolean, broken = false): SignState => (!present ? 'off' : broken ? 'bad' : 'on');
 
-export function signs(github: SignState, orcid: SignState, data: SignState, beacon: SignState): Sign[] {
+/** signs.signs: the four, in order; Saving shows Google Drive's logo (icon 'drive') when your data is saved there. */
+export function signs(github: SignState, orcid: SignState, data: SignState, beacon: SignState, where = ''): Sign[] {
   const given: Record<Sign['key'], SignState> = { github, orcid: orcid !== 'off' ? 'on' : 'off', data, beacon };
   return ORDER.map((key) => {
     const st: SignState = ['on', 'off', 'bad'].includes(given[key]) ? given[key] : 'off';
-    return { key, label: LABELS[key], state: st, tip: TIPS[key][st] ?? '' };
+    const drive = key === 'data' && where === 'drive' && st !== 'off';
+    return { key, label: LABELS[key], state: st, icon: drive ? 'drive' : '', tip: (drive ? DRIVE_TIPS[st] : TIPS[key][st]) ?? '' };
   });
 }
 

@@ -77,8 +77,6 @@ def test_panel_sync_pulls_other_computers_settings(monkeypatch):
     monkeypatch.setattr(sync, "git_exe", lambda: "git")
     monkeypatch.setattr(sync, "_git", lambda *a, **k: R())
     monkeypatch.setattr(sync, "push", lambda: "Pushed to GitHub.")
-    from mygeeky import saving
-    monkeypatch.setattr(saving, "follow_if_locked", lambda cfg: False)     # an older, plain repo, still plain
     from mygeeky.config import MyGeekyConfig
     cfg = MyGeekyConfig(sync_repo="me/data")
     assert logic.sync_now(cfg) == {"ok": True, "changed": True, "message": "Pushed to GitHub."}

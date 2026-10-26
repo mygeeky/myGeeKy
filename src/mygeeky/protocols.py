@@ -916,10 +916,6 @@ def publish(entry: dict[str, Any]) -> dict[str, str]:
             "clipboard": text}
 
 
-def publish_url(entry: dict[str, Any]) -> str:
-    return publish(entry)["url"]
-
-
 _JSON_BLOCK = re.compile(r"```json\s*(\{.*?\})\s*```", re.S)
 
 

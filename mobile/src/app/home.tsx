@@ -46,7 +46,7 @@ import { checkTokens, SETTINGS_URL, type TokenState } from '../lib/tokens';
 import { reminder, signs as makeSigns, state as signState } from '../lib/signs';
 import { cards as accountCards, todo as accountsTodo } from '../lib/accounts';
 import { StatusSigns } from '../components/status-signs';
-import { recordInterest } from '../lib/model-repo';
+import { recordInterest, savingLink, type SavingLink } from '../lib/model-repo';
 import { loadSeen, markSeen } from '../lib/seen';
 import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
 import { fetchPeople } from '../lib/people';
@@ -251,8 +251,11 @@ export default function Home() {
   useEffect(() => { checkTokens().then((t) => { setTokens(t); setTokenWarn(t.find((x) => x.warn) ?? null); }).catch(() => undefined); }, []);
   // the four signs beside the page's name (lib/signs.ts): GitHub, ORCID, saving to your data repo, your beacon
   const dataTok = tokens.find((t) => t.name === 'data'), sigTok = tokens.find((t) => t.name === 'signals');
-  const signItems = makeSigns(signState(!!token), signState(!!settings?.orcid), signState(!!dataTok, !!dataTok?.warn),
-                              signState(!!sigTok, !!sigTok?.warn));
+  const [savingAt, setSavingAt] = useState<SavingLink | null>(null);      // Google Drive needs no token: ask where
+  useEffect(() => { savingLink().then(setSavingAt).catch(() => setSavingAt(null)); }, [tokens, sel]);
+  const signItems = makeSigns(signState(!!token), signState(!!settings?.orcid),
+                              signState(!!savingAt, savingAt?.where === 'github' && !!dataTok?.warn),
+                              signState(!!sigTok, !!sigTok?.warn), savingAt?.where ?? '');
   const needsYou = accountsTodo(accountCards({ github: signItems[0].state, orcid: signItems[1].state, data: signItems[2].state,
     beacon: signItems[3].state }, 'phone'));
   const remindKey = signItems.filter((x) => x.state === 'bad').map((x) => x.key).join(',');

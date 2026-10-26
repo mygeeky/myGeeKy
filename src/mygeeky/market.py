@@ -27,7 +27,7 @@ import math
 import re
 import time
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 import requests
 
@@ -350,7 +350,3 @@ def _signal(row: dict[str, Any], metric: str) -> float | None:
     return float(value)
 
 
-def top_movers(rows: Iterable[dict[str, Any]], n: int = 3) -> list[dict[str, Any]]:
-    """Biggest climbers by rank movement, for a compact "movers" strip."""
-    moved = [r for r in rows if isinstance(r.get("movement"), int) and r["movement"] > 0]
-    return sorted(moved, key=lambda r: r["movement"], reverse=True)[:n]

@@ -70,7 +70,7 @@ class WhoisSection(QWidget):
             oa = (scholar.load_scholar_profile() or {}).get("openalex") or {}
             who = oa.get("display_name") or self.cfg.openalex_id
             self._label(f"✓ You: {who}" + (f" · {oa.get('works_count')} works" if oa.get("works_count") else ""),
-                        f"color:#7fe6c8; font-size:11px; background:transparent;")
+                        f"color:{logic.readable('#7fe6c8', self.theme())}; font-size:11px; background:transparent;")
             self._button("Not me: forget it", self._forget)
             return
         found = state.get("found")

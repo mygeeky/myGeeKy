@@ -31,14 +31,8 @@ def _why(key: str, state: str, platform: str, d: dict[str, str]) -> str:
         repo = d.get("repo") or "your data repo"
         place = "Google Drive" if d.get("where") == "drive" else repo
         if state == "on":
-            if d.get("where") == "github-plain":
-                return f"Saving to {repo}. It isn't encrypted yet: encrypt it, so only your devices can read it."
-            return f"Saving to {place}, encrypted: only your devices can read it. Your computers and phone share " \
-                   "your settings and progress."
+            return f"Saving to {place}. Your computers and phone share your settings and progress."
         if state == "bad":
-            if d.get("problem") == "key":
-                return f"Your saved data is encrypted with a key {here} doesn't have yet. Type your recovery code" + (
-                    ", or scan the QR code your computer shows." if platform == "phone" else ".")
             if d.get("where") == "drive":
                 return f"Google Drive stopped accepting {here}'s sign-in, so nothing has been saved since. " \
                        "Sign in with Google again."
@@ -46,8 +40,7 @@ def _why(key: str, state: str, platform: str, d: dict[str, str]) -> str:
                 "On GitHub, open the token, click Regenerate token, and paste the new one here." if platform == "phone"
                 else "Open the setup window to connect it again.") + " (Google Drive never needs renewing.)"
         return f"Right now, your settings and progress are only on {here}. Save them in Google Drive (recommended) " \
-               "or a private GitHub repo: choose one. Either works the same, and you can switch later. They're " \
-               "encrypted on your devices, so only your devices can read them."
+               "or a private GitHub repo: choose one. Either works the same, and you can switch later."
     if key == "beacon":
         return {"on": f"Signals is on: private thank-yous and collab invites, with a key kept only on {here}.",
                 "bad": "Your Signals token stopped working: renew it to keep Signals on."}.get(

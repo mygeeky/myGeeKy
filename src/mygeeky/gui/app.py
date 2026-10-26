@@ -151,10 +151,6 @@ def get_status(cfg: MyGeekyConfig) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- starting from keywords alone
-def field_opening() -> list[dict[str, Any]]:
-    """The first five keywords to offer somebody with no account of any kind."""
-    from .. import fieldstart
-    return fieldstart.opening()
 
 
 def field_suggest(picked: list[str], dismissed: list[str] | None = None,
@@ -195,11 +191,6 @@ def account_asked(cfg: MyGeekyConfig, wall: str = "") -> None:
     from .. import fieldstart
     fieldstart.asked(cfg, wall=wall)
     save_config(cfg)
-
-
-def field_summary(cfg: MyGeekyConfig) -> dict[str, Any]:
-    from .. import fieldstart
-    return fieldstart.summary(cfg)
 
 
 def _luminance(hex_color: str) -> float:
@@ -355,19 +346,16 @@ def setup_overview(cfg: MyGeekyConfig) -> dict[str, Any]:
 
 
 def _saving_summary(cfg: MyGeekyConfig) -> dict[str, Any]:
-    from .. import saving, storesync
+    from .. import saving
     w = saving.where(cfg)
-    return {"where": w, "label": saving.label(cfg), "ready": saving.ready(cfg) if w in ("drive", "github") else bool(w),
-            "has_key": storesync.get_key() is not None}
+    return {"where": w, "label": saving.label(cfg), "ready": saving.ready(cfg)}
 
 
 def _saving_call(fn: Any, *args: Any) -> dict[str, Any]:
-    """Run a saving.py step for a button: {"ok": True, ...} or {"ok": False, "error", "needs_key"?}."""
+    """Run a saving.py step for a button: {"ok": True, ...} or {"ok": False, "error"}."""
     from .. import google_login, storesync, sync
     try:
         return fn(*args)
-    except storesync.NeedsKey as exc:
-        return {"ok": False, "needs_key": True, "error": str(exc)}
     except (storesync.StoreError, sync.SyncError, google_login.GoogleLoginError) as exc:
         return {"ok": False, "error": str(exc)}
     except Exception as exc:  # noqa: BLE001
@@ -377,7 +365,7 @@ def _saving_call(fn: Any, *args: Any) -> dict[str, Any]:
 
 def saving_use_drive(cfg: MyGeekyConfig, sign_in: bool = True) -> dict[str, Any]:
     """"Keep it in Google Drive": Google's sign-in in the browser (unless signed in already), then the data moves
-    there, encrypted."""
+    there."""
     from .. import google_login, saving
 
     def go() -> dict[str, Any]:
@@ -387,33 +375,19 @@ def saving_use_drive(cfg: MyGeekyConfig, sign_in: bool = True) -> dict[str, Any]
     return _saving_call(go)
 
 
-def saving_where(cfg: MyGeekyConfig) -> str:
-    from .. import saving
-    return saving.where(cfg)
+def saving_google_sign_in() -> dict[str, Any]:
+    """Google's sign-in in the browser alone, so the panel can say "copying…" while the data goes up after it."""
+    from .. import google_login
+
+    def go() -> dict[str, Any]:
+        google_login.sign_in()
+        return {"ok": True}
+    return _saving_call(go)
 
 
 def saving_use_github(cfg: MyGeekyConfig, repo: str) -> dict[str, Any]:
     from .. import saving
     return _saving_call(saving.use_github, repo)
-
-
-def saving_lock(cfg: MyGeekyConfig) -> dict[str, Any]:
-    from .. import saving
-    return _saving_call(saving.lock_github)
-
-
-def saving_enter_code(cfg: MyGeekyConfig, code: str) -> dict[str, Any]:
-    from .. import saving
-    return _saving_call(saving.enter_code, code)
-
-
-def saving_stop(cfg: MyGeekyConfig) -> dict[str, Any]:
-    from .. import saving
-
-    def go() -> dict[str, Any]:
-        saving.stop()
-        return {"ok": True, "message": "Your data is kept on this computer only now. Nothing was deleted."}
-    return _saving_call(go)
 
 
 def set_signals_enabled(cfg: MyGeekyConfig, on: bool) -> dict[str, Any]:
@@ -468,20 +442,20 @@ def sync_access_error(result: dict[str, Any]) -> str:
     was taken away), not when you were just offline: that turns the Saving sign red."""
     err = str(result.get("error") or "")
     low = err.lower()
-    if result.get("needs_key") or result.get("moved"):
-        return err or "needs the recovery code"
+    if result.get("moved"):
+        return err
     return err if any(w in low for w in ("401", "403", "auth", "denied", "permission", "credential", "revoked",
                                          "expired", "not found", "sign in with google")) else ""
 
 
 def status_signs(cfg: MyGeekyConfig, warnings: list[dict[str, Any]], sync_error: str = "") -> list[dict[str, str]]:
     """The four signs beside the page's name (signs.py), from what the panel already knows: no request."""
-    from .. import signs
+    from .. import saving, signs
     warn = {w.get("name") for w in warnings or [] if w.get("warn")}
     return signs.signs(signs.state(bool(cfg.github_username), "read" in warn),
                        signs.state(bool(cfg.orcid_id)),
                        signs.state(sync_enabled(cfg), bool(sync_error)),
-                       signs.state(bool(cfg.beacon_enabled), "beacon" in warn))
+                       signs.state(bool(cfg.beacon_enabled), "beacon" in warn), saving.where(cfg))
 
 
 def get_token_warnings(cfg: MyGeekyConfig) -> list[dict[str, Any]]:
@@ -516,18 +490,6 @@ def replace_token(cfg: MyGeekyConfig, name: str, value: str) -> dict[str, Any]:
     tokens.forget()
     renewed = next((t for t in tokens.status(cfg, force=True) if t["name"] == name), None)
     return {"ok": True, "message": "Saved. " + (renewed["message"] if renewed else "")}
-
-
-WORK_STYLES = (("", "I'd rather not say"), ("code", "I mostly build software"),
-               ("analysis", "I mostly analyse data"), ("both", "Both"))
-
-
-def set_work_style(cfg: MyGeekyConfig, style: str) -> str:
-    """What kind of work you mostly do: it only tilts which kinds of skill come up first (skills.py)."""
-    from ..config import save_config
-    cfg.work_style = style if style in {s for s, _ in WORK_STYLES} else ""
-    save_config(cfg)
-    return cfg.work_style
 
 
 def set_hearts(cfg: MyGeekyConfig, enabled: bool) -> None:
@@ -1295,7 +1257,7 @@ def sync_enabled(cfg: MyGeekyConfig) -> bool:
         return False
     try:
         from .. import saving, sync
-        if saving.where(cfg) in ("drive", "github"):
+        if saving.where(cfg) == "drive":
             return saving.ready(cfg)
         return bool(cfg.sync_repo) and sync.is_initialized() and sync.git_exe() is not None
     except Exception:
@@ -1304,22 +1266,21 @@ def sync_enabled(cfg: MyGeekyConfig) -> bool:
 
 def sync_now(cfg: MyGeekyConfig) -> dict[str, Any]:
     """Two-way sync with your storage (Google Drive or your private repo): this computer's changes go up, the other
-    devices' come down. Returns whether anything came down; "needs_key" when the recovery code is wanted."""
+    devices' come down. Returns whether anything came down; "moved" when another device took the data elsewhere."""
     from .. import saving, storesync, sync
     if not sync_enabled(cfg):
         return {"ok": False, "skipped": True}
     try:
-        if saving.follow_if_locked(cfg):          # another computer encrypted the repo: follow it
-            cfg = load_config()
-        if saving.where(cfg) in ("drive", "github"):
-            result = saving.sync_now(cfg)
+        if saving.where(cfg) == "drive":
+            result = saving.sync_now()
             return {"ok": True, "changed": bool(result["down"]),
                     "message": f"Synced ({len(result['down'])} down, {len(result['up'])} up)."}
         before = sync._git("rev-parse", "HEAD", check=False).stdout.strip()
         message = sync.push()
         after = sync._git("rev-parse", "HEAD", check=False).stdout.strip()
-    except storesync.NeedsKey as exc:
-        return {"ok": False, "needs_key": True, "error": str(exc)}
+        moved = saving.repo_moved()
+        if moved:
+            raise storesync.Moved(moved)
     except storesync.StoreError as exc:
         return {"ok": False, "error": str(exc), "moved": isinstance(exc, storesync.Moved)}
     except Exception as exc:
@@ -1522,11 +1483,6 @@ def get_brain(cfg: MyGeekyConfig) -> dict[str, Any]:
     }
 
 
-def get_learned_interests(cfg: MyGeekyConfig) -> list[tuple[str, float]]:
-    from .. import interests
-    return interests.learned_terms(cfg, 10)
-
-
 def get_market(cfg: MyGeekyConfig) -> dict[str, Any]:
     """The saved board -- local only, no network."""
     from .. import producthunt
@@ -1595,6 +1551,11 @@ def refresh_growth(cfg: MyGeekyConfig, force: bool = False) -> dict[str, Any]:
         skilltrends.refresh_if_due(force=force)        # the shared world file Rising skills measures growth on
     except Exception:
         pass                                           # the copy myGeeKy shipped with still works
+    try:
+        from .. import quiz
+        quiz.refresh_if_due(force=force)               # new quiz questions, like the lists (docs/QUIZZES.md)
+    except Exception:
+        pass
     try:
         from .. import datasets
         datasets.refresh_if_due(force=force)           # Grow → Data's list
@@ -1763,7 +1724,6 @@ def report_links(kind: str, item: dict[str, Any]) -> dict[str, str]:
 def build_protocol(cfg: MyGeekyConfig, skill: str, goal: str = "") -> dict[str, Any]:
     """Start a protocol for `skill`: the reviewed one if there is one, else one built now from GitHub and
     OpenAlex with the protocol model. Slow (searches): call it off the UI thread. {"id"} or {"error"}."""
-    import requests
     from .. import protocols
     skill = " ".join((skill or "").split())[:60]
     if not skill:
@@ -1911,16 +1871,6 @@ def quiz_flag(qid: str, on: bool = True) -> bool:
 def quiz_report(question: Any, reason: str = "") -> str:
     from .. import quiz
     return quiz.report_question(question, reason)
-
-
-def quiz_refresh(force: bool = False) -> dict[str, Any]:
-    """Fetch the newest question bank (like the curated lists). Never raises."""
-    from .. import quiz
-    try:
-        return {"changed": quiz.refresh_if_due(force=force)}
-    except Exception as exc:
-        from ..errors import describe
-        return {"error": f"Couldn't fetch the questions: {describe(exc)}"}
 
 
 # ---- showing a score on mygeeky.org: only if you ask, from your own account (leaderboard.py)
@@ -2420,7 +2370,6 @@ def _panel_geometry(cfg: MyGeekyConfig, folded: bool, screen_rect,
 def main() -> None:
     """Start the panel. It usually runs without a console (pythonw), so a
     failure must be shown in a message box -- otherwise it just never appears."""
-    import sys
     from ..config import LOG_DIR
     from ..errors import ISSUES_URL, describe, save_crash_report, show_message_box
 

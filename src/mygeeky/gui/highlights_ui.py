@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from .. import highlight_shape as shape
+from .app import readable
 from .growth_ui import FlowRow
 
 
@@ -46,7 +47,8 @@ class HighlightCard(QFrame):
         lay.setContentsMargins(10, 8, 10, 8)
         lay.setSpacing(3)
         kind = "✨ " + (shape.LABELS["en"]["full"] if item["coverage"] == "full" else shape.LABELS["en"]["abstract"])
-        lay.addWidget(_label(kind, f"color:#ff6fd8; font-size:9.5px; font-weight:700; background:transparent;"))
+        lay.addWidget(_label(kind, f"color:{readable('#ff6fd8', theme)}; font-size:9.5px; font-weight:700; "
+                                   "background:transparent;"))
         lay.addWidget(_label(item["title"], f"color:{theme['text']}; font-size:13px; font-weight:700; background:transparent;"))
         if item.get("hook"):
             lay.addWidget(_label(item["hook"], f"color:{theme['text']}; font-size:11px; background:transparent;"))
@@ -89,7 +91,7 @@ class HighlightDialog(QDialog):
         outer.addWidget(chips)
         if warnings:
             outer.addWidget(_label("⚠ Check before accepting: " + "; ".join(warnings),
-                                   "color:#ffc457; font-size:11px; background:transparent;"))
+                                   f"color:{readable('#ffc457', theme)}; font-size:11px; background:transparent;"))
         self.body = QWidget()
         self.body_lay = QVBoxLayout(self.body)
         self.body_lay.setSpacing(8)

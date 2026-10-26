@@ -174,7 +174,7 @@ class Dots(QWidget):
         super().__init__()
         self.models, self.theme = models, theme
         self.setMinimumHeight(10)
-        self.setToolTip("\n".join(m["model"] for m in models[:20]))
+        self.setToolTip("<qt>" + "<br>".join(html.escape(str(m["model"])) for m in models[:20]) + "</qt>")
 
     def paintEvent(self, _event) -> None:  # noqa: N802
         p = QPainter(self)

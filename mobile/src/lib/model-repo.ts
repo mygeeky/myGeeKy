@@ -7,8 +7,8 @@
 //   * what you open on the phone becomes interest events (interests.record: terms only, never
 //     the item's text), queued here and appended to interest_events.jsonl, so your computers
 //     learn from the phone too. The desktop merges .jsonl files line by line (git's union driver).
-// Your data is in Google Drive or that repo, encrypted (lib/data-store.ts, data-lock.ts); an older repo may still be
-// plain. The repo needs its OWN fine-grained token -- that one repo only, Contents: Read and write -- kept in the
+// Your data is in Google Drive or that repo, the same plain files in either (lib/data-store.ts). The repo needs its
+// OWN fine-grained token -- that one repo only, Contents: Read and write -- kept in the
 // phone's secure store, like the Signals token. The phone only ever adds to the logs of what you open and use here.
 // What comes back is your own data, but it arrives over the network, so every field is type-checked and capped
 // before it is used.
@@ -18,12 +18,10 @@ import { Platform } from 'react-native';
 import { type Dict, expand } from './interests';
 import { fetchT } from './net';
 import { wiseFetch } from './wisep';
-import { b64, utf8 } from './signal-crypto';
 import { readCache, writeCache } from './storage';
 import { blendLearned, type Event, extractTerms, KIND_WEIGHTS, learnedTerms, STOPWORDS } from './learn';
-import { driveStore, getKey, githubStore, openLocked, savedWhere, setWhere } from './data-store';
+import { appendTo, driveStore, githubStore, openStore, savedWhere, setWhere, throwIfMoved } from './data-store';
 import { forgetGoogle } from './google-drive-auth';
-import { FORMAT_FILE } from './data-lock';
 
 export { blendLearned, extractTerms, learnedTerms } from './learn';
 
@@ -35,7 +33,6 @@ const EVENTS_FILE = 'interest_events.jsonl';
 const USAGE_FILE = 'usage.jsonl';
 const USAGE_QUEUE_KEY = 'mygeeky.model.usagequeue';
 const MIGRATED_KEY = 'mygeeky.model.migrated';
-const ME = { name: 'myGeeKy', email: 'housekeeping@mygeeky.invalid' };   // as the desktop's sync commits
 export const MODEL_TOKEN_PAGE = 'https://github.com/settings/personal-access-tokens/new';
 
 // (the learning numbers and rules, as interests.py: lib/learn.ts)
@@ -99,7 +96,7 @@ export async function modelLink(): Promise<{ repo: string; token: string } | nul
 export const validRepo = (repo: string) => /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(repo);
 
 /** Check the token reaches the repo and can't do more than read it, then keep both. */
-export async function connectModel(repo: string, token: string): Promise<void> {
+export async function connectModel(repo: string, token: string, flush = true): Promise<void> {
   repo = repo.trim();
   token = token.trim();
   if (!validRepo(repo)) throw new Error('Give the repo as owner/name, e.g. you/mygeeky-data.');
@@ -127,7 +124,7 @@ export async function connectModel(repo: string, token: string): Promise<void> {
   // anything else but 201 (e.g. 409: the repo is still empty) can't tell -- as on the desktop, don't refuse
   await secureSet(TOKEN_ITEM, token);
   await AsyncStorage.setItem(REPO_KEY, repo);
-  flushInterests().catch(() => undefined);   // what this phone learned before: into the repo now
+  if (flush) flushInterests().catch(() => undefined);   // what this phone learned before: into the repo now
 }
 
 export async function disconnectModel(): Promise<void> {
@@ -137,14 +134,12 @@ export async function disconnectModel(): Promise<void> {
   await AsyncStorage.multiRemove([REPO_KEY, `mygeeky.cache.${CACHE_KEY}`]);   // what you did here stays queued
 }
 
-/** Where your data is saved, as far as this phone knows: Google Drive, your repo (encrypted or an older plain one). */
-export type SavingLink = { where: 'drive' | 'github' | 'github-plain'; repo: string; label: string };
+/** Where your data is saved, as far as this phone knows: Google Drive or your repo. */
+export type SavingLink = { where: 'drive' | 'github'; repo: string; label: string };
 export async function savingLink(): Promise<SavingLink | null> {
-  const where = await savedWhere();
-  if (where === 'drive') return { where, repo: '', label: 'Google Drive' };
+  if (await savedWhere() === 'drive') return { where: 'drive', repo: '', label: 'Google Drive' };
   const link = await modelLink();
-  if (!link) return null;
-  return where === 'github' ? { where, repo: link.repo, label: link.repo } : { where: 'github-plain', repo: link.repo, label: link.repo };
+  return link ? { where: 'github', repo: link.repo, label: link.repo } : null;
 }
 
 /** Reading and adding to your saved data, wherever it is. */
@@ -158,27 +153,20 @@ export type Source = {
 export async function currentSource(): Promise<Source | null> {
   const where = await savedWhere();
   if (where === 'drive') {
-    const locked = await openLocked(driveStore(), await getKey());
-    return { label: 'Google Drive', read: locked.read, append: (f, lines) => locked.append(f, lines),
+    const drive = await openStore(driveStore());
+    return { label: 'Google Drive', read: drive.read, append: (f, lines) => drive.append(f, lines),
       syncedAt: async () => new Date().toISOString() };
   }
   const link = await modelLink();
   if (!link) return null;
-  const store = githubStore(link.repo, link.token);
+  throwIfMoved(await raw(link.repo, link.token, 'mygeeky.json'));
   const commits = async () => {
     const r = await api(`/repos/${link.repo}/commits?per_page=1`, link.token).catch(() => null);
     const j = r?.ok ? await r.json() : [];
     return Array.isArray(j) && typeof j[0]?.commit?.committer?.date === 'string' ? j[0].commit.committer.date as string : null;
   };
-  // an older plain repo another device has since encrypted: from now on it's read encrypted
-  const names = where === 'github' ? null : await store.list();
-  if (where === 'github' || (names && FORMAT_FILE in names)) {
-    if (where !== 'github') await setWhere('github');
-    const locked = await openLocked(store, await getKey());
-    return { label: link.repo, read: locked.read, append: (f, lines) => locked.append(f, lines), syncedAt: commits };
-  }
   return { label: link.repo, read: (f) => raw(link.repo, link.token, f),
-    append: (f, lines, what) => appendPlain(link.repo, link.token, f, lines, what), syncedAt: commits };
+    append: (f, lines) => appendTo(githubStore(link.repo, link.token), f, lines), syncedAt: commits };
 }
 
 export async function cachedBrain(): Promise<{ at: string; data: Brain } | null> {
@@ -631,37 +619,18 @@ export async function flushInterests(src?: Source | null): Promise<number> {
 export async function flushQueue(src: Source, file: string, key: string, what: string): Promise<number> {
   const queue = JSON.parse((await AsyncStorage.getItem(key)) ?? '[]');
   if (!Array.isArray(queue) || !queue.length) return 0;
-  await src.append(file, queue.map((e) => JSON.stringify(e)), what);
+  const sent = queue.map((e) => JSON.stringify(e));
+  await src.append(file, sent, what);
+  const left = new Map<string, number>();
+  for (const line of sent) left.set(line, (left.get(line) ?? 0) + 1);
   const now = JSON.parse((await AsyncStorage.getItem(key)) ?? '[]');
-  await AsyncStorage.setItem(key, JSON.stringify(Array.isArray(now) ? now.slice(queue.length) : []));
+  const rest = (Array.isArray(now) ? now : []).filter((e) => {
+    const n = left.get(JSON.stringify(e)) ?? 0;
+    if (n) left.set(JSON.stringify(e), n - 1);
+    return !n;
+  });
+  await AsyncStorage.setItem(key, JSON.stringify(rest));
   return queue.length;
-}
-
-/** An older, plain repo: append to the .jsonl file itself; once more if a computer pushed in between. */
-async function appendPlain(repo: string, token: string, file: string, add: string[], what: string): Promise<void> {
-  const lines = add.join('\n') + '\n';
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const meta = await api(`/repos/${repo}/contents/${file}`, token);
-    if (meta.status === 401 || meta.status === 403) throw new Error('The model token no longer works. Make a new one and connect again.');
-    let current = '';
-    let sha: string | undefined;
-    if (meta.ok) {
-      sha = (await meta.json()).sha;
-      current = (await raw(repo, token, file)) ?? '';
-      if (current && !current.endsWith('\n')) current += '\n';     // as append_jsonl: never glue onto a cut line
-    } else if (meta.status !== 404) {
-      throw new Error(`GitHub answered ${meta.status} for ${file}.`);
-    }
-    const put = await fetchT(`https://api.github.com/repos/${repo}/contents/${file}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `myGeeKy phone: ${add.length} ${what}${add.length === 1 ? '' : 's'}`,
-        sha, author: ME, committer: ME, content: b64(utf8(current + lines)) }),
-    });
-    if (put.ok) return;
-    if (put.status !== 409 && put.status !== 422) throw new Error(`GitHub answered ${put.status} when saving ${file}.`);
-  }
-  throw new Error('Your computer was syncing at the same moment. Try again in a minute.');
 }
 
 // ---- this phone's usage, for badges (achievements.log): the kind of thing only, never titles or links

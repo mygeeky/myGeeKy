@@ -504,7 +504,7 @@ def test_the_phone_carries_the_same_refusal_rule():
     for sid in safety.BLOCKED_SOURCE_IDS:
         assert f"'{sid}'" in ts, f"mobile/src/lib/safety.ts is missing {sid}"
     plain = ts.replace("\\\\", "\\")          # the TS source escapes its regex twice
-    for word in ("western\s*blot", "cell\s*cultur", "biosafety", "wet\s*lab", "pcr", "elisa"):
+    for word in (r"western\s*blot", r"cell\s*cultur", "biosafety", r"wet\s*lab", "pcr", "elisa"):
         assert word in plain, f"mobile/src/lib/safety.ts is missing the rule for {word}"
     # and the phone refuses to build one at all
     built = (ROOT / "mobile" / "src" / "lib" / "protocols.ts").read_text(encoding="utf-8")

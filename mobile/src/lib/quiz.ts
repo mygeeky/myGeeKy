@@ -11,6 +11,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
+import { fetchT } from './net';
 import { https, text } from './protocol-shape';
 import type { Protocol } from './protocol-shape';
 import { type Resource, resourceOf } from './protocols';
@@ -101,6 +102,7 @@ const CACHE_KEY = 'mygeeky.questions';
 /** The newest bank we have: the one shipped, or a newer one fetched since. */
 export async function bank(): Promise<Bank> {
   if (cached) return cached;
+  refreshIfDue().catch(() => undefined);              // new questions, like the lists (docs/QUIZZES.md); next time
   // loaded the first time it's needed, not at startup: the bundle's data files are parsed into memory when imported
   // (Metro's inline requires are off), and most people never open this (docs/RESOURCES.md, plan 9)
   const shipped = cleanBank(require('../data/questions.json'));
@@ -124,7 +126,7 @@ export async function refreshIfDue(force = false): Promise<boolean> {
   }
   const checked = Date.parse(saved?.checkedAt ?? '');
   if (!force && checked && Date.now() - checked < CHECK_EVERY_HOURS * 3600_000) return false;
-  const r = await fetch(REMOTE_URL, { headers: { 'User-Agent': 'mygeeky' } });
+  const r = await fetchT(REMOTE_URL);
   if (r.status === 404) {
     await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ ...(saved ?? {}), checkedAt: new Date().toISOString() }));
     return false;
@@ -296,13 +298,3 @@ export function reportUrl(q: Question, reason = ''): string {
     title: `🚩 Quiz question looks wrong: ${q.text.slice(0, 70)}`, body, labels: 'report' }).toString()}`;
 }
 
-// ---- comparing protocols, for fun
-/** How much a protocol counts, 1.0-2.0. The harder it turns out to be, the heavier it is. */
-export async function weightOf(pid: string, difficulty?: Record<string, number>): Promise<number> {
-  let avg = difficulty?.[pid];
-  if (avg == null) {
-    const c = await counts(pid);
-    avg = c.total ? 0.85 - 0.5 * (c.tricky / c.total) : 0.8;
-  }
-  return Math.round((1 + Math.max(0, Math.min(1, (0.9 - avg) / 0.5))) * 100) / 100;
-}

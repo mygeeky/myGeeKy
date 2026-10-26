@@ -3,6 +3,17 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.38.0 (2026-10-27): plain files in your own Google Drive, quicker, and a tidy-up (phone 1.20.0)
+
+- **Your data is saved as plain files, no encryption** (computer and phone). Your settings and progress already live in your own private place (a hidden folder in your Google Drive, or your private GitHub repo) and travel over HTTPS, so the extra layer added in 0.37.0 is gone: no key, no recovery code, no *Encrypt it*. Drive and GitHub hold the same files under the same names, so switching copies them as they are. 0.37.0's encrypted copies in Drive are replaced by plain ones on the first sync; a GitHub repo syncs with git as it did up to 0.36.
+- **Google Drive is quicker** (computer): files move four at a time and only the ones that changed, and after *Signed in with Google* the panel says it's copying your data instead of going quiet.
+- **Google Drive's logo on the Saving sign** (computer and phone) when your data is saved there. On the phone the sign also lights up for Drive (it looked for a GitHub token before).
+- **Fixes in syncing** (computer): a second computer can follow when another moved the data off Google Drive; where each computer saves is its own choice and no longer travels with your shared settings; a retry after Google asked for a fresh sign-in kept its upload intact; files that never sync (the model, caches, tokens) never come down from Drive either; two syncs at the same moment no longer collide.
+- **Fixes on the computer**: turning on saving from ⚙ starts the automatic sync without a restart, and a profile change right after no longer switches saving off again; "Your setup" names Google Drive; the Signals windows are readable on the Frosted theme, as are badge tiers, Highlights' labels and "Is this you?"; text from other people's profiles shown in tooltips is always plain text; "We found your papers" only when it really did; the weekly run carries on past GitHub's hourly limit, and a limit or no internet is no longer saved as a crash report; finding your papers by name no longer fails when OpenAlex is unreachable.
+- **Fixes on the phone**: switching from Drive to GitHub no longer loses what you opened just before; scanning your computer's code never changes where the phone already saves (it fills in your repo's name); a full queue of what you opened no longer drops the newest; Badges syncs once when opened, not on every settings change; a build that can't use Google Drive says so.
+- **New quiz questions arrive without an update** (computer and phone), as the docs always said: the question bank is fetched like the lists, at most twice a day.
+- **Old code removed**: the encryption, and functions nothing called anymore, on both apps.
+
 ## 0.37.0 (2026-10-26): save your data in Google Drive, encrypted on your devices (phone 1.19.0)
 
 - **Save your data in Google Drive, encrypted** (computer and phone). Saving your settings and progress now asks one question: **Google Drive** (recommended: one sign-in, nothing to renew) or **a GitHub repo**, never both, and you can switch later. myGeeKy asks Google for one thing only, its own hidden folder in your Drive; it can't see your other files. The computer's setup and the phone's start ask it too (the phone's start has a fourth step, *Where should I save your settings and progress?*), and Settings → Accounts has it on the Saving card: Sync now, Switch to GitHub / Google Drive, and your recovery code.

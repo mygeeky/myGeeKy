@@ -125,7 +125,7 @@ function ModelMap({ username, dict }: { username: string; dict: Dict | null }) {
         </Text>
         <Text style={st.scanSub}>
           Choose Google Drive (recommended) or a private GitHub repo in Settings → Accounts → Saving your data. Either works
-          the same, encrypted on your devices: your computers&apos; map comes here, and what you open here teaches them too.
+          the same: your computers&apos; map comes here, and what you open here teaches them too.
         </Text>
         {note ? <Text style={[st.scanSub, { color: C.red }]}>{note}</Text> : null}
       </View>
@@ -220,9 +220,9 @@ export function BadgesPart() {
           if (r) await show(r.brain);
         } catch { /* offline: the saved copy stays */ }
       }
-    })();
-    if (settings?.username) githubAchievements(settings.username).then(setGh);
-  }, [settings]);
+    })().catch(() => undefined);
+    if (settings?.username) githubAchievements(settings.username).then(setGh).catch(() => undefined);
+  }, [settings?.username]);   // eslint-disable-line react-hooks/exhaustive-deps -- once per account, not on every save
   // by score: gold, silver, bronze, not yet -- and within each, closest to the next tier first
   const level = (b: Earned) => (b.tier ? TIERS.indexOf(b.tier as typeof TIERS[number]) + 1 : 0);
   const progress = (b: Earned) => (b.next ? b.count / b.next : 1);

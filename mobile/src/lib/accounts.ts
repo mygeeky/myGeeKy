@@ -27,20 +27,13 @@ function why(key: AccountKey, state: AccountState, platform: string, d: Record<s
   if (key === 'data') {
     const repo = d.repo || 'your data repo';
     const place = d.where === 'drive' ? 'Google Drive' : repo;
-    if (state === 'on') {
-      if (d.where === 'github-plain') return `Saving to ${repo}. It isn't encrypted yet: encrypt it, so only your devices can read it.`;
-      return `Saving to ${place}, encrypted: only your devices can read it. Your computers and phone share your settings and progress.`;
-    }
+    if (state === 'on') return `Saving to ${place}. Your computers and phone share your settings and progress.`;
     if (state === 'bad') {
-      if (d.problem === 'key') {
-        return `Your saved data is encrypted with a key ${here} doesn't have yet. Type your recovery code${platform === 'phone'
-          ? ', or scan the QR code your computer shows.' : '.'}`;
-      }
       if (d.where === 'drive') return `Google Drive stopped accepting ${here}'s sign-in, so nothing has been saved since. Sign in with Google again.`;
       return `Access to ${repo} stopped working, so nothing has been saved since. ${platform === 'phone'
         ? 'On GitHub, open the token, click Regenerate token, and paste the new one here.' : 'Open the setup window to connect it again.'} (Google Drive never needs renewing.)`;
     }
-    return `Right now, your settings and progress are only on ${here}. Save them in Google Drive (recommended) or a private GitHub repo: choose one. Either works the same, and you can switch later. They're encrypted on your devices, so only your devices can read them.`;
+    return `Right now, your settings and progress are only on ${here}. Save them in Google Drive (recommended) or a private GitHub repo: choose one. Either works the same, and you can switch later.`;
   }
   if (key === 'beacon') {
     if (state === 'on') return `Signals is on: private thank-yous and collab invites, with a key kept only on ${here}.`;

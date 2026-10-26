@@ -378,8 +378,8 @@ GITHUB_UNLOCKS = {
 
 
 TOAST_MS = 4000             # the floating message stays this long (the phone's toast.tsx uses the same)
-LOCAL_ONLY_TEXT = ("💻 Learning on this computer only. Turn on your private data repo (run myGeeKy setup again, or "
-                   "mygeeky sync init) to keep it and share it with your phone: what this computer learned goes there too.")
+LOCAL_ONLY_TEXT = ("💻 Learning on this computer only. Save it in Google Drive or a private GitHub repo (⚙ Settings → "
+                   "Accounts) to keep it and share it with your phone: what this computer learned goes there too.")
 
 
 def reviewed_heading(some: bool) -> str:
@@ -1024,9 +1024,6 @@ def _explore_chip(theme: dict[str, Any]) -> QLabel:
 NEWS_BADGES = {"arxiv": ("arXiv", "#b31b1b"), "biorxiv": ("bioRxiv", "#bd2736"), "hackernews": ("HN", "#ff6600")}
 
 
-HEADLINE_COLORS = {"ai": "#ff6fd8", "science": "#34d399", "tech": "#7fd8ff"}
-
-
 class HeadlineRow(QFrame):
     """One headline: a small source tag and the title. Click to read it."""
 
@@ -1112,9 +1109,6 @@ class NewsCard(QFrame):
         self.setCursor(Qt.PointingHandCursor)
         url = item.get("url", "")
         self.mousePressEvent = lambda ev: on_open(url)  # noqa: ARG005
-
-
-PUBLISHED_GREEN = "#22c55e"
 
 
 def letter_badge(letter: str, tooltip: str, url: str = "",
@@ -1622,6 +1616,18 @@ GROUP_ICONS = {
 BACK_ICON = "M15 18l-6-6 6-6"
 
 
+# Google Drive's logo, for the Saving sign when your data is saved there (the phone's components/status-signs.tsx)
+DRIVE_LOGO = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 87.3 78">'
+    '<path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>'
+    '<path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>'
+    '<path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" '
+    'fill="#ea4335"/>'
+    '<path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>'
+    '<path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>'
+    '<path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" '
+    'fill="#ffba00"/></svg>')
+
 SIGN_ICONS = {
     "github": "M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 "
               "1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49"
@@ -1687,6 +1693,9 @@ class StatusSigns(QWidget):
                 f.setBold(True)
                 p.setFont(f)
                 p.drawText(box, Qt.AlignCenter, "iD")
+                continue
+            if s.get("icon") == "drive":
+                QSvgRenderer(QByteArray(DRIVE_LOGO.encode())).render(p, box.adjusted(4, 4.6, -4, -4.4))
                 continue
             path = SIGN_ICONS["data_bad" if s["key"] == "data" and s["state"] == "bad" else s["key"]]
             svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c.name()}" '
@@ -2232,7 +2241,7 @@ class ProfileView(QFrame):
                 b = QPushButton(mark)
                 b.setFixedSize(30, 30)
                 b.setCursor(Qt.PointingHandCursor)
-                b.setToolTip(f"{name}: {link['url']}")
+                b.setToolTip(_tip(f"{name}: {link['url']}"))
                 b.setStyleSheet(f"QPushButton {{ background:{color}; color:white; border:none; border-radius:15px; "
                                 f"font-weight:800; font-size:11px; padding:0; }} QPushButton:hover {{ border:2px solid white; }}")
                 b.clicked.connect(lambda checked=False, u=link["url"]: QDesktopServices.openUrl(QUrl(u))
@@ -2755,11 +2764,6 @@ class SignalCard(QFrame):
         for btn in self.gesture_buttons.values():
             btn.setEnabled(not busy)
 
-    def show_result(self, text: str, detail: str = "") -> None:
-        self.feedback.setText(text)
-        self.feedback.setToolTip(_tip(detail))
-
-
 UP_COLOR = "#34d399"
 DOWN_COLOR = "#f87171"
 
@@ -2946,7 +2950,7 @@ class ModelRow(QFrame):
         self.setStyleSheet(f"QFrame#modelRow {{ background:{theme['card_bg']}; border-radius:10px; }}"
                            f"QFrame#modelRow:hover {{ background:{theme['btn_bg']}; }}")
         self.setCursor(Qt.PointingHandCursor)
-        self.setToolTip(", ".join(m.get("tags") or [])[:300])
+        self.setToolTip(_tip(", ".join(m.get("tags") or [])[:300]))
         url = m.get("url", "")
         self.mousePressEvent = lambda ev: on_open(url)  # noqa: ARG005
 
@@ -4336,7 +4340,7 @@ class MyGeekyPanel(QWidget):
             self.models_area.addWidget(msg)
             return
         tags = ", ".join(data.get("tags") or [])
-        for label, group in ((f"IN YOUR FIELD" + (f" · {tags}" if tags else ""), field),
+        for label, group in (("IN YOUR FIELD" + (f" · {tags}" if tags else ""), field),
                              ("\U0001f30d TRENDING EVERYWHERE", trending)):
             if not group:
                 continue
@@ -5752,13 +5756,6 @@ class MyGeekyPanel(QWidget):
             if out.get("url"):
                 logic.open_link(out["url"])
 
-    def _on_stop_path(self, pid: str) -> None:
-        self._protocol_act(pid, "stop")
-
-    def _on_tick_step(self, pid: str, step: str, done: bool) -> None:
-        logic.protocol_action(self.cfg, "tick", pid, step, done)
-        self._load_growth()
-
     def _on_ask_collab(self, card) -> None:
         login = card.person["login"]
         card.ask.setEnabled(False)
@@ -6271,7 +6268,7 @@ class MyGeekyPanel(QWidget):
     # ---- 📝 quizzes (quizwriter.py): DeepSeek writes them from each protocol's own sources, myGeeKy
     # checks them, and the maker only reads five
     def _render_quizwriter(self) -> None:
-        from .growth_ui import FlowRow, _label, _muted, _pill_button
+        from .growth_ui import _label, _muted
         theme = THEMES[self._theme_name()]
         area = self.admin_quiz
         _clear_layout(area)
@@ -7332,11 +7329,10 @@ class MyGeekyPanel(QWidget):
         result = result if isinstance(result, dict) else {}
         if result.get("skipped"):
             return
+        was = getattr(self, "_sync_error", "")
         self._sync_error = logic.sync_access_error(result)
-        was = getattr(self, "_sync_needs_key", False)
-        self._sync_needs_key = bool(result.get("needs_key"))
         self._render_signs()
-        if was != self._sync_needs_key and getattr(self, "_setup", None):
+        if was != self._sync_error and getattr(self, "_setup", None):
             self._render_setup(self._setup)
         if result.get("error"):
             self.sync_label.setText(f"Sync: {result['error'][:120]}")
@@ -7490,7 +7486,7 @@ class MyGeekyPanel(QWidget):
         elif action in ("drive", "to_drive"):
             self._toast("Google's sign-in is opening in your browser: choose your account and allow myGeeKy's own "
                         "folder, then come back.")
-            self._run_async(lambda: logic.saving_use_drive(self.cfg), self._on_saving_done)
+            self._run_async(lambda: logic.saving_google_sign_in(), self._on_google_signed_in)
         elif action in ("github", "to_github"):
             default = self.cfg.sync_repo or (f"{self.cfg.github_username}/mygeeky-data" if self.cfg.github_username else "")
             repo = self._ask_text("Save in a GitHub repo",
@@ -7498,67 +7494,32 @@ class MyGeekyPanel(QWidget):
             if repo:
                 self._toast("Setting up your repo… Git may ask you to sign in to GitHub once.")
                 self._run_async(lambda: logic.saving_use_github(self.cfg, repo), self._on_saving_done)
-        elif action == "encrypt":
-            box = self._box("Encrypt your data repo?",
-                            f"{self.cfg.sync_repo} will hold only encrypted files: only your devices can read them. "
-                            "Its old history is dropped from GitHub (it's kept on this computer).\n\nUpdate myGeeKy "
-                            "on your other computers and phone first: older versions can't read it.")
-            yes = box.addButton("Encrypt it", QMessageBox.AcceptRole)
-            box.addButton(QMessageBox.Cancel)
-            box.exec()
-            if box.clickedButton() is yes:
-                self._toast("Encrypting your data repo…")
-                self._run_async(lambda: logic.saving_lock(self.cfg), self._on_saving_done)
-        elif action == "code":
-            self._show_recovery_code()
-        elif action == "code_enter":
-            value = self._ask_text("Your recovery code", "Type the recovery code (56 letters and digits, in groups "
-                                                         "of four) from where you saved it:")
-            if value:
-                self._run_async(lambda: logic.saving_enter_code(self.cfg, value), self._on_saving_done)
+
+    def _on_google_signed_in(self, result: Any) -> None:
+        result = result if isinstance(result, dict) else {"ok": False, "error": str(result)}
+        if not result.get("ok"):
+            self._toast(result.get("error") or "Google didn't sign you in. Try again.")
+            return
+        self._toast("Signed in with Google. Copying your settings and progress to Google Drive…")
+        self._run_async(lambda: logic.saving_use_drive(self.cfg, sign_in=False), self._on_saving_done)
 
     def _on_saving_done(self, result: Any) -> None:
         result = result if isinstance(result, dict) else {"ok": False, "error": str(result)}
-        self.cfg = logic.load_config()
-        if result.get("needs_key"):
-            self._sync_needs_key = True
-            self._toast(result.get("error", "Type your recovery code."))
-        elif not result.get("ok"):
+        from dataclasses import fields
+        fresh = logic.load_config()               # into the same object: other parts (Is this you?, Packs) hold it
+        for f in fields(fresh):
+            setattr(self.cfg, f.name, getattr(fresh, f.name))
+        if logic.sync_enabled(self.cfg) and not self._sync_timer.isActive():
+            self._sync_timer.start(SYNC_EVERY_MS)
+        if not result.get("ok"):
             self._toast(result.get("error") or "That didn't work. Try again.")
         else:
-            self._sync_needs_key = False
             self._sync_error = ""
             self._toast(result.get("message") or "Done.")
             if result.get("down"):
                 self._apply_synced_data()
-            from .. import storesync
-            if storesync.get_key() and not self.cfg.recovery_shown and logic.saving_where(self.cfg) in ("drive", "github"):
-                self._show_recovery_code(first=True)
         self._render_signs()
         self._load_setup()
-
-    def _show_recovery_code(self, first: bool = False) -> None:
-        """The recovery code, to write down or keep in a password manager: with it, any new device reads your data."""
-        from .. import saving
-        code = saving.recovery_code()
-        if not code:
-            self._toast("There's no encryption key on this computer yet.")
-            return
-        box = self._box("Your recovery code", "")
-        box.setTextFormat(Qt.PlainText)
-        box.setText(("Your data is encrypted. Keep this code somewhere safe (on paper, or in a password manager):\n\n"
-                     if first else "") + code + "\n\nWith it, a new computer or phone can read your saved data. "
-                    "Lose every device and this code, and nobody can read it, not even you.")
-        box.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        copy = box.addButton("Copy", QMessageBox.ActionRole)
-        box.addButton("I've saved it" if first else "Close", QMessageBox.AcceptRole)
-        box.exec()
-        if box.clickedButton() is copy:
-            QApplication.clipboard().setText(code)
-            self._toast("Copied. Paste it somewhere safe.")
-        if first:
-            self.cfg.recovery_shown = True
-            logic.save_config(self.cfg)
 
     def _account_cards(self, info: dict[str, Any]) -> list[dict]:
         """The Accounts cards from the setup summary (what's stored, each token's state) and the last sync."""
@@ -7567,33 +7528,26 @@ class MyGeekyPanel(QWidget):
         broken = lambda name: toks.get(name) in ("expired", "invalid")              # noqa: E731
         saving = info.get("saving") or {}
         where = saving.get("where", "")
-        needs_key = bool(getattr(self, "_sync_needs_key", False))
         states = {
             "github": "off" if not (info.get("user") and "read" in toks) else "bad" if broken("read") else "on",
             "orcid": "on" if info.get("orcid") else "off",
-            "data": "off" if not where else "bad" if (getattr(self, "_sync_error", "") or needs_key
+            "data": "off" if not where else "bad" if (getattr(self, "_sync_error", "")
                                                       or not saving.get("ready", True)) else "on",
             "beacon": "off" if not info.get("signals") else "bad" if broken("beacon") else "on",
         }
         items = accounts.cards(states, "desktop", {"user": info.get("user") or "", "orcid": info.get("orcid") or "",
-                                                   "repo": info.get("sync") or "", "where": where,
-                                                   "problem": "key" if needs_key else ""})
+                                                   "repo": info.get("sync") or "", "where": where})
         data = next(c for c in items if c["key"] == "data")
         if data["state"] == "on":
             other = ("Switch to GitHub", "to_github") if where == "drive" else ("Switch to Google Drive", "to_drive")
             data["title"] = f"Saving your data · {'Google Drive' if where == 'drive' else 'GitHub'}"
             data["actions"] = [("Sync now", "sync", "ghost"), (other[0], other[1], "ghost")]
-            if where == "github-plain":
-                data["actions"].insert(0, ("Encrypt it", "encrypt", "primary"))
-            else:
-                data["actions"].append(("Recovery code", "code", "ghost"))
         elif data["state"] == "bad" and "moved to" in getattr(self, "_sync_error", ""):
             data["why"] = self._sync_error           # another device switched: follow it
             data["actions"] = [("Switch to GitHub", "to_github", "bad") if where == "drive" else
                                ("Switch to Google Drive", "to_drive", "bad")]
         elif data["state"] == "bad":
-            data["actions"] = ([("Type recovery code", "code_enter", "bad")] if needs_key else
-                               [("Sign in with Google again", "drive", "bad")] if where == "drive" else
+            data["actions"] = ([("Sign in with Google again", "drive", "bad")] if where == "drive" else
                                [("Open the setup window", "setup", "bad")])
         return items
 
@@ -7624,8 +7578,9 @@ class MyGeekyPanel(QWidget):
             rows.append(row("Signals", "\u2713 on: you send and receive", ok))
         else:
             rows.append(row("Signals", "off" + ("" if info.get("beacon_token") else " (needs token 2)"), off))
-        rows.append(row("Sync", f"\u2713 on: {h.escape(info['sync'])}" if info.get("sync") else "off: this computer only",
-                        ok if info.get("sync") else off))
+        saving_at = (info.get("saving") or {}).get("label", "")
+        rows.append(row("Sync", f"\u2713 on: {h.escape(saving_at)}" if saving_at else "off: this computer only",
+                        ok if saving_at else off))
         rows.append(row("ORCID", h.escape(info.get("orcid") or "not set"), None if info.get("orcid") else off))
         rows.append(row("Scholar", h.escape(info.get("scholar") or "not set"), None if info.get("scholar") else off))
         rows.append(row("CV", h.escape(info.get("cv") or "not set"), None if info.get("cv") else off))
@@ -8937,7 +8892,7 @@ class MyGeekyPanel(QWidget):
             self._run_async(lambda: logic.whois_retry(self.cfg), self._whois_found)
 
     def _whois_found(self, cands: Any) -> None:
-        if cands:
+        if isinstance(cands, list) and cands:
             self._toast("📄 We found your papers on OpenAlex: is this you? See ⚙ Settings → Your profile.")
             self.whois_section.render()
 
@@ -9041,7 +8996,7 @@ class MyGeekyPanel(QWidget):
             lay.addWidget(self._badge_icon(b, 36, locked=locked))
             body = QVBoxLayout()
             body.setSpacing(1)
-            tier = "" if locked else f"  <span style='color:{TIER_COLORS[b['tier']]}'>{b['tier']}</span>"
+            tier = "" if locked else f"  <span style='color:{logic.readable(TIER_COLORS[b['tier']], theme)}'>{b['tier']}</span>"
             name = QLabel(f"<b>{html.escape(b['name'])}</b>{tier}")
             name.setTextFormat(Qt.RichText)
             name.setStyleSheet(f"color:{theme['text'] if not locked else theme['muted']}; font-size:12px; "
@@ -9263,7 +9218,7 @@ class MyGeekyPanel(QWidget):
         self._update_live_ticker()
 
     def _render_signals(self, data: dict[str, Any]) -> None:
-        from .signals_ui import CallCard, FieldCard, MyCallCard
+        from .signals_ui import FieldCard, MyCallCard
         theme = THEMES[self._theme_name()]
         self._signals_data = data
         _clear_layout(self.signals_area)
@@ -9683,9 +9638,10 @@ class MyGeekyPanel(QWidget):
                             self._on_research_people, self.avatar_loader, kind=kind)
 
     def _on_research_people(self, card: "ResearchCard", repo: str) -> None:
-        self._run_async(lambda: logic.repo_people(self.cfg, repo),
-                        lambda people: card.set_people(people if isinstance(people, list) else [],
-                                                       self._opener("person", {"username": repo})))
+        def show(people: Any) -> None:
+            if shiboken6.isValid(card):                  # Research may have been rebuilt meanwhile
+                card.set_people(people if isinstance(people, list) else [], self._opener("person", {"username": repo}))
+        self._run_async(lambda: logic.repo_people(self.cfg, repo), show)
 
     def _refresh_market(self, force: bool) -> None:
         if self._market_running:

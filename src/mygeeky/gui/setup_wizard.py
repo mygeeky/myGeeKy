@@ -38,7 +38,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMessageBox,
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
@@ -1345,12 +1344,11 @@ class TokenPage(Page):
 
 class SyncPage(Page):
     """Where your settings and progress are saved: Google Drive (recommended), a GitHub repo, or this computer only --
-    one or the other, never both, encrypted either way (as the phone's start, components/setup-steps.tsx)."""
+    one or the other, never both (as the phone's start, app/setup.tsx)."""
 
     def __init__(self) -> None:
         super().__init__("Where should I save your settings and progress?",
-                         "Choose one. Either works the same, and you can switch later in Settings → Accounts. "
-                         "It's encrypted on your devices first, so only your devices can read it.")
+                         "Choose one. Either works the same, and you can switch later in Settings → Accounts.")
         from PySide6.QtWidgets import QButtonGroup, QRadioButton
         self.drive = QRadioButton("Google Drive  (recommended: one sign-in, nothing to renew)")
         self.github = QRadioButton("A GitHub repository  (if you already use GitHub)")
@@ -1363,10 +1361,8 @@ class SyncPage(Page):
         self.drive_note = self.add(_label("Next opens Google's sign-in in your browser. myGeeKy asks for one thing "
                                           "only: its own hidden folder in your Drive. It can't see your other files.",
                                           "muted"))
-        self.code = QLineEdit()
-        self.code.setPlaceholderText("Your recovery code (from the device that set it up)")
-        self.add(self.code)
         self.repo = QLineEdit()
+        self.repo.textChanged.connect(self._show)
         self.add(self.repo)
         self.note = self.add(_label("", "muted"))
         # as on the phone: skipping it is fine, but say plainly what that means
@@ -1384,7 +1380,6 @@ class SyncPage(Page):
         s = self.w.state
         self.repo.setText(s.get("sync_repo") or f"{s.get('github_username') or 'you'}/mygeeky-data")
         self.note.setTextFormat(Qt.RichText)
-        self.code.setVisible(False)
         where = s.get("saving") or ""
         self.github.setEnabled(bool(s.get("github_username")) or where.startswith("github"))
         if not self.github.isEnabled():
@@ -1394,7 +1389,6 @@ class SyncPage(Page):
             self.say("✓ Already saving in Google Drive. Next checks it and brings the latest.", "ok")
         elif where:
             self.say(f"✓ Already saving in {s.get('sync_repo')}. Next re-connects and brings the latest.", "ok")
-        self.repo.textChanged.connect(self._show)
         self._show()
 
     def _show(self) -> None:
@@ -1404,8 +1398,6 @@ class SyncPage(Page):
         self.repo.setVisible(github)
         self.note.setVisible(github)
         self.alone.setVisible(self.none.isChecked())
-        if self.code.isVisible() and not drive:
-            self.code.setVisible(False)
         if not github:
             self.steps.setText("")
             return
@@ -1439,8 +1431,7 @@ class SyncPage(Page):
         if self.none.isChecked():
             return None
         if self.drive.isChecked():
-            code = self.code.text().strip() if self.code.isVisible() else ""
-            return lambda wk: api(python, "saving_drive", {"code": code}, timeout=900)
+            return lambda wk: api(python, "saving_drive", {}, timeout=900)
         repo = self.repo.text().strip()
         needs_git = not self.w.state.get("git")
 
@@ -1460,38 +1451,16 @@ class SyncPage(Page):
 
     def busy_text(self) -> str:
         if self.drive.isChecked():
-            return "Waiting for Google's sign-in in your browser, then saving (encrypted)…"
+            return "Waiting for Google's sign-in in your browser, then copying your settings and progress to Drive…"
         if not self.w.state.get("git"):
             return "Installing Git, then setting up your repo (a minute or two)…"
         return "Setting up your repo…"
 
     def on_result(self, result):
-        if result.get("needs_key"):
-            self.code.setVisible(True)
-            self.code.setFocus()
-            self.say("Your saved data is already there, encrypted by another of your devices. Type your recovery "
-                     "code above and click Next.", "err")
-            return False
         if result.get("ok"):
             self.w.notes.append(result.get("message", ""))
-            if result.get("recovery"):
-                self._show_code(result["recovery"])
             self.w.refresh_state()
         return bool(result.get("ok"))
-
-    def _show_code(self, code: str) -> None:
-        box = QMessageBox(self)
-        box.setWindowTitle("Your recovery code")
-        box.setTextFormat(Qt.PlainText)
-        box.setText("Your settings and progress are encrypted. Keep this code somewhere safe (on paper, or in a "
-                    f"password manager):\n\n{code}\n\nWith it, a new computer or phone can read your saved data. "
-                    "Lose every device and this code, and nobody can read it, not even you.")
-        box.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        copy = box.addButton("Copy", QMessageBox.ActionRole)
-        box.addButton("I've saved it", QMessageBox.AcceptRole)
-        box.exec()
-        if box.clickedButton() is copy:
-            QApplication.clipboard().setText(code)
 
     def nextId(self) -> int:  # noqa: N802
         if not self.w.state.get("github_username"):

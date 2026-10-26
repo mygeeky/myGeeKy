@@ -1,13 +1,13 @@
 """Connect your phone: a QR code that sets up the myGeeKy phone app in one scan.
 
 The code carries your profile -- GitHub username, ORCID, keywords, topics, your
-weighted interests, research field and badges -- where your data is saved and
-the key it's encrypted with (so the phone can read it), and, only when it is
+weighted interests, research field and badges -- where your data is saved (so
+the phone reads it too), and, only when it is
 strictly read-only (can't follow anyone, can't write to any repo), your GitHub
 token. The Signals token and key never go into a QR code.
 It's shown only when you ask for it, and only for a couple of minutes.
 
-Format: `mygeeky:1:` + base64url(JSON {u, o, k, t, w, f, b, tok?, ds?, dk?}), ASCII only, which
+Format: `mygeeky:1:` + base64url(JSON {u, o, k, t, w, f, b, tok?, ds?}), ASCII only, which
 the phone app checks field by field (mobile/src/lib/pairing.ts).
 """
 
@@ -68,18 +68,12 @@ def payload(cfg: MyGeekyConfig, token: str | None = None) -> str:
 
 
 def _saving(cfg: MyGeekyConfig) -> dict[str, str]:
-    """Where your data is saved and its encryption key, so the phone reads it too: {"ds": "drive" or
-    "github:owner/name", "dk": key}. Nothing for an older, unencrypted repo or none at all."""
-    try:
-        from . import saving, storesync
-        where = saving.where(cfg)
-        key = storesync.get_key()
-    except Exception:  # noqa: BLE001
+    """Where your data is saved, so the phone reads it too: {"ds": "drive" or "github:owner/name"}, or nothing."""
+    from . import saving
+    where = saving.where(cfg)
+    if not where:
         return {}
-    if where not in ("drive", "github") or key is None:
-        return {}
-    return {"ds": "drive" if where == "drive" else f"github:{cfg.sync_repo}",
-            "dk": base64.urlsafe_b64encode(key).decode("ascii").rstrip("=")}
+    return {"ds": "drive" if where == "drive" else f"github:{cfg.sync_repo}"}
 
 
 def decode(text: str) -> dict[str, Any]:

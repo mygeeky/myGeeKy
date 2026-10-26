@@ -24,7 +24,7 @@ from __future__ import annotations
 import base64
 import json
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable
 
@@ -146,11 +146,6 @@ def work_by_doi(doi: str, session: requests.Session) -> dict[str, Any] | None:
 
 
 # --------------------------------------------------------------------------- trends
-def _relevant(paper: dict[str, Any], weights: dict[str, float]) -> tuple[float, list[str]]:
-    score, hits = interests.match(f"{paper['title']} {paper['abstract']}", weights)
-    if len(hits) < 2 and not any(" " in h for h in hits):   # one generic word isn't evidence
-        score *= 0.2
-    return score, hits
 
 
 def people_behind(papers: list[dict[str, Any]], n: int = 8) -> list[dict[str, Any]]:

@@ -517,8 +517,8 @@ class MyCallCard(QFrame):
 
 # --------------------------------------------------------------------------- the two windows
 def _window_style(theme: dict[str, Any]) -> str:
-    return (f"QDialog {{ background:#17171f; }} QLabel {{ color:{theme['text']}; font-size:11.5px; }}"
-            f"QLineEdit, QPlainTextEdit, QComboBox, QListWidget {{ background:#22222e; color:#f0f0f5; "
+    return ("QDialog { background:#17171f; } QLabel { color:#f0f0f5; font-size:11.5px; }"
+            "QLineEdit, QPlainTextEdit, QComboBox, QListWidget { background:#22222e; color:#f0f0f5; "
             "border:1px solid #34344a; border-radius:7px; padding:5px; font-size:11.5px; }"
             "QListWidget::item { padding:5px 4px; border-radius:6px; }"
             "QListWidget::item:selected { background:rgba(255,111,216,60); color:#ffffff; }"

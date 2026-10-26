@@ -20,12 +20,14 @@ TIPS = {
               "off": "ORCID isn't linked. Add it in Settings → Accounts for your papers and who cites you."},
     "data": {"on": "Saving your settings and progress: your computers and phone share them.",
              "off": "Not saving anywhere yet: your settings and progress are only on this device.",
-             "bad": "myGeeKy can't save any more: its access to your storage stopped working, or it needs your "
-                    "recovery code. See Settings → Accounts."},
+             "bad": "myGeeKy can't save any more: its access to your storage stopped working. See Settings → "
+                    "Accounts."},
     "beacon": {"on": "Your Signals beacon is on.",
                "off": "Signals is off.",
                "bad": "Your Signals token expired or stopped working: renew it to keep Signals on."},
 }
+DRIVE_TIPS = {"on": "Saving your settings and progress in Google Drive: your computers and phone share them.",
+              "bad": "myGeeKy can't save to Google Drive any more: sign in with Google again in Settings → Accounts."}
 REMIND_HOURS = 24
 
 
@@ -36,13 +38,16 @@ def state(present: bool, broken: bool = False) -> str:
     return "bad" if broken else "on"
 
 
-def signs(github: str, orcid: str, data: str, beacon: str) -> list[dict[str, str]]:
-    """The four, in order: key, label, state and what it means (ORCID never goes bad: it doesn't expire)."""
+def signs(github: str, orcid: str, data: str, beacon: str, where: str = "") -> list[dict[str, str]]:
+    """The four, in order: key, label, state, what it means (ORCID never goes bad: it doesn't expire) and the icon:
+    "drive" (Google Drive's logo) on Saving when your data is saved there, else "" (the sign's own)."""
     given = {"github": github, "orcid": "on" if orcid != "off" else "off", "data": data, "beacon": beacon}
     out = []
     for key in ORDER:
         st = given[key] if given[key] in ("on", "off", "bad") else "off"
-        out.append({"key": key, "label": LABELS[key], "state": st, "tip": TIPS[key][st]})
+        drive = key == "data" and where == "drive" and st != "off"
+        out.append({"key": key, "label": LABELS[key], "state": st, "icon": "drive" if drive else "",
+                    "tip": DRIVE_TIPS[st] if drive else TIPS[key][st]})
     return out
 
 

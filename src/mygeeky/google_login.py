@@ -29,7 +29,6 @@ _SECRET = ("GOCSPX", "-", "UTAPXfWK-na3YA", "Cb1E3aKLtWa-rd")
 SCOPE = "https://www.googleapis.com/auth/drive.appdata"
 AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
-REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 KEYRING_SERVICE = "mygeeky-google-drive"
 WAIT_SECONDS = 300
 _access: dict[str, Any] = {}           # {"token", "until"}: the current 1-hour token, in memory only
@@ -188,13 +187,3 @@ def access_token(fresh: bool = False) -> str:
     return str(_access["token"])
 
 
-def sign_out() -> None:
-    """Forget this computer's Google sign-in and tell Google to end it."""
-    refresh = _get_refresh()
-    _set_refresh(None)
-    _access.clear()
-    if refresh:
-        try:
-            requests.post(REVOKE_URL, data={"token": refresh}, timeout=15)
-        except requests.RequestException:
-            pass

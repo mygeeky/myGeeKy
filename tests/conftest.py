@@ -183,14 +183,11 @@ def _no_real_deepseek_key(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _no_real_data_key(monkeypatch):
-    """The encryption key of the maker's saved data and their Google sign-in (both in the system keyring) are never
-    seen or changed by a test: each test gets an empty in-memory keyring for them."""
+def _no_real_google_sign_in(monkeypatch):
+    """The maker's Google sign-in (in the system keyring) is never seen or changed by a test: each test gets an empty
+    in-memory keyring for it."""
     import mygeeky.google_login as google_login
-    import mygeeky.storesync as storesync
-    kept: dict[str, bytes | str | None] = {}
-    monkeypatch.setattr(storesync, "get_key", lambda: kept.get("key"))
-    monkeypatch.setattr(storesync, "set_key", lambda key: kept.__setitem__("key", key))
+    kept: dict[str, str | None] = {}
     monkeypatch.setattr(google_login, "_get_refresh", lambda: kept.get("refresh"))
     monkeypatch.setattr(google_login, "_set_refresh", lambda value: kept.__setitem__("refresh", value))
     monkeypatch.setattr(google_login, "_access", {})
@@ -230,6 +227,14 @@ def _no_skill_trends(monkeypatch):
     monkeypatch.setattr(skilltrends, "load", lambda *a, **kw: skilltrends.clean({}))
     import mygeeky.datasets as datasets
     monkeypatch.setattr(datasets, "refresh_if_due", lambda *a, **kw: False)    # Grow → Data's list: never fetched
+
+
+@pytest.fixture(autouse=True)
+def _no_quiz_fetch(monkeypatch, request):
+    """New quiz questions are never fetched by a test (test_quiz.py checks the fetch itself, with a fake network)."""
+    if request.path.name != "test_quiz.py":
+        import mygeeky.quiz as quiz
+        monkeypatch.setattr(quiz, "refresh_if_due", lambda *a, **kw: False)
 
 
 @pytest.fixture(autouse=True)

@@ -59,7 +59,7 @@
     <strong>In short</strong>
     <ul>
       <li>myGeeKy runs on your computer and your phone. <strong>There is no myGeeKy server</strong>, no account with us, and no database of users.</li>
-      <li>Your CV, your settings and your progress <strong>stay on your devices</strong>, unless you choose to save them in <strong>a hidden folder in your own Google Drive</strong> or <strong>your own private GitHub repository</strong>, <strong>encrypted on your devices first</strong>, so only your devices can read them.</li>
+      <li>Your CV, your settings and your progress <strong>stay on your devices</strong>, unless you choose to save them in <strong>a hidden folder in your own Google Drive</strong> or <strong>your own private GitHub repository</strong>, which only you can open.</li>
       <li>Your GitHub tokens are kept in your system's <strong>secure credential store</strong>, never in files, logs or messages.</li>
       <li>myGeeKy <strong>only reads</strong> public data. It never follows, stars, posts or writes anything on your behalf.</li>
       <li><strong>No analytics, no tracking, no ads</strong>, and nothing is sold or shared.</li>
@@ -116,8 +116,8 @@
       myGeeKy <strong>cannot see, open or change any of your other Drive files</strong>, and does not ask for your contacts,
       email or anything else in your Google account.</li>
     <li><strong>What it keeps there.</strong> The same data the GitHub sync keeps (your settings, the interests myGeeKy learned,
-      your badges and history, and, from a computer, your CV text), <strong>encrypted on your device before it is sent</strong>
-      (see <em>Encryption</em> below), so Google cannot read the files, and neither can anyone else.</li>
+      your badges and history, and, from a computer, your CV text). It is sent over an encrypted connection (HTTPS) and kept
+      in myGeeKy's hidden folder in your Drive, which only you and myGeeKy, on your devices, can open.</li>
     <li><strong>How it is used.</strong> Only to save your data and bring it back on your other devices. It is never sent to
       myGeeKy (there is no myGeeKy server), never shared, sold or used for advertising, and never used to train any model.
       No person reads it.</li>
@@ -130,20 +130,6 @@
     <li><strong>Google's rules.</strong> myGeeKy's use and transfer of information received from Google APIs will adhere to the
       <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
       including the Limited Use requirements.</li>
-  </ul>
-
-  <h2>Encryption of your saved data</h2>
-  <ul>
-    <li><strong>Encrypted on your devices.</strong> Whether you save in Google Drive or in your own private GitHub repository,
-      every file is encrypted on your computer or phone before it leaves it (ChaCha20-Poly1305, with a 256-bit key). The
-      storage only ever holds unreadable files; their names say what kind of file each is (for example your settings, or a
-      month of your activity log), not what is in it.</li>
-    <li><strong>The key stays with you.</strong> It is made on your first device and kept in its secure credential store. It
-      reaches your other devices only by the <em>Connect your phone</em> QR code (shown when you ask, for two minutes) or by
-      the <em>recovery code</em> myGeeKy shows you once, to write down or keep in a password manager. myGeeKy never sends it
-      anywhere else. If you lose every device and the recovery code, nobody can read the saved data, not even you.</li>
-    <li><strong>Older GitHub repositories.</strong> A repository set up by an older myGeeKy holds plain files until you choose
-      <em>Encrypt it</em> (Settings → Accounts) on a computer; its old, readable history is then dropped from GitHub.</li>
   </ul>
 
   <h2>Who myGeeKy talks to</h2>

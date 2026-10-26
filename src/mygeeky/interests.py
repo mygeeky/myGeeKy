@@ -28,7 +28,6 @@ import random
 import re
 from collections import Counter
 from datetime import date, datetime, timezone
-from pathlib import Path
 from typing import Any, Iterable
 
 from .config import CV_TEXT_FILE, INTEREST_EVENTS_FILE, MyGeekyConfig, ensure_dirs
