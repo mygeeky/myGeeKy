@@ -204,10 +204,25 @@ def pending(log_dir: Path) -> list[Path]:
     return sorted(out, key=lambda p: p.stat().st_mtime, reverse=True)
 
 
+ENDED = "--- ended cleanly"
+# Windows raises these inside its own COM / accessibility layer and handles them itself, but faulthandler
+# writes down every error-level exception it sees, handled or not. A run that only logged these didn't crash.
+# 0x8001010d (RPC_E_CANTCALLOUT_ININPUTSYNCCALL) arrived from a Windows 11 user as a "hard crash" while the
+# intro was being shown, and the panel had carried on.
+HANDLED_BY_WINDOWS = {"0x8001010d", "0x8001010e", "0x80010108", "0x800706ba", "0x800706be", "0xe06d7363"}
+_WIN_EXC = re.compile(r"Windows fatal exception: (?:code )?(\S+)")
+
+
 def fatal_crash(log: str) -> str:
-    """The last hard crash in fatal.log ('' if the last run ended cleanly)."""
+    """The last hard crash in fatal.log ('' if the last run ended cleanly).
+
+    Only what came after a clean end counts (Qt can still abort while the program closes), and a run whose only
+    trouble is exceptions Windows handles itself isn't a crash."""
     last_run = log.rsplit("\n--- started ", 1)[-1]
-    return last_run if ("Fatal Python error" in last_run or "Windows fatal exception" in last_run) else ""
+    after = last_run.rsplit(f"\n{ENDED}", 1)[-1] if f"\n{ENDED}" in last_run else last_run
+    real = "Fatal Python error" in after or any(code.lower() not in HANDLED_BY_WINDOWS
+                                                 for code in _WIN_EXC.findall(after))
+    return last_run if real else ""
 
 
 def offer_key(path: Path) -> str:
@@ -313,7 +328,14 @@ def qt_message_handler(log_dir: Path):
 
 
 def clean_fatal_log(log_dir: Path) -> None:
-    """A clean exit leaves only 'started' lines: keep the file small."""
+    """The panel closed normally: say so in fatal.log (what Windows logged before this wasn't a crash), and keep
+    the file small."""
+    try:
+        if _fatal_handle is not None and not _fatal_handle.closed:
+            _fatal_handle.write(f"{ENDED} {datetime.now(timezone.utc).isoformat()}\n")
+            _fatal_handle.flush()
+    except (OSError, ValueError):
+        pass
     try:
         fatal = log_dir / FATAL_LOG
         if fatal.exists() and fatal.stat().st_size > 200_000:

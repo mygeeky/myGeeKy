@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **No more false "hard crash" reports on Windows** (computer). Windows raises some errors inside its own COM and accessibility code and handles them itself (code 0x8001010d, seen while the intro played on Windows 11), but Python's crash recorder writes them down anyway, and myGeeKy then offered them on the next start as "the program closed". These are no longer counted, and a panel that closed normally now says so in its log, so only a real crash is offered.
 - **Grow opens on Skills** (computer and phone). Highlights moved to the end of Grow until there are more of them, and 🤝 Collaborators is hidden for now: it matches you with other myGeeKy users on Signals, and there are still too few for it to find anyone. GeeKOc's Grow tour follows the new order.
 
 ## 0.36.0 (2026-10-23): GeeKOc shows you around, ❓ Help, and crash reports by email (phone 1.18.0)

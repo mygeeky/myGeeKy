@@ -94,6 +94,30 @@ def test_a_hard_crash_is_reported_on_the_next_start(tmp_path, hooks):
     assert len(list(tmp_path.glob("crash-*.txt"))) == 1
 
 
+def test_what_windows_handles_itself_or_a_clean_end_is_not_a_crash():
+    head = "--- started 2026-10-23T10:00:00 · myGeeKy 0.36.0 · Windows-11\n"
+    stack = 'Current thread 0x00000d7c (most recent call first):\n  File "splash.py", line 117 in start\n'
+    com = head + "Windows fatal exception: code 0x8001010d\n\n" + stack       # the Windows 11 report
+    assert crashreport.fatal_crash(com) == "", "COM's own exception, handled by Windows: the panel carried on"
+    assert crashreport.fatal_crash(com + crashreport.ENDED + " 2026-10-23T11:00:00\n") == ""
+    real = head + "Windows fatal exception: access violation\n\n" + stack
+    assert crashreport.fatal_crash(real), "a real crash is still reported"
+    assert crashreport.fatal_crash(head + "Windows fatal exception: code 0xc0000409\n\n" + stack)
+    assert crashreport.fatal_crash(com + "Fatal Python error: Aborted\n\n" + stack), "COM first, then a real one"
+    ended = head + "Windows fatal exception: access violation\n\n" + stack + crashreport.ENDED + " later\n"
+    assert crashreport.fatal_crash(ended) == "", "it happened, but the panel went on and closed normally"
+    assert crashreport.fatal_crash(ended + "Fatal Python error: Aborted\n"), "an abort while closing still counts"
+    assert crashreport.fatal_crash("old run\nFatal Python error: x\n\n" + head) == "", "only the last run"
+
+
+def test_a_clean_close_is_written_down(tmp_path, hooks):
+    crashreport.install(tmp_path)
+    crashreport.clean_fatal_log(tmp_path)
+    text = (tmp_path / crashreport.FATAL_LOG).read_text(encoding="utf-8")
+    assert text.rstrip().splitlines()[-1].startswith(crashreport.ENDED)
+    assert crashreport.fatal_crash(text) == ""
+
+
 def test_a_hard_crash_carries_what_qt_said_just_before_it(tmp_path, hooks):
     # Qt (or the C library) prints its reason to stderr, then aborts: with no terminal, that line was lost
     code = ("import os, sys; sys.path.insert(0, sys.argv[2]); from mygeeky import crashreport; "
