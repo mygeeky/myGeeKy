@@ -1,5 +1,5 @@
 {
- "version": "2026-10-22T01:00:22Z",
+ "version": "2026-10-26T08:56:02Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -881,25 +881,6 @@
    }
   },
   {
-   "id": "institut-des-sciences-de-l-evolution-de-montpellier-equipe-p-2026",
-   "title": "Postdoc in evolution and public health - Pennings' lab",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202610050825-cdd-postdoc-in-evolution-and-public-health-pennings-lab",
-   "keywords": [
-    "bioinformatics",
-    "population genomics",
-    "statistics",
-    "drug resistance",
-    "evolution",
-    "machine learning"
-   ],
-   "summary": "A 23-month postdoc position in the Pennings' lab at the Institut des Sciences de l'Evolution de Montpellier, starting Nov 23, 2026, to study the dynamics of drug resistance in pathogens using modeling and genomic data.",
-   "deadline": "2026-10-25",
-   "org": "Institut des Sciences de l'Evolution de Montpellier - Equipe Phylogénie Evolution Moléculaire",
-   "place": "Montpellier, France",
-   "type": "postdoc",
-   "remote": false
-  },
-  {
    "id": "imperial-college-london-postdoc-in-artificial-intelligence-f-2026",
    "title": "Postdoc in Artificial Intelligence for Antifungal Drug Discovery",
    "url": "https://www.sfbi.fr/en/emplois/offre/202609301228-cdd-postdoc-in-artificial-intelligence-for-antifungal-drug-discovery",
@@ -1077,25 +1058,6 @@
    "org": "University of Oxford - Nuffield Department of Medicine",
    "place": "Oxford, United Kingdom",
    "type": "postdoc",
-   "remote": false
-  },
-  {
-   "id": "hub-bioinformatique-et-biostatistique-institut-pasteur-ing-n-2026",
-   "title": "Ingénieur·e bioinformaticien·ne en génomique computationnelle et logiciels scientifiques H/F/X",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202610021234-cdi-ingenieure-bioinformaticienne-en-genomique-computationnelle-et-logiciels-scientifiques-hfx",
-   "keywords": [
-    "bioinformatics",
-    "computational genomics",
-    "scientific software",
-    "algorithm",
-    "omics",
-    "biostatistics"
-   ],
-   "summary": "A permanent (CDI) research engineer position in computational genomics and scientific software at the Bioinformatics and Biostatistics Hub, Institut Pasteur, Paris. 80% of the time will be spent in the 'Algorithms for Biological Sequences' team led by Dr Rayan Chikhi, with 20% for technical contributions and training.",
-   "deadline": "2026-10-25",
-   "org": "Hub Bioinformatique et Biostatistique, Institut Pasteur",
-   "place": "Paris, France",
-   "type": "engineer",
    "remote": false
   },
   {
