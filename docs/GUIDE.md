@@ -292,7 +292,7 @@ Circle → **📄 Researchers** (the computer and the phone) is for people who p
 - **🌟 Leading lights:** living people who lead your field: Nobel and other prize winners, the most cited on a topic,
   and the people behind famous tools. Your Model picks four who fit you, and a new set comes every three days, going
   round everyone who fits before anyone comes back. Each shows why they're here, their latest papers, Follow, and a link
-  to their Google Scholar (or ORCID / OpenAlex) profile. Tap a name for their report: papers, citations, h-index and
+  to their Google Scholar (or ORCID / OpenAlex) profile. Tap a name (or Report) and their report unfolds right under them: papers, citations, h-index and
   i10-index, the last ten years as a chart, their topics (yours marked ★), their most cited papers and where they work.
   It costs about one OpenAlex credit a set and one a report. The list is checked by hand; *Report a mistake* says if
   someone is wrong, has moved or has passed away.

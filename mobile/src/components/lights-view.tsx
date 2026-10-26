@@ -1,8 +1,8 @@
 // Circle → Researchers → 🌟 Leading lights: a few people who lead your field (a new set every three days, picked by your
-// Model), each with why (🏅 🏆 📈 🛠), their latest papers, Follow and their links; a tap opens their report -- the
+// Model), each with why (🏅 🏆 📈 🛠), their latest papers, Follow and their links; a tap unfolds their report under them -- the
 // desktop's gui/lights_ui.py. lib/lights.ts does the reading. Everything is plain text (it comes from the internet).
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 import { useApp } from '../lib/app-state';
 import * as L from '../lib/lights';
@@ -35,55 +35,37 @@ function YearBars({ years, width }: { years: [number, number, number][]; width: 
   );
 }
 
-function ReportSheet({ person, onClose }: { person: L.Light; onClose: () => void }) {
-  const { profile } = useApp();
-  const [rep, setRep] = useState<L.Report | null>(null);
-  const [note, setNote] = useState('');
+/** What a tap on someone shows, unfolded right under them in the list: their numbers, the last ten years, their
+ *  topics (yours marked), their most cited papers and where to read more. Read once, then kept while the list is open. */
+function ReportBox({ person, rep, note }: { person: L.Light; rep: L.Report | undefined; note: string }) {
   const [width, setWidth] = useState(0);
-  useEffect(() => {
-    let live = true;
-    L.fetchReport(person.id, profile?.weights ?? {}).then((out) => {
-      if (!live) return;
-      if (out.report) setRep(out.report); else setNote('OpenAlex is resting for now (its daily budget). Try again later.');
-    }).catch(() => undefined);
-    return () => { live = false; };
-  }, [person.id, profile?.weights]);
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={st.shade}>
-        <View style={st.sheet}>
-          <ScrollView onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-            <Text style={st.big}>{person.name}</Text>
-            <Text style={st.text}>{badge(person)} · {person.why}</Text>
-            <Text style={st.muted}>{rep?.institution || person.institution}</Text>
-            {!rep ? <Text style={[st.muted, { marginTop: 12 }]}>{note || `Reading ${person.name}'s record…`}</Text> : <>
-              <View style={st.nums}>
-                {([[rep.works, 'papers'], [rep.cited, 'citations'], [rep.h, 'h-index'], [rep.i10, 'i10-index']] as [number, string][]).map(([v, w]) => (
-                  <View key={w}><Text style={st.num}>{v.toLocaleString('en')}</Text><Text style={st.muted}>{w}</Text></View>
-                ))}
-              </View>
-              <Text style={st.muted}>Papers (bars) and citations (line), the last ten years</Text>
-              {width ? <YearBars years={rep.years} width={width} /> : null}
-              {rep.topics.length ? <Text style={st.text}>Topics: {rep.topics.map(([t, mine]) => (mine ? '★ ' : '') + t).join(', ')}
-                {rep.topics.some(([, m]) => m) ? '   (★ also yours)' : ''}</Text> : null}
-              {rep.top.length ? <Text style={st.head}>MOST CITED</Text> : null}
-              {rep.top.map((w) => (
-                <Pressable key={w.url} onPress={() => open(w.url, 'paper')}>
-                  <Text style={st.text}>{w.title}  ·  {w.year || ''} · {w.cited.toLocaleString('en')} citations</Text>
-                </Pressable>
-              ))}
-            </>}
-            <View style={st.row}>
-              {L.links(person).map(([word, url]) => (
-                <Pressable key={word} onPress={() => open(url, 'person')} style={st.btn}><Text style={st.btnText}>{word} ↗</Text></Pressable>
-              ))}
-            </View>
-            {person.source ? <Pressable onPress={() => open(person.source)}><Text style={st.muted}>Why they&apos;re here: source ↗</Text></Pressable> : null}
-          </ScrollView>
-          <Pressable onPress={onClose} style={[st.btn, { alignSelf: 'flex-end', marginTop: 8 }]}><Text style={st.btnText}>Close</Text></Pressable>
+    <View style={st.report} onLayout={(e) => setWidth(e.nativeEvent.layout.width - 20)}>
+      {!rep ? <Text style={st.muted}>{note || `Looking up ${person.name}…`}</Text> : <>
+        {rep.institution ? <Text style={st.muted}>{rep.institution}</Text> : null}
+        <View style={st.nums}>
+          {([[rep.works, 'papers'], [rep.cited, 'citations'], [rep.h, 'h-index'], [rep.i10, 'i10-index']] as [number, string][]).map(([v, w]) => (
+            <View key={w}><Text style={st.num}>{v.toLocaleString('en')}</Text><Text style={st.muted}>{w}</Text></View>
+          ))}
         </View>
-      </View>
-    </Modal>
+        <Text style={st.muted}>Papers (bars) and citations (line), the last ten years</Text>
+        {width > 0 ? <YearBars years={rep.years} width={width} /> : null}
+        {rep.topics.length ? <Text style={st.text}>Topics: {rep.topics.map(([t, mine]) => (mine ? '★ ' : '') + t).join(', ')}
+          {rep.topics.some(([, m]) => m) ? '   (★ also yours)' : ''}</Text> : null}
+        {rep.top.length ? <Text style={st.head}>MOST CITED</Text> : null}
+        {rep.top.map((w) => (
+          <Pressable key={w.url} onPress={() => open(w.url, 'paper')}>
+            <Text style={st.text}>{w.title}  ·  {w.year || ''} · {w.cited.toLocaleString('en')} citations</Text>
+          </Pressable>
+        ))}
+        <View style={st.row}>
+          {L.links(person).map(([word, url]) => (
+            <Pressable key={word} onPress={() => open(url, 'person')} style={st.btn}><Text style={st.btnText}>{word} ↗</Text></Pressable>
+          ))}
+        </View>
+        {person.source ? <Pressable onPress={() => open(person.source)}><Text style={st.muted}>Why they&apos;re here: source ↗</Text></Pressable> : null}
+      </>}
+    </View>
   );
 }
 
@@ -93,7 +75,19 @@ export function LightsView({ following, onFollow }: { following: Set<string>; on
   const shown = useMemo(() => L.pick(L.load().people, weights ?? {}, today()), [weights]);
   const [recent, setRecent] = useState<Record<string, L.Paper[]>>({});
   const [note, setNote] = useState('');
-  const [report, setReport] = useState<L.Light | null>(null);
+  const [openId, setOpenId] = useState('');                      // whose report is unfolded
+  const [reports, setReports] = useState<Record<string, L.Report>>({});
+  const [wait, setWait] = useState('');
+  const toggle = (p: L.Light) => {
+    if (openId === p.id) { setOpenId(''); return; }
+    setOpenId(p.id);
+    setWait('');
+    if (reports[p.id]) return;
+    L.fetchReport(p.id, weights ?? {}).then((out) => {
+      if (out.report) setReports((r) => ({ ...r, [p.id]: out.report! }));
+      else setWait('OpenAlex is resting for now (its daily budget). Try again later.');
+    }).catch(() => undefined);
+  };
   const ids = shown.map((p) => p.id).join('|');
   useEffect(() => {                                 // their latest papers: one search for everyone on show
     let live = true;
@@ -113,7 +107,7 @@ export function LightsView({ following, onFollow }: { following: Set<string>; on
       {shown.map((p) => (
         <View key={p.id} style={st.card}>
           <View style={{ flexDirection: 'row', gap: 6 }}>
-            <Pressable style={{ flex: 1 }} onPress={() => setReport(p)}><Text style={st.title}>{p.name}</Text></Pressable>
+            <Pressable style={{ flex: 1 }} onPress={() => toggle(p)}><Text style={st.title}>{p.name}</Text></Pressable>
             <Text style={st.badge}>{badge(p)}</Text>
           </View>
           <Text style={st.muted}>{[p.why, p.institution].filter(Boolean).join(' · ')}</Text>
@@ -123,18 +117,18 @@ export function LightsView({ following, onFollow }: { following: Set<string>; on
             </Pressable>
           ))}
           <View style={st.row}>
-            <Pressable onPress={() => setReport(p)} style={[st.btn, { backgroundColor: C.violet }]}><Text style={[st.btnText, { color: '#fff' }]}>Report</Text></Pressable>
+            <Pressable onPress={() => toggle(p)} style={[st.btn, { backgroundColor: C.violet }]}><Text style={[st.btnText, { color: '#fff' }]}>{openId === p.id ? 'Hide' : 'Report'}</Text></Pressable>
             {following.has(p.id) ? <Text style={st.muted}>✓ Following</Text>
               : <Pressable onPress={() => onFollow({ id: p.id, name: p.name, institution: p.institution, topics: p.topics.slice(0, 3) })} style={st.btn}>
                 <Text style={st.btnText}>Follow</Text></Pressable>}
             <Pressable onPress={() => open(L.links(p)[0][1], 'person')} style={st.btn}><Text style={st.btnText}>{L.links(p)[0][0]} ↗</Text></Pressable>
           </View>
+          {openId === p.id ? <ReportBox person={p} rep={reports[p.id]} note={wait} /> : null}
         </View>
       ))}
       <Pressable onPress={() => open(REPORT_MAIL)}>
         <Text style={st.muted}>Something wrong (wrong person, wrong prize, someone who has passed away)? Report a mistake ↗</Text>
       </Pressable>
-      {report ? <ReportSheet person={report} onClose={() => setReport(null)} /> : null}
     </View>
   );
 }
@@ -150,9 +144,7 @@ const st = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   btn: { backgroundColor: C.cardHi, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   btnText: { color: C.text, fontSize: 12.5, fontWeight: '700' },
-  shade: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: C.bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, maxHeight: '88%' },
-  big: { color: C.text, fontSize: 18, fontWeight: '800' },
+  report: { borderWidth: 1, borderColor: C.violet, borderRadius: 10, padding: 10, marginTop: 8 },
   nums: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10 },
   num: { color: C.text, fontSize: 17, fontWeight: '800' },
 });

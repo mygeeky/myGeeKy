@@ -1,6 +1,6 @@
 """Circle → Researchers → 🌟 Leading lights, in the panel: a few people who lead your field (a new set every three days,
-picked by your Model), each with why (🏅 🏆 📈 🛠), their latest papers, Follow, and their links; a tap opens their
-report (lights.py does the reading; the phone shows the same in components/lights-view.tsx). Everything is plain
+picked by your Model), each with why (🏅 🏆 📈 🛠), their latest papers, Follow, and their links; a tap unfolds their
+report under them (lights.py does the reading; the phone shows the same in components/lights-view.tsx). Everything is plain
 text: the list and OpenAlex's answers come from the internet."""
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from typing import Any, Callable
 
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from .. import lights
 from .. import researchers as rs
@@ -44,7 +44,7 @@ class YearBars(QWidget):
     def __init__(self, years: list[list[int]], theme: dict[str, Any]) -> None:
         super().__init__()
         self.years, self.theme = years, theme
-        self.setMinimumHeight(110)
+        self.setFixedHeight(110)          # fixed: inside a card that wraps text, a minimum gets squeezed
 
     def paintEvent(self, _e) -> None:  # noqa: N802
         p = QPainter(self)
@@ -74,33 +74,29 @@ class YearBars(QWidget):
         p.end()
 
 
-class ReportDialog(QDialog):
-    """What a tap on someone shows: their numbers, the last ten years, their topics (yours marked), their most cited
-    papers and where to read more."""
+class ReportPanel(QFrame):
+    """What a tap on someone shows, unfolded right under them in the list (like a GitHub person's profile in People):
+    their numbers, the last ten years, their topics (yours marked), their most cited papers and where to read more."""
 
     def __init__(self, person: dict[str, Any], rep: dict[str, Any], theme: dict[str, Any],
-                 on_open: Callable[[str], Any], parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setWindowTitle(person["name"])
-        self.setMinimumWidth(380)
+                 on_open: Callable[[str], Any]) -> None:
+        super().__init__()
         t = theme
-        muted, text = f"color:{t['muted']}; font-size:11px;", f"color:{t['text']}; font-size:12px;"
-        self.setStyleSheet(f"QDialog {{ background:{t['solid_bg']}; }}")   # a window of its own: the solid colour
-        outer = QVBoxLayout(self)
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
-        body = QWidget()
-        body.setStyleSheet("background:transparent;")
-        lay = QVBoxLayout(body)
-        lay.addWidget(_label(person["name"], f"color:{t['text']}; font-size:15px; font-weight:800;"))
-        lay.addWidget(_label(f"{badge_text(person)} · {person['why']}", text))
-        lay.addWidget(_label(rep.get("institution") or person["institution"], muted))
+        self.setObjectName("lightReport")
+        self.setStyleSheet(f"QFrame#lightReport {{ background:{t['card_bg']}; border:1px solid {t['accent']}; "
+                           "border-radius:10px; }")
+        muted, text = f"color:{t['muted']}; font-size:10.5px;", f"color:{t['text']}; font-size:11.5px;"
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(10, 8, 10, 10)
+        lay.setSpacing(4)
+        if rep.get("institution"):
+            lay.addWidget(_label(rep["institution"], muted))
         nums = QHBoxLayout()
         for value, word in ((rep["works"], "papers"), (rep["cited"], "citations"), (rep["h"], "h-index"),
                             (rep["i10"], "i10-index")):
             box = QVBoxLayout()
-            box.addWidget(_label(f"{value:,}", f"color:{t['text']}; font-size:16px; font-weight:800;"))
+            box.setSpacing(0)
+            box.addWidget(_label(f"{value:,}", f"color:{t['text']}; font-size:14px; font-weight:800;"))
             box.addWidget(_label(word, muted))
             nums.addLayout(box)
         lay.addLayout(nums)
@@ -110,7 +106,7 @@ class ReportDialog(QDialog):
             lay.addWidget(_label("Topics: " + ", ".join(("★ " if mine else "") + name for name, mine in rep["topics"])
                                  + ("   (★ also yours)" if any(m for _, m in rep["topics"]) else ""), text))
         if rep["top"]:
-            lay.addWidget(_label("MOST CITED", f"color:{t['text']}; font-size:10.5px; font-weight:700; margin-top:6px;"))
+            lay.addWidget(_label("MOST CITED", f"color:{t['text']}; font-size:10px; font-weight:700; margin-top:4px;"))
         for w in rep["top"]:
             row = _label(f"{w['title']}  ·  {w['year'] or ''} · {w['cited']:,} citations", text)
             row.setCursor(Qt.PointingHandCursor)
@@ -121,7 +117,7 @@ class ReportDialog(QDialog):
             b = QPushButton(word + " ↗")
             b.setCursor(Qt.PointingHandCursor)
             b.setStyleSheet(f"QPushButton {{ background:{t['section_btn']}; color:{t['text']}; border:none; "
-                            "border-radius:8px; padding:4px 10px; font-size:11px; }")
+                            "border-radius:8px; padding:3px 9px; font-size:10.5px; }")
             b.clicked.connect(lambda _=False, u=url: on_open(u))
             links.addWidget(b)
         links.addStretch(1)
@@ -131,9 +127,6 @@ class ReportDialog(QDialog):
             src.setCursor(Qt.PointingHandCursor)
             src.mousePressEvent = lambda ev: on_open(person["source"])  # noqa: ARG005
             lay.addWidget(src)
-        lay.addStretch(1)
-        scroll.setWidget(body)
-        outer.addWidget(scroll)
 
 
 def render(page: Any, muted: str, text: str) -> None:
@@ -165,7 +158,8 @@ def render(page: Any, muted: str, text: str) -> None:
             paper.mousePressEvent = lambda ev, u=w["url"]: page.on_open(u)  # noqa: ARG005
             col.addWidget(paper)
         row = QHBoxLayout()
-        row.addWidget(page._btn("Report", lambda p=p: page.light_report(p), accent=True))
+        row.addWidget(page._btn("Hide" if page.lights_open == p["id"] else "Report", lambda p=p: page.light_report(p),
+                                accent=True))
         if p["id"] in following:
             row.addWidget(_label("✓ Following", muted))
         else:
@@ -175,6 +169,10 @@ def render(page: Any, muted: str, text: str) -> None:
         row.addWidget(page._btn(word + " ↗", lambda u=url: page.on_open(u)))
         row.addStretch(1)
         col.addLayout(row)
+        if page.lights_open == p["id"]:                    # the report, unfolded under them
+            rep = page.lights_reports.get(p["id"])
+            col.addWidget(ReportPanel(p, rep, t, page.on_open) if rep else
+                          _label(page.lights_wait or f"Looking up {p['name']}…", muted))
         page.lay.addWidget(card)
     wrong = _label("Something wrong (wrong person, wrong prize, someone who has passed away)? Report a mistake ↗", muted)
     wrong.setCursor(Qt.PointingHandCursor)

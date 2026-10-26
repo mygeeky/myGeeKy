@@ -139,7 +139,6 @@ def test_the_panel_shows_leading_lights_and_a_report(qapp_offscreen, monkeypatch
                                           "date": "2026-10-01", "venue": "Nature"}] for p in people}})
     monkeypatch.setattr(lights, "fetch_report", lambda aid, weights, today=None, session=None: {
         "ok": True, "report": lights.report(AUTHOR, TOP, weights, "2026-10-25")})
-    monkeypatch.setattr(lights_ui.ReportDialog, "exec", lambda self: shown.append(self.windowTitle()) or 0)
     monkeypatch.setattr(logic, "open_link", lambda url: opened.append(url) or True)
     app, p = _quiet_panel(monkeypatch, MyGeekyConfig(github_username="me", keywords=["gwas", "genetic"]))
     try:
@@ -163,7 +162,13 @@ def test_the_panel_shows_leading_lights_and_a_report(qapp_offscreen, monkeypatch
             for w in list(p._workers):
                 w.wait(3000)
             QApplication.processEvents()
-        assert len(shown) == 1
+        panels = page.body.findChildren(lights_ui.ReportPanel)
+        assert len(panels) == 1, "the report unfolds inside the panel, under the person"
+        assert any(x.text() == "140" for x in panels[0].findChildren(QLabel))
+        hide = next(b for b in page.body.findChildren(QPushButton) if b.text() == "Hide")
+        hide.click()
+        QApplication.processEvents()
+        assert not [w for w in page.body.findChildren(lights_ui.ReportPanel) if w.isVisible()]
         follow = next(b for b in page.body.findChildren(QPushButton) if b.text() == "Follow")
         follow.click()
         assert len(rs.load()["following"]) == 1

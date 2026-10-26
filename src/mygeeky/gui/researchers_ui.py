@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QToolTip,
                                QVBoxLayout, QWidget)
@@ -132,6 +132,8 @@ class ResearchersPage(QScrollArea):
         self.lights_recent: dict[str, list[dict[str, Any]]] = {}       # 🌟: the latest papers of those on show
         self.lights_for: tuple[str, ...] = ()
         self._lights: list[dict[str, Any]] | None = None
+        self.lights_open, self.lights_wait = "", ""                       # whose report is unfolded; "busy" note
+        self.lights_reports: dict[str, dict[str, Any]] = {}
         self._network_asked = False
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -313,6 +315,19 @@ class ResearchersPage(QScrollArea):
                 col.addWidget(self._btn("Follow", lambda p=p: self.follow(p), accent=True), 0, Qt.AlignLeft)
                 self.lay.addWidget(card)
         self.lay.addStretch(1)
+        self._fit()
+        QTimer.singleShot(0, self._fit)                   # again once the new widgets are laid out
+
+    def _fit(self) -> None:
+        """As tall as the content needs at this width: wrapped text doesn't say so by itself, and the scroll area would
+        squeeze the cards into each other instead of scrolling."""
+        self.lay.activate()
+        h = self.lay.totalHeightForWidth(max(1, self.viewport().width()))
+        self.body.setMinimumHeight(h if h > 0 else self.lay.totalSizeHint().height())
+
+    def resizeEvent(self, e) -> None:  # noqa: N802
+        super().resizeEvent(e)
+        self._fit()
 
     # ---- actions
     def refresh(self) -> None:
@@ -359,18 +374,27 @@ class ResearchersPage(QScrollArea):
             self.render()
 
     def light_report(self, person: dict[str, Any]) -> None:
+        """Report: unfold their numbers under them (read once, then kept); pressed again, fold it away."""
         from .. import lights
-        from .lights_ui import ReportDialog
-        self.note = f"Reading {person['name']}'s record…"
+        aid = person["id"]
+        if self.lights_open == aid:
+            self.lights_open = ""
+            self.render()
+            return
+        self.lights_open, self.lights_wait = aid, ""
         self.render()
+        if aid in self.lights_reports:
+            return
 
         def done(out: dict[str, Any]) -> None:
-            self.note = "" if out.get("ok") else "OpenAlex is resting for now (its daily budget). Try again later."
-            self.render()
             if out.get("ok"):
-                ReportDialog(person, out["report"], self.theme(), self.on_open, self).exec()
+                self.lights_reports[aid] = out["report"]
+            else:
+                self.lights_wait = "OpenAlex is resting for now (its daily budget). Try again later."
+            if self.part == "lights":
+                self.render()
         weights = self.weights()
-        self.run_async(lambda: lights.fetch_report(person["id"], weights), done)
+        self.run_async(lambda: lights.fetch_report(aid, weights), done)
 
     def pick(self, nid: str) -> None:
         self.picked = nid
