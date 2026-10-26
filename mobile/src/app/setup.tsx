@@ -89,7 +89,7 @@ export default function Setup() {
             <Text style={st.of}>{at} of 3</Text>
           </View>
         ) : null}
-        <ScrollView contentContainerStyle={[st.wrap, step === 'welcome' && { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[st.wrap, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
 
           {step === 'welcome' ? <Welcome onStart={() => setStep('github')} /> : null}
 
@@ -98,7 +98,7 @@ export default function Setup() {
             <Text style={st.body}>It adds what moves around you: who follows you, what your circle pushes, your own repos and Signals.</Text>
             <Text style={st.promise}>✓  Read-only: myGeeKy never posts, stars or follows</Text>
             <Text style={st.promise}>✓  Your token stays on this phone</Text>
-            <View style={{ height: 18 }} />
+            <View style={st.push} />
             <SignInButton signedInAs={signedIn} onSignedIn={(login, t) => { setToken(t); setUsername(login); setSignedIn(login); setStep('orcid'); }} />
             {signedIn ? (
               <Pressable style={st.primary} onPress={() => setStep('orcid')} accessibilityRole="button"><Text style={st.primaryText}>Continue</Text></Pressable>
@@ -127,7 +127,7 @@ export default function Setup() {
                 onBusy={() => { setFinding(false); setPapersNote('OpenAlex is busy right now. myGeeKy will look again later by itself and ask "Is this you?" (You → Settings).'); }} />
             ) : null}
             {papersNote ? <Text style={st.ok}>{papersNote}</Text> : null}
-            <View style={{ height: 18 }} />
+            <View style={st.push} />
             <OrcidSignInButton signedInAs={orcidName} onSignedIn={(me) => { setOrcid(me.orcid); setOrcidName(me.name || me.orcid); setStep('field'); }} />
             {orcidName || openalex ? (
               <Pressable style={st.primary} onPress={() => setStep('field')} accessibilityRole="button"><Text style={st.primaryText}>Continue</Text></Pressable>
@@ -175,6 +175,7 @@ export default function Setup() {
             </Option>
 
             {error ? <Text style={st.error}>{error}</Text> : null}
+            <View style={st.push} />
             <Text style={[st.need, ready && { color: C.green }]}>
               {ready ? 'Great, that is enough to start.'
                 : words.length ? `Add ${3 - words.length} more keyword${3 - words.length === 1 ? '' : 's'}, or your CV, or your ORCID iD. Or continue without: myGeeKy learns your field from what you open, like and save.`
@@ -335,4 +336,5 @@ const st = StyleSheet.create({
   chip: { backgroundColor: C.bg, borderColor: C.line, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   chipText: { color: C.text, fontSize: 14 },
   foot: { color: C.muted, fontSize: 12, textAlign: 'center', marginTop: 22 },
+  push: { flexGrow: 1, minHeight: 24 },                // the buttons sit at the bottom, where the thumb is
 });
