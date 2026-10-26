@@ -67,6 +67,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `seasons.ts` | `seasons.py` |
 | `seen.ts` | `freshness.py` |
 | `signal-crypto.ts` | `signal_crypto.py` |
+| `signs.ts` (+ `components/status-signs.tsx`) | `signs.py` (+ `gui/qt_panel.py` `StatusSigns`, `gui/app.py` `status_signs`) |
 | `signals.ts`, `signals-core.ts` | `beacon.py` |
 | `skills.ts` (+ `components/skill-views.tsx`) | `skills.py`, `skilltrends.py` (+ `gui/skillviews_ui.py`) |
 | `datasets.ts` (+ `components/datasets-view.tsx`) | `datasets.py` (+ `gui/datasets_ui.py`, `gui/app.py` `get_growth`); the rules: skill `mygeeky-datasets` |

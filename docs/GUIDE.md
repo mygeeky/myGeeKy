@@ -46,6 +46,11 @@ zero dependencies.)
 happens — myGeeKy has no follow/unfollow code anywhere in the project; see
 [Safety](#safety).*
 
+
+**The four signs** on the right of the strip with the page's name: GitHub, ORCID, Saving (your private data repo)
+and Beacon (Signals). Lit means on, faint means not set up, red means its access expired or stopped working: renew
+it (a small reminder comes at most once a day). Click or tap one to see what it means.
+
 ## 🌱 Grow and 🎯 Chances
 
 Two planets on the panel (and two on the phone's rings) for what comes next.

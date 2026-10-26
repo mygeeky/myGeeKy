@@ -1617,6 +1617,79 @@ GROUP_ICONS = {
 BACK_ICON = "M15 18l-6-6 6-6"
 
 
+SIGN_ICONS = {
+    "github": "M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 "
+              "1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49"
+              "-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4M9 18c-4.51 2-5-2-7-2",
+    "data": "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9ZM9 13l2 2 4-4",
+    "data_bad": "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9ZM3 3l18 18",
+    "beacon": "M4.9 19.1C1 15.2 1 8.8 4.9 4.9M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5M19.1 "
+              "4.9C23 8.8 23 15.1 19.1 19M12 12h.01",
+}
+
+
+class StatusSigns(QWidget):
+    """The four signs on the right of the strip with the page's name (signs.py; the phone's
+    components/status-signs.tsx): GitHub, ORCID, saving to your data repo, your Signals beacon. Lit when on,
+    faint when never set up, red when its access stopped working. A click says what the sign means."""
+
+    clicked = Signal(str)
+    D = 22
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.items: list[dict[str, str]] = []
+        self._colors: dict[str, QColor] = {}
+        self.setFixedHeight(self.D)
+        self.setCursor(Qt.PointingHandCursor)
+
+    def set_signs(self, items: list[dict[str, str]], theme: dict[str, Any]) -> None:
+        lit = {"github": theme["text"], "orcid": "#a6ce39", "data": "#22d3ee", "beacon": "#ff6fd8"}
+        self.items = items
+        self._colors = {s["key"]: QColor(logic.readable(theme["bad"] if s["state"] == "bad" else lit[s["key"]], theme))
+                        for s in items}
+        self.setFixedWidth(len(items) * (self.D + 5))
+        self.setToolTip("\n".join(f"{s['label']}: {s['tip']}" for s in items))
+        self.update()
+
+    def _at(self, x: float) -> dict[str, str] | None:
+        i = int(x // (self.D + 5))
+        return self.items[i] if 0 <= i < len(self.items) else None
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        s = self._at(event.position().x())
+        if s:
+            self.clicked.emit(s["tip"])
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        for i, s in enumerate(self.items):
+            c = self._colors.get(s["key"], QColor("#888888"))
+            box = QRectF(i * (self.D + 5) + 1, 1, self.D - 2, self.D - 2)
+            p.setOpacity(0.3 if s["state"] == "off" else 1.0)
+            if s["state"] == "bad":
+                fill = QColor(c)
+                fill.setAlpha(40)
+                p.setBrush(fill)
+            else:
+                p.setBrush(Qt.NoBrush)
+            p.setPen(QPen(c, 1.4))
+            p.drawEllipse(box)
+            if s["key"] == "orcid":
+                f = p.font()
+                f.setPixelSize(9)
+                f.setBold(True)
+                p.setFont(f)
+                p.drawText(box, Qt.AlignCenter, "iD")
+                continue
+            path = SIGN_ICONS["data_bad" if s["key"] == "data" and s["state"] == "bad" else s["key"]]
+            svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c.name()}" '
+                   f'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{path}"/></svg>')
+            QSvgRenderer(QByteArray(svg.encode())).render(p, box.adjusted(4, 4, -4, -4))
+        p.end()
+
+
 class PlanetButton(QPushButton):
     """One planet in the dock: a coloured ring with a line icon. The selected one
     swells into a filled planet with a soft halo, with a little spring to it."""
@@ -3820,6 +3893,11 @@ class MyGeekyPanel(QWidget):
         self.nav_trail.setTextFormat(Qt.PlainText)
         nh.addWidget(self.nav_back_text)
         nh.addWidget(self.nav_trail, 1)
+        # on the right: GitHub, ORCID, saving to your data repo, your beacon (signs.py), lit, faint or red
+        self.status_signs = StatusSigns()
+        self.status_signs.clicked.connect(self._toast)
+        self._sync_error = ""
+        nh.addWidget(self.status_signs)
         panel_layout.addWidget(self.nav_head)
         # the planet row is no longer shown (the side rail below replaces it), but its planets still carry each
         # place's count and dot, which the rail reads
@@ -5830,6 +5908,7 @@ class MyGeekyPanel(QWidget):
 
     def _on_token_warnings(self, warnings: Any) -> None:
         self._token_warnings = warnings if isinstance(warnings, list) else []
+        self._render_signs()
         if not self._token_warnings:
             self.token_banner.setVisible(False)
             return
@@ -7203,12 +7282,29 @@ class MyGeekyPanel(QWidget):
         result = result if isinstance(result, dict) else {}
         if result.get("skipped"):
             return
+        self._sync_error = logic.sync_access_error(result)
+        self._render_signs()
         if result.get("error"):
             self.sync_label.setText(f"Sync: {result['error'][:120]}")
             return
         self.sync_label.setText("Synced with your other computers " + datetime.now().strftime("%H:%M"))
         if result.get("changed"):
             self._apply_synced_data()
+
+    def _render_signs(self) -> None:
+        """The four signs from what the panel knows already (the daily token check, the last sync); a red one
+        reminds you to renew, at most once a day (signs.reminder)."""
+        if not hasattr(self, "status_signs"):
+            return
+        from .. import signs
+        items = logic.status_signs(self.cfg, getattr(self, "_token_warnings", []), self._sync_error)
+        self.status_signs.set_signs(items, THEMES[self._theme_name()])
+        now = datetime.now(timezone.utc)
+        msg = signs.reminder(items, self.cfg.signs_reminded, now)
+        if msg:
+            self.cfg.signs_reminded = now.isoformat()
+            logic.save_config(self.cfg)
+            self._toast(f"\u26a0 {msg}")
 
     def _apply_synced_data(self) -> None:
         """Another computer's changes arrived: use its settings and data here too."""
@@ -7582,6 +7678,7 @@ class MyGeekyPanel(QWidget):
 
     def _apply_theme(self) -> None:
         theme = THEMES[self._theme_name()]
+        self._render_signs()
         self.panel_frame.set_style(theme["bg"], theme["border"], radius=22.0)
         self.panel_frame.setStyleSheet(
             f"QLabel {{ color:{theme['text']}; }}"

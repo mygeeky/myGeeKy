@@ -208,6 +208,7 @@ class MyGeekyConfig:
     beacon_blocked: list[str] = field(default_factory=list)  # never show signals from these
     signals_terms: str = ""                                  # the Signals terms you agreed to (beacon.TERMS_VERSION)
     beacon_daily_limit: int = 10            # signals you can send per day
+    signs_reminded: str = ""                # when a red sign last reminded you to renew (ISO), signs.py
     beacon_repeat_days: int = 30            # the same signal to the same person at most once in this many days
     beacon_weekly_new_people: int = 5       # people you can start signalling per week
     badges_seen: list[str] = field(default_factory=list)   # "id:tier" you've already been shown

@@ -400,6 +400,25 @@ def install_update() -> dict[str, Any]:
             "current": updates.__version__, "steps": updates.manual_steps()}
 
 
+def sync_access_error(result: dict[str, Any]) -> str:
+    """The last sync's error when it says myGeeKy may no longer write to your data repo (its access expired or
+    was taken away), not when you were just offline: that turns the Saving sign red."""
+    err = str(result.get("error") or "")
+    low = err.lower()
+    return err if any(w in low for w in ("401", "403", "auth", "denied", "permission", "credential", "revoked",
+                                         "expired", "not found")) else ""
+
+
+def status_signs(cfg: MyGeekyConfig, warnings: list[dict[str, Any]], sync_error: str = "") -> list[dict[str, str]]:
+    """The four signs beside the page's name (signs.py), from what the panel already knows: no request."""
+    from .. import signs
+    warn = {w.get("name") for w in warnings or [] if w.get("warn")}
+    return signs.signs(signs.state(bool(cfg.github_username), "read" in warn),
+                       signs.state(bool(cfg.orcid_id)),
+                       signs.state(sync_enabled(cfg), bool(sync_error)),
+                       signs.state(bool(cfg.beacon_enabled), "beacon" in warn))
+
+
 def get_token_warnings(cfg: MyGeekyConfig) -> list[dict[str, Any]]:
     """Tokens that expire within a week (or already have); checked at most daily."""
     from .. import tokens

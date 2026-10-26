@@ -42,6 +42,8 @@ import { type BoardRow, loadBoard } from '../lib/board';
 import { loadContributions } from '../lib/contribute';
 import { fetchNews } from '../lib/news';
 import { checkTokens, SETTINGS_URL, type TokenState } from '../lib/tokens';
+import { reminder, signs as makeSigns, state as signState } from '../lib/signs';
+import { StatusSigns } from '../components/status-signs';
 import { recordInterest } from '../lib/model-repo';
 import { loadSeen, markSeen } from '../lib/seen';
 import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
@@ -233,7 +235,23 @@ export default function Home() {
   const [collapsed, setCollapsed] = useState(params.fold === '1');
   const [openId, setOpenId] = useState<string | null>(params.open === 'first' ? 'first' : null);
   const [tokenWarn, setTokenWarn] = useState<TokenState | null>(null);   // a token about to stop working
-  useEffect(() => { checkTokens().then((t) => setTokenWarn(t.find((x) => x.warn) ?? null)).catch(() => undefined); }, []);
+  const [tokens, setTokens] = useState<TokenState[]>([]);                   // the daily check: the signs read it too
+  useEffect(() => { checkTokens().then((t) => { setTokens(t); setTokenWarn(t.find((x) => x.warn) ?? null); }).catch(() => undefined); }, []);
+  // the four signs beside the page's name (lib/signs.ts): GitHub, ORCID, saving to your data repo, your beacon
+  const dataTok = tokens.find((t) => t.name === 'data'), sigTok = tokens.find((t) => t.name === 'signals');
+  const signItems = makeSigns(signState(!!token), signState(!!settings?.orcid), signState(!!dataTok, !!dataTok?.warn),
+                              signState(!!sigTok, !!sigTok?.warn));
+  const remindKey = signItems.filter((x) => x.state === 'bad').map((x) => x.key).join(',');
+  useEffect(() => {                                       // a sign gone red: a small reminder, at most once a day
+    if (!remindKey) return;
+    (async () => {
+      const last = (await AsyncStorage.getItem('mygeeky.signs.reminded')) ?? '';
+      const msg = reminder(signItems, last, new Date());
+      if (!msg) return;
+      await AsyncStorage.setItem('mygeeky.signs.reminded', new Date().toISOString());
+      toast(`⚠ ${msg}`);
+    })().catch(() => undefined);
+  }, [remindKey]);   // eslint-disable-line react-hooks/exhaustive-deps -- once per change of what's red
   const [newsPart, setNewsPart] = useState<NewsPart>('airace');
   const [researcherPart, setResearcherPart] = useState('new');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
@@ -486,7 +504,8 @@ export default function Home() {
       <View style={st.panel}>
         <View style={st.head}>
           <Text style={st.h1} numberOfLines={1}>{title}</Text>
-          <Text style={[st.ring, { color: ringColor }]}>{ring}</Text>
+          <Text style={[st.ring, { color: ringColor, flexShrink: 1 }]} numberOfLines={1}>{ring}</Text>
+          <StatusSigns items={signItems} onTip={toast} />
         </View>
         <Text style={st.about}>{about}</Text>
         {tokenWarn ? (

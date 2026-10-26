@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Four signs beside the page's name** (computer and phone): GitHub, ORCID, Saving (your private data repo) and Beacon (Signals). Each is lit when it's on and faint when it was never set up. Saving and Beacon (and a GitHub sign-in) turn red when their access expires or stops working, and a small message reminds you to renew, at most once a day. Click or tap a sign to see what it means. They use only what myGeeKy already checks (the daily token check, the last sync), with no extra requests.
 - **••• More, the last main** (computer and phone): it holds ⚙ Settings and ❓ Help. Settings left You on the phone (the ⚙ button stays on the computer, as a shortcut); the Settings page says what it holds.
 - **Start over starts empty** (phone). It erased what was stored, but the running app kept its copy of your settings, and the new start filled itself from it (your old ORCID showed up again). Start over now forgets both, and the start is always empty.
 - **GeeKOc's eyes stay white** (phone). Now and then, as his frames changed, an eye drew black; each frame is now a fresh drawing, with no clip paths.
