@@ -35,7 +35,7 @@ export function CitedByView() {
   const holding = useHold(author === null || (!!author && state === null));
   if (holding) return <GeekLoader text="Looking for who cites you…" />;
   if (!author) {
-    return <Text style={st.muted}>See who cites your papers: add your ORCID iD, or find your papers by your name (More → Settings → Your papers).</Text>;
+    return <Text style={st.muted}>See who cites your papers: add your ORCID iD, or find your papers by your name (Settings → Your profile → Your papers).</Text>;
   }
   const s = summary(state ?? {}, new Date().toISOString().slice(0, 10));
   const tot = s.totals as { cited?: number; h?: number };

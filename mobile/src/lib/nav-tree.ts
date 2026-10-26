@@ -126,9 +126,12 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     { ...G.chances, icon: 'briefcase-outline', children: [
       leaf('chances', 'seasons', 'Seasons', 'calendar-outline'), leaf('chances', 'jobs', 'Jobs', 'briefcase-outline'),
       leaf('chances', 'funding', 'Funding', 'cash-outline'), leaf('chances', 'conferences', 'Conferences', 'mic-outline')] },
-    // ••• More, the last: ⚙ Settings and ❓ Help (GeeKOc's tours and the answers), as on the computer
-    { id: 'settings', label: 'More', icon: 'ellipsis-horizontal-circle-outline', color: '#2dd4bf', children: [
-      leaf('you', 'more', 'Settings', 'settings-outline'),
+    // ⚙ Settings, the last: Accounts first (what's connected, what needs you), then the rest, and ❓ Help (GeeKOc's tours
+    // and the answers), as on the computer. The pages are You's parts (components/settings-parts.tsx).
+    { id: 'settings', label: 'Settings', icon: 'settings-outline', color: '#2dd4bf', children: [
+      leaf('you', 'accounts', 'Accounts', 'link-outline'), leaf('you', 'profile', 'Your profile', 'person-circle-outline'),
+      leaf('you', 'look', 'Look', 'color-palette-outline'), leaf('you', 'notify', 'Notifications', 'notifications-outline'),
+      leaf('you', 'data', 'Data & privacy', 'shield-checkmark-outline'),
       { id: 'help', label: 'Help', icon: 'help-circle-outline', tab: 'help' }] },
   ] });
 }

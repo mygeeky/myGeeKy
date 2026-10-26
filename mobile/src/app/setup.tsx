@@ -133,7 +133,7 @@ export default function Setup() {
               <WhoisFind
                 onPick={(c) => { setOpenalex(c.id); setFinding(false); setPapersNote(`✓ That's you: ${c.name} (${c.works} works). Your papers will shape your profile.`); }}
                 onNone={() => { setFinding(false); setPapersNote('No match: carry on, keywords or a CV work just as well.'); }}
-                onBusy={() => { setFinding(false); setPapersNote('OpenAlex is busy right now. myGeeKy will look again later by itself and ask "Is this you?" (More → Settings).'); }} />
+                onBusy={() => { setFinding(false); setPapersNote('OpenAlex is busy right now. myGeeKy will look again later by itself and ask "Is this you?" (Settings → Your profile).'); }} />
             ) : null}
             {papersNote ? <Text style={st.ok}>{papersNote}</Text> : null}
             <View style={st.push}>{finding ? null : <GeekMover pose="point" size={150} />}</View>

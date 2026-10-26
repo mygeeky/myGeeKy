@@ -54,6 +54,7 @@ from PySide6.QtGui import (
     QRadialGradient,
 )
 from PySide6.QtWidgets import (
+    QGridLayout,
     QApplication,
     QCheckBox,
     QComboBox,
@@ -1612,7 +1613,11 @@ GROUP_ICONS = {
     "world": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
     "circle": PLANETS["suggestions"][1],
     "feed": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",     # 🏠 Home, the first page
-    "settings": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 12h.01M12 12h.01M16 12h.01",   # ••• More (Settings, Help), the last
+    "settings": ("M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 "
+                 "1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-2.82-1.17l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 "
+                 "1.65 0 0 0 3 13H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83"
+                 "l.06.06A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06"
+                 ".06A1.65 1.65 0 0 0 21 11h.09a2 2 0 1 1 0 4H21a1.65 1.65 0 0 0-1.6 0z"),   # ⚙ Settings (its pages, Help), the last
 }
 BACK_ICON = "M15 18l-6-6 6-6"
 
@@ -3582,6 +3587,19 @@ ADMIN_PARTS = [("overview", "Overview", "\U0001f4ca"), ("review", "Review", "\U0
                ("inbox", "Inbox", "\U0001f4a1"), ("people", "People", "\U0001f91d"), ("settings", "Settings", "\u2699")]
 
 
+# ⚙ Settings' pages (the phone's Settings parts, mobile/src/components/settings-parts.tsx): label, icon, what it holds
+SETTINGS_PAGES: dict[str, tuple[str, str, str]] = {
+    "accounts": ("Accounts", "\U0001f517", "What myGeeKy can use. Each one is optional, and you can change it any time."),
+    "profile": ("Your profile", "\U0001f464", "What shapes your feeds: your papers and a CV."),
+    "look": ("Look and window", "\U0001f3a8", "The theme, and how big, how see-through and where the panel is."),
+    "notify": ("Notifications", "\U0001f514", "Off unless you switch them on. Only what is really worth it."),
+    "data": ("Data & privacy", "\U0001f6e1", "How myGeeKy asks the internet, sharing your setup, your privacy, and leaving."),
+}
+# the tour's stops in ⚙ (data/tour.json "settings:…"), and the page each lives on
+SETTINGS_PAGE_OF = {"look": "look", "place": "look", "papers": "profile", "cv": "profile", "wisep": "data", "packs": "data",
+                    "setup": "accounts", "sync": "accounts"}
+
+
 def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
     """The panel's pages under the six groups (navtree.py): a tab, or a tab and one of its parts."""
     n = navtree.node
@@ -3621,9 +3639,10 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
         group("circle", [circle[k] for k in navtree.ordered(list(circle), has_github, NEEDS_GITHUB_TABS)]),
         group("repos", [n("repos", "Help out", tab="repos"), n("market:repos", "Rising", icon="\U0001f4c8", tab="market", part="repos")]),
         group("chances", modes("chances", MyGeekyPanel.CHANCE_MODES)),
-        # ••• More, the last: ⚙ Settings (the ⚙ panel) and ❓ Help (GeeKOc's tours and the answers)
-        n("settings", "More", "#2dd4bf", children=[n("settings:panel", "Settings", icon="\u2699", tab="settings"),
-                                                       n("help", "Help", icon="\u2753", tab="help")]),
+        # ⚙ Settings, the last: its pages (the ⚙ panel's, Accounts first) and ❓ Help (GeeKOc's tours and the answers)
+        n("settings", "Settings", "#2dd4bf", children=[
+            *(n(f"settings:{key}", label, icon=icon, tab="settings", part=key) for key, (label, icon, _about) in SETTINGS_PAGES.items()),
+            n("help", "Help", icon="\u2753", tab="help")]),
     ]))
 
 
@@ -3820,6 +3839,7 @@ class MyGeekyPanel(QWidget):
         panel_layout.addLayout(header)
 
         self.settings_panel = self._build_settings_panel()
+        self._show_settings_page("accounts", load=False)
         self.settings_panel.setVisible(False)
         panel_layout.addWidget(self.settings_panel, 1)
 
@@ -3977,7 +3997,7 @@ class MyGeekyPanel(QWidget):
 
     # ------------------------------------------------------------------ GeeKOc's tour (tour.py, tour_ui.py)
     TOUR_SETTINGS = {"look": "Theme", "place": "Place on screen", "papers": "Your papers", "cv": "From a CV",
-                     "wisep": "How myGeeKy asks the internet", "packs": "Packs", "setup": "Your setup", "sync": "Sync"}
+                     "wisep": "How myGeeKy asks the internet", "packs": "Packs", "setup": "Accounts", "sync": "Saving your data"}
 
     def _maybe_tour(self) -> None:
         """The tour opens by itself the first time, and after an update with new stops; tour.auto says never under
@@ -4022,15 +4042,18 @@ class MyGeekyPanel(QWidget):
             self.help_page.build()                        # the language may have been picked on the way
 
     def _tour_widget(self, part: str) -> QWidget | None:
+        heads = getattr(getattr(self, "accounts_section", None), "headings", {})
         return {"look": getattr(self, "_tour_look", None), "place": getattr(self, "place_label", None),
                 "papers": getattr(self, "whois_section", None), "cv": getattr(self, "doc_section", None),
                 "wisep": getattr(self, "wisep_section", None), "packs": getattr(self, "pack_section", None),
-                "setup": getattr(self, "setup_label", None), "sync": getattr(self, "sync_label", None)}.get(part)
+                "setup": heads.get("setup"), "sync": heads.get("sync")}.get(part)
 
     def tour_go(self, target: str) -> None:
         """Move the app to a stop: ⚙, a part of ⚙ (scrolled into view), or a page, with the rail dropped down to
         it so the spotlight can sit on its line."""
         if target == "settings" or target.startswith("settings:"):
+            if ":" in target:
+                self._show_settings_page(SETTINGS_PAGE_OF.get(target.split(":", 1)[1], "accounts"))
             if not self.settings_panel.isVisible():
                 self._toggle_settings()
             w = self._tour_widget(target.split(":", 1)[1]) if ":" in target else None
@@ -4930,7 +4953,7 @@ class MyGeekyPanel(QWidget):
             self._grow_note("Looking for people who complement you…", theme)
             return
         if not data.get("enabled"):
-            self._grow_note("Collaborator matching uses Signals: turn it on in ⚙ Settings (Signals), and "
+            self._grow_note("Collaborator matching uses Signals: turn it on in ⚙ Settings → Accounts, and "
                             "people who complement you show up here.", theme)
             return
         people = data.get("people") or []
@@ -6215,7 +6238,7 @@ class MyGeekyPanel(QWidget):
                else "\n\nNothing accepted yet, so Publish has nothing to send."))
         self.admin_publish_btn.setText(f"🚀 Publish {len(going)} to mygeeky.org" if going else "🚀 Publish")
         from .wisep_ui import summary as wisep_summary
-        self.admin_wisep.setText("WISEP (every user has their own; yours is in ⚙ Settings → How myGeeKy asks the "
+        self.admin_wisep.setText("WISEP (every user has their own; yours is in ⚙ Settings → Data & privacy → How myGeeKy asks the "
                                  "internet): " + wisep_summary())
         self.admin_publish_btn.setEnabled(bool(going) and not getattr(self, "_scout_publishing", False))
         self.admin_publish_btn.setStyleSheet(
@@ -6930,10 +6953,41 @@ class MyGeekyPanel(QWidget):
     def _build_settings_panel(self) -> QFrame:
         content = QWidget()
         content.setObjectName("settingsContent")
-        layout = QVBoxLayout(content)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(8)
+        main = QVBoxLayout(content)
+        main.setContentsMargins(10, 10, 10, 10)
+        main.setSpacing(8)
+        # its pages, as on the phone: buttons to move between them (the side menu steps aside while ⚙ is open), the
+        # page's name and what it holds, then the page; only the open one is shown, so ⚙ is as tall as that page
+        nav = QGridLayout()
+        nav.setSpacing(4)
+        self.settings_nav: dict[str, QPushButton] = {}
+        for i, (key, (label, icon, _about)) in enumerate(SETTINGS_PAGES.items()):
+            b = QPushButton(f"{icon} {label}".replace("&", "&&"))   # a single & would underline the next letter
+            b.setCursor(Qt.PointingHandCursor)
+            b.clicked.connect(lambda _checked=False, k=key: self._show_settings_page(k))
+            self.settings_nav[key] = b
+            nav.addWidget(b, i // 3, i % 3)
+        main.addLayout(nav)
+        self.settings_title = QLabel("")
+        self.settings_title.setTextFormat(Qt.PlainText)
+        self.settings_about = QLabel("")
+        self.settings_about.setTextFormat(Qt.PlainText)
+        self.settings_about.setWordWrap(True)
+        main.addWidget(self.settings_title)
+        main.addWidget(self.settings_about)
+        self.settings_pages: dict[str, QWidget] = {}
+        pages: dict[str, QVBoxLayout] = {}
+        for key in SETTINGS_PAGES:
+            page = QWidget()
+            pages[key] = QVBoxLayout(page)
+            pages[key].setContentsMargins(0, 0, 0, 0)
+            pages[key].setSpacing(8)
+            self.settings_pages[key] = page
+            main.addWidget(page)
+        main.addStretch(1)
+        self._settings_page = "accounts"
 
+        layout = pages["look"]
         theme_row = QHBoxLayout()
         theme_label = QLabel("Theme")
         self._tour_look = theme_label                     # where the Settings tour points for "how it looks"
@@ -7071,12 +7125,14 @@ class MyGeekyPanel(QWidget):
         layout.addWidget(self.rail_side_switch)
 
         # 🔔 notifications: exactly what you agreed to (all off until you switch a kind on)
+        layout = pages["notify"]
         from .notify_ui import NotifySettings
         self.notify_settings = NotifySettings(lambda: logic.notify_settings(self.cfg),
                                               lambda s: logic.set_notify(self.cfg, s), lambda: THEMES[self._theme_name()])
         layout.addWidget(self.notify_settings)
 
         # 🧠 How myGeeKy asks the internet: your own WISEP, its numbers and its switch (wisep.py)
+        layout = pages["data"]
         from .wisep_ui import WisepSection
         self.wisep_section = WisepSection(lambda: THEMES[self._theme_name()], self._toast)
         layout.addWidget(self.wisep_section)
@@ -7087,6 +7143,7 @@ class MyGeekyPanel(QWidget):
         layout.addWidget(self.pack_section)
 
         # 📄 "Is this you?": your OpenAlex author record, with no ORCID (whois.py)
+        layout = pages["profile"]
         from .whois_ui import WhoisSection
         self.whois_section = WhoisSection(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, self._toast)
         layout.addWidget(self.whois_section)
@@ -7096,24 +7153,17 @@ class MyGeekyPanel(QWidget):
         self.doc_section = DocSection(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, self._toast)
         layout.addWidget(self.doc_section)
 
-        # Your setup: what decides how myGeeKy works for you, at a glance
+        # 🔗 Accounts: GitHub and ORCID, then saving your data and Signals, then your phone (accounts.py)
+        from .accounts_ui import AccountsSection
+        self.accounts_section = AccountsSection(lambda: THEMES[self._theme_name()], self._account_action)
+        pages["accounts"].addWidget(self.accounts_section)
+        # what the setup summary and the Signals switch report into (no longer shown: the cards say it)
         self.setup_label = QLabel("")
         self.setup_label.setTextFormat(Qt.RichText)
-        self.setup_label.setWordWrap(True)
-        layout.addWidget(self.setup_label)
         self.signals_btn = QPushButton("")
-        self.signals_btn.setCursor(Qt.PointingHandCursor)
-        self.signals_btn.clicked.connect(self._on_signals_switch)
-        self.signals_btn.hide()
-        layout.addWidget(self.signals_btn)
-
         self.pair_btn = QPushButton("\U0001f4f1 Connect your phone")
-        self.pair_btn.setCursor(Qt.PointingHandCursor)
-        self.pair_btn.setToolTip("Show a QR code that sets up the myGeeKy phone app in one scan")
-        self.pair_btn.clicked.connect(lambda: self._show_dialog(
-            "_pair_dialog", lambda: PairDialog(self, THEMES[self._theme_name()])))
-        layout.addWidget(self.pair_btn)
 
+        layout = pages["data"]
         legal = QHBoxLayout()                              # Play asks for the privacy policy inside the app; the phone has it too
         self.legal_btns = []
         for text, url in (("Privacy policy \u2197", "https://mygeeky.org/privacy.html"),
@@ -7299,6 +7349,10 @@ class MyGeekyPanel(QWidget):
         from .. import signs
         items = logic.status_signs(self.cfg, getattr(self, "_token_warnings", []), self._sync_error)
         self.status_signs.set_signs(items, THEMES[self._theme_name()])
+        from .. import accounts                          # what needs you, counted on Settings → Accounts' line
+        self._accounts_todo = accounts.todo(accounts.cards({s["key"]: s["state"] for s in items}, "desktop"))
+        if hasattr(self, "nav_buttons"):
+            self._update_group_counts()
         now = datetime.now(timezone.utc)
         msg = signs.reminder(items, self.cfg.signs_reminded, now)
         if msg:
@@ -7370,6 +7424,80 @@ class MyGeekyPanel(QWidget):
                 w.setVisible(shown)
             self._before_settings = {}
 
+    # ------------------------------------------------------------------ ⚙'s pages
+    def _show_settings_page(self, key: str, load: bool = True) -> None:
+        if key not in SETTINGS_PAGES:
+            key = "accounts"
+        self._settings_page = key
+        for k, page in self.settings_pages.items():
+            page.setVisible(k == key)
+        label, icon, about = SETTINGS_PAGES[key]
+        self.settings_title.setText(f"{icon} {label}")
+        self.settings_about.setText(about)
+        self._style_settings_nav()
+        if hasattr(self, "settings_scroll"):
+            self.settings_scroll.verticalScrollBar().setValue(0)
+        if key == "accounts" and load:
+            self._load_setup()
+
+    def _style_settings_nav(self) -> None:
+        if not hasattr(self, "settings_nav"):
+            return
+        t = THEMES[self._theme_name()]
+        for k, b in self.settings_nav.items():
+            on = k == getattr(self, "_settings_page", "accounts")
+            bg, fg = (t["accent"], t["on_accent"]) if on else (t["btn_bg"], t["text"])
+            b.setStyleSheet(f"QPushButton {{ background:{bg}; color:{fg}; border:none; border-radius:9px; padding:4px 6px; "
+                            f"font-size:10.5px; font-weight:{800 if on else 600}; }} QPushButton:hover {{ background:{t['btn_hover']}; "
+                            f"color:{t['text']}; }}")
+        self.settings_title.setStyleSheet(f"color:{t['title']}; font-size:15px; font-weight:800; background:transparent; margin-top:4px;")
+        self.settings_about.setStyleSheet(f"color:{t['muted']}; font-size:11px; background:transparent;")
+
+    def _account_action(self, action: str) -> None:
+        """A button on an Accounts card (gui/accounts_ui.py ACTIONS): what the panel already does for each."""
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        info = getattr(self, "_setup", None) or {}
+        if action == "setup":
+            self._open_setup_window()
+            self._toast("The setup window is opening: sign in or set it up there, then come back.")
+        elif action == "sync":
+            self._sync_now()
+            self._toast("Saving to your data repo…")
+        elif action == "signals_on":
+            if info.get("beacon_token"):
+                self._on_signals_switch()
+            else:
+                self._open_setup_window()
+                self._toast("The setup window is opening: Signals is one of its steps.")
+        elif action == "signals_off":
+            self._on_signals_switch()
+        elif action == "renew":
+            from ..tokens import SETTINGS_URL
+            QDesktopServices.openUrl(QUrl(SETTINGS_URL))
+        elif action == "paste_beacon":
+            from PySide6.QtWidgets import QLineEdit
+            value = self._ask_text("myGeeKy", "Paste your new Signals token:", echo=QLineEdit.Password)
+            if value:
+                self._run_async(lambda: logic.replace_token(self.cfg, "beacon", value),
+                                lambda r: (self._toast(r.get("message", "") if isinstance(r, dict) else str(r)), self._load_setup()))
+        elif action == "pair":
+            self._show_dialog("_pair_dialog", lambda: PairDialog(self, THEMES[self._theme_name()]))
+
+    def _account_cards(self, info: dict[str, Any]) -> list[dict]:
+        """The Accounts cards from the setup summary (what's stored, each token's state) and the last sync."""
+        from .. import accounts
+        toks = {t["name"]: t["state"] for t in info.get("tokens", [])}
+        broken = lambda name: toks.get(name) in ("expired", "invalid")              # noqa: E731
+        states = {
+            "github": "off" if not (info.get("user") and "read" in toks) else "bad" if broken("read") else "on",
+            "orcid": "on" if info.get("orcid") else "off",
+            "data": "off" if not info.get("sync") else "bad" if getattr(self, "_sync_error", "") else "on",
+            "beacon": "off" if not info.get("signals") else "bad" if broken("beacon") else "on",
+        }
+        return accounts.cards(states, "desktop", {"user": info.get("user") or "", "orcid": info.get("orcid") or "",
+                                                  "repo": info.get("sync") or ""})
+
     # ------------------------------------------------------------------ your setup (in ⚙)
     def _load_setup(self) -> None:
         if not getattr(self, "_setup", None):
@@ -7379,6 +7507,8 @@ class MyGeekyPanel(QWidget):
     def _render_setup(self, info: dict[str, Any]) -> None:
         import html as h
         self._setup = info
+        if hasattr(self, "accounts_section"):
+            self.accounts_section.set_cards(self._account_cards(info))
         theme = THEMES[self._theme_name()]
         ok, off = theme["good"], theme["muted"]
 
@@ -7679,6 +7809,7 @@ class MyGeekyPanel(QWidget):
     def _apply_theme(self) -> None:
         theme = THEMES[self._theme_name()]
         self._render_signs()
+        self._style_settings_nav()
         self.panel_frame.set_style(theme["bg"], theme["border"], radius=22.0)
         self.panel_frame.setStyleSheet(
             f"QLabel {{ color:{theme['text']}; }}"
@@ -7811,7 +7942,8 @@ class MyGeekyPanel(QWidget):
         """Open a page: its part first (so the row doesn't jump to where the tab's old part lives), then its tab."""
         if not nd or not nd["tab"]:
             return
-        if nd["tab"] == "settings":                       # ⚙ Settings → Settings: the ⚙ panel, not a page
+        if nd["tab"] == "settings":                       # a Settings page: the ⚙ panel, open on that page
+            self._show_settings_page(nd["part"] or "accounts")
             if not self.settings_panel.isVisible():
                 self._toggle_settings()
             return
@@ -7887,6 +8019,10 @@ class MyGeekyPanel(QWidget):
                 continue                     # a page whose parts are all its own tab (News): it keeps its own count
             btn.set_count(sum(self.tab_buttons[t]._count for t in tabs
                               if t in self.tab_buttons and self.tab_buttons[t] is not btn))
+        todo = getattr(self, "_accounts_todo", 0)         # Settings → Accounts: what needs you
+        if "settings:accounts" in self.nav_buttons:
+            self.nav_buttons["settings:accounts"].set_count(todo)
+            self.nav_buttons["settings"].set_count(self.nav_buttons["settings"]._count + todo)
         if hasattr(self, "rail_host"):
             self.rail_host.refresh()
 
@@ -8703,7 +8839,7 @@ class MyGeekyPanel(QWidget):
 
     def _whois_found(self, cands: Any) -> None:
         if cands:
-            self._toast("📄 We found your papers on OpenAlex: is this you? See ⚙ → Your papers.")
+            self._toast("📄 We found your papers on OpenAlex: is this you? See ⚙ Settings → Your profile.")
             self.whois_section.render()
 
     def _notify_tick(self) -> None:

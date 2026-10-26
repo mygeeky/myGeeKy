@@ -270,7 +270,7 @@ class ResearchersPage(QScrollArea):
                                       "outside, and the people you follow in orange. Click anyone to see who connects "
                                       "you. Rebuilt weekly from your papers.", muted))
             if not self.me():
-                self.lay.addWidget(_label("Add your ORCID iD, or find your papers by your name (⚙ → Your papers), to "
+                self.lay.addWidget(_label("Add your ORCID iD, or find your papers by your name (⚙ Settings → Your profile → Your papers), to "
                                           "see your co-author network.", muted))
             elif not net.get("nodes"):
                 self.lay.addWidget(_label("Building your network…", muted))

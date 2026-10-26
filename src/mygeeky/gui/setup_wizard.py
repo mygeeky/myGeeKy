@@ -1676,7 +1676,7 @@ class FinishPage(Page):
         # notifications: optional, and all off unless ticked (the same choices as ⚙ Settings → Notifications)
         from .. import notify
         self.add(_label("🔔 Notifications (optional): myGeeKy tells you, at most once a day, when something "
-                        "important fits you. Tick only what you want; you can change it any time in ⚙ Settings.",
+                        "important fits you. Tick only what you want; you can change it any time in ⚙ Settings → Notifications.",
                         "muted"))
         self.notify_boxes: dict[str, QCheckBox] = {}
         for kind, emoji, label, about, _short in notify.KINDS:

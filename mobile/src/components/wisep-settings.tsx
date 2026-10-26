@@ -1,4 +1,4 @@
-// More → Settings → 🧠 How myGeeKy asks the internet: every user's own WISEP in plain words -- what it asked today and
+// Settings → Data & privacy → 🧠 How myGeeKy asks the internet: every user's own WISEP in plain words -- what it asked today and
 // what it answered from what it kept, GitHub beside it, the pages it learned you open, how far it is from deciding
 // alone, the Auto / Always / Never switch, and Forget what it learned. All of it stays on this phone. The desktop's
 // gui/wisep_ui.py shows the same.

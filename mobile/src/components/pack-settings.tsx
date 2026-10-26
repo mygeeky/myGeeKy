@@ -1,4 +1,4 @@
-// More → Settings → 📦 Packs: make a pack from your setup and show it as one to three QR codes, one at a time ("Code 2
+// Settings → Data & privacy → 📦 Packs: make a pack from your setup and show it as one to three QR codes, one at a time ("Code 2
 // of 3", Back / Next), receive one (app/pack-scan.tsx), and undo the last pack you took. The desktop's
 // gui/packs_ui.py makes and shows packs the same way.
 import { router } from 'expo-router';
@@ -36,7 +36,7 @@ export function PackCodes({ codes, onClose }: { codes: string[]; onClose: () => 
       {codes.length > 1 ? <View style={st.dots}>{codes.map((_, i) => <View key={i} style={[st.dot, i === at && st.dotOn]} />)}</View> : null}
       <View style={{ padding: 8, backgroundColor: '#fff', borderRadius: 12 }}><QrCode text={codes[at]} size={280} /></View>
       <Text style={[st.text, { textAlign: 'center', marginTop: 6 }]}>
-        On the other phone: More → Settings → 📦 Packs → Receive a pack. {codes.length > 1 ? 'It counts the codes and tells you when to show the next one.' : ''}
+        On the other phone: Settings → Data & privacy → 📦 Packs → Receive a pack. {codes.length > 1 ? 'It counts the codes and tells you when to show the next one.' : ''}
       </Text>
       <View style={st.row}>
         {codes.length > 1 ? <Pressable disabled={at === 0} onPress={() => setAt(at - 1)} style={[st.btn, at === 0 && { opacity: 0.4 }]}><Text style={st.btnText}>‹ Back</Text></Pressable> : null}

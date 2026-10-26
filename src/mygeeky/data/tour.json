@@ -184,7 +184,7 @@
       "fr": "Des badges gagnés en progressant : apprendre, aider, partager. Ils sont à toi, personne ne te classe avec.",
       "ar": "شارات تكسبها وأنت تنمو: بالتعلّم والمساعدة والمشاركة. إنها لك، ولا أحد يرتّبك بها.",
       "zh": "你在成长中获得的徽章：学习、帮助、分享。它们属于你，没人拿它们给你排名。"}},
-    "settings_page": {"at": {"desktop": "settings", "phone": "you:more"}, "pose": "point", "since": 1, "t": {
+    "settings_page": {"at": {"desktop": "settings", "phone": "you:accounts"}, "pose": "point", "since": 1, "t": {
       "en": "Settings: your accounts, your CV, how it looks, and how myGeeKy asks the internet. Help has a tour of it.",
       "fr": "Les réglages (Settings) : tes comptes, ton CV, l'apparence, et la façon dont myGeeKy interroge internet. Help en propose une visite.",
       "ar": "الإعدادات (Settings): حساباتك وسيرتك الذاتية والمظهر وطريقة سؤال myGeeKy للإنترنت. في Help جولة خاصة بها.",
@@ -234,7 +234,7 @@
       "fr": "La synchronisation relie tes ordinateurs et ton téléphone via un dépôt privé qui t'appartient. Désactivée sauf si tu l'actives.",
       "ar": "المزامنة تربط حواسيبك وهاتفك عبر مستودع خاص تملكه أنت. متوقفة ما لم تشغّلها.",
       "zh": "同步通过你自己的私有仓库连接你的电脑和手机。默认关闭，除非你打开。"}},
-    "more": {"pose": "present", "since": 1, "at": {"desktop": "settings", "phone": "you:more"}, "by_kind": {
+    "more": {"pose": "present", "since": 1, "at": {"desktop": "settings", "phone": "you:accounts"}, "by_kind": {
       "github": {
         "en": "Want more? Add your ORCID in Settings and you also get Researchers, Cited by, and papers and funding matched to your exact field.",
         "fr": "Envie de plus ? Ajoute ton ORCID dans Settings et tu auras aussi Researchers, Cited by, et des articles et financements faits pour ton domaine précis.",

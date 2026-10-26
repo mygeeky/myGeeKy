@@ -67,6 +67,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `seasons.ts` | `seasons.py` |
 | `seen.ts` | `freshness.py` |
 | `signal-crypto.ts` | `signal_crypto.py` |
+| `accounts.ts` (+ `components/settings-parts.tsx`: the Settings parts) | `accounts.py` (+ `gui/accounts_ui.py`, `gui/qt_panel.py` `SETTINGS_PAGES`, the ⚙ pages) |
 | `signs.ts` (+ `components/status-signs.tsx`) | `signs.py` (+ `gui/qt_panel.py` `StatusSigns`, `gui/app.py` `status_signs`) |
 | `signals.ts`, `signals-core.ts` | `beacon.py` |
 | `skills.ts` (+ `components/skill-views.tsx`) | `skills.py`, `skilltrends.py` (+ `gui/skillviews_ui.py`) |

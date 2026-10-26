@@ -166,7 +166,7 @@ export function ResearchersView({ part }: { part: string }) {
         return (
           <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
             <Text style={st.muted}>You in the middle, your co-authors around you, the people one introduction away outside, and the people you follow in orange. Tap anyone to see who connects you. Rebuilt weekly from your papers.</Text>
-            {me === '' ? <Empty>Add your ORCID iD, or find your papers by your name (More → Settings → Your papers), to see your co-author network.</Empty>
+            {me === '' ? <Empty>Add your ORCID iD, or find your papers by your name (Settings → Your profile → Your papers), to see your co-author network.</Empty>
               : !net?.nodes.length ? <GeekLoader text="Building your network…" />
                 : <>
                   <Text style={st.muted}><Text style={{ color: YOU }}>●</Text> you  <Text style={{ color: CO }}>●</Text> co-authors  <Text style={{ color: FAR }}>●</Text> one introduction away  <Text style={{ color: FOLLOWED }}>●</Text> you follow</Text>

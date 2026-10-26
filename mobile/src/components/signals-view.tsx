@@ -358,7 +358,7 @@ function askTerms(): Promise<boolean> {
   ], { cancelable: true, onDismiss: () => done(false) }));
 }
 
-function SetupCard({ me, onDone }: { me: string; onDone: () => void }) {
+export function SetupCard({ me, onDone }: { me: string; onDone: () => void }) {
   const [value, setValue] = useState('');
   const [agreed, setAgreed] = useState(false);
   useEffect(() => { termsAccepted().then(setAgreed).catch(() => undefined); }, []);

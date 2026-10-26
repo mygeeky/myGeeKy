@@ -55,10 +55,11 @@ def test_rows_and_order():
 def test_the_panel_tree_has_every_tab():
     from mygeeky.gui.qt_panel import TABS, panel_tree
     t = panel_tree(True, True)
-    tabs = {n["tab"] for n in nt.walk(t) if n["tab"]} - {"settings"}          # ⚙ Settings → Settings: the ⚙ panel
+    tabs = {n["tab"] for n in nt.walk(t) if n["tab"]} - {"settings"}          # ⚙ Settings' pages: the ⚙ panel's, not tabs
     assert tabs == set(TABS), "every tab is somewhere under a group"
-    assert [g["id"] for g in t["children"]] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["settings"]   # 🏠 Home, the groups, ••• More
-    assert [c["id"] for c in nt.find(t, "settings")["children"]] == ["settings:panel", "help"], "••• More: Settings and Help"
+    assert [g["id"] for g in t["children"]] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["settings"]   # 🏠 Home, the groups, ⚙ Settings
+    assert [c["id"] for c in nt.find(t, "settings")["children"]] == [
+        "settings:accounts", "settings:profile", "settings:look", "settings:notify", "settings:data", "help"], "Accounts first, Help last"
     assert "admin" not in {n["tab"] for n in nt.walk(panel_tree(False, False))}
     circle = [c["tab"] for c in nt.find(panel_tree(False, False), "circle")["children"]]
     assert circle[-2:] == ["activity", "signals"], "without GitHub, what needs it goes last"
@@ -82,7 +83,7 @@ const ph = N.phoneTree(false, false);
 out({ groups: N.GROUPS, root: N.ROOT_LABEL, levels: ids.map((id: string) => N.level(N.find(t, id)!)),
   taps: taps.map(([a, p, o]: string[]) => N.tap(t, a, p, o)), rows: [2, 6, 7, 8].map(N.rows),
   leaf: [N.leafFor(t, 'market', 'repos')?.id, N.leafFor(t, 'news', '')?.id, N.leafFor(t, 'nope')],
-  phoneGroups: ph.children.map((g) => g.id), phoneCircle: N.find(ph, 'circle')!.children.map((c) => c.id),
+  phoneGroups: ph.children.map((g) => g.id), phoneSettings: N.find(ph, 'settings')!.children.map((c) => c.part || c.id), phoneCircle: N.find(ph, 'circle')!.children.map((c) => c.id),
   phoneTabs: [...new Set(N.walk(ph).map((n) => n.tab).filter(Boolean))].sort() });
 """, [plain(t), taps, ["home", "world", "news", "repos"]])
     assert said["groups"] == nt.GROUPS and said["root"] == nt.ROOT_LABEL
@@ -90,7 +91,8 @@ out({ groups: N.GROUPS, root: N.ROOT_LABEL, levels: ids.map((id: string) => N.le
     assert said["taps"] == [nt.tap(t, *x) for x in taps]
     assert said["rows"] == [nt.rows(n) for n in (2, 6, 7, 8)]
     assert said["leaf"] == ["repos:rising", "news:airace", None]
-    assert said["phoneGroups"] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["settings"]   # 🏠 Home first, ••• More last, as on the computer
+    assert said["phoneGroups"] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["settings"]   # 🏠 Home first, ⚙ Settings last, as on the computer
+    assert said["phoneSettings"] == ["accounts", "profile", "look", "notify", "data", "help"]   # the same pages as ⚙'s
     assert said["phoneCircle"] == ["researchers", "live", "people", "activity", "signals"]   # no GitHub: what works first
     assert said["phoneTabs"] == sorted(["you", "grow", "news", "papers", "models", "launches", "live", "people", "activity",
                                         "signals", "repos", "chances", "researchers", "feed", "help"])

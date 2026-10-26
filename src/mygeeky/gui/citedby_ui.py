@@ -76,7 +76,7 @@ class CitedByPage(QWidget):
         muted = f"color:{t['muted']}; font-size:10.5px;"
         if not d.get("author"):
             self.lay.addWidget(_label("See who cites your papers: add your ORCID iD, or find your papers by your name "
-                                      "(⚙ → Your papers).", f"color:{t['muted']}; font-size:11px;"))
+                                      "(⚙ Settings → Your profile → Your papers).", f"color:{t['muted']}; font-size:11px;"))
             return
         s = d.get("summary") or {}
         tot = s.get("totals") or {}

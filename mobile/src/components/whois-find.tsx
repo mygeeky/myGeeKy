@@ -1,5 +1,5 @@
 // "Is this you?": type your name and institution, see the researchers OpenAlex knows, pick yourself -- in setup and
-// in More → Settings (the desktop's setup page and ⚙ → Your papers, gui/whois_ui.py). If OpenAlex is busy, you carry
+// in Settings → Your profile (the desktop's setup page and ⚙ → Your papers, gui/whois_ui.py). If OpenAlex is busy, you carry
 // on without it and the search is kept and tried again later (lib/whois-store.ts).
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -69,7 +69,7 @@ export function WhoisFind({ onPick, onNone, onBusy }: { onPick: (c: Candidate) =
   );
 }
 
-/** More → Settings → 📄 Your papers: who you are on OpenAlex, or "Is this you?" candidates, or the search. */
+/** Settings → Your profile → 📄 Your papers: who you are on OpenAlex, or "Is this you?" candidates, or the search. */
 export function WhoisSettings() {
   const { settings, save } = useApp();
   const [state, setState] = useState<WhoisState | null>(null);

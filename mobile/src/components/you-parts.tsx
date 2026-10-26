@@ -1,13 +1,8 @@
 // You, in the centre of the orbit: your model (keywords), your badges, and the rest.
-import { WisepSettings } from './wisep-settings';
-import { PackSettings } from './pack-settings';
-import Constants from 'expo-constants';
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Image, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { InterestMap, MAP_EXPLORE, MAP_FIELD, MAP_LEARNED } from './interest-map';
 import { AucGauge, aucVerdict, ExploreDonut, StatTiles, TrendChart, WeightBars } from './model-plots';
-import { SignInButton } from './signin';
 import { TokenGuide } from './token-guide';
 
 import { Card, Empty, open, s, Section, timeAgo } from './ui';
@@ -16,13 +11,7 @@ import { Achievement, earned, Earned, githubAchievements, TIER_COLORS, TIERS } f
 import { Dict, lookup } from '../lib/interests';
 import { badgeCounts, type Brain, cachedBrain, connectModel, disconnectModel, localEvents, MODEL_TOKEN_PAGE, modelLink, queuedUsage, syncModel } from '../lib/model-repo';
 import { loadDictionary } from '../lib/profile';
-import { signalsToken } from '../lib/signals';
-import { checkTokens, type TokenState } from '../lib/tokens';
-import { C, setTheme, THEME, THEME_LABELS, type ThemeName } from '../lib/theme';
-import { DOCK_IDLE_CHOICES, DOCK_IDLE_DEFAULT, dockIdleMs, setDockIdleMs } from '../lib/prefs';
-import { NotifySettings } from './notify-settings';
-import { WhoisSettings } from './whois-find';
-import { DocSettings } from './doc-drop';
+import { C } from '../lib/theme';
 
 
 export function ModelPart() {
@@ -306,153 +295,6 @@ export function BadgesPart() {
 
 // ⚙ Settings: what the desktop's ⚙ holds that means something on a phone -- your setup, sync with your data
 // repo, Signals, the 💡 -- and none of its window controls (transparency, panel height, place on screen).
-export function MorePart() {
-  const { settings, token, save, forget } = useApp();
-  const [repo, setRepo] = useState<string | null>(null);
-  const [signals, setSignals] = useState(false);
-  useEffect(() => {
-    modelLink().then((l) => setRepo(l?.repo ?? null)).catch(() => setRepo(null));
-    signalsToken().then((t) => setSignals(!!t)).catch(() => setSignals(false));
-  }, []);
-  const [tokens, setTokens] = useState<TokenState[]>([]);
-  useEffect(() => { checkTokens().then(setTokens).catch(() => undefined); }, []);
-  const [dockIdle, setDockIdle] = useState(DOCK_IDLE_DEFAULT);
-  useEffect(() => { dockIdleMs().then(setDockIdle); }, []);
-  if (!settings) return null;
-  const pickTheme = (name: ThemeName) => {
-    if (name === THEME) return;
-    Alert.alert('Change the theme?', 'myGeeKy restarts to draw every screen in the new colours.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Change it', onPress: async () => { if (!(await setTheme(name))) Alert.alert('Theme', 'Saved: close and open myGeeKy to see it.'); } },
-    ]);
-  };
-  const pickDock = async (ms: number) => { setDockIdle(ms); await setDockIdleMs(ms); };
-  const reset = async () => {
-    const go = async () => {
-      router.replace('/setup');                    // first leave Home (it needs settings to draw)...
-      await forget();                              // ...then forget what's stored and the running app's copy
-    };
-    if (Platform.OS === 'web') return go();
-    Alert.alert('Start over?', 'This erases everything myGeeKy keeps on this phone: settings, sign-in, tokens and keys. '
-      + 'Your GitHub repos stay (mygeeky.org/delete.html says how to remove them).', [
-      { text: 'Cancel', style: 'cancel' }, { text: 'Start over', style: 'destructive', onPress: go },
-    ]);
-  };
-  const rows: [string, string, boolean][] = [
-    ['GitHub', settings.username, true],
-    ['Signed in', token ? 'yes: Live and People refresh freely' : 'no (sign in below)', !!token],
-    ['ORCID', settings.orcid || 'not set', !!settings.orcid],
-    ['Keywords', settings.keywords.length ? settings.keywords.join(', ') : 'none yet (add them in Your model)', settings.keywords.length > 0],
-    ['From computer', Object.keys(settings.interests ?? {}).length
-      ? `${Object.keys(settings.interests).length} interests, ${settings.field?.length ?? 0} research topics, ${settings.desktopBadges?.length ?? 0} badges`
-      : 'nothing yet: scan the code above', Object.keys(settings.interests ?? {}).length > 0],
-    ['Sync', repo ? `✓ on: ${repo} (your model, badges and clicks)` : 'off: connect your data repo in Your model', !!repo],
-    ['Signals', signals ? '✓ on: you send and receive on this phone' : 'off (turn it on in the 📡 Signals planet)', signals],
-    ...tokens.map((t) => [t.name === 'signals' ? 'Signals token' : 'Data token', t.message.replace(`${t.label} `, '').replace(`${t.label}: `, ''), !t.warn] as [string, string, boolean]),
-    ['App version', Constants.expoConfig?.version ?? '', true],
-  ];
-  return (
-    <>
-      <Pressable onPress={() => router.push('/scan')} style={st.scan}>
-        <Text style={st.scanTitle}>📷  Scan from your computer</Text>
-        <Text style={st.scanSub}>On your computer: ⚙ → Connect your phone. One scan brings over your profile, your
-          interests and your badges (do it again any time to refresh them).</Text>
-      </Pressable>
-
-      <Section tour="settings:papers">📄 YOUR PAPERS (OPENALEX)</Section>
-      <View style={{ marginBottom: 6 }}><WhoisSettings /></View>
-      <Section tour="settings:cv">📝 FROM A CV, THESIS OR ABSTRACT</Section>
-      <View style={{ marginBottom: 6 }}><DocSettings /></View>
-      <Section>🔔 NOTIFICATIONS</Section>
-      <View style={{ marginBottom: 6 }}><NotifySettings full /></View>
-      <Section tour="settings:wisep">🧠 HOW MYGEEKY ASKS THE INTERNET</Section>
-      <View style={{ marginBottom: 6 }}><WisepSettings /></View>
-      <Section tour="settings:packs">📦 PACKS</Section>
-      <View style={{ marginBottom: 6 }}><PackSettings /></View>
-      <Section tour="settings:look">🎨 LOOK</Section>
-      <Card>
-        <Text style={st.setupKey}>Theme</Text>
-        <View style={st.choices}>
-          {THEME_LABELS.map(([name, label]) => (
-            <Pressable key={name} onPress={() => pickTheme(name)} accessibilityRole="radio" accessibilityState={{ selected: THEME === name }}
-                       style={[st.choice, THEME === name && st.choiceOn]}>
-              <Text style={[st.choiceText, THEME === name && { color: '#fff' }]}>{label}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={[st.setupKey, { marginTop: 12, width: undefined }]}>The dock folds away after</Text>
-        <View style={st.choices}>
-          {DOCK_IDLE_CHOICES.map(([ms, label]) => (
-            <Pressable key={ms} onPress={() => pickDock(ms)} accessibilityRole="radio" accessibilityState={{ selected: dockIdle === ms }}
-                       style={[st.choice, dockIdle === ms && st.choiceOn]}>
-              <Text style={[st.choiceText, dockIdle === ms && { color: '#fff' }]}>{label}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={[s.small, { marginTop: 10 }]}>The same three themes as on your computer. The computer&apos;s window settings
-          (transparency, panel height, place on screen, stay on top, floating hearts) belong to its floating panel and have no
-          phone equivalent; Start over below is the phone&apos;s uninstall.</Text>
-      </Card>
-
-      <Section tour="settings:setup">⚙️ YOUR SETUP</Section>
-      <Card>
-        {rows.map(([k, v, on]) => (
-          <View key={k} style={st.setupRow}>
-            <Text style={st.setupKey}>{k}</Text>
-            <Text style={[st.setupVal, !on && { color: C.muted }]}>{v}</Text>
-          </View>
-        ))}
-      </Card>
-
-      <Section>🔑 GITHUB</Section>
-      <Card>
-        <Text style={st.body}>{token ? 'Signed in: Live and People refresh freely. Read-only: myGeeKy can never follow, star or post.'
-          : 'Sign in so Live and People can refresh freely. Read-only: myGeeKy can never follow, star or post.'}</Text>
-        {!token ? (
-          <SignInButton onSignedIn={async (login, t) => {
-            if (login.toLowerCase() !== settings.username.toLowerCase()) {
-              throw new Error(`You signed in as ${login}, but this phone is set up for ${settings.username}.`);
-            }
-            await save(settings, t);
-          }} />
-        ) : null}
-      </Card>
-
-      <Section tour="settings:sync">☁️ SYNC WITH YOUR COMPUTERS</Section>
-      <Card>
-        <Text style={st.body}>{repo
-          ? `Your model, badges and what you open here travel through your private repo ${repo}, like one more computer in sync. Its token is only on this phone, in the secure store.`
-          : 'Connect your private data repo (the one `mygeeky sync` uses) in Your model: the phone then shows your real model and badges, and teaches your computers too.'}</Text>
-      </Card>
-
-      <Section>📡 SIGNALS</Section>
-      <Card>
-        <Text style={st.body}>Private thank-yous and collab invites between myGeeKy users. Open the 📡 Signals planet
-          to turn them on for this phone: it gets its own key, kept only here.</Text>
-      </Card>
-
-      <Section>🔒 PRIVACY</Section>
-      <Card>
-        <Text style={st.body}>{repo ? 'Your data stays on this phone and in your own private repo.' : 'Everything stays on this phone.'} myGeeKy
-          reads public data (news feeds, OpenAlex, Hugging Face, Product Hunt, GitHub) and never posts, follows or stars anything for you.</Text>
-      </Card>
-
-      <Pressable onPress={() => open('https://mygeeky.org')}>
-        <Text style={[st.link, { marginTop: 18 }]}>myGeeKy for your computer ↗</Text>
-      </Pressable>
-      <Pressable onPress={() => open('https://mygeeky.org/privacy.html')}>
-        <Text style={st.link}>Privacy policy ↗</Text>
-      </Pressable>
-      <Pressable onPress={() => open('https://mygeeky.org/terms.html')}>
-        <Text style={st.link}>Signals terms ↗</Text>
-      </Pressable>
-      <Pressable onPress={() => Linking.openURL('mailto:support@mygeeky.org')}>
-        <Text style={st.link}>Questions or problems? support@mygeeky.org</Text>
-      </Pressable>
-      <Pressable onPress={reset}><Text style={[st.link, { color: C.red, marginTop: 14 }]}>Start over</Text></Pressable>
-    </>
-  );
-}
 
 const st = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

@@ -9,10 +9,10 @@ export const ORDER = ['github', 'orcid', 'data', 'beacon'] as const;
 export const LABELS: Record<Sign['key'], string> = { github: 'GitHub', orcid: 'ORCID', data: 'Saving', beacon: 'Beacon' };
 export const TIPS: Record<Sign['key'], Partial<Record<SignState, string>>> = {
   github: { on: 'Signed in with GitHub.',
-    off: "GitHub isn't linked. Link it in More → Settings for people, your repos and Signals.",
-    bad: 'Your GitHub sign-in stopped working. Sign in again in More → Settings.' },
+    off: "GitHub isn't linked. Link it in Settings → Accounts for people, your repos and Signals.",
+    bad: 'Your GitHub sign-in stopped working. Sign in again in Settings → Accounts.' },
   orcid: { on: 'ORCID is linked: your papers shape what you see.',
-    off: "ORCID isn't linked. Add it in More → Settings for your papers and who cites you." },
+    off: "ORCID isn't linked. Add it in Settings → Accounts for your papers and who cites you." },
   data: { on: 'Saving to your private data repo: your computers and phone share your settings and progress.',
     off: 'Not saving anywhere yet: your settings and progress are only on this device.',
     bad: "myGeeKy can't save to your data repo any more: its access expired or stopped working. Renew it." },

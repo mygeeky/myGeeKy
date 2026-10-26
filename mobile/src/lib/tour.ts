@@ -1,6 +1,6 @@
 // GeeKOc's tours and Help (the desktop's tour.py): which tour to show, when, and what each stop says. The data is
 // an identical copy of the desktop's (data/tour.json). A stop opens a page (its "at" for the phone: a place in the
-// navigation, "you:more" for Settings, a Settings section like "settings:cv", or "help") and GeeKOc says one thing
+// navigation, "you:accounts" for Settings, a Settings section like "settings:cv", or "help") and GeeKOc says one thing
 // about it in the language picked for the tours. The general tour depends on what the user gave -- GitHub, ORCID,
 // both, a CV, or none -- and opens by itself the first time, and after an update only for the new stops.
 // tests/test_tour.py runs this next to tour.py on the same inputs.

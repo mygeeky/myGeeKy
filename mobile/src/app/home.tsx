@@ -31,7 +31,8 @@ import { SignalsView } from '../components/signals-view';
 import { Empty, open } from '../components/ui';
 import { AdminPart } from '../components/admin-part';
 import { IdeaForm } from '../components/idea-sheet';
-import { BadgesPart, ModelPart, MorePart } from '../components/you-parts';
+import { BadgesPart, ModelPart } from '../components/you-parts';
+import { AccountsPart, DataPart, LookPart, NotifyPart, ProfilePart } from '../components/settings-parts';
 import { timeAgo, useApp, useFeed } from '../lib/app-state';
 import { fetchHeadlines } from '../lib/headlines';
 import { fetchLive } from '../lib/live';
@@ -43,6 +44,7 @@ import { loadContributions } from '../lib/contribute';
 import { fetchNews } from '../lib/news';
 import { checkTokens, SETTINGS_URL, type TokenState } from '../lib/tokens';
 import { reminder, signs as makeSigns, state as signState } from '../lib/signs';
+import { cards as accountCards, todo as accountsTodo } from '../lib/accounts';
 import { StatusSigns } from '../components/status-signs';
 import { recordInterest } from '../lib/model-repo';
 import { loadSeen, markSeen } from '../lib/seen';
@@ -60,14 +62,24 @@ import { retryWhois } from '../lib/whois-store';
 const HINT_KEY = 'mygeeky.orbitHinted';
 type NewsPart = 'airace' | 'headlines' | 'discuss';
 type RepoPart = 'help' | 'rising';
-type YouPart = 'month' | 'model' | 'cited' | 'badges' | 'more' | 'ideas' | 'admin';
+type YouPart = 'month' | 'model' | 'cited' | 'badges' | 'ideas' | 'admin' | SettingsPart;
+// Settings' pages (the Settings main): You's parts, drawn by components/settings-parts.tsx
+type SettingsPart = 'accounts' | 'profile' | 'look' | 'notify' | 'data';
+const SETTINGS_PARTS: SettingsPart[] = ['accounts', 'profile', 'look', 'notify', 'data'];
+const SETTINGS_ABOUT: Record<SettingsPart, string> = {
+  accounts: 'What myGeeKy can use. Each one is optional, and you can change it any time.',
+  profile: 'What shapes your feeds: your papers, a CV and your keywords.',
+  look: 'The theme, and how the dock behaves.',
+  notify: 'Off unless you switch them on. Only what is really worth it.',
+  data: 'How myGeeKy asks the internet, sharing your setup, and your privacy.',
+};
 
 const EMPTY: Partial<Record<SectionId, string>> = {
   live: 'Nothing new around you yet. Pull down to check again.',
   activity: "The people you follow haven't done anything public lately.",
   people: 'No one found for your keywords yet: add a few in You → Your model.',
   news: 'No headlines yet. Pull down to load them.',
-  papers: 'No rising papers found yet. Connecting your data repo (You → Model) or adding your ORCID (More → Settings → Start over) finds your exact field.',
+  papers: 'No rising papers found yet. Connecting your data repo (You → Model) or adding your ORCID (Settings → Accounts) finds your exact field.',
   repos: 'No repos yet: your computer finds them (Repos tab there), and they arrive with its next sync.',
   models: 'No trending models yet. Pull down to load them.',
   launches: 'No launches yet. Pull down to load them.',
@@ -229,7 +241,7 @@ export default function Home() {
   useEffect(() => { checkNow().catch(() => undefined); }, []);
   // a pending "Is this you?" search (OpenAlex was busy): tried again quietly; when it works, say so
   useEffect(() => {
-    retryWhois().then((found) => found.length && toast('📄 We found your papers on OpenAlex: is this you? See More → Settings.'))
+    retryWhois().then((found) => found.length && toast('📄 We found your papers on OpenAlex: is this you? See Settings → Your profile.'))
       .catch(() => undefined);
   }, [toast]);
   const [collapsed, setCollapsed] = useState(params.fold === '1');
@@ -241,6 +253,8 @@ export default function Home() {
   const dataTok = tokens.find((t) => t.name === 'data'), sigTok = tokens.find((t) => t.name === 'signals');
   const signItems = makeSigns(signState(!!token), signState(!!settings?.orcid), signState(!!dataTok, !!dataTok?.warn),
                               signState(!!sigTok, !!sigTok?.warn));
+  const needsYou = accountsTodo(accountCards({ github: signItems[0].state, orcid: signItems[1].state, data: signItems[2].state,
+    beacon: signItems[3].state }, 'phone'));
   const remindKey = signItems.filter((x) => x.state === 'bad').map((x) => x.key).join(',');
   useEffect(() => {                                       // a sign gone red: a small reminder, at most once a day
     if (!remindKey) return;
@@ -255,7 +269,8 @@ export default function Home() {
   const [newsPart, setNewsPart] = useState<NewsPart>('airace');
   const [researcherPart, setResearcherPart] = useState('new');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
-  const [youPart, setYouPart] = useState<YouPart>(params.part === 'badges' || params.part === 'more' || params.part === 'model' ? params.part : 'month');
+  const [youPart, setYouPart] = useState<YouPart>(params.part === 'more' ? 'accounts'
+    : params.part === 'badges' || params.part === 'model' || SETTINGS_PARTS.includes(params.part as SettingsPart) ? params.part as YouPart : 'month');
   const [growMode, setGrowMode] = useState<GrowMode>('highlights');
   const [chanceMode, setChanceMode] = useState<ChanceMode>('jobs');
   // the maker's Admin part: only for the account GitHub says owns the connected data repo (lib/admin.ts)
@@ -293,7 +308,15 @@ export default function Home() {
     if (n.tab === 'chances' && part) setChanceMode(part as ChanceMode);
     setSel(n.tab as SectionId);
     setOpenId(null);
+  };  // a Settings page's link to another page (Your model, Signals): open it, with the dock at its group
+  const goTo = (id: string) => {
+    const n = find(tree, id);
+    if (!n) return;
+    const page = firstLeaf(n);
+    openNode(page.id);
+    setNavAt(page.parent?.id ?? 'home');
   };
+
   const onNav = (picked: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const out = navTap(tree, navAt, picked, leaf?.id ?? '');
@@ -306,6 +329,7 @@ export default function Home() {
   const tourKind = Tour.kind(!!user, !!(settings?.orcid || settings?.openalex), settings?.coauthors !== undefined);
   const [tour, setTour] = useState<{ steps: string[]; marksSeen: boolean } | null>(null);
   const scroller = useRef<ScrollView>(null);
+  useEffect(() => { scroller.current?.scrollTo({ y: 0, animated: false }); }, [leafId]);   // a new page opens at its top (the tour scrolls after)
   const scrollY = useRef(0);
   const tourAsked = useRef(false);
   useEffect(() => {
@@ -320,13 +344,16 @@ export default function Home() {
   }, [settings, tourKind]);
   const startTour = (name: string) => setTour({ steps: Tour.stops(name, tourKind), marksSeen: name === 'start' });
   const SETTINGS_NAMES: Record<string, string> = { look: 'Look', papers: 'Your papers', cv: 'From a CV', wisep: 'How myGeeKy asks the internet',
-    packs: 'Packs', setup: 'Your setup', sync: 'Sync' };
-  nameSpots((target) => target.startsWith('settings:') ? `You › Settings › ${SETTINGS_NAMES[target.slice(9)] ?? ''}`
+    packs: 'Packs', setup: 'Accounts', sync: 'Saving your data' };
+  // the tour's stops in Settings, and the page each lives on now
+  const SETTINGS_PAGE: Record<string, SettingsPart> = { look: 'look', papers: 'profile', cv: 'profile', wisep: 'data', packs: 'data',
+    setup: 'accounts', sync: 'accounts' };
+  nameSpots((target) => target.startsWith('settings:') ? `Settings › ${SETTINGS_NAMES[target.slice(9)] ?? ''}`
     : navPath(find(tree, target)).slice(1).map((n) => n.label).join(' › '));
   const tourGo = (target: string) => {
     if (target.startsWith('settings:')) {                 // a part of Settings: open it, make room, scroll to it
-      openNode('you:more');
-      setNavAt('settings');                              // Settings lives in the ••• More main
+      openNode(`you:${SETTINGS_PAGE[target.slice(9)] ?? 'accounts'}`);
+      setNavAt('settings');
       setCollapsed(true);
       setDockOpen(false);
       setTimeout(() => {
@@ -393,8 +420,11 @@ export default function Home() {
       const tabs = n.children.length ? [...new Set(walk(n).map((x) => x.tab).filter(Boolean))] : n.part ? [] : [n.tab];
       out[n.id] = tabs.reduce((s, tb) => s + (counts[tb as SectionId] ?? 0), 0);
     }
+    // Settings → Accounts counts what needs you (saving not set up, or access gone red), on its planet and Settings'
+    out['you:accounts'] = needsYou;
+    out.settings = (out.settings ?? 0) + needsYou;
     return out;
-  }, [tree, counts]);
+  }, [tree, counts, needsYou]);
   const view: SectionId = sel === 'repos' && repoPart === 'rising' ? 'market' : sel === 'news' && newsPart === 'discuss' ? 'discuss' : sel;
   const listed = rowsFor(view, data);
   // opening a list marks what is in it as seen; what was new keeps its dot until you leave
@@ -422,9 +452,9 @@ export default function Home() {
   // the heading is the page you're on (a part, if it has one); beside it, where it lives: WORLD › NEWS
   const title = leaf && leaf.part ? leaf.label : section.label;
   const ring = (leaf ? navPath(leaf).slice(1, -1).map((n) => n.label).join(' › ') || navPath(leaf)[1]?.label || '' : '').toUpperCase();
-  // Settings lives in the ••• More main now (its page is still You's "more" part): its own words and colour
-  const inSettings = leaf?.id === 'you:more';
-  const about = inSettings ? 'How myGeeKy looks, your papers and CV, how it asks the internet, packs and sync.' : section.about;
+  // Settings' pages are You's parts under the Settings main: their own words and colour
+  const inSettings = leaf?.parent?.id === 'settings' && leaf.tab === 'you';
+  const about = inSettings ? SETTINGS_ABOUT[leaf.part as SettingsPart] ?? section.about : section.about;
   const ringColor = inSettings ? (leaf?.color ?? section.color) : section.color;
   const fs = feedsOf[view];
   const loading = fs.some((f) => f.loading);
@@ -531,7 +561,9 @@ export default function Home() {
         >
           {sel === 'you' ? (
             <View style={{ marginHorizontal: -4 }}>
-              {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'cited' ? <CitedByView /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart /> : youPart === 'ideas' ? <IdeaForm /> : <MorePart />}
+              {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'cited' ? <CitedByView /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart /> : youPart === 'ideas' ? <IdeaForm />
+                : youPart === 'profile' ? <ProfilePart go={goTo} /> : youPart === 'look' ? <LookPart /> : youPart === 'notify' ? <NotifyPart />
+                : youPart === 'data' ? <DataPart /> : <AccountsPart go={goTo} />}
             </View>
           ) : sel === 'help' ? (
             <HelpView onStart={startTour} labelOf={(m) => find(tree, m === 'home' ? 'feed' : m)?.label ?? m} lang={tour ? 'touring' : 'idle'} />
