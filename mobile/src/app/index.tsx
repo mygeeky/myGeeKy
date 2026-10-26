@@ -14,6 +14,6 @@ export default function Index() {
       </View>
     );
   }
-  const known = settings && (settings.username || settings.orcid || settings.keywords.length);
+  const known = settings && (settings.started || settings.username || settings.orcid || settings.openalex || settings.keywords.length);
   return <Redirect href={known ? '/home' : '/setup'} />;
 }

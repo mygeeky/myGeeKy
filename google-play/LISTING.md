@@ -127,11 +127,14 @@ app through the curated lists' `signals_hidden` (within hours).
 **App access** (Policy → App content → App access): *All or some functionality is restricted*? **No login needed.**
 Note for the reviewer:
 
-> myGeeKy works without any account. On first launch choose **Continue as guest** (or type a few research keywords,
-> e.g. "genomics, machine learning"): Home, World, Grow and Chances then work fully. Signing in with GitHub is optional
-> and only adds features that read the user's own GitHub account (Live, People, My GitHub, Signals). Signals also
-> needs a second, single-repository GitHub token the user creates themselves, so reviewers are not expected to test it;
-> its terms are at https://mygeeky.org/terms.html.
+> No sign-in is needed. On first launch tap Start, then Skip for now (GitHub) and Skip for now (ORCID). On the last
+> step type a few keywords (e.g. genomics, statistics, machine learning) or tap Continue without. Then open the orbit on
+> Home: Home, You, Grow (Skills, Protocols with quizzes, Learn, Data), World (News, Research, AI models), Chances
+> (Seasons, Jobs, Funding, Conferences) and Help all work fully. Nothing is paid.
+
+(The Console's *Sign in details*, set 1 "Guest mode", 424 characters: paste the text above when the build with the new
+start, 1.18.1 or later, is uploaded. Until then the 1.18.0 build in review still has *Continue as guest*. Set 2, the
+optional GitHub / ORCID / QR codes, is unchanged.)
 
 **Government app / Financial features / Health**: No.
 

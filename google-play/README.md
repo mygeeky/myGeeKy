@@ -16,7 +16,7 @@ never committed (`.gitignore`).
 | Signals terms (user content) | https://mygeeky.org/terms.html | ✅ live |
 | Data safety answers | `LISTING.md` → Data safety | ✅ checked against the code |
 | Content rating (IARC), ads, target audience, news app | `LISTING.md` → App content | ✅ (audience, news: you decide) |
-| App access (note for the reviewer) | `LISTING.md` → App access | ✅ *Continue as guest* |
+| App access (note for the reviewer) | `LISTING.md` → App access | ✅ Start → Skip → Skip → keywords or *Continue without* (from 1.18.1) |
 | The developer account, the closed test (12 testers × 14 days) | `ACCOUNT.md` | your steps |
 
 ## Build the bundle

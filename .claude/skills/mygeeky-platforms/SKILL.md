@@ -86,7 +86,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `components/field-map.tsx`, `interest-map.tsx`, `model-plots.tsx` | `gui/signals_ui.py`, `gui/qt_panel.py` |
 | `ideas.ts` (+ `components/idea-sheet.tsx`) | `ideas.py` (+ `IdeaDialog` in `gui/qt_panel.py`) |
 | `tour.ts` (+ `components/tour-overlay.tsx`, `components/help-view.tsx`, `app/home.tsx` `tourGo`) | `tour.py` (+ `gui/tour_ui.py`, `gui/help_ui.py`, `gui/qt_panel.py` `tour_go`/`tour_rect`) |
-| `app/setup.tsx`, `components/setup-steps.tsx`, `signin.tsx` | `gui/setup_wizard.py`, `setup_api.py` |
+| `app/setup.tsx`, `signin.tsx` | `gui/setup_wizard.py`, `setup_api.py` |
 
 Phone-only plumbing (no desktop side): `net.ts`, `prefs.ts`, `sections.ts`.
 

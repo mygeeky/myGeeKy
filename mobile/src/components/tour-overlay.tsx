@@ -27,7 +27,7 @@ let moves: Moves | null = null;
 const loadMoves = (): Moves => (moves ??= require('../data/geekoc_moves.json') as Moves);   // only once a tour opens
 
 /** GeeKOc in one pose, his arms swimming (tools/geekoc_poses.py made the frames); still with reduce motion. */
-function GeekMover({ pose, size }: { pose: string; size: number }) {
+export function GeekMover({ pose, size }: { pose: string; size: number }) {
   const m = loadMoves();
   const p = m.poses[pose] ?? m.poses.wave;
   const frames = useMemo(() => p.frames.map((f) => `<svg viewBox="${m.viewBox}">${f.map((i) => p.parts[i]).join('')}</svg>`), [p, m.viewBox]);

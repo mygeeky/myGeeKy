@@ -63,15 +63,52 @@ for (const [name, face] of Object.entries(poses)) {
     out[name].push(G.markup(G.build({ pose, face, still: true }), { id: 'gm' + name }));
   }
 }
+// The phone's welcome: GeekOc jet-swims. The mantle fills (arms open like an umbrella, he drifts down), squeezes
+// shut (the arms snap into one streamlined bundle, water leaves the siphon as bubbles, he shoots up), then he glides
+// and sinks while it refills. JET_FRAMES at the same fps as the rest.
+const ease = (x) => x * x * (3 - 2 * x), lerp = (a, b, t) => a + (b - a) * t;
+const open = { ...G.POSES.jet, face: 'happy' };
+const shut = { len: 1.06, face: 'happy', swing: [-36, -27, -17, -7, 7, 17, 27, 36], curl: [16, 12, 9, 6, -6, -9, -12, -16] };
+const J = +process.argv[4];
+out.jet = [];
+for (let f = 0; f < J; f++) {
+  const u = f / J;
+  let fill, arms, y, puff = -1;
+  if (u < 0.55) { const k = ease(u / 0.55); fill = k; arms = k; y = lerp(0, 12, k); }
+  else if (u < 0.68) { const k = ease((u - 0.55) / 0.13); fill = lerp(1, -0.7, k); arms = 1 - k; y = lerp(12, -30, k); puff = k * 0.4; }
+  else { const k = (u - 0.68) / 0.32; fill = lerp(-0.7, 0, ease(k)); arms = 0.15 * ease(k); y = lerp(-30, 0, ease(k)); puff = 0.4 + k * 0.6; }
+  let svg = G.markup(G.build({ pose: G.mix(shut, open, arms), face: 'happy', still: true, head: 0.98 * (1 + 0.07 * fill), at: [0, y] }),
+                     { id: 'gmjet' });
+  if (puff >= 0) {
+    const by = 520 + y;
+    svg += '<g fill="none" stroke="#9fe6ff" stroke-width="6" opacity="' + (1 - puff).toFixed(2) + '">' +
+      [[0, 0, 16], [-22, 30, 11], [20, 54, 13], [-8, 80, 9]].map(([dx, dy, r]) => '<circle cx="' + Math.round(310 + dx * (1 + puff)) +
+        '" cy="' + Math.round(by + dy * (0.4 + puff * 1.2)) + '" r="' + Math.round(r * (0.6 + puff * 0.7)) + '"/>').join('') + '</g>';
+  }
+  out.jet.push(svg);
+}
 process.stdout.write(JSON.stringify(out));
 """
+JET_FRAMES = 20
+
+
+def _thin(m: re.Match) -> str:
+    d = m.group(1)
+    if "C" in d or "Q" in d:
+        return m.group(0)
+    closed = d.endswith("Z")
+    pts = (d[:-1] if closed else d).split("L")
+    if len(pts) < 12:
+        return m.group(0)
+    keep = [p for i, p in enumerate(pts) if i % 2 == 0 or i == len(pts) - 1]
+    return 'd="M' + "L".join(keep) + ("Z" if closed else "") + '"'
 
 
 def moves() -> dict[str, object]:
     """Each pose as its pieces (one SVG element each, coordinates in whole units: plenty at the size he's drawn)
     and its frames as lists of pieces: the body, face and glasses are the same in every frame, so they're kept
     once. A frame is "".join(parts[i] for i in frame)."""
-    drawn = json.loads(subprocess.run(["node", "-e", MOVE, str(KIT), json.dumps(MOVES), str(FRAMES)], check=True,
+    drawn = json.loads(subprocess.run(["node", "-e", MOVE, str(KIT), json.dumps(MOVES), str(FRAMES), str(JET_FRAMES)], check=True,
                                       capture_output=True, text=True).stdout)
     poses = {}
     for name, frames in drawn.items():
@@ -81,6 +118,8 @@ def moves() -> dict[str, object]:
         for markup in frames:
             markup = re.sub(r"-?\d+\.\d+", lambda m: (str(round(float(m.group()))) if abs(float(m.group())) >= 2
                                                        else m.group()), markup)   # gradient stops stay as they are
+            if name == "jet":                       # the welcome's loop: every other point of an arm's outline is plenty
+                markup = re.sub(r'd="M([^"]+)"', _thin, markup)
             row = []
             for piece in re.split(r"(?=<)", markup):
                 if piece:

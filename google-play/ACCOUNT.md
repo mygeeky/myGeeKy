@@ -81,7 +81,7 @@ Setup → API access): a credential, so your password manager only, never the re
 ## The two that get apps rejected
 
 - **App access.** A reviewer cannot sign in with GitHub, and doesn't need to: the note in `LISTING.md` tells
-  them to choose *Continue as guest*, which opens everything but the parts that read their own GitHub account.
+  them to tap Start, skip GitHub and ORCID, and type a few keywords or *Continue without* (1.18.0 still says *Continue as guest*), which opens everything but the parts that read their own GitHub account.
 - **Screenshots.** Play rejects screenshots with a device frame drawn around them. The ones in `screenshots/`
   (22 October 2026, app 1.17.1) have none.
 

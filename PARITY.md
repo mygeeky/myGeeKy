@@ -5,6 +5,10 @@ platforms; remove it when the last one is done. See `.claude/skills/mygeeky-plat
 
 ## Pending
 
+- 2026-10-26 · **The new start, one question a screen** (Welcome with GeeKOc → GitHub, skip → ORCID, skip → "Can you
+  give me one of these?" three keywords / a CV / an ORCID iD, each unfolding, or *Continue without*): done on the phone
+  (`app/setup.tsx`); the computer's setup wizard (`gui/setup_wizard.py`) still has its own pages and *Continue as
+  guest*, and asks for at least one thing. Behind: the computer.
 - 2026-10-18 · **People without a GitHub account**: on the desktop, People still finds people from your field (the
   "field half", by searching repos in your field); on the phone, People needs GitHub. So the tab order differs too:
   the desktop moves Activity and Signals last, the phone also Live and People (`tab-order.ts`). Behind: the phone.

@@ -18,6 +18,7 @@ export type Settings = {
   interests: Record<string, number>;
   field: string[];
   desktopBadges: string[];
+  started?: boolean;          // the start was finished, even with nothing given (myGeeKy then learns from what you open)
 };
 
 export const DEFAULT_SETTINGS: Settings = {
