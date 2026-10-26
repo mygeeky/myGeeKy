@@ -91,3 +91,27 @@ no server. That is the careful answer; "collects nothing" reads better and is th
 an app pulled later.
 
 **Realistically three to four weeks** from signing up to a public listing, nearly all of it waiting.
+
+## Google Drive sign-in (Google Cloud project, set up 26 Oct 2026; for ideas 36–37)
+
+- **Project:** `myGeeKy` in console.cloud.google.com, Google Drive API enabled. Domain `mygeeky.org` verified in
+  Search Console (a TXT record in Cloudflare DNS, added by Google's Cloudflare button: **never remove it**).
+- **Consent screen** (Google Auth Platform): External, **In production**, brand verified and published. Home page,
+  `privacy.html` (its *Google Drive (optional)* section and the Limited Use sentence are what Google checks) and
+  `terms.html`; authorised domain `mygeeky.org`; no logo yet (adding one re-checks the brand).
+- **One scope only: `drive.appdata`** (non-sensitive). The "100 user cap" shown on the Audience page counts only
+  unapproved sensitive or restricted scopes, so it doesn't apply. **Never add another scope**: `drive` is restricted
+  (verification plus a yearly paid security assessment).
+- **Clients:**
+  - Desktop app `myGeeKy desktop`: ID `897067171099-a87clp5keoh0lh1e7afsdfkd70c43iob.apps.googleusercontent.com`;
+    its JSON (with the secret, which Google treats as not confidential for desktop apps) is kept outside the repo in
+    `~/.config/mygeeky-google/client.json` (mode 600).
+  - Android, package `org.mygeeky.app`, one client per signing key (their client IDs end `-ekoba3goh4…`,
+    `-15fdu87hr5…` and `-6ndflk23m1…`, in the order they were made; the JSON files, which hold no secret, are in
+    `~/.config/mygeeky-google/android-*.json`; the console shows which SHA-1 each one has):
+
+    | Client | Key | SHA-1 |
+    |---|---|---|
+    | myGeeKy Play | Play app signing key (Play Console → App integrity → App signing) | `A4:BD:C7:07:4C:FA:0E:08:01:F2:03:A5:94:C6:79:53:45:A7:51:13` |
+    | myGeeKy upload | upload key `~/.config/mygeeky-play/upload-keystore.jks` | `8C:1B:B2:0C:C6:C5:BD:F4:A4:20:6C:F7:E0:43:CB:D5:C5:2A:EA:1C` |
+    | myGeeKy debug | `mobile/android/app/debug.keystore` (emulator dev builds) | `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25` |
