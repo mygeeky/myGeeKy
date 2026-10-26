@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Datasets open when you click them** (computer). A dataset on Home, the "new datasets" banner's list and every card in Grow → Data did nothing: Zenodo, Figshare and NCBI weren't on the panel's list of links it may open. Now the checked datasets in Data (their page, download and tutorial) and the ones the dataset radar found on those sites open in your browser; any other link stays blocked as before.
 - **No more false "hard crash" reports on Windows** (computer). Windows raises some errors inside its own COM and accessibility code and handles them itself (code 0x8001010d, seen while the intro played on Windows 11), but Python's crash recorder writes them down anyway, and myGeeKy then offered them on the next start as "the program closed". These are no longer counted, and a panel that closed normally now says so in its log, so only a real crash is offered.
 - **Grow opens on Skills** (computer and phone). Highlights moved to the end of Grow until there are more of them, and 🤝 Collaborators is hidden for now: it matches you with other myGeeKy users on Signals, and there are still too few for it to find anyone. GeeKOc's Grow tour follows the new order.
 

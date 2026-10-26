@@ -2226,7 +2226,25 @@ def _curated_link(url: str) -> bool:
         for p in protocols.reviewed(data) + [e["protocol"] for e in protocols.mine().values()]:
             if any(url == it["url"] for st in p["stages"] for it in st["items"]):
                 return True
+        return _dataset_link(url)
+    except Exception:
         return False
+
+
+RADAR_HOSTS = ("zenodo.org", "figshare.com", "www.ncbi.nlm.nih.gov")   # where the dataset radar searches
+
+
+def _dataset_link(url: str) -> bool:
+    """A dataset in Grow → Data (the checked list: its page, download and tutorial), or one the radar found on
+    your keywords, if it's on a site the radar searches (it comes from those sites' answers, not from us)."""
+    try:
+        from urllib.parse import urlsplit
+        from .. import datasets
+        if any(url in (d.get("url"), d.get("download"), d.get("tutorial")) for d in datasets.load().get("datasets") or []):
+            return True
+        host = urlsplit(url).hostname or ""
+        on_site = url.startswith("https://") and any(host == h or host.endswith("." + h) for h in RADAR_HOSTS)
+        return on_site and any(url == it.get("url") for it in datasets.radar_load().get("items") or [])
     except Exception:
         return False
 
