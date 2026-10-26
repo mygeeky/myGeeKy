@@ -2226,7 +2226,16 @@ def _curated_link(url: str) -> bool:
         for p in protocols.reviewed(data) + [e["protocol"] for e in protocols.mine().values()]:
             if any(url == it["url"] for st in p["stages"] for it in st["items"]):
                 return True
-        return _dataset_link(url)
+        return _dataset_link(url) or _lights_link(url)
+    except Exception:
+        return False
+
+
+def _lights_link(url: str) -> bool:
+    """A 🌟 Leading light's Google Scholar profile or the source of why they're on the list."""
+    try:
+        from .. import lights
+        return any(url and url in (p["scholar"], p["source"]) for p in lights.load()["people"])
     except Exception:
         return False
 
@@ -2247,6 +2256,15 @@ def _dataset_link(url: str) -> bool:
         return on_site and any(url == it.get("url") for it in datasets.radar_load().get("items") or [])
     except Exception:
         return False
+
+
+def lights_weights(cfg: MyGeekyConfig) -> dict[str, float]:
+    """🌟 Leading lights are picked by your Model: your keywords, topics and what it learned."""
+    try:
+        from .. import interests
+        return interests.profile_terms(cfg)
+    except Exception:
+        return {}
 
 
 def open_link(url: str) -> bool:

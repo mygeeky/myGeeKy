@@ -94,7 +94,8 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     people: { id: 'people', label: 'People', icon: 'people-outline', tab: 'people' },
     researchers: { id: 'researchers', label: 'Researchers', icon: 'school-outline', tab: 'researchers', children: [
       leaf('researchers', 'new', 'New work', 'sparkles-outline'), leaf('researchers', 'following', 'Following', 'people-outline'),
-      leaf('researchers', 'suggested', 'Suggested', 'bulb-outline'), leaf('researchers', 'network', 'Network', 'git-network-outline')] },
+      leaf('researchers', 'suggested', 'Suggested', 'bulb-outline'), leaf('researchers', 'lights', 'Leading lights', 'star-outline'),
+      leaf('researchers', 'network', 'Network', 'git-network-outline')] },
     activity: { id: 'activity', label: 'Activity', icon: 'pulse-outline', tab: 'activity' },
     signals: { id: 'signals', label: 'Signals', icon: 'radio-outline', tab: 'signals' },
   };

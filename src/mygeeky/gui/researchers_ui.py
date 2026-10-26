@@ -1,6 +1,6 @@
 """Circle → 📄 Researchers, in the panel: 🆕 New work from the people you follow (preprints first, a preprint and its
 published version as one), 👥 Following (find anyone by name, the "is this the right one?" check, and the list), and
-✨ Suggested (who cites you, who leads your field's rising papers). The parts are planets in the navigation, not tabs
+✨ Suggested (who cites you, who leads your field's rising papers), and 🌟 Leading lights (lights_ui.py). The parts are planets in the navigation, not tabs
 in the page. researchers.py does the reading; the phone shows the same (components/researchers-view.tsx). Titles and
 names come from OpenAlex, so they're plain text.
 """
@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButt
 from .. import researchers as rs
 
 PARTS = [("new", "New work", "🆕"), ("following", "Following", "👥"), ("suggested", "Suggested", "✨"),
-         ("network", "Network", "🕸")]
+         ("lights", "Leading lights", "🌟"), ("network", "Network", "🕸")]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
@@ -124,10 +124,14 @@ class NetworkMap(QWidget):
 class ResearchersPage(QScrollArea):
     def __init__(self, theme: Callable[[], dict[str, Any]], run_async: Callable[..., None],
                  on_open: Callable[[str], Any], suggested: Callable[[], list[dict[str, Any]]],
-                 me: Callable[[], str] = lambda: "") -> None:
+                 me: Callable[[], str] = lambda: "", weights: Callable[[], dict[str, float]] = lambda: {}) -> None:
         super().__init__()
         self.theme, self.run_async, self.on_open, self.suggested, self.me = theme, run_async, on_open, suggested, me
+        self.weights = weights
         self.part, self.candidates, self.note, self.picked = "new", [], "", ""
+        self.lights_recent: dict[str, list[dict[str, Any]]] = {}       # 🌟: the latest papers of those on show
+        self.lights_for: tuple[str, ...] = ()
+        self._lights: list[dict[str, Any]] | None = None
         self._network_asked = False
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -177,7 +181,7 @@ class ResearchersPage(QScrollArea):
         b.setStyleSheet(f"QPushButton {{ background:{t['accent'] if accent else t['section_btn']}; "
                         f"color:{t['on_accent'] if accent else t['text']}; "
                         "border:none; border-radius:8px; padding:4px 10px; font-size:11px; }")
-        b.clicked.connect(fn)
+        b.clicked.connect(lambda _checked=False: fn())   # not fn itself: Qt would hand it `checked` as its first argument
         return b
 
     def _card(self) -> tuple[QFrame, QVBoxLayout]:
@@ -293,6 +297,9 @@ class ResearchersPage(QScrollArea):
                                            "your circle (switched off). It would add: ") + (top or "nothing yet") + ".", muted))
                 self.lay.addWidget(self._btn("Stop learning from my circle" if on else "Learn from my circle",
                                              lambda: (rs.set_circle(not on), self.render())), 0, Qt.AlignLeft)
+        elif self.part == "lights":
+            from . import lights_ui
+            lights_ui.render(self, muted, text)
         else:
             self.lay.addWidget(_label("People worth following, from what myGeeKy already read: who cites your work, and "
                                       "who leads the papers rising in your field.", muted))
@@ -336,6 +343,34 @@ class ResearchersPage(QScrollArea):
         self.note = f"Following {person['name']}. Their new work appears in 🆕 New work."
         self.render()
         self.run_async(lambda: rs.refresh(), lambda _out: self.render())
+
+    # ---- 🌟 Leading lights
+    def lights_people(self) -> list[dict[str, Any]]:
+        if self._lights is None:
+            from .. import lights
+            self._lights = lights.load()["people"]
+        return self._lights
+
+    def lights_got(self, out: dict[str, Any]) -> None:
+        self.lights_recent = out.get("recent") or {}
+        if out.get("busy") and not self.lights_recent:
+            self.note = "OpenAlex is resting for now (its daily budget): their latest papers come later."
+        if self.part == "lights":
+            self.render()
+
+    def light_report(self, person: dict[str, Any]) -> None:
+        from .. import lights
+        from .lights_ui import ReportDialog
+        self.note = f"Reading {person['name']}'s record…"
+        self.render()
+
+        def done(out: dict[str, Any]) -> None:
+            self.note = "" if out.get("ok") else "OpenAlex is resting for now (its daily budget). Try again later."
+            self.render()
+            if out.get("ok"):
+                ReportDialog(person, out["report"], self.theme(), self.on_open, self).exec()
+        weights = self.weights()
+        self.run_async(lambda: lights.fetch_report(person["id"], weights), done)
 
     def pick(self, nid: str) -> None:
         self.picked = nid

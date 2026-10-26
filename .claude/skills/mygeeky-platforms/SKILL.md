@@ -80,6 +80,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `nav-tree.ts` (+ `components/orbit-zoom.tsx`, the folded dock in `app/home.tsx`) | `navtree.py` (+ `gui/qt_panel.py` `panel_tree`, `_nav_tap`, the planet row) |
 | `tokens.ts` | `tokens.py`, `token_check.py` |
 | `wins.ts` | `wins.py` |
+| `lights.ts` (+ `components/lights-view.tsx`) | `lights.py` (+ `gui/lights_ui.py`, `gui/researchers_ui.py` `light_report`) |
 | `cited-by.ts` (+ `components/cited-by-view.tsx`) | `citedby.py` (+ `gui/citedby_ui.py`, `gui/app.py` `cited_by`) |
 | `word-suggest.ts` | `keywords.py` (`suggest`, `pick`) + `gui/word_suggest.py` |
 | `components/field-map.tsx`, `interest-map.tsx`, `model-plots.tsx` | `gui/signals_ui.py`, `gui/qt_panel.py` |
@@ -110,6 +111,7 @@ The desktop file is the source; the phone copy must be identical or generated fr
 | `src/mygeeky/data/geekoc_moves.json` | `mobile/src/data/geekoc_moves.json` (identical) | `tools/geekoc_poses.py` writes both; `test_tour.py` |
 | `src/mygeeky/data/tour.json` | `mobile/src/data/tour.json` (identical) | `test_tour.py` |
 | `src/mygeeky/data/docread.json` | `mobile/src/data/docread.json` (identical) | `test_docread.py` |
+| `src/mygeeky/data/lights.json` | `mobile/src/data/lights.json` (identical) | `tools/lights_build.py` drafts, the maker checks; `test_lights.py` |
 | `src/mygeeky/data/ai_race.json` | `mobile/src/data/ai_race.json` (identical) | `airace.save()` / `.github/workflows/ai-race.yml` write both; `test_airace.py` |
 | `src/mygeeky/data/datasets.json` | `mobile/src/data/datasets.json` (identical) | `datasets.save()` / `.github/workflows/datasets.yml` write both; `test_datasets.py` |
 | `src/mygeeky/data/skill_trends.json` | `mobile/src/data/skill_trends.json` (identical) | `skilltrends.save()` / `.github/workflows/skill-trends.yml` write both; `test_growth.py` |
@@ -130,7 +132,7 @@ file in Node (phone-only packages swapped for stand-ins), so a new matching test
 ```
 
 `test_phone_seasons_match_desktop.py`, `test_phone_signals_match_desktop.py` and
-`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py`, `test_phone_month_match_desktop.py`, `test_highlights.py`, `test_notify.py`, `test_whois.py`, `test_docread.py`, `test_airace.py`, `test_learn_locally.py`, `test_tab_order.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
+`test_phone_reviewed_match_desktop.py`, `test_phone_ideas_match_desktop.py`, `test_phone_month_match_desktop.py`, `test_highlights.py`, `test_notify.py`, `test_whois.py`, `test_docread.py`, `test_airace.py`, `test_learn_locally.py`, `test_tab_order.py`, `test_lights.py` run the phone's real TypeScript in Node (copied into `mobile/.crosscheck/`,
 imports given their `.ts` ending) on the same inputs as the Python and compare the answers. They need **Node 22.6+**
 (`node --experimental-strip-types`) and skip without it: if pytest reports them as *skipped*, the phone was not
 checked, so say so instead of calling the change verified. When you change a shared

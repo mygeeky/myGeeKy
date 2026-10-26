@@ -1,6 +1,6 @@
 // Circle → 📄 Researchers: 🆕 New work from the people you follow (preprints first, a preprint and its published version
 // as one), 👥 Following (find anyone by name, with the "is this the right one?" check), ✨ Suggested (who cites you, who
-// leads your field's rising papers). The parts are planets in the navigation, not tabs here -- the desktop's
+// leads your field's rising papers), 🌟 Leading lights (lights-view.tsx). The parts are planets in the navigation, not tabs here -- the desktop's
 // gui/researchers_ui.py. lib/researchers.ts does the reading.
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -12,6 +12,7 @@ import * as R from '../lib/researchers';
 import type { Candidate } from '../lib/whois';
 import { C } from '../lib/theme';
 import { GeekLoader } from './geek-loader';
+import { LightsView } from './lights-view';
 import { Empty, open } from './ui';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -185,6 +186,8 @@ export function ResearchersView({ part }: { part: string }) {
           </View>
         );
       })() : null}
+
+      {part === 'lights' ? <LightsView following={new Set(state.following.map((p) => p.id))} onFollow={follow} /> : null}
 
       {part === 'suggested' ? <>
         <Text style={st.muted}>People worth following, from what myGeeKy already read: who cites your work, and who leads the papers rising in your field.</Text>

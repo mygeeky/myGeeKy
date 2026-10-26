@@ -289,6 +289,13 @@ Circle → **📄 Researchers** (the computer and the phone) is for people who p
 - **✨ Suggested:** who cites your work (from You → Cited by) and who leads the papers rising in your field (from
   World → Papers). Both were already read, so suggesting costs nothing.
 
+- **🌟 Leading lights:** living people who lead your field: Nobel and other prize winners, the most cited on a topic,
+  and the people behind famous tools. Your Model picks four who fit you, and a new set comes every three days, going
+  round everyone who fits before anyone comes back. Each shows why they're here, their latest papers, Follow, and a link
+  to their Google Scholar (or ORCID / OpenAlex) profile. Tap a name for their report: papers, citations, h-index and
+  i10-index, the last ten years as a chart, their topics (yours marked ★), their most cited papers and where they work.
+  It costs about one OpenAlex credit a set and one a report. The list is checked by hand; *Report a mistake* says if
+  someone is wrong, has moved or has passed away.
 - **🕸 Network:** you in the middle, your co-authors around you, the people one introduction away outside, and
   the people you follow in orange, with lines where people have written together. Tap anyone to see who connects you
   ("you → Ada → Grace") and follow them. It's built from your papers (ORCID or "Find my papers") and rebuilt weekly
