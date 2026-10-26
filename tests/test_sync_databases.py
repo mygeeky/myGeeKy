@@ -14,7 +14,7 @@ pytestmark = pytest.mark.skipif(not shutil.which("git"), reason="needs git")
 
 
 def _git(cwd, *args):
-    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout
+    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True, timeout=120).stdout
 
 
 def _computer(path, remote):

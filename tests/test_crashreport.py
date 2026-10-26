@@ -28,7 +28,8 @@ def hooks():
     yield
     sys.excepthook, threading.excepthook = saved
     import faulthandler
-    faulthandler.disable()
+    faulthandler.disable()                     # install() pointed it at a log file in tmp_path...
+    faulthandler.enable(file=sys.__stderr__, all_threads=True)   # ...so the rest of the run still dumps a hard crash
     if crashreport._fatal_handle:
         crashreport._fatal_handle.close()
         crashreport._fatal_handle = None
@@ -84,7 +85,7 @@ def test_a_hard_crash_is_reported_on_the_next_start(tmp_path, hooks):
     code = ("import sys, faulthandler; sys.path.insert(0, sys.argv[2]); from mygeeky import crashreport; "
             "from pathlib import Path; crashreport.install(Path(sys.argv[1])); faulthandler._sigsegv()")
     src = str(Path(crashreport.__file__).parents[1])
-    r = subprocess.run([sys.executable, "-c", code, str(tmp_path), src], capture_output=True)
+    r = subprocess.run([sys.executable, "-c", code, str(tmp_path), src], capture_output=True, timeout=120)
     assert r.returncode != 0 and crashreport.pending(tmp_path) == []
     crashreport.install(tmp_path)                                  # the next start
     [report] = crashreport.pending(tmp_path)
@@ -125,7 +126,7 @@ def test_a_hard_crash_carries_what_qt_said_just_before_it(tmp_path, hooks):
             "(log / 'qt.log').write_text('2026-10-12 09:00:00 QtCriticalMsg: QPainter::begin: no device'); "
             "os.write(2, b'QThread: Destroyed while thread is still running'); os.abort()")
     src = str(Path(crashreport.__file__).parents[1])
-    r = subprocess.run([sys.executable, "-c", code, str(tmp_path), src], capture_output=True)
+    r = subprocess.run([sys.executable, "-c", code, str(tmp_path), src], capture_output=True, timeout=120)
     assert r.returncode != 0
     crashreport.install(tmp_path)                                  # the next start
     [report] = crashreport.pending(tmp_path)

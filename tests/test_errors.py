@@ -8,7 +8,7 @@ from mygeeky import errors
 
 def _launch_missing(program="definitely-not-a-real-program-xyz"):
     try:
-        subprocess.run([program, "--version"], capture_output=True)
+        subprocess.run([program, "--version"], capture_output=True, timeout=120)
     except FileNotFoundError as exc:   # the bare "[WinError 2] The system cannot find the file specified"
         return exc
     pytest.skip("the program unexpectedly exists")

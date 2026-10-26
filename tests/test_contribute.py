@@ -124,7 +124,7 @@ def sync_env(tmp_path, monkeypatch):
     from mygeeky import sync
 
     bare = tmp_path / "remote.git"
-    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(bare)], check=True)
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(bare)], check=True, timeout=120)
     monkeypatch.setattr(sync, "_has_gh", lambda: False)
     monkeypatch.setattr(sync, "_repo_exists", lambda repo: True)
     monkeypatch.setattr(sync, "_repo_is_private", lambda repo: True)

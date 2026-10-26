@@ -31,7 +31,7 @@ DAY = date(2026, 10, 15)          # fixed, or the two sides would disagree whene
 def _ready() -> bool:
     if not shutil.which("node") or not (MOBILE / "src" / "lib" / "seasons.ts").exists():
         return False
-    v = subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip().lstrip("v").split(".")
+    v = subprocess.run(["node", "--version"], capture_output=True, text=True, timeout=120).stdout.strip().lstrip("v").split(".")
     return len(v) > 1 and v[0].isdigit() and v[1].isdigit() and (int(v[0]), int(v[1])) >= (22, 6)   # runs TypeScript
 
 
@@ -70,7 +70,7 @@ def phone() -> dict:
     runner = WORK / "seasons-side.ts"
     runner.write_text(SCRIPT, encoding="utf-8")
     out = subprocess.run(["node", "--experimental-strip-types", str(runner), DAY.isoformat(), str(LISTS)],
-                         capture_output=True, text=True, cwd=str(MOBILE))
+                         capture_output=True, text=True, cwd=str(MOBILE), timeout=120)
     if out.returncode != 0:
         pytest.fail(f"the phone's seasons.ts would not run:\n{out.stderr[-2000:]}")
     return json.loads(out.stdout.strip().splitlines()[-1])

@@ -123,10 +123,10 @@ def test_on_a_mac_the_bundle_passes_apples_own_checks(tmp_path, monkeypatch):
     import subprocess
     app = tmp_path / "myGeeKy.app"
     desktop.build_app_bundle(app)
-    assert subprocess.run(["plutil", "-lint", str(app / "Contents" / "Info.plist")]).returncode == 0
+    assert subprocess.run(["plutil", "-lint", str(app / "Contents" / "Info.plist")], timeout=120).returncode == 0
     out = tmp_path / "check.iconset"
     assert subprocess.run(["iconutil", "-c", "iconset", str(app / "Contents" / "Resources" / "myGeeKy.icns"),
-                           "-o", str(out)]).returncode == 0
+                           "-o", str(out)], timeout=120).returncode == 0
     assert len(list(out.glob("*.png"))) >= 5
 
 

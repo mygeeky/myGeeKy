@@ -51,7 +51,7 @@ LADDER = [0, 49, 50, 208, 740, 3499, 3500, 9000]
 def _node() -> bool:
     if not shutil.which("node"):
         return False
-    v = subprocess.run(["node", "--version"], capture_output=True, text=True).stdout.strip().lstrip("v").split(".")
+    v = subprocess.run(["node", "--version"], capture_output=True, text=True, timeout=120).stdout.strip().lstrip("v").split(".")
     return len(v) > 1 and v[0].isdigit() and v[1].isdigit() and (int(v[0]), int(v[1])) >= (22, 6)
 
 
