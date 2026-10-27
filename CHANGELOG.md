@@ -6,6 +6,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 ## Unreleased
 
 - **The logo reads on the light theme** (computer). The opening animation's neon, half-transparent letters faded into a light background; on Frosted they now stand on the app icon's dark badge. The header's "myGeeKy" takes the theme's title colour.
+- **Badges read on the light theme** (computer and phone). A badge's inside was see-through, which looked faint on Frosted; it is now a solid shade of its tier's colour (gold, silver, bronze), and the ring and the tier's word are darkened until they show. On the dark themes the tier's colour glows through the inside.
 - **Every text follows the theme, not the computer** (computer): the panel now gives Qt the theme's colours and font, so any label, field, menu, tooltip or dialog that doesn't choose its own colour follows the theme. On a computer set to dark mode, some texts were white on Frosted. Each theme also names its font (the system's own UI font first), so the panel looks the same everywhere. The theme check now runs under a "hostile" system colour (white text under a light theme, black under a dark one), so anything that slips back to the computer's colour is caught.
 
 ## 0.39.0 (2026-10-27): What's new, a way back you can see, and the maker's Admin console (phone 1.21.0)

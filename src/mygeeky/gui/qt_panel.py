@@ -8955,12 +8955,24 @@ class MyGeekyPanel(QWidget):
 
     def _badge_icon(self, b: dict[str, Any], size: int = 22, locked: bool = False) -> QLabel:
         from ..achievements import TIER_COLORS
+        theme = THEMES[self._theme_name()]
         icon = QLabel(b["emoji"])
         icon.setFixedSize(size, size)
         icon.setAlignment(Qt.AlignCenter)
-        ring = "#55556a" if locked else TIER_COLORS.get(b["tier"], "#55556a")
-        icon.setStyleSheet(f"background:{'rgba(255,255,255,0.04)' if locked else 'rgba(255,255,255,0.10)'}; "
-                           f"border:2px solid {ring}; border-radius:{size // 2}px; font-size:{int(size * 0.5)}px;")
+        tier = QColor("#8a8aa0" if locked else TIER_COLORS.get(b["tier"], "#8a8aa0"))
+        if theme.get("dark", True):
+            # on a dark theme: the tier's own colour glows through the inside, the ring at full strength
+            ring, fill = tier.name(), f"rgba({tier.red()},{tier.green()},{tier.blue()},{18 if locked else 60})"
+        else:
+            # on a light theme a see-through inside vanishes: a solid pastel of the tier's colour, and a ring deep
+            # enough to show on the light panel
+            base = QColor(theme["solid_bg"])
+            k = 0.12 if locked else 0.34
+            fill = QColor(round(base.red() + (tier.red() - base.red()) * k), round(base.green() + (tier.green() - base.green()) * k),
+                          round(base.blue() + (tier.blue() - base.blue()) * k)).name()
+            ring = logic.readable(tier.name(), theme, 2.6)
+        icon.setStyleSheet(f"background:{fill}; border:2px solid {ring}; border-radius:{size // 2}px; "
+                           f"font-size:{int(size * 0.5)}px;")
         return icon
 
     def _github_icon(self, a: dict[str, str], size: int = 22) -> QLabel:

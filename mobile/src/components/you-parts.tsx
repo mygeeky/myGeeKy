@@ -10,7 +10,7 @@ import { Achievement, earned, Earned, githubAchievements, TIER_COLORS, TIERS } f
 import { Dict, lookup } from '../lib/interests';
 import { badgeCounts, type Brain, cachedBrain, disconnectModel, localEvents, queuedUsage, savingLink, syncModel } from '../lib/model-repo';
 import { loadDictionary } from '../lib/profile';
-import { C } from '../lib/theme';
+import { C, medal } from '../lib/theme';
 
 
 export function ModelPart() {
@@ -245,11 +245,13 @@ export function BadgesPart() {
       {ranked.map((b) => (
         <Card key={b.id}>
           <View style={[s.row, { alignItems: 'center' }]}>
-            <View style={[st.medal, { borderColor: b.tier ? TIER_COLORS[b.tier] : C.line, opacity: b.tier ? 1 : 0.45 }]}>
+            <View style={[st.medal, b.tier
+              ? { borderColor: medal(TIER_COLORS[b.tier]).ring, backgroundColor: medal(TIER_COLORS[b.tier]).fill }
+              : { borderColor: C.line, opacity: 0.45 }]}>
               <Text style={{ fontSize: 20 }}>{b.emoji}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.name}>{b.name}{b.tier ? <Text style={{ color: TIER_COLORS[b.tier] }}>  {b.tier}</Text> : null}</Text>
+              <Text style={s.name}>{b.name}{b.tier ? <Text style={{ color: medal(TIER_COLORS[b.tier]).text }}>  {b.tier}</Text> : null}</Text>
               <Text style={s.small}>{b.count} {b.what}{b.next ? ` · next at ${b.next}` : ''}</Text>
             </View>
           </View>
