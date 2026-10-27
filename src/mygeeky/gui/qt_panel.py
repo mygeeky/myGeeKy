@@ -3948,7 +3948,7 @@ class MyGeekyPanel(QWidget):
             icon_of=self._rail_icon, theme=lambda: THEMES[self._theme_name()],
             pinned=bool(getattr(self.cfg, "gui_rail_pinned", False)),
             on_pin=lambda on: logic.set_rail_pinned(self.cfg, on), side=logic.rail_side(self.cfg),
-            on_change=self._render_up_button)
+            on_change=self._render_up_button, show_level=self._show_level, level=self._level_node)
         panel_layout.addWidget(self.rail_host, 1)
         self.width_grip = WidthGrip(self.panel_frame, self._resize_width_from_grip,
                                     lambda: logic.clamp_panel_width(self.cfg.gui_expanded_width),
@@ -3969,6 +3969,9 @@ class MyGeekyPanel(QWidget):
         self._tab_order = [name for name in tabs if name in pages]
         for name in self._tab_order:
             self.content_stack.addWidget(pages[name])
+        from .navrail import LevelPage
+        self.level_page = LevelPage(self.rail_host)        # a level shown in the panel: going up from a page
+        self.content_stack.addWidget(self.level_page)
         self.content_stack.setCurrentIndex(self._tab_order.index(self.active_tab))   # opens on Home
 
         outer.addWidget(self.panel_frame)
@@ -8167,6 +8170,8 @@ class MyGeekyPanel(QWidget):
             self.local_only.setStyleSheet(f"color:{logic.readable('#ffc457', theme)}; font-size:11px; background:transparent;")
         if hasattr(self, "rail_host"):
             self.rail_host.restyle()
+            if hasattr(self, "level_page"):
+                self.level_page.render()             # its title and tiles in the new theme
 
     # ------------------------------------------------------------------ the dock: groups → pages → parts
     def _nav_part(self, tab: str) -> str:
@@ -8179,6 +8184,16 @@ class MyGeekyPanel(QWidget):
     def _nav_leaf(self) -> dict[str, Any] | None:
         tab = getattr(self, "active_tab", "")
         return navtree.leaf_for(self.nav_tree, tab, self._nav_part(tab))
+
+    def _level_node(self) -> dict[str, Any] | None:
+        """The level the panel shows instead of a page (‹ Grow from Grow › Skills), or None."""
+        lp = getattr(self, "level_page", None)
+        return lp.at if lp is not None and self.content_stack.currentWidget() is lp else None
+
+    def _show_level(self, nd: dict[str, Any]) -> None:
+        self.level_page.show_level(nd)
+        self.content_stack.setCurrentWidget(self.level_page)
+        self._update_tab_styles()
 
     def _nav_tap(self, picked: str) -> None:
         leaf = self._nav_leaf()
@@ -8243,13 +8258,16 @@ class MyGeekyPanel(QWidget):
             self.nav_row.addWidget(self.nav_buttons[i], 1)
             self.nav_buttons[i].show()
         # always says where you are: the page that's open (its group › page › part)
-        leaf = self._nav_leaf()
-        self.nav_trail.setText(" \u203a ".join(n["label"] for n in navtree.path(leaf)[1:]) if leaf else "")
+        leaf = self._level_node() or self._nav_leaf()      # a level shown in the panel, else the open page
+        self.nav_trail.setText((" \u203a ".join(n["label"] for n in navtree.path(leaf)[1:]) or "All sections")
+                               if leaf else "")
         # where you are, in the open page's colour, and beside it the way up a level
-        color = logic.readable(leaf["color"], theme) if leaf else theme["text"]
+        color = logic.readable(leaf["color"], theme) if leaf and leaf is not self.nav_tree else theme["text"]
         self.nav_trail.setStyleSheet(f"color:{color}; font-size:11.5px; font-weight:700; background:transparent;")
         if hasattr(self, "rail_host"):
             self.rail_host.refresh()
+            if hasattr(self, "level_page"):
+                self.level_page.refresh()            # the tiles' counts
         self._render_up_button()
 
     def _render_up_button(self) -> None:
@@ -8283,6 +8301,8 @@ class MyGeekyPanel(QWidget):
             self.nav_buttons["settings"].set_count(self.nav_buttons["settings"]._count + todo)
         if hasattr(self, "rail_host"):
             self.rail_host.refresh()
+            if hasattr(self, "level_page"):
+                self.level_page.refresh()            # the tiles' counts
 
     def _update_tab_styles(self) -> None:
         theme = THEMES[self._theme_name()]

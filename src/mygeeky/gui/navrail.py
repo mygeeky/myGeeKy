@@ -239,10 +239,11 @@ class VerticalLabel(QWidget):
         f.setPixelSize(11)
         f.setBold(True)
         p.setFont(f)
-        p.setPen(QColor(leaf["color"]))
+        root = leaf is self.rail.host.tree                 # the panel shows all sections
+        p.setPen(QColor(self.rail.theme()["text"] if root else leaf["color"]))
         p.translate(self.width() / 2 + 5, 6)
         p.rotate(90)
-        text = p.fontMetrics().elidedText(leaf["label"], Qt.ElideRight, max(0, self.height() - 12))
+        text = p.fontMetrics().elidedText("All sections" if root else leaf["label"], Qt.ElideRight, max(0, self.height() - 12))
         p.drawText(QPointF(0, 0), text)
         p.end()
 
@@ -268,7 +269,7 @@ class NavRail(QWidget):
     icon_of = property(lambda self: self.host.icon_of)
     count_of = property(lambda self: self.host.count_of)
     dot_of = property(lambda self: self.host.dot_of)
-    leaf = property(lambda self: self.host.leaf)
+    leaf = property(lambda self: self.host.place)       # the level the panel shows, else the open page
     bg = property(lambda self: self.host.rail_bg)
 
     def tapped(self, nid: str) -> None:
@@ -390,6 +391,111 @@ class NavRail(QWidget):
         self.update()
 
 
+class LevelTile(_Clickable):
+    """One place on a level page: its tile (icon, count) and its name; › when it opens into more parts."""
+
+    def __init__(self, host: "RailHost", nd: dict[str, Any], on_click: Callable[[], None]) -> None:
+        super().__init__(on_click, nd["label"])
+        self.host, self.nd = host, nd
+        self.setFixedHeight(52)
+        self.setMinimumWidth(120)
+
+    def paintEvent(self, e) -> None:  # noqa: N802
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        theme, nd = self.host.theme(), self.nd
+        bg = QColor(theme.get("solid_bg") or "#1c1c2a")
+        card = QColor(theme["text"])
+        card.setAlpha(34 if self._hover or self.hasFocus() else 16)
+        p.setPen(Qt.NoPen)
+        p.setBrush(card)
+        p.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 12, 12)
+        path, emoji = self.host.icon_of(nd)
+        tile = QRectF(10, (self.height() - 30) / 2, 30, 30)
+        paint_tile(p, tile, QColor(nd["color"] or theme["accent"]), path, emoji, filled=False, sub=False,
+                   count=self.host.count_of(nd["id"]), dot=self.host.dot_of(nd["id"]), ring_bg=bg,
+                   ink=QColor(theme["text"]))
+        f = QFont(self.font())
+        f.setPixelSize(13)
+        f.setBold(True)
+        p.setFont(f)
+        p.setPen(QColor(theme["text"]))
+        right = self.width() - (22 if nd["children"] else 8)
+        p.drawText(QRectF(50, 0, right - 50, self.height()), Qt.AlignVCenter | Qt.AlignLeft,
+                   p.fontMetrics().elidedText(nd["label"], Qt.ElideRight, int(right - 50)))
+        if nd["children"]:
+            p.setPen(QColor(theme["text"]))
+            p.drawText(QRectF(self.width() - 20, 0, 14, self.height()), Qt.AlignCenter, "\u203a")
+        p.end()
+
+
+class LevelPage(QWidget):
+    """A level shown in the panel itself (going up from a page): the group's pages, a page's parts, or all sections,
+    each a tile with its count -- what the phone's orbit shows when you go back (components/orbit-zoom.tsx). A tile
+    opens its page, or that page's own level when it has parts."""
+
+    def __init__(self, host: "RailHost") -> None:
+        super().__init__()
+        self.host = host
+        self.at: dict[str, Any] | None = None
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background:transparent; } QScrollArea > QWidget > QWidget { background:transparent; }")
+        outer.addWidget(scroll)
+        body = QWidget()
+        scroll.setWidget(body)
+        self.lay = QVBoxLayout(body)
+        self.lay.setContentsMargins(6, 6, 6, 6)
+        self.lay.setSpacing(8)
+        from PySide6.QtWidgets import QGridLayout, QLabel
+        self.title = QLabel("")
+        self.title.setTextFormat(Qt.PlainText)
+        self.lay.addWidget(self.title)
+        self.grid = QGridLayout()
+        self.grid.setSpacing(8)
+        self.lay.addLayout(self.grid)
+        self.lay.addStretch(1)
+
+    def show_level(self, nd: dict[str, Any]) -> None:
+        self.at = nd
+        self.render()
+
+    def render(self) -> None:
+        while self.grid.count():
+            w = self.grid.takeAt(0).widget()
+            if w is not None:
+                w.hide()
+                w.deleteLater()
+        nd = self.at
+        if nd is None:
+            return
+        theme = self.host.theme()
+        root = nd is self.host.tree
+        color = QColor(theme["text"]) if root else QColor(nd["color"] or theme["accent"])
+        if not theme.get("dark", True):
+            color = color.darker(150)
+        self.title.setText("All sections" if root else nd["label"])
+        self.title.setStyleSheet(f"color:{color.name()}; font-size:17px; font-weight:800; background:transparent;")
+        cols = 2 if self.width() >= 300 else 1
+        for i, child in enumerate(nd["children"]):
+            tile = LevelTile(self.host, child, lambda c=child: self.host.go(c))
+            self.grid.addWidget(tile, i // cols, i % cols)
+
+    def refresh(self) -> None:
+        for i in range(self.grid.count()):
+            w = self.grid.itemAt(i).widget()
+            if w is not None:
+                w.update()
+
+    def resizeEvent(self, e) -> None:  # noqa: N802
+        super().resizeEvent(e)
+        if self.at is not None and (e.oldSize().width() >= 300) != (e.size().width() >= 300):
+            self.render()
+
+
 class _Scrim(QWidget):
     def __init__(self, host: "RailHost") -> None:
         super().__init__(host)
@@ -412,9 +518,12 @@ class RailHost(QWidget):
                  leaf: Callable[[], dict[str, Any] | None], count_of: Callable[[str], int],
                  dot_of: Callable[[str], bool], icon_of: Callable[[dict[str, Any]], tuple[str, str]],
                  theme: Callable[[], dict[str, Any]], pinned: bool, on_pin: Callable[[bool], None],
-                 side: str = "left", on_change: Callable[[], None] | None = None) -> None:
+                 side: str = "left", on_change: Callable[[], None] | None = None,
+                 show_level: Callable[[dict[str, Any]], None] | None = None,
+                 level: Callable[[], dict[str, Any] | None] = lambda: None) -> None:
         super().__init__()
         self.tree, self.content = tree, content
+        self._show_level, self.level = show_level, level
         self.side = "right" if side == "right" else "left"
         self._open_node, self.leaf, self.count_of, self.dot_of, self.icon_of = open_node, leaf, count_of, dot_of, icon_of
         self.theme, self._on_pin, self._on_change = theme, on_pin, on_change
@@ -511,41 +620,81 @@ class RailHost(QWidget):
             self.state.open = False
         self.apply()
 
-    def up_target(self) -> dict[str, Any] | None:
-        """Where "up a level" goes from here -- {"label", "color"} -- or None on Home (nothing above it). Closed, the
-        menu first opens at the level above your page (Grow's pages around Skills); open, it climbs one level each
-        time: a page's parts, its group, all sections, then Home."""
-        s, leaf = self.state, self.leaf()
-        home = next((g for g in self.tree["children"] if not g["children"]), None)
-        if not s.open:
-            path = navtree.path(leaf) if leaf else []
-            above = path[-2] if len(path) >= 3 else None
-            return {"label": above["label"], "color": above["color"]} if above else None
-        if s.open_page:
-            g = navtree.find(self.tree, s.open_group or "")
-            return {"label": g["label"], "color": g["color"]} if g else None
-        if s.open_group:
-            return {"label": "All sections", "color": self.theme()["accent"]}
-        if leaf is not None and home is not None and leaf["id"] == home["id"]:
+    def place(self) -> dict[str, Any] | None:
+        """Where the panel is: the level it shows (‹ Grow), else the page that's open."""
+        return self.level() or self.leaf()
+
+    def _home(self) -> dict[str, Any] | None:
+        return next((g for g in self.tree["children"] if not g["children"]), None)
+
+    def _from(self) -> tuple[dict[str, Any] | None, bool]:
+        """Where "up" starts from, and whether that is a page: the menu's level when it's open, else the level the
+        panel shows, else the page you're on."""
+        s = self.state
+        if s.open:
+            nid = s.open_page or s.open_group
+            return (navtree.find(self.tree, nid) if nid else self.tree), False
+        if self.level() is not None:
+            return self.level(), False
+        return self.leaf(), True
+
+    def _target(self) -> dict[str, Any] | None:
+        """The level above where you are (the tree's root is "all sections"), Home above all sections, or None."""
+        frm, is_page = self._from()
+        if frm is None:
             return None
-        return {"label": home["label"], "color": home["color"]} if home else None
+        if frm is self.tree:
+            leaf, home = self.leaf(), self._home()
+            return None if self.level() is None and leaf is not None and home is not None and leaf["id"] == home["id"] \
+                else home
+        above = frm["parent"]
+        if is_page and above is self.tree:                 # 🏠 Home: nothing above it
+            return None
+        return above
+
+    def up_target(self) -> dict[str, Any] | None:
+        """Where "up a level" goes from here -- {"label", "color"} -- or None on Home (nothing above it): a page's
+        group (Grow, from Grow › Skills), then all sections, then Home."""
+        to = self._target()
+        if to is None:
+            return None
+        if to is self.tree:
+            return {"label": "All sections", "color": self.theme()["accent"]}
+        return {"label": to["label"], "color": to["color"]}
+
+    def _menu_at(self, nd: dict[str, Any]) -> None:
+        """The menu follows a level: all sections, a group dropped down, or a page's parts."""
+        path = navtree.path(nd)
+        self.state.open_group = path[1]["id"] if len(path) > 1 else None
+        self.state.open_page = path[2]["id"] if len(path) > 2 else None
+
+    def go(self, nd: dict[str, Any]) -> None:
+        """Open a place from a level page: a page opens, a place with parts shows its own level."""
+        if nd["children"] and self._show_level is not None:
+            self._menu_at(nd)
+            self._show_level(nd)
+        else:
+            self._open_node(nd)
+            self._follow_leaf()
+        self.apply()
 
     def up(self) -> None:
-        """Up a level (the phone's Back does the same): the menu shows the level above, and after all sections, Home."""
-        s = self.state
-        if not s.open:
-            self._follow_leaf()
-            s.open = True
-        elif s.open_page:
-            s.open_page = None
-        elif s.open_group:
-            s.open_group = None
-        else:
-            home = next((g for g in self.tree["children"] if not g["children"]), None)
-            if home is not None:
-                self._open_node(home)
+        """Up a level (the phone's Back does the same): the panel shows the level above -- the page's group, then all
+        sections -- and the menu moves with it; above all sections, Home."""
+        s, to = self.state, self._target()
+        if to is None:
+            return
+        if not to["children"]:                             # 🏠 Home
+            self._open_node(to)
+            s.open_group = s.open_page = None
             if not s.pinned:
                 s.open = False
+        else:
+            self._menu_at(to)
+            if self._show_level is not None:
+                self._show_level(to)
+            elif not s.open:
+                s.open = True
         self.apply()
 
     def fold(self) -> None:

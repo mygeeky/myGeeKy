@@ -137,18 +137,38 @@ def test_the_panel_is_wider_and_its_inner_edge_or_settings_change_the_width(pane
     assert saved[-1] == 700 and panel.width_value_label.text() == "700 px"
 
 
-def test_up_a_level_climbs_like_the_phones_back_then_goes_home(panel):
+def test_up_a_level_takes_the_panel_to_that_level_then_home(panel):
+    from mygeeky.gui.navrail import LevelTile
     host = panel.rail_host
     host.open_at("chances")
     host.tapped("chances:jobs")                                     # on Chances › Jobs, the menu folded
     assert panel.nav_back_text.isVisible() and "Chances" in panel.nav_back_text.text()
-    panel.nav_back_text.click()                                     # the menu opens at Chances' pages
-    assert host.state.open and host.state.open_group == "chances" and panel.active_tab == "chances"
+    panel.nav_back_text.click()                                     # the panel shows Chances' pages
+    assert panel._level_node()["id"] == "chances" and panel.nav_trail.text() == "Chances"
+    assert host.state.open_group == "chances" and not host.state.open             # the menu follows, still folded
+    assert "chances:jobs" in [w.nd["id"] for w in panel.level_page.findChildren(LevelTile) if not w.isHidden()]
     assert host.up_target()["label"] == "All sections"
-    host.up()
+    panel.nav_back_text.click()                                     # all sections: the six groups and Home
+    assert panel._level_node() is panel.nav_tree and panel.nav_trail.text() == "All sections"
     assert host.state.open_group is None and host.up_target()["label"] == "Home"
-    host.up()                                                       # last: Home
-    assert panel.active_tab == "home" and not host.state.open and not panel.nav_back_text.isVisible()
+    panel.nav_back_text.click()                                     # last: Home
+    assert panel.active_tab == "home" and panel._level_node() is None and not panel.nav_back_text.isVisible()
+
+
+def test_a_level_tile_opens_its_page_or_its_own_level(panel):
+    from mygeeky.gui.navrail import LevelTile
+    host = panel.rail_host
+    host.open_at("grow")
+    host.tapped("grow:skills")
+    host.up()                                                       # Grow's pages
+    tiles = {w.nd["id"]: w for w in panel.level_page.findChildren(LevelTile) if not w.isHidden()}
+    tiles["grow:data"]._on_click()                                  # Data has parts: its own level
+    assert panel._level_node()["id"] == "grow:data" and host.up_target()["label"] == "Grow"
+    from PySide6.QtWidgets import QApplication
+    QApplication.processEvents()                                    # new tiles show on the next pass of the loop
+    first = next(w for w in panel.level_page.findChildren(LevelTile) if not w.isHidden())
+    first._on_click()                                               # a part: the page opens
+    assert panel._level_node() is None and panel.active_tab == "grow" and panel._grow_mode.startswith("data")
 
 
 def test_the_pin_stands_up_when_pinned_and_leans_when_not(panel):
