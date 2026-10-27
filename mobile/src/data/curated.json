@@ -1,5 +1,5 @@
 {
- "version": "2026-10-26T08:56:02Z",
+ "version": "2026-10-27T09:00:31Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -778,57 +778,6 @@
    }
   },
   {
-   "id": "wroc-aw-university-of-environmental-and-life-sciences-resear-2026",
-   "title": "Research-Technical Employee in the Department of Biochemistry and Molecular Biology (PACMAN Project – Vacancy 3) (M/F/X)",
-   "url": "https://euraxess.ec.europa.eu/jobs/472444",
-   "keywords": [
-    "veterinary",
-    "oncology",
-    "immunology",
-    "antibody-drug conjugates",
-    "animal models",
-    "molecular biology"
-   ],
-   "summary": "A research-technical employee position at the Department of Biochemistry and Molecular Biology, Wrocław University of Environmental and Life Sciences, within the PACMAN project on personalized antibody-drug conjugates activated by matrix metalloproteinases for solid tumors. The role involves preclinical in vivo research on animal models, including testing therapeutic antibodies and conjugates in p",
-   "deadline": "2026-10-26",
-   "org": "WROCŁAW UNIVERSITY OF ENVIRONMENTAL AND LIFE SCIENCES",
-   "place": "Wrocław, Poland",
-   "type": "job",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "موظف بحثي-تقني في قسم الكيمياء الحيوية والأحياء الجزيئية (مشروع PACMAN – وظيفة 3) (ذكر/أنثى/متنوع)",
-     "summary": "وظيفة موظف بحثي-تقني في قسم الكيمياء الحيوية والأحياء الجزيئية، جامعة فروتسواف للعلوم البيئية وعلوم الحياة، ضمن مشروع PACMAN حول مترافقات الأجسام المضادة-الدواء المخصصة المنشطة بواسطة الميتالوبروتينازات المصفوفية للأورام الصلبة. يتضمن الدور بحثًا قبل سريري في الجسم الحي على نماذج حيوانية، بما في ذلك اختبار الأجسام المضادة العلاجية والمترافقات في p"
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Employé de recherche technique au Département de biochimie et de biologie moléculaire (Projet PACMAN – Poste 3) (H/F/X)",
-     "summary": "Un poste d'employé de recherche technique au Département de biochimie et de biologie moléculaire, Université des sciences de l'environnement et de la vie de Wrocław, dans le cadre du projet PACMAN sur les conjugués anticorps-médicament personnalisés activés par les métalloprotéinases matricielles pour les tumeurs solides. Le rôle implique une recherche préclinique in vivo sur des modèles animaux, "
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Forschungs-technischer Mitarbeiter in der Abteilung für Biochemie und Molekularbiologie (PACMAN-Projekt – Stelle 3) (m/w/x)",
-     "summary": "Eine Stelle als forschungs-technischer Mitarbeiter in der Abteilung für Biochemie und Molekularbiologie, Universität für Umwelt- und Lebenswissenschaften Wrocław, im Rahmen des PACMAN-Projekts über personalisierte Antikörper-Wirkstoff-Konjugate, die durch Matrix-Metalloproteinasen für solide Tumoren aktiviert werden. Die Rolle umfasst präklinische In-vivo-Forschung an Tiermodellen, einschließlich "
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Empleado técnico de investigación en el Departamento de Bioquímica y Biología Molecular (Proyecto PACMAN – Vacante 3) (M/F/X)",
-     "summary": "Un puesto de empleado técnico de investigación en el Departamento de Bioquímica y Biología Molecular, Universidad de Ciencias Ambientales y de la Vida de Wrocław, dentro del proyecto PACMAN sobre conjugados anticuerpo-fármaco personalizados activados por metaloproteinasas de matriz para tumores sólidos. El rol implica investigación preclínica in vivo en modelos animales, incluyendo probar anticuer"
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "生物化学与分子生物学系研究技术员工（PACMAN项目 – 职位3）（男/女/其他）",
-     "summary": "弗罗茨瓦夫环境与生命科学大学生物化学与分子生物学系的研究技术员工职位，属于PACMAN项目，该项目研究由基质金属蛋白酶激活的个性化抗体-药物偶联物用于实体瘤。该角色涉及动物模型的临床前体内研究，包括在p中测试治疗性抗体和偶联物"
-    }
-   }
-  },
-  {
    "id": "associa-o-biopolis-junior-researcher-2026",
    "title": "Junior Researcher",
    "url": "https://euraxess.ec.europa.eu/jobs/472457",
@@ -1058,26 +1007,6 @@
    "org": "University of Oxford - Nuffield Department of Medicine",
    "place": "Oxford, United Kingdom",
    "type": "postdoc",
-   "remote": false
-  },
-  {
-   "id": "uppsala-university-phd-student-position-in-bioinformatics-ev-2026",
-   "title": "PhD student position in Bioinformatics/Evolutionary Microbiology",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202610051200-cdd-phd-student-position-in-bioinformaticsevolutionary-microbiology",
-   "keywords": [
-    "bioinformatics",
-    "evolutionary microbiology",
-    "metagenomics",
-    "molecular evolution",
-    "microbial ecology",
-    "high-performance computing",
-    "molecular biology"
-   ],
-   "summary": "A 48-month PhD student position (CDD, Thèse) in Bioinformatics/Evolutionary Microbiology at the Department of Medical Biochemistry and Microbiology (IMBIM), Uppsala University, Sweden.",
-   "deadline": "2026-10-26",
-   "org": "Uppsala University",
-   "place": "Uppsala, Sweden",
-   "type": "phd",
    "remote": false
   }
  ],
