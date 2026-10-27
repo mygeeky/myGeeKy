@@ -3912,7 +3912,7 @@ class MyGeekyPanel(QWidget):
         nh.setSpacing(6)
         self.nav_back_text = QPushButton("")
         self.nav_back_text.setCursor(Qt.PointingHandCursor)
-        self.nav_back_text.clicked.connect(lambda: self._nav_tap("back"))
+        self.nav_back_text.clicked.connect(lambda: self.rail_host.up() if hasattr(self, "rail_host") else None)
         self.nav_trail = QLabel("")
         self.nav_trail.setTextFormat(Qt.PlainText)
         nh.addWidget(self.nav_back_text)
@@ -3942,7 +3942,8 @@ class MyGeekyPanel(QWidget):
             dot_of=lambda nid: bool(getattr(self.nav_buttons.get(nid), "_dot", False)),
             icon_of=self._rail_icon, theme=lambda: THEMES[self._theme_name()],
             pinned=bool(getattr(self.cfg, "gui_rail_pinned", False)),
-            on_pin=lambda on: logic.set_rail_pinned(self.cfg, on), side=logic.rail_side(self.cfg))
+            on_pin=lambda on: logic.set_rail_pinned(self.cfg, on), side=logic.rail_side(self.cfg),
+            on_change=self._render_up_button)
         panel_layout.addWidget(self.rail_host, 1)
         self.width_grip = WidthGrip(self.panel_frame, self._resize_width_from_grip,
                                     lambda: logic.clamp_panel_width(self.cfg.gui_expanded_width),
@@ -8053,21 +8054,29 @@ class MyGeekyPanel(QWidget):
         for i in lvl["items"]:
             self.nav_row.addWidget(self.nav_buttons[i], 1)
             self.nav_buttons[i].show()
-        # always says where you are: the page that's open (its group › page › part), and, inside a group, the way back
+        # always says where you are: the page that's open (its group › page › part)
         leaf = self._nav_leaf()
-        self.nav_back_text.setVisible(bool(lvl["back"]))
-        if lvl["back"]:
-            c = QColor(lvl["back"]["color"]).darker(150).name()
-            self.nav_back_text.setText(f"\u2039  Back to {lvl['back']['label']}")
-            self.nav_back_text.setStyleSheet(f"QPushButton {{ background:{c}; color:#ffffff; border:none; border-radius:10px; "
-                                             "padding:2px 10px; font-size:10.5px; font-weight:800; }")
         self.nav_trail.setText(" \u203a ".join(n["label"] for n in navtree.path(leaf)[1:]) if leaf else "")
-        # where you are, in the open page's colour (the rail has its own way back, so no "Back to" here)
-        self.nav_back_text.setVisible(False)
+        # where you are, in the open page's colour, and beside it the way up a level
         color = logic.readable(leaf["color"], theme) if leaf else theme["text"]
         self.nav_trail.setStyleSheet(f"color:{color}; font-size:11.5px; font-weight:700; background:transparent;")
         if hasattr(self, "rail_host"):
             self.rail_host.refresh()
+        self._render_up_button()
+
+    def _render_up_button(self) -> None:
+        """"‹ Grow" beside "Grow › Skills": up a level, as the menu's own back button (navrail.RailHost.up)."""
+        if not hasattr(self, "nav_back_text"):
+            return
+        up = self.rail_host.up_target() if hasattr(self, "rail_host") else None
+        self.nav_back_text.setVisible(bool(up))
+        if up:
+            c = QColor(up["color"]).darker(150).name()
+            self.nav_back_text.setText(f"\u2039  {up['label']}")
+            self.nav_back_text.setToolTip(f"Back to {up['label']}")
+            self.nav_back_text.setAccessibleName(f"Back to {up['label']}")
+            self.nav_back_text.setStyleSheet(f"QPushButton {{ background:{c}; color:#ffffff; border:none; border-radius:10px; "
+                                             "padding:3px 10px; font-size:10.5px; font-weight:800; }")
 
     def _update_group_counts(self) -> None:
         """A group's (or a page's) planet counts what's new in the pages under it."""
@@ -8185,7 +8194,10 @@ class MyGeekyPanel(QWidget):
         # the folded tab is sized purely by config; the full panel can't go
         # below what its content needs, so position it by that real size
         need = QSize(0, 0) if folded else self.panel_frame.minimumSizeHint()
-        return QRect(*logic._panel_geometry(self.cfg, folded, rect, need.width(), need.height()))
+        wide = 0
+        if not folded and getattr(self, "active_tab", "") == "admin":     # Admin has room to work: the panel widens
+            wide = logic.admin_width(rect.width())
+        return QRect(*logic._panel_geometry(self.cfg, folded, rect, max(need.width(), wide), need.height()))
 
     def _dock(self, folded: bool, animate: bool = False) -> None:
         screen = self._home_screen()
@@ -9902,6 +9914,8 @@ class MyGeekyPanel(QWidget):
             self._fresh_dirty.add(previous)           # what you saw there makes room next time
         QTimer.singleShot(0, lambda: self._refresh_fresh_tab(name))
         self.content_stack.setCurrentIndex(self._tab_order.index(name))
+        if "admin" in (previous, name) and previous != name and self.panel_frame.isVisible():
+            self._dock(folded=False)                  # wide for Admin, back to your own width when you leave it
         self._nav_follow()
         self._update_tab_styles()
         if name == "badges":

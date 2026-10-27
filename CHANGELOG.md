@@ -5,6 +5,9 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **A way back you can see** (computer): beside where you are (*Grow › Skills*) a button says where it goes (*‹ Grow*), and the side menu has the same one, on its own line. Each press goes up a level, as the phone's Back does: the menu opens at the level above your page, then its group, then all sections, then Home.
+- **The side menu's pin stands up when pinned** and leans when it isn't (computer), drawn in the theme's colours instead of an emoji.
+- **Admin opens wide** (computer): the panel grows to fit Admin (up to 1120 px, never more than 85% of the screen) and goes back to your own width when you open anything else.
 - **The maker's admin tools, made harder to misuse** (computer and phone). What the admin tab publishes to everyone (Chances listings, Highlights) is checked more strictly: a listing keeps its own link only when the pasted page says it word for word (a link the AI made up becomes the page itself); a translation can't add a link, an email, a phone number or a sum the English doesn't have; a Highlight always links to its DOI; every item is checked again just before publishing, and the Publish box lists each one with where its link goes. Both apps refuse links with a hidden `name@` in front of the site (`https://www.nature.com@evil.example`), backslashes or control characters, and the phone refuses a published list over 2 MB, as the computer does. An old action queued on the phone can change a listing's status, never its contents; an invite's email address can't carry extra recipients; message boxes show web text as text, never as HTML.
 
 ## 0.38.0 (2026-10-27): plain files in your own Google Drive, quicker, and a tidy-up (phone 1.20.0)

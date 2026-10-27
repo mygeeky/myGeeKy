@@ -135,3 +135,48 @@ def test_the_panel_is_wider_and_its_inner_edge_or_settings_change_the_width(pane
     panel.width_slider.setValue(700)
     panel._on_width_committed()
     assert saved[-1] == 700 and panel.width_value_label.text() == "700 px"
+
+
+def test_up_a_level_climbs_like_the_phones_back_then_goes_home(panel):
+    host = panel.rail_host
+    host.open_at("chances")
+    host.tapped("chances:jobs")                                     # on Chances › Jobs, the menu folded
+    assert panel.nav_back_text.isVisible() and "Chances" in panel.nav_back_text.text()
+    panel.nav_back_text.click()                                     # the menu opens at Chances' pages
+    assert host.state.open and host.state.open_group == "chances" and panel.active_tab == "chances"
+    assert host.up_target()["label"] == "All sections"
+    host.up()
+    assert host.state.open_group is None and host.up_target()["label"] == "Home"
+    host.up()                                                       # last: Home
+    assert panel.active_tab == "home" and not host.state.open and not panel.nav_back_text.isVisible()
+
+
+def test_the_pin_stands_up_when_pinned_and_leans_when_not(panel):
+    from mygeeky.gui import navrail
+    a = navrail.pin_icon("#ffffff", upright=True).pixmap(36, 36).toImage()
+    b = navrail.pin_icon("#ffffff", upright=False).pixmap(36, 36).toImage()
+    assert a != b and not a.isNull()
+    host = panel.rail_host
+    host.open_at("grow")
+    assert not host.overlay.pin_btn.icon().isNull() and host.overlay.pin_btn.text() == ""
+
+
+def test_admin_widens_the_panel_and_leaving_it_brings_it_back(qapp_offscreen, monkeypatch):
+    from PySide6.QtWidgets import QApplication
+    from mygeeky.gui import app as logic
+    from mygeeky.gui.qt_panel import MyGeekyPanel
+    assert logic.admin_width(1920) == logic.ADMIN_WIDTH and logic.admin_width(1000) == 850
+    monkeypatch.setattr(logic, "is_admin", lambda cfg: True)
+    p = MyGeekyPanel(MyGeekyConfig(github_username="me", keywords=["gwas"]))
+    p.show()
+    p._dock(folded=False)
+    QApplication.processEvents()
+    normal = p.width()
+    p._switch_tab("admin")
+    QApplication.processEvents()
+    screen = p._home_screen().availableGeometry().width()
+    assert p.width() >= min(logic.admin_width(screen), screen) > normal or screen <= normal
+    p._switch_tab("home")
+    QApplication.processEvents()
+    assert p.width() == normal                                       # your own width again
+    p.close()

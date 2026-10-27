@@ -300,6 +300,13 @@ MAX_PANEL_WIDTH = 900       # ...up to about a third of a wide screen
 RAIL_SIDES = ("auto", "left", "right")
 
 
+ADMIN_WIDTH = 1120          # the panel's width on Admin (never more than 85% of the screen); your own width elsewhere
+
+
+def admin_width(screen_width: int) -> int:
+    return min(ADMIN_WIDTH, int(screen_width * 0.85))
+
+
 def clamp_panel_width(width: float) -> int:
     return int(min(max(float(width), MIN_PANEL_WIDTH), MAX_PANEL_WIDTH))
 

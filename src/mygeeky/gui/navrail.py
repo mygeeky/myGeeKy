@@ -12,11 +12,12 @@ panel (qt_panel.py), which keeps doing the navigation itself.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any, Callable
 
 from PySide6.QtCore import QByteArray, QPointF, QRectF, QSize, Qt, QTimer
-from PySide6.QtGui import QColor, QFont, QKeySequence, QPainter, QPen, QShortcut
+from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QPainter, QPen, QPixmap, QShortcut
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QToolButton, QVBoxLayout, QWidget
 
@@ -25,6 +26,34 @@ from .. import navtree
 FOLDED_W = 46
 OPEN_W = 140                     # rows are 12px narrower (scroll bar): "Researchers" and "Leading lights" fit
 DARK_INK = QColor("#0d0d16")
+# a push pin (stroke icon): drawn upright when the menu is pinned beside the page, leaning when it isn't
+PIN_PATH = ("M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76"
+            "a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z")
+
+
+def pin_icon(color: str, upright: bool, size: int = 18) -> QIcon:
+    m = re.match(r"rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)", color.strip())
+    if m:                                             # a theme colour may be rgba(...), which SVG and QColor can't read
+        a = float(m.group(4)) if m.group(4) else 255
+        c = QColor(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(a * 255) if a <= 1 else int(a))
+    else:
+        c = QColor(color)
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c.name()}" '
+           f'stroke-opacity="{max(c.alphaF(), 0.55):.2f}" stroke-width="2" stroke-linecap="round" '
+           f'stroke-linejoin="round"><path d="{PIN_PATH}"/></svg>')
+    scale = 2                                         # drawn at twice the size: sharp on high-DPI screens
+    pm = QPixmap(size * scale, size * scale)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    p.translate(pm.width() / 2, pm.height() / 2)
+    p.rotate(0 if upright else 45)
+    p.translate(-pm.width() / 2, -pm.height() / 2)
+    QSvgRenderer(QByteArray(svg.encode())).render(p, QRectF(pm.width() * 0.12, pm.height() * 0.12,
+                                                            pm.width() * 0.76, pm.height() * 0.76))
+    p.end()
+    pm.setDevicePixelRatio(scale)
+    return QIcon(pm)
 
 
 @dataclass
@@ -282,15 +311,25 @@ class NavRail(QWidget):
             bl = QHBoxLayout(bar)
             bl.setContentsMargins(0, 0, 0, 0)
             bl.setSpacing(0)
-            self.back_btn = self._button("‹", "Up a level (Esc)", self.host.back, checked=None)
-            self.pin_btn = self._button("\U0001f4cc", "Unpin (opens over the page)" if self.state.pinned
+            up = self.host.up_target()
+            # up a level, on a line of its own under the bar: wide enough to say where it goes
+            self.back_btn = self._button("", f"Back to {up['label']}" if up else "", self.host.up, checked=None)
+            self.back_btn.setFixedSize(OPEN_W - 14, 26)
+            self.back_btn.setObjectName("railBack")
+            self.back_btn.setText(self.back_btn.fontMetrics().elidedText(f"‹  {up['label']}", Qt.ElideRight,
+                                                                         self.back_btn.width() - 16) if up else "")
+            self.back_btn.setVisible(bool(up))
+            self.pin_btn = self._button("", "Unpin (opens over the page)" if self.state.pinned
                                         else "Pin beside the page", self.host.toggle_pin, checked=self.state.pinned)
+            t = self.theme()
+            self.pin_btn.setIcon(pin_icon(t["text"] if self.state.pinned else t["muted"], upright=self.state.pinned))
+            self.pin_btn.setIconSize(QSize(18, 18))
             self.fold_btn = self._button(self.host.arrow(opening=False), "Fold (Ctrl+\\)", self.host.fold, checked=None)
-            bl.addWidget(self.back_btn)
             bl.addStretch(1)
             bl.addWidget(self.pin_btn)
             bl.addWidget(self.fold_btn)
             self.lay.addWidget(bar)
+            self.lay.addWidget(self.back_btn, 0, Qt.AlignLeft)
             scroll = QScrollArea()
             scroll.setWidgetResizable(True)
             scroll.setFrameShape(QScrollArea.NoFrame)
@@ -337,6 +376,8 @@ class NavRail(QWidget):
             f"QToolButton {{ background:transparent; color:{t['muted']}; border:none; border-radius:7px; font-size:13px; }}"
             f"QToolButton:hover {{ background:{t['btn_hover']}; color:{t['text']}; }}"
             f"QToolButton:checked {{ background:{t['section_btn']}; color:{t['text']}; }}"
+            f"QToolButton#railBack {{ background:{t['section_btn']}; color:{t['text']}; font-size:11px; font-weight:700; "
+            "text-align:left; padding:0 8px; border-radius:9px; }"
             "QScrollArea, QScrollArea > QWidget > QWidget { background:transparent; }")
 
     def refresh(self) -> None:
@@ -371,12 +412,12 @@ class RailHost(QWidget):
                  leaf: Callable[[], dict[str, Any] | None], count_of: Callable[[str], int],
                  dot_of: Callable[[str], bool], icon_of: Callable[[dict[str, Any]], tuple[str, str]],
                  theme: Callable[[], dict[str, Any]], pinned: bool, on_pin: Callable[[bool], None],
-                 side: str = "left") -> None:
+                 side: str = "left", on_change: Callable[[], None] | None = None) -> None:
         super().__init__()
         self.tree, self.content = tree, content
         self.side = "right" if side == "right" else "left"
         self._open_node, self.leaf, self.count_of, self.dot_of, self.icon_of = open_node, leaf, count_of, dot_of, icon_of
-        self.theme, self._on_pin = theme, on_pin
+        self.theme, self._on_pin, self._on_change = theme, on_pin, on_change
         self.state = RailState(open=pinned, pinned=pinned)
         self.row = QHBoxLayout(self)
         self.row.setContentsMargins(0, 0, 0, 0)
@@ -470,6 +511,43 @@ class RailHost(QWidget):
             self.state.open = False
         self.apply()
 
+    def up_target(self) -> dict[str, Any] | None:
+        """Where "up a level" goes from here -- {"label", "color"} -- or None on Home (nothing above it). Closed, the
+        menu first opens at the level above your page (Grow's pages around Skills); open, it climbs one level each
+        time: a page's parts, its group, all sections, then Home."""
+        s, leaf = self.state, self.leaf()
+        home = next((g for g in self.tree["children"] if not g["children"]), None)
+        if not s.open:
+            path = navtree.path(leaf) if leaf else []
+            above = path[-2] if len(path) >= 3 else None
+            return {"label": above["label"], "color": above["color"]} if above else None
+        if s.open_page:
+            g = navtree.find(self.tree, s.open_group or "")
+            return {"label": g["label"], "color": g["color"]} if g else None
+        if s.open_group:
+            return {"label": "All sections", "color": self.theme()["accent"]}
+        if leaf is not None and home is not None and leaf["id"] == home["id"]:
+            return None
+        return {"label": home["label"], "color": home["color"]} if home else None
+
+    def up(self) -> None:
+        """Up a level (the phone's Back does the same): the menu shows the level above, and after all sections, Home."""
+        s = self.state
+        if not s.open:
+            self._follow_leaf()
+            s.open = True
+        elif s.open_page:
+            s.open_page = None
+        elif s.open_group:
+            s.open_group = None
+        else:
+            home = next((g for g in self.tree["children"] if not g["children"]), None)
+            if home is not None:
+                self._open_node(home)
+            if not s.pinned:
+                s.open = False
+        self.apply()
+
     def fold(self) -> None:
         self.state.open = False
         self.apply()
@@ -503,6 +581,8 @@ class RailHost(QWidget):
             if rail.isVisibleTo(self) or rail is self.strip:
                 rail.rebuild()
         self._place()
+        if self._on_change is not None:
+            self._on_change()
 
     def refresh(self) -> None:
         for rail in (self.strip, self.docked, self.overlay):
