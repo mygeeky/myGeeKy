@@ -49,7 +49,7 @@ export async function loadAdmin(): Promise<AdminData | null> {
     .filter((p: any) => p && typeof p.login === 'string' && /^[A-Za-z0-9-]{1,39}$/.test(p.login))
     .map((p: any) => ({
       login: p.login, status: str(p.status, 20), why: (Array.isArray(p.why) ? p.why : []).map((w: unknown) => str(w, 160)).filter(Boolean),
-      name: str(p.name, 120), bio: str(p.bio, 300), email: /^[^@\s]{1,64}@[^@\s]{1,190}\.[A-Za-z]{2,}$/.test(str(p.email)) ? p.email : '',
+      name: str(p.name, 120), bio: str(p.bio, 300), email: /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,}$/.test(str(p.email)) ? p.email : '',
       followers: int(p.followers), avatar: httpsGithub(p.avatar), score: int(p.score), looked_up_at: str(p.looked_up_at, 40),
       events_30d: int(p.events_30d), last_active: str(p.last_active, 40), invited_at: str(p.invited_at, 40),
     }));
@@ -144,7 +144,6 @@ export async function loadListings(pending: Action[]): Promise<{ toReview: Candi
 
 // ---- 📝 quizzes: how many each reviewed protocol has (app.quizwriter_state), and batches waiting for you
 export const QUIZ_READY = 10;
-export const QUIZ_GOOD = 20;
 export type QuizRow = { id: string; title: string; count: number; spotCheck: boolean };
 
 export async function quizStatus(lists: Lists | null): Promise<{ rows: QuizRow[]; bank: number; withQuiz: number } | null> {

@@ -132,7 +132,9 @@ export async function refreshIfDue(force = false): Promise<boolean> {
     return false;
   }
   if (!r.ok) throw new Error(`questions: ${r.status}`);
-  const fresh = cleanBank(await r.json());
+  const body = await r.text();
+  if (body.length > 8_000_000) throw new Error('questions: too big');          // as the desktop (quiz.py)
+  const fresh = cleanBank(JSON.parse(body));
   const changed = JSON.stringify(fresh) !== JSON.stringify(cleanBank(saved?.bank));
   await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ checkedAt: new Date().toISOString(), bank: fresh }));
   cached = null;

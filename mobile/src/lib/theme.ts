@@ -85,4 +85,3 @@ export const BADGES: Record<string, { label: string; color: string; text: string
   A: { label: 'announcement', color: '#a78bfa', text: '#ffffff' },
 };
 
-export const CATEGORY_COLORS: Record<string, string> = { ai: C.pink, science: C.green, tech: C.cyan };

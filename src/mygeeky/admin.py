@@ -33,7 +33,7 @@ PROJECT_REPO = "mygeeky/myGeeKy"
 INVITE_DAILY_LIMIT = 10
 _RESEARCH_BIO = re.compile(r"ph\.?d|postdoc|professor|lab\b|universit|institut|scientist|research|"
                            r"bioinformatic|genom|genetic|biolog|computational", re.I)
-_EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,190}\.[A-Za-z]{2,}$")
+_EMAIL = re.compile(r"^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,}$")   # no ?, & or = to add recipients
 
 
 def is_admin(cfg: MyGeekyConfig) -> bool:
@@ -249,7 +249,7 @@ def invite(person: dict[str, Any], cfg: MyGeekyConfig) -> dict[str, str]:
             f"Best,\nAlsamman\n(github.com/{cfg.github_username})")
     out = {"subject": subject, "body": body}
     if person.get("email"):
-        out["mailto"] = f"mailto:{person['email']}?subject={quote(subject)}&body={quote(body)}"
+        out["mailto"] = f"mailto:{quote(person['email'], safe='@')}?subject={quote(subject)}&body={quote(body)}"
         # Gmail's own compose window, in the browser (a mailto: link opens whatever mail app Windows
         # picks, usually Outlook); everything filled in, nothing sent until you press Send
         out["gmail"] = (f"https://mail.google.com/mail/?view=cm&fs=1&to={quote(person['email'])}"

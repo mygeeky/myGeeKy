@@ -13,6 +13,7 @@ import { cleanAll as cleanHighlights, type Highlight } from './highlight-shape';
 
 export const REMOTE_URL = 'https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/data/curated.json';
 const CHECK_EVERY_HOURS = 6;
+const MAX_BYTES = 2_000_000;
 export const LISTS = ['jobs', 'funding', 'conferences', 'resources'] as const;
 export type ListName = (typeof LISTS)[number];
 const DATED: ListName[] = ['jobs', 'funding', 'conferences'];
@@ -43,7 +44,8 @@ export type Ranked = Item & { score: number; match: string[]; daysLeft: number |
 const text = (v: unknown, n: number) => (typeof v === 'string' || typeof v === 'number' ? String(v).split(/\s+/).join(' ').trim().slice(0, n) : '');
 function https(v: unknown): string {
   const u = String(v ?? '').trim();
-  return /^https:\/\/[^\s/]+\.[^\s]*$/.test(u) && !u.includes(' ') ? u.slice(0, 500) : '';
+  // https only, to a real host: no "user@" in front of it, no spaces, backslashes or control characters
+  return /^https:\/\/[^\s/?#@\\]+\.[^\s/?#@\\]+([/?#][^\s\\]*)?$/.test(u) && !/[\u0000-\u001f]/.test(u) ? u.slice(0, 500) : '';
 }
 function day(v: unknown): string {
   const s = String(v ?? '').slice(0, 10);
@@ -160,8 +162,9 @@ export async function loadLists(force = false): Promise<Lists> {
   if (force || isStale(cached?.at, CHECK_EVERY_HOURS)) {
     try {
       const r = await fetchT(REMOTE_URL);
-      if (r.ok) {
-        const fresh = clean(await r.json());
+      const body = r.ok ? await r.text() : '';
+      if (r.ok && body.length <= MAX_BYTES) {                // as the desktop (curated.py): never a huge file
+        const fresh = clean(JSON.parse(body));
         await writeCache('curated', fresh);
         if (fresh.version >= best.version) best = fresh;
       }

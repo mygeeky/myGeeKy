@@ -1,9 +1,9 @@
 // Small building blocks shared by the screens, in myGeeKy's style.
 import { ReactNode } from 'react';
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { timeAgo } from '../lib/app-state';
 import { logClick } from '../lib/badges';
-import { C, BADGES, tint } from '../lib/theme';
+import { C, tint } from '../lib/theme';
 import { spot } from './tour-overlay';
 
 /** A small switch between the parts of a tab (e.g. Headlines | Papers). */
@@ -32,36 +32,11 @@ export function Empty({ children }: { children: ReactNode }) {
   return <Text style={s.empty}>{children}</Text>;
 }
 
-export function Badge({ letter }: { letter: string }) {
-  const b = BADGES[letter];
-  return (
-    <View style={[s.badge, { backgroundColor: b.color }]} accessibilityLabel={b.label}>
-      <Text style={[s.badgeText, { color: b.text }]}>{letter}</Text>
-    </View>
-  );
-}
-
 export function Card({ onPress, children, style }: { onPress?: () => void; children: ReactNode; style?: object }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [s.card, pressed && s.cardPressed, style]}>
       {children}
     </Pressable>
-  );
-}
-
-/** One person: avatar, name, why they're here; opens their GitHub profile. */
-export function PersonRow({ login, avatar, line, right }: { login: string; avatar: string; line: string; right?: string }) {
-  return (
-    <Card onPress={() => open(`https://github.com/${login}`, 'person')}>
-      <View style={[s.row, { alignItems: 'center' }]}>
-        <Image source={{ uri: `${avatar}${avatar.includes('?') ? '&' : '?'}s=88` }} style={s.avatar} />
-        <View style={{ flex: 1 }}>
-          <Text style={s.name} numberOfLines={1}>{login}</Text>
-          <Text style={s.small} numberOfLines={2}>{line}</Text>
-        </View>
-        {right ? <Text style={s.small}>{right}</Text> : null}
-      </View>
-    </Card>
   );
 }
 
@@ -97,11 +72,8 @@ export const s = StyleSheet.create({
   empty: { color: C.muted, fontSize: 14, marginTop: 8, lineHeight: 20 },
   card: { backgroundColor: C.card, borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.line },
   cardPressed: { backgroundColor: C.cardHi },
-  badge: { width: 20, height: 20, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { fontSize: 11, fontWeight: '900' },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   itemTitle: { color: C.text, fontSize: 15, lineHeight: 21, flex: 1 },
   name: { color: C.text, fontSize: 15, fontWeight: '800' },
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.cardHi },
   small: { color: C.muted, fontSize: 12, marginTop: 3 },
 });

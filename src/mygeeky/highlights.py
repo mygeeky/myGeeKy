@@ -357,6 +357,9 @@ def merge(data: dict[str, Any], items: list[dict[str, Any]]) -> tuple[dict[str, 
     have = [h for h in out.get("highlights") or [] if isinstance(h, dict)]
     added = 0
     for it in items:
+        it = shape.clean(it)                  # checked again before it goes to everyone
+        if not it:
+            continue
         if any(h.get("id") == it["id"] or (it.get("doi") and h.get("doi") == it["doi"]) for h in have):
             continue
         have.append(it)

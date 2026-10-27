@@ -39,7 +39,9 @@ function https(v: unknown): string {
   const url = String(v ?? '').trim();
   try {
     const u = new URL(url);
-    return u.protocol === 'https:' && u.host && !url.includes(' ') ? url.slice(0, 500) : '';
+    // a Highlight points at its article's DOI page, nowhere else (and never with a "user@" in front of the host)
+    return u.protocol === 'https:' && u.hostname === 'doi.org' && !u.username && !u.password && !/[\s\\\u0000-\u001f]/.test(url)
+      ? url.slice(0, 500) : '';
   } catch {
     return '';
   }

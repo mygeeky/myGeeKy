@@ -67,7 +67,20 @@ def _https(value: Any) -> str:
         parts = urlsplit(url)
     except ValueError:
         return ""
-    return url[:500] if parts.scheme == "https" and parts.netloc and " " not in url else ""
+    # https only, to a real host: no "user@" in front of it (https://www.nature.com@evil.example reads as Nature),
+    # no spaces, backslashes or control characters
+    ok = (parts.scheme == "https" and parts.hostname and "." in parts.hostname and "@" not in parts.netloc
+          and not any(c.isspace() or c == "\\" or ord(c) < 32 for c in url))
+    return url[:500] if ok else ""
+
+
+def site_of(url: str) -> str:
+    """The site a link belongs to: its last two host labels, three for a country's own second level (ox.ac.uk,
+    u-tokyo.ac.jp), so www.embo.org and jobs.embo.org are one site and embo.org.evil.example is not."""
+    host = (urlsplit(url).hostname or "").lower().rstrip(".")
+    labels = host.split(".")
+    keep = 3 if len(labels) >= 3 and len(labels[-1]) == 2 and len(labels[-2]) <= 3 else 2
+    return ".".join(labels[-keep:])
 
 
 def _day(value: Any) -> str:

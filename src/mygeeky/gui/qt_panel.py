@@ -5449,6 +5449,7 @@ class MyGeekyPanel(QWidget):
     def _box(self, title: str, text: str) -> QMessageBox:
         box = QMessageBox(self)
         box.setWindowTitle(title)
+        box.setTextFormat(Qt.PlainText)               # titles from web pages show as text, never as HTML
         box.setText(text)
         box.setStyleSheet(self._dialog_css())
         return box
@@ -6874,10 +6875,16 @@ class MyGeekyPanel(QWidget):
         st, n_hl = logic.scout_state(), len(highlights.accepted())
         what = " and ".join(x for x in (f"{len(st['accepted'])} listing(s) to everyone's Chances" if st["accepted"] else "",
                                         f"{n_hl} Highlight(s) to Grow" if n_hl else "") if x)
+        from urllib.parse import urlsplit
+        going = [(c["item"].get("title", ""), c["item"].get("url", "")) for c in st["accepted"]]
+        going += [(h.get("title", ""), h.get("url", "")) for h in highlights.accepted()]
+        listed = "\n".join(f"• {t[:70]}  →  {urlsplit(u).hostname or '?'}" for t, u in going[:15])
+        more = f"\n…and {len(going) - 15} more" if len(going) > 15 else ""
         box = self._box("Publish to mygeeky.org",
-                        f"Add {what}?\n\n"
-                        "This makes one commit to the curated lists on GitHub (main), with your own git login. "
-                        "Every myGeeKy shows them within a few hours. Each one disappears after its deadline.")
+                        f"Add {what}?\n\n{listed}{more}\n\n"
+                        "Check each link goes where it should. This makes one commit to the curated lists on GitHub "
+                        "(main), with your own git login. Every myGeeKy shows them within a few hours. Each one "
+                        "disappears after its deadline.")
         go = box.addButton("Publish", QMessageBox.AcceptRole)
         box.addButton(QMessageBox.Cancel)
         box.exec()

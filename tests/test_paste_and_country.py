@@ -161,8 +161,15 @@ def test_a_listing_with_no_deadline_in_the_text_is_refused():
 def test_a_listing_keeps_its_own_link_when_the_text_carried_one():
     own = "https://www.imperial.ac.uk/jobs/description/XYZ/"
     with_link = {"listings": [dict(FOUND["listings"][0], link=own)]}
-    scout.from_paste("jobs", PAGE, LINK, key="sk-test", today=date(2026, 10, 15), post=_deepseek(with_link))
+    scout.from_paste("jobs", f"{PAGE}\nApply at {own}", LINK, key="sk-test", today=date(2026, 10, 15),
+                     post=_deepseek(with_link))
     assert list(scout.load()["candidates"].values())[0]["item"]["url"] == own
+
+
+def test_a_link_the_text_never_said_is_replaced_by_the_page():
+    made_up = {"listings": [dict(FOUND["listings"][0], link="https://apply-imperial.example/now")]}
+    scout.from_paste("jobs", PAGE, LINK, key="sk-test", today=date(2026, 10, 15), post=_deepseek(made_up))
+    assert list(scout.load()["candidates"].values())[0]["item"]["url"] == LINK
 
 
 def test_nothing_in_the_text_is_not_an_error():

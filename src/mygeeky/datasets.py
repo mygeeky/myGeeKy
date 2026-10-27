@@ -103,7 +103,11 @@ def _https(value: Any) -> str:
         parts = urlsplit(url)
     except ValueError:
         return ""
-    return url[:600] if parts.scheme == "https" and parts.netloc and " " not in url else ""
+    # https only, to a real host: no "user@" in front of it (https://www.nature.com@evil.example reads as Nature),
+    # no spaces, backslashes or control characters
+    ok = (parts.scheme == "https" and parts.hostname and "." in parts.hostname and "@" not in parts.netloc
+          and not any(c.isspace() or c == "\\" or ord(c) < 32 for c in url))
+    return url[:600] if ok else ""
 
 
 def accept(r: dict[str, Any]) -> list[str]:

@@ -33,7 +33,6 @@ const EVENTS_FILE = 'interest_events.jsonl';
 const USAGE_FILE = 'usage.jsonl';
 const USAGE_QUEUE_KEY = 'mygeeky.model.usagequeue';
 const MIGRATED_KEY = 'mygeeky.model.migrated';
-export const MODEL_TOKEN_PAGE = 'https://github.com/settings/personal-access-tokens/new';
 
 // (the learning numbers and rules, as interests.py: lib/learn.ts)
 // scikit-learn's English stop words, as CountVectorizer(stop_words='english') on the desktop

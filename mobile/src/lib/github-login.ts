@@ -45,11 +45,6 @@ const grantOf = (d: TokenAnswer): Grant => ({
   refreshExpiresIn: d.refresh_token_expires_in ? Number(d.refresh_token_expires_in) : undefined,
 });
 
-/** Waits until you authorize on github.com; resolves to the token. */
-export async function waitForLogin(flow: Flow, cancelled: () => boolean): Promise<string> {
-  return (await waitForGrant(flow, cancelled)).token;
-}
-
 /** The same, with the refresh token GitHub may send along. */
 export async function waitForGrant(flow: Flow, cancelled: () => boolean): Promise<Grant> {
   const deadline = Date.now() + flow.expiresIn * 1000;

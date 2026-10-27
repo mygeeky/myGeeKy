@@ -3,6 +3,10 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **The maker's admin tools, made harder to misuse** (computer and phone). What the admin tab publishes to everyone (Chances listings, Highlights) is checked more strictly: a listing keeps its own link only when the pasted page says it word for word (a link the AI made up becomes the page itself); a translation can't add a link, an email, a phone number or a sum the English doesn't have; a Highlight always links to its DOI; every item is checked again just before publishing, and the Publish box lists each one with where its link goes. Both apps refuse links with a hidden `name@` in front of the site (`https://www.nature.com@evil.example`), backslashes or control characters, and the phone refuses a published list over 2 MB, as the computer does. An old action queued on the phone can change a listing's status, never its contents; an invite's email address can't carry extra recipients; message boxes show web text as text, never as HTML.
+
 ## 0.38.0 (2026-10-27): plain files in your own Google Drive, quicker, and a tidy-up (phone 1.20.0)
 
 - **Your data is saved as plain files, no encryption** (computer and phone). Your settings and progress already live in your own private place (a hidden folder in your Google Drive, or your private GitHub repo) and travel over HTTPS, so the extra layer added in 0.37.0 is gone: no key, no recovery code, no *Encrypt it*. Drive and GitHub hold the same files under the same names, so switching copies them as they are. 0.37.0's encrypted copies in Drive are replaced by plain ones on the first sync; a GitHub repo syncs with git as it did up to 0.36.

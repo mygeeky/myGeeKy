@@ -56,3 +56,16 @@ def test_a_listing_reviewed_on_the_phone_is_accepted_or_rejected_here():
     state = scout.load()
     assert state["candidates"]["job-abc"]["status"] == "accepted"
     assert state["candidates"]["job-def"]["status"] == "rejected" and "job-def" in state["rejected"]
+
+
+def test_a_phone_action_changes_a_listings_status_never_its_link():
+    item = {"id": "job-abc", "title": "Postdoc in GWAS", "url": "https://example.org/job", "org": "Lab",
+            "deadline": "2099-01-01", "type": "postdoc", "summary": "A postdoc.", "keywords": ["gwas"]}
+    scout.save({"candidates": {"job-abc": {"kind": "jobs", "item": item, "score": 0.9, "checks": [], "status": "new"}},
+                "rejected": []})
+    append_jsonl(adminlog.ACTIONS_FILE, {"id": "phone-0020", "at": "2026-10-16T11:00:00+00:00", "kind": "listing",
+                                         "id_listing": "job-abc", "status": "accepted",
+                                         "item": {"url": "https://phish.example/apply"}})
+    adminlog.apply(MAKER)
+    c = scout.load()["candidates"]["job-abc"]
+    assert c["status"] == "accepted" and c["item"]["url"] == "https://example.org/job" and not c.get("edited")

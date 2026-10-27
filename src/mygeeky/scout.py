@@ -462,6 +462,32 @@ def from_paste(kind: str, text: str, url: str, key: str | None = None, focus: st
     return queue_listings(kind, answers, text, page_url, today)
 
 
+def on_page_link(link: Any, page_url: str, text: str) -> str:
+    """A listing's own link only when the pasted text says it word for word (a job board's post naming the
+    employer's page); else the page itself. The text is what the maker copied from their browser, so a link in it
+    is one they could see -- never one the model made up or read in words hidden from them."""
+    url = curated._https(link)
+    return url if url and url in (text or "") else page_url
+
+
+_NUMBER = re.compile(r"\d[\d.,]*")
+_CONTACT = re.compile(r"https?:|www\.|@|\+\d|whatsapp|telegram|wechat", re.I)
+
+
+def safe_translations(item: dict[str, Any]) -> dict[str, Any]:
+    """The listing's translations, keeping only those that say nothing the English doesn't: no link, email or
+    phone, and no number that isn't in the English. They come from the same answer as the rest, which read the
+    page, and the maker reviews the English -- so a hostile page could hide "pay a fee on WhatsApp" in Arabic."""
+    english = " ".join(str(v) for k, v in item.items() if k != "translations" and isinstance(v, (str, int, float)))
+    numbers = set(_NUMBER.findall(english))
+    kept = {}
+    for code, tr in (item.get("translations") or {}).items():
+        said = " ".join(str(v) for k, v in tr.items() if k not in ("name", "rtl") and isinstance(v, str))
+        if not _CONTACT.search(said) and set(_NUMBER.findall(said)) <= numbers:
+            kept[code] = tr
+    return {**item, "translations": kept} if item.get("translations") else item
+
+
 def queue_listings(kind: str, answers: list[dict[str, Any]], text: str, page_url: str, today: date | None = None,
                    came_from: str = "pasted") -> dict[str, Any]:
     """Check listings read out of `text` (DeepSeek's answer, or one written elsewhere and pasted into the admin
@@ -474,7 +500,7 @@ def queue_listings(kind: str, answers: list[dict[str, Any]], text: str, page_url
     pretend = {"url": page_url, "text": text, "links": []}
     added, dropped, why = 0, 0, []
     for ans in answers:
-        link = curated._https(ans.get("link")) or page_url
+        link = on_page_link(ans.get("link"), page_url, text)
         # being in the "listings" array IS the claim that this is one, so it is not asked for twice. The
         # checks that matter are untouched: the title and the quote must still be found in the text.
         ans.setdefault("is_listing", True)
@@ -556,8 +582,7 @@ def check_season(season: dict[str, Any], ans: dict[str, Any], detail: dict[str, 
     opens = curated._day(ans.get("opens"))
     if opens:
         checks.append((date_in(quote, opens) or opens <= closes, "the opening date fits the same sentence"))
-    same_site = (urlsplit(detail["url"]).netloc.split(".")[-2:]
-                 == urlsplit(season.get("url", "")).netloc.split(".")[-2:])
+    same_site = curated.site_of(detail["url"]) == curated.site_of(season.get("url", ""))
     checks.append((same_site, "on the programme's own site"))
     checks.append((bool(ans.get("recurring")), "the page shows it comes back"))
     if not all(ok for ok, _ in checks[:2]):
@@ -732,7 +757,7 @@ def check(kind: str, ans: dict[str, Any], detail: dict[str, Any], listing_url: s
     quoted = bool(quote) and _norm(quote) in text
     checks.append((quoted, "deadline sentence is on the page"))
     checks.append((date_in(quote, deadline), "that sentence holds the date"))
-    same_site = urlsplit(detail["url"]).netloc.split(".")[-2:] == urlsplit(listing_url).netloc.split(".")[-2:]
+    same_site = curated.site_of(detail["url"]) == curated.site_of(listing_url)
     checks.append((same_site, "on the site it was listed on"))
     relevance = max(0.0, min(1.0, float(ans.get("relevance") or 0)))
     checks.append((relevance >= 0.5, f"fits your field ({round(relevance * 100)}%)"))
@@ -765,7 +790,8 @@ def to_item(kind: str, ans: dict[str, Any], url: str) -> dict[str, Any] | None:
            "keywords": ans.get("keywords") or [], "summary": ans.get("summary_en") or ans.get("summary"),
            "language": language if translated else "", "original_title": original if translated else "",
            "translations": ans.get("translations")}
-    return curated.clean_item(kind, raw)
+    item = curated.clean_item(kind, raw)
+    return safe_translations(item) if item else item
 
 
 # --------------------------------------------------------------------------- a run
@@ -889,10 +915,14 @@ def merge(data: dict[str, Any], accepted: list[dict[str, Any]], today: date | No
     out = json.loads(json.dumps(data))
     added = 0
     for c in accepted:
-        lst = out.setdefault(c["kind"], [])
-        if any(x.get("id") == c["item"]["id"] or x.get("url") == c["item"]["url"] for x in lst if isinstance(x, dict)):
+        item = curated.clean_item(c.get("kind"), c.get("item") or {})    # checked again: scout.json is a synced file
+        if not item:
             continue
-        lst.append(c["item"])
+        item = safe_translations(item)
+        lst = out.setdefault(c["kind"], [])
+        if any(x.get("id") == item["id"] or x.get("url") == item["url"] for x in lst if isinstance(x, dict)):
+            continue
+        lst.append(item)
         added += 1
     out, _ = curated.prune(out, today)
     out["version"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

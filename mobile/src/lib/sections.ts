@@ -42,7 +42,6 @@ export const SECTIONS: Record<SectionId, Section> = {
 
 export const INNER: SectionId[] = ['live', 'people', 'activity', 'signals', 'grow'];
 export const OUTER: SectionId[] = ['news', 'papers', 'repos', 'models', 'launches', 'chances'];
-export const RING_NAME = { inner: 'YOUR CIRCLE', outer: 'THE WORLD', you: 'THE CENTRE' };
 
 export { NEEDS_GITHUB_IDS, ordered } from './tab-order';
 

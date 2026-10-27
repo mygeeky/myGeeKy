@@ -26,7 +26,8 @@ export const text = (v: unknown, n: number) =>
   typeof v === 'string' || typeof v === 'number' ? String(v).split(/\s+/).join(' ').trim().slice(0, n) : '';
 export function https(v: unknown): string {
   const u = String(v ?? '').trim();
-  return /^https:\/\/[^\s/]+\.[^\s]*$/.test(u) && !u.includes(' ') ? u.slice(0, 500) : '';
+  // https only, to a real host: no "user@" in front of it, no spaces, backslashes or control characters
+  return /^https:\/\/[^\s/?#@\\]+\.[^\s/?#@\\]+([/?#][^\s\\]*)?$/.test(u) && !/[\u0000-\u001f]/.test(u) ? u.slice(0, 500) : '';
 }
 const words = (v: unknown, n = 12) => Array.isArray(v)
   ? [...new Set(v.map((x) => text(x, 40).toLowerCase()).filter(Boolean))].slice(0, n) : [];

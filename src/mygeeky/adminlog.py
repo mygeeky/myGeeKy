@@ -45,9 +45,8 @@ def _apply_one(action: dict[str, Any]) -> bool:
         admin.save(state)
         return True
     if kind == "listing" and status in LISTING and isinstance(action.get("id_listing"), str):
-        from . import scout
-        item = action.get("item") if isinstance(action.get("item"), dict) and status == "accepted" else None
-        return scout.set_status(action["id_listing"], status, item)
+        from . import scout                  # a status only: what gets published is edited on the computer
+        return scout.set_status(action["id_listing"], status)
     return False
 
 

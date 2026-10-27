@@ -54,7 +54,16 @@ def _https(value: Any) -> str:
         parts = urlsplit(url)
     except ValueError:
         return ""
-    return url[:500] if parts.scheme == "https" and parts.netloc and " " not in url else ""
+    # https only, to a real host: no "user@" in front of it (https://www.nature.com@evil.example reads as Nature),
+    # no spaces, backslashes or control characters
+    ok = (parts.scheme == "https" and parts.hostname and "." in parts.hostname and "@" not in parts.netloc
+          and not any(c.isspace() or c == "\\" or ord(c) < 32 for c in url))
+    return url[:500] if ok else ""
+
+
+def _doi_link(value: Any) -> str:
+    url = _https(value)
+    return url if url.lower().startswith("https://doi.org/") else ""
 
 
 def _day(value: Any) -> str:
@@ -112,7 +121,7 @@ def clean(raw: Any) -> dict[str, Any] | None:
     kind = str(raw.get("kind", "article"))
     body = _body(raw.get("body"))
     item = {"id": raw["id"], "kind": kind if kind in KINDS else "article", "title": _text(raw.get("title"), 140),
-            "hook": _text(raw.get("hook"), 220), "url": _https(raw.get("url")), "added": _day(raw.get("added")),
+            "hook": _text(raw.get("hook"), 220), "url": _doi_link(raw.get("url")), "added": _day(raw.get("added")),
             "coverage": raw.get("coverage") if raw.get("coverage") in COVERAGE else "abstract",
             "body": body}
     if not item["title"] or not item["url"] or not item["added"] or len(body) < MIN_PARAGRAPHS:
