@@ -257,6 +257,45 @@ def invite(person: dict[str, Any], cfg: MyGeekyConfig) -> dict[str, str]:
     return out
 
 
+# --------------------------------------------------------------------------- the phone's overview
+SUMMARY_FILE = ADMIN_FILE.with_name("admin_summary.json")
+
+
+def summary() -> dict[str, Any]:
+    """What the phone's Admin overview shows: numbers only -- no names, no email addresses, no messages -- so the
+    synced file says nothing about anyone. Read from local state, no network."""
+    from . import highlights, quizwriter, scout, support, trace
+    state = load()
+    sc = scout.load()
+    t = trace.stats()
+    batches = (quizwriter.load().get("batches") or {}).values()
+    published = [str(c.get("published_at", "")) for c in sc.get("candidates", {}).values()]
+    published += [str(i.get("published_at", "")) for i in trace.load()["items"].values()]
+    return {
+        "updated_at": _now().isoformat(timespec="seconds"),
+        "adoption": {k: (state.get("adoption") or {}).get(k) for k in
+                     ("pypi_week", "pypi_month", "installer_downloads", "stars", "forks", "signals_users")},
+        "waiting": {"listings": sum(1 for c in sc.get("candidates", {}).values() if c.get("status") == "new"),
+                    "news": t["waiting"], "highlights": len(highlights.drafts("new")),
+                    "quiz_batches": sum(1 for b in batches if isinstance(b, dict) and b.get("questions") and not b.get("verdict")),
+                    "support": len(support.threads("new")), "ideas": len(state.get("inbox") or []),
+                    "keywords": len(state.get("keyword_requests") or []),
+                    "ready_to_publish": sum(1 for c in sc.get("candidates", {}).values() if c.get("status") == "accepted")
+                    + len(highlights.accepted()) + len(trace.queue("accepted"))},
+        "invites": funnel(state),
+        "trace": {"triggers_week": dict(t["funnel"]).get("Triggers", 0), "accepted_week": dict(t["funnel"]).get("You accepted", 0),
+                  "rising": t["rising"][:5], "spent_today": t["spent_today"], "per_day": t["budget"]["per_day"]},
+        "last_publish": max(published, default=""),
+    }
+
+
+def write_summary() -> dict[str, Any]:
+    out = summary()
+    ensure_dirs()
+    write_json(SUMMARY_FILE, out, indent=1)
+    return out
+
+
 # --------------------------------------------------------------------------- adoption
 def adoption(client) -> dict[str, Any]:
     from . import beacon

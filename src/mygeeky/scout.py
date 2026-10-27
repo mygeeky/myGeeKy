@@ -941,9 +941,10 @@ def publish(dry_run: bool = False, repo_url: str = REPO_URL) -> dict[str, Any]:
     """Add every accepted listing and Highlight to curated.json on GitHub's main branch: a fresh shallow copy of main in
     a temporary folder, one commit, one push, with your own git login. Your own checkouts aren't touched.
     {"published": n, "commit": sha} -- or, with dry_run, the change without pushing."""
-    from . import highlights
+    from . import highlights, trace, whatsnew_shape
     accepted, stories = candidates("accepted"), highlights.accepted()       # stories: accepted Highlights
-    if not accepted and not stories:
+    news = trace.accepted_for_publish()                                     # What's new: accepted TRACE news
+    if not accepted and not stories and not news:
         return {"published": 0, "commit": ""}
     tmp = Path(tempfile.mkdtemp(prefix="mygeeky-publish-"))
     try:
@@ -956,7 +957,8 @@ def publish(dry_run: bool = False, repo_url: str = REPO_URL) -> dict[str, Any]:
         data = json.loads(path.read_text(encoding="utf-8"))
         merged, added = merge(data, accepted)
         merged, added_stories = highlights.merge(merged, stories)
-        added += added_stories
+        merged, added_news = whatsnew_shape.merge(merged, news)
+        added += added_stories + added_news
         problems = curated.problems(merged)
         if problems:
             raise ValueError("The file wouldn't pass its check: " + "; ".join(problems[:3]))
@@ -965,6 +967,7 @@ def publish(dry_run: bool = False, repo_url: str = REPO_URL) -> dict[str, Any]:
         path.write_text(json.dumps(merged, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         counts = {k: sum(1 for c in accepted if c["kind"] == k) for k in KINDS}
         counts["highlights"] = added_stories
+        counts["news"] = added_news
         summary = ", ".join(f"{n} {k}" for k, n in counts.items() if n)
         if dry_run:
             return {"published": 0, "would_add": added, "summary": summary}
@@ -975,6 +978,9 @@ def publish(dry_run: bool = False, repo_url: str = REPO_URL) -> dict[str, Any]:
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     highlights.mark_published([h["id"] for h in stories])
+    trace.mark_published([n["id"] for n in news])
+    from . import adminaudit
+    adminaudit.log(f"Published {summary} · commit {sha}")
     state = load()
     for c in accepted:
         if c["id"] in state["candidates"]:

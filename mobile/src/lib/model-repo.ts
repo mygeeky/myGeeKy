@@ -692,24 +692,9 @@ export async function syncModel(dict: Dict | null): Promise<{ brain: Brain; sent
   return { brain: await fetchBrain(src, dict), sent };
 }
 
-// ---- for the maker's admin part (admin.ts): one file from your data repo, and who the token belongs to
+// ---- for the maker's admin part (admin.ts): one file from your saved data
 /** A file from your saved data (Google Drive or your repo); null when not connected or not synced. */
 export async function readRepoFile(file: string): Promise<string | null> {
   const src = await currentSource();
   return src ? src.read(file) : null;
-}
-
-/** The GitHub account the phone's data-repo token belongs to, as GitHub itself says -- not a name typed
- *  anywhere in the app -- and only if that account owns the repo the token reads. */
-export async function verifiedOwner(): Promise<string | null> {
-  const link = await modelLink();
-  if (!link) return null;
-  try {
-    const r = await api('/user', link.token);
-    if (!r.ok) return null;
-    const login = String((await r.json())?.login ?? '');
-    return login && link.repo.split('/')[0].toLowerCase() === login.toLowerCase() ? login : null;
-  } catch {
-    return null;
-  }
 }

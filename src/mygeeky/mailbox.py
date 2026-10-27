@@ -45,35 +45,44 @@ _SKIP = re.compile(r"unsubscribe|email-preferences|manage-alerts|privacy|terms|\
                    r"|mailto:|/account|/login|/signin|facebook\.com|twitter\.com|x\.com|linkedin\.com/shar",
                    re.I)
 _HREF = re.compile(r"""href\s*=\s*["']([^"'>\s]+)["']""", re.I)
+_BARE = re.compile(r"https://[^\s<>\"')\]]+")             # links written out in a plain-text email
 _TAG = re.compile(r"<[^>]+>")
 _DROP = re.compile(r"<(script|style|head)\b.*?</\1>", re.S | re.I)
 
 
 # --------------------------------------------------------------------------- the password
-def get_password() -> str | None:
+# each mailbox myGeeKy reads has its own entry: the job alerts (this one), TRACE's trigger inbox (trace.py) and
+# support@ (support.py)
+def get_password(service: str = KEY_SERVICE) -> str | None:
     try:
         import keyring
-        return keyring.get_password(KEY_SERVICE, KEY_USER)
+        return keyring.get_password(service, KEY_USER)
     except Exception:
         return None
 
 
-def set_password(password: str) -> bool:
+def set_password(password: str, service: str = KEY_SERVICE) -> bool:
     """Keep the mailbox password in this computer's credential store. Never anywhere else."""
     password = (password or "").strip().replace(" ", "")      # Google prints app passwords in four blocks
     if len(password) < 8:
         return False
     import keyring
-    keyring.set_password(KEY_SERVICE, KEY_USER, password)
+    keyring.set_password(service, KEY_USER, password)
     return True
 
 
-def forget_password() -> None:
+def forget_password(service: str = KEY_SERVICE) -> None:
     try:
         import keyring
-        keyring.delete_password(KEY_SERVICE, KEY_USER)
+        keyring.delete_password(service, KEY_USER)
     except Exception:
         pass
+
+
+def sender_address(message: Message) -> str:
+    """The bare address a message says it is from, lower case ("" if none)."""
+    from email.utils import parseaddr
+    return parseaddr(_words(message.get("From")))[1].strip().lower()
 
 
 def host_for(address: str) -> str:
@@ -133,15 +142,19 @@ def links(message: Message, resolve=None, cap: int = MAX_LINKS) -> list[str]:
     `resolve` follows a tracking link that hides its target; left out, such links are returned as they
     are, and whatever myGeeKy fetches will be the page the redirect lands on anyway."""
     out: list[str] = []
-    for part in message.walk() if message.is_multipart() else [message]:
-        if (part.get_content_type() or "").lower() != "text/html":
-            continue
+    parts = [p for p in (message.walk() if message.is_multipart() else [message])
+             if (p.get_content_type() or "").lower() in ("text/html", "text/plain")]
+    has_html = any((p.get_content_type() or "").lower() == "text/html" for p in parts)
+    for part in parts:
+        html = (part.get_content_type() or "").lower() == "text/html"
+        if has_html and not html:
+            continue                                   # the HTML part has the real links (plain text may be a stub)
         try:
             body = part.get_payload(decode=True)
             body = body.decode(part.get_content_charset() or "utf-8", "replace") if body else ""
         except Exception:
             continue
-        for href in _HREF.findall(body):
+        for href in (_HREF.findall(body) if html else _BARE.findall(body)):
             url = href.replace("&amp;", "&").strip()
             if not url.startswith("https://") or _SKIP.search(url):
                 continue

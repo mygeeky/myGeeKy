@@ -108,9 +108,9 @@ def test_the_panel_row_goes_in_and_out(monkeypatch):
         names = lambda: [bar.itemAt(i).widget().accessibleName() for i in range(bar.count())]   # noqa: E731
         panel.nav_buttons["world"].click()
         assert names() == ["Back to All", "News", "Research", "AI models"]
-        assert panel.active_tab == "news" and panel._news_mode == "airace", "a group opens its first page"
+        assert panel.active_tab == "news" and panel._news_mode == "whatsnew", "a group opens its first page"
         panel.nav_buttons["news"].click()
-        assert names() == ["Back to World", "AI race", "Headlines", "Papers & discussions"]
+        assert names() == ["Back to World", "What's new", "AI race", "Headlines", "Papers & discussions"]
         panel.nav_buttons["news:headlines"].click()
         assert panel._news_mode == "headlines" and panel.nav_trail.text() == "World › News › Headlines"
         panel.nav_back.click()

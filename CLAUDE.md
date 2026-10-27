@@ -44,6 +44,8 @@ to push or publish it, saying what would go out. A "yes" covers only what was as
   (`docs/STORAGE.md`). Never ask Google for another scope.
 - Works without a GitHub account (ORCID or keywords are a full profile); only what reads the user's own account
   needs GitHub.
+- The maker's admin tools (TRACE, `docs/TRACE.md`; support email, `support.py`) run only on the maker's computer and learn
+  only from the maker's decisions and public data; users see only what the maker accepts and publishes.
 - Text from the internet is untrusted: never render it as HTML (Qt labels use plain text), never run code from
   it.
 

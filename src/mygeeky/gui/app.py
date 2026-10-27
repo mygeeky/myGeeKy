@@ -38,7 +38,7 @@ Design constraints, deliberately unchanged from the previous version:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 from pathlib import Path
 
@@ -1205,6 +1205,23 @@ def cited_by(cfg: MyGeekyConfig, refresh: bool = False, today: str = "") -> dict
     return {"author": author, "summary": citedby.summary(state, today or date.today().isoformat()), "busy": busy}
 
 
+def host_of(url: str) -> str:
+    from urllib.parse import urlsplit
+    h = (urlsplit(str(url)).hostname or "").lower()
+    return h[4:] if h.startswith("www.") else h
+
+
+def whats_new(cfg: MyGeekyConfig, refresh: bool = False) -> list[dict[str, Any]]:
+    """News → What's new: the checked AI and technology news in the curated lists, nudged toward your field."""
+    from .. import curated, interests, whatsnew_shape
+    if refresh:
+        try:
+            curated.refresh_if_due()
+        except Exception:
+            pass
+    return whatsnew_shape.ranked(curated.load().get("whatsnew", []), interests.profile_terms(cfg))
+
+
 def ai_race(refresh: bool = False) -> dict[str, Any]:
     """News → AI race: the newest data we have (airace.py), fetched from GitHub at most once a day when asked."""
     from .. import airace
@@ -1378,8 +1395,13 @@ def scout_find(cfg: MyGeekyConfig) -> dict[str, Any]:
 
 
 def scout_set_status(cid: str, status: str, item: dict[str, Any] | None = None) -> bool:
-    from .. import scout
-    return scout.set_status(cid, status, item)
+    from .. import adminaudit, scout, trace
+    ok = scout.set_status(cid, status, item)
+    if ok and status in ("accepted", "rejected"):
+        c = scout.load()["candidates"].get(cid) or {}
+        trace.listing_decided(c, status == "accepted")      # a listing TRACE found: its source learns
+        adminaudit.log(f"{status.capitalize()} “{(c.get('item') or {}).get('title', cid)}”")
+    return ok
 
 
 def scout_publish() -> dict[str, Any]:
@@ -1418,12 +1440,8 @@ def forget_github_cache() -> int:
 
 
 def admin_data(cfg: MyGeekyConfig) -> dict[str, Any]:
-    """The admin tab from local state (no network), after anything the phone asked for (adminlog.py)."""
-    from .. import admin, adminlog
-    try:
-        adminlog.apply(cfg)
-    except Exception:  # noqa: BLE001
-        pass
+    """The admin tab from local state (no network)."""
+    from .. import admin
     state = admin.load()
     return {"prospects": admin.prospects(state), "funnel": admin.funnel(state),
             "invited_today": admin.invited_today(state), "inbox": state.get("inbox") or [],
@@ -1444,10 +1462,152 @@ def admin_refresh(cfg: MyGeekyConfig) -> dict[str, Any]:
         from .. import keywords
         state["keyword_requests"] = keywords.keyword_requests(client, cfg)
         admin.save(state)
+        admin.write_summary()                 # the phone's overview: counts only (admin_summary.json)
     except Exception as exc:
         from ..errors import describe
         return {"error": f"Couldn't refresh: {describe(exc)}"}
     return {"ok": True}
+
+
+# ---- the admin console: TRACE (trace.py), Support (support.py), the activity log (adminaudit.py)
+def _plainly(fn: Callable[[], Any]) -> Any:
+    """Run an admin step for a button: its answer, or {"error": ...} in plain words."""
+    try:
+        out = fn()
+        return out if out is not None else {"ok": True}
+    except (PermissionError, ValueError, KeyError) as exc:
+        return {"error": str(exc).strip("'") or "That didn't work."}
+    except Exception as exc:  # noqa: BLE001
+        from ..errors import describe
+        return {"error": describe(exc)}
+
+
+def trace_stats() -> dict[str, Any]:
+    from .. import trace
+    return trace.stats()
+
+
+def trace_queue() -> list[dict[str, Any]]:
+    from .. import trace
+    return trace.queue()
+
+
+def trace_run(manual: bool = False) -> dict[str, Any]:
+    from .. import adminaudit, trace
+
+    def go() -> dict[str, Any]:
+        out = trace.run(manual=manual)
+        if manual:
+            adminaudit.log(f"Checked feeds and inbox: {out['triggers']} trigger(s), {out['items']} news, {out['listings']} listing(s)")
+        msg = (f"TRACE: {out['triggers']} new trigger(s), {out['items']} news and {out['listings']} listing(s) in Review"
+               + (f", {out['skipped']} waiting for tomorrow's budget" if out["skipped"] else "")
+               + (f" ({'; '.join(out['errors'])})" if out["errors"] else ""))
+        return {**out, "message": msg}
+    return _plainly(go)
+
+
+def trace_decide(item_id: str, accepted: bool) -> dict[str, Any]:
+    from .. import adminaudit, trace
+    it = trace.load()["items"].get(item_id) or {}
+    ok = trace.decide(item_id, accepted)
+    if ok:
+        adminaudit.log(f"{'Accepted' if accepted else 'Rejected'} news “{it.get('title', item_id)}”")
+    return {"ok": ok}
+
+
+def trace_add_feed(ftype: str, ref: str, name: str, kind: str) -> dict[str, Any]:
+    from .. import trace
+    return _plainly(lambda: {"ok": True, "message": f"Added {trace.add_feed(ftype, ref, name, kind)['name']}."})
+
+
+def trace_add_sender(address: str, name: str, kind: str) -> dict[str, Any]:
+    from .. import trace
+    return _plainly(lambda: {"ok": True, "message": f"{trace.add_sender(address, name, kind)['sender']} may trigger TRACE now."})
+
+
+def trace_set_enabled(sid: str, on: bool) -> dict[str, Any]:
+    from .. import trace
+    return _plainly(lambda: trace.set_enabled(sid, on))
+
+
+def trace_set_inbox(address: str, labels: list[str], password: str = "") -> dict[str, Any]:
+    from .. import mailbox, trace
+
+    def go() -> dict[str, Any]:
+        trace.set_inbox(address, labels)
+        if password.strip() and not mailbox.set_password(password, trace.INBOX_SERVICE):
+            raise ValueError("That app password looks too short (Gmail's has 16 letters).")
+        return {"ok": True, "message": "Trigger inbox saved." + (" App password kept in the keyring." if password.strip() else "")}
+    return _plainly(go)
+
+
+def trace_set_budget(per_day: int) -> dict[str, Any]:
+    from .. import trace
+    return _plainly(lambda: trace.set_budget(per_day))
+
+
+def support_settings() -> dict[str, Any]:
+    from .. import support
+    return support.settings()
+
+
+def support_save_settings(address: str, send_as: str, password: str, flags: dict[str, bool]) -> dict[str, Any]:
+    from .. import support
+
+    def go() -> dict[str, Any]:
+        support.settings(address=address, send_as=send_as, **flags)
+        if password.strip() and not support.set_password(password):
+            raise ValueError("That app password looks too short (Gmail's has 16 letters).")
+        return {"ok": True}
+    return _plainly(go)
+
+
+def support_fetch() -> dict[str, Any]:
+    from .. import support
+    return _plainly(support.fetch)
+
+
+def support_threads() -> list[dict[str, Any]]:
+    from .. import support
+    return support.threads()
+
+
+def support_ai(tid: str, kind: str, draft: str = "") -> dict[str, Any]:
+    from .. import support
+    return _plainly(lambda: support.ai(tid, kind, draft))
+
+
+def support_send(tid: str, body: str) -> dict[str, Any]:
+    from .. import support
+    return _plainly(lambda: support.send(tid, body))
+
+
+def support_save_draft(tid: str, text: str) -> dict[str, Any]:
+    from .. import support
+    return _plainly(lambda: support.save_draft(tid, text))
+
+
+def support_mark_done(tid: str) -> dict[str, Any]:
+    from .. import support
+    return _plainly(lambda: support.mark_done(tid))
+
+
+def admin_activity(n: int = 40) -> list[dict[str, Any]]:
+    from .. import adminaudit
+    return adminaudit.recent(n)
+
+
+def admin_needs(cfg: MyGeekyConfig) -> list[dict[str, Any]]:
+    """The Dashboard's "Needs you" cards: what's waiting, each with the console section that has it."""
+    from .. import admin
+    s = admin.summary()
+    w, tr = s["waiting"], s["trace"]
+    cards = [(w["listings"], "Listings to review", "review"), (w["news"], "News to review", "review"),
+             (w["highlights"], "Highlights to review", "review"), (w["quiz_batches"], "Quiz batches to check", "review"),
+             (w["ready_to_publish"], "Ready to publish", "publish"), (w["support"], "Support emails", "support"),
+             (w["ideas"], "Ideas in the inbox", "inbox"), (len(tr["rising"]), "Rising topics", "dashboard")]
+    return [{"count": n, "label": label, "part": part, "hint": ", ".join(tr["rising"][:2]) if label == "Rising topics" else ""}
+            for n, label, part in cards if n]
 
 
 def admin_mark(login: str, status: str) -> dict[str, Any]:
@@ -2271,6 +2431,11 @@ def _curated_link(url: str) -> bool:
         if any(url == it.get("url") for kind in curated.LISTS for it in data.get(kind, [])):
             return True
         if any(url == h.get("url") for h in data.get("highlights", [])):
+            return True
+        if any(url == w["url"] or url in w["sources"] for w in data.get("whatsnew", [])):
+            return True
+        from .. import trace             # a news item TRACE found, for the maker to check
+        if any(url == it.get("url") or url in it.get("sources", []) for it in trace.load()["items"].values()):
             return True
         from .. import highlights        # a Highlight the maker is reviewing
         if any(url == d["item"]["url"] for d in highlights.load()["drafts"].values() if isinstance(d, dict)):

@@ -106,6 +106,8 @@ def run(theme_name: str, switched: bool) -> list[dict]:
     from mygeeky.gui import app as logic
     from mygeeky.gui.qt_panel import MyGeekyPanel
     logic.save_config = lambda cfg: None                  # switching theme here must not write settings
+    logic.is_admin = lambda cfg: True                     # the Admin console is checked too (it reads local files only)
+    logic.trace_run = lambda manual=False: {}
     app = QApplication.instance() or QApplication(sys.argv[:1])
     cfg = MyGeekyConfig(github_username="audit", keywords=["gwas", "genomics", "machine learning", "snakemake"],
                         topics=["bioinformatics"], gui_theme="midnight" if switched else theme_name)

@@ -46,6 +46,9 @@ import mygeeky.ghcache  # noqa: F401
 import mygeeky.quiz  # noqa: F401
 import mygeeky.quizwriter  # noqa: F401
 import mygeeky.leaderboard  # noqa: F401
+import mygeeky.trace  # noqa: F401
+import mygeeky.adminaudit  # noqa: F401
+import mygeeky.support  # noqa: F401
 
 @pytest.fixture(autouse=True, scope="session")
 def _isolate_child_processes(tmp_path_factory):
@@ -180,6 +183,24 @@ def _no_real_deepseek_key(monkeypatch):
     passes a fake one itself, and DeepSeek is always faked."""
     import mygeeky.scout as scout
     monkeypatch.setattr(scout, "get_key", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_mailbox_passwords(monkeypatch):
+    """The mailbox app passwords (job alerts, TRACE's trigger inbox, support@) live in the system keyring: a test gets
+    an empty in-memory keyring for them instead, and can never read or write the real ones."""
+    import mygeeky.mailbox as mailbox
+    kept: dict[str, str] = {}
+    monkeypatch.setattr(mailbox, "get_password", lambda service=mailbox.KEY_SERVICE: kept.get(service))
+
+    def set_password(password, service=mailbox.KEY_SERVICE):
+        password = (password or "").strip().replace(" ", "")
+        if len(password) < 8:
+            return False
+        kept[service] = password
+        return True
+    monkeypatch.setattr(mailbox, "set_password", set_password)
+    monkeypatch.setattr(mailbox, "forget_password", lambda service=mailbox.KEY_SERVICE: kept.pop(service, None))
 
 
 @pytest.fixture(autouse=True)

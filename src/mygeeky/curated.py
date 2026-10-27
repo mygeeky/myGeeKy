@@ -315,6 +315,8 @@ def clean(data: Any) -> dict[str, Any]:
     hidden = data.get("signals_hidden") if isinstance(data, dict) else None   # beacons hidden from everyone (terms)
     out["signals_hidden"] = [u for u in (hidden if isinstance(hidden, list) else [])[:500]
                              if isinstance(u, str) and _LOGIN.fullmatch(u)]
+    from .whatsnew_shape import clean_all as clean_whatsnew     # AI and tech news from TRACE (whatsnew_shape.py)
+    out["whatsnew"] = clean_whatsnew(data.get("whatsnew") if isinstance(data, dict) else None)
     from .highlight_shape import clean_all as clean_highlights   # the maker's stories (highlight_shape.py)
     out["highlights"] = clean_highlights(data.get("highlights") if isinstance(data, dict) else None)
     from .seasons import clean as clean_seasons   # scholarships that come back every year (seasons.py)

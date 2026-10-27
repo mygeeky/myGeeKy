@@ -581,7 +581,11 @@ mygeeky trends --refresh    # ask OpenAlex again now (otherwise daily)
 
 ## News for your field (`mygeeky news`)
 
-**🏁 AI race** (the first view in the News tab, on the computer and the phone): who leads the AI race and how far
+**📰 What's new** (the first view in the News tab, on the computer and the phone): AI and technology news worth
+knowing, each item checked against its sources (the page itself, and the same story elsewhere) before it's shown, the
+newest first and nudged toward your field. It's the same for everyone; nothing about you is used to find it.
+
+**🏁 AI race** (in the News tab, on the computer and the phone): who leads the AI race and how far
 open-weights models trail (in points and in months), the newest releases with where each lands, the race replayed
 month by month, what each recent model is best at (reasoning, coding, math, science, agents, knowledge, writing,
 vision, security), each top model's "fingerprint", and a picker that ranks models for the skills your work needs.

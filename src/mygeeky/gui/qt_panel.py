@@ -3587,8 +3587,11 @@ def tab_order(names: list[str], has_github: bool) -> list[str]:
 
 
 # You → Admin's sections, as planets: (part, label, emoji) -- the phone has the same (components/admin-part.tsx)
-ADMIN_PARTS = [("overview", "Overview", "\U0001f4ca"), ("review", "Review", "\U0001f4e5"), ("write", "Write", "\u270d"),
-               ("inbox", "Inbox", "\U0001f4a1"), ("people", "People", "\U0001f91d"), ("settings", "Settings", "\u2699")]
+# the Admin console's sections, in its own menu and under You → Admin in the side menu
+ADMIN_PARTS = [("dashboard", "Dashboard", "\U0001f4ca"), ("review", "Review", "\U0001f4e5"), ("publish", "Publish", "\U0001f680"),
+               ("create", "Create", "\u270d"), ("outreach", "Outreach", "\U0001f91d"), ("support", "Support", "\u2709"),
+               ("inbox", "Inbox", "\U0001f4a1"), ("triggers", "Triggers", "\u26a1"), ("settings", "Settings", "\u2699")]
+ADMIN_RENAMED = {"overview": "dashboard", "write": "create", "people": "outreach"}     # the console's older names
 
 
 # ⚙ Settings' pages (the phone's Settings parts, mobile/src/components/settings-parts.tsx): label, icon, what it holds
@@ -3635,6 +3638,7 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
                                                               if is_admin else [])),
         group("grow", grow()),
         group("world", [n("news", "News", tab="news", children=[
+            n("news:whatsnew", "What's new", icon="\U0001f4f0", tab="news", part="whatsnew"),
             n("news:airace", "AI race", icon="\U0001f3c1", tab="news", part="airace"),
             n("news:headlines", "Headlines", icon="\U0001f5de", tab="news", part="headlines"),
             n("news:papers", "Papers & discussions", icon="\U0001f4ac", tab="news", part="papers")]),
@@ -4434,7 +4438,8 @@ class MyGeekyPanel(QWidget):
         mode_row = QHBoxLayout()
         mode_row.setSpacing(4)
         self.news_mode_buttons: dict[str, QPushButton] = {}
-        for mode, label in (("airace", "\U0001f3c1 AI race"), ("headlines", "Headlines"), ("papers", "Papers && discussions")):
+        for mode, label in (("whatsnew", "\U0001f4f0 What's new"), ("airace", "\U0001f3c1 AI race"), ("headlines", "Headlines"),
+                            ("papers", "Papers && discussions")):
             b = QPushButton(label)
             b.setCursor(Qt.PointingHandCursor)
             b.clicked.connect(lambda checked=False, m=mode: self._set_news_mode(m))
@@ -4447,7 +4452,11 @@ class MyGeekyPanel(QWidget):
         self.news_hint.setWordWrap(True)
         self.news_hint.setTextFormat(Qt.RichText)
         layout.addWidget(self.news_hint)
-        # 🏁 the AI race (airace.py): the first part of News
+        # 📰 What's new (whatsnew_shape.py): checked AI and technology news, the first part of News
+        from .whatsnew_ui import WhatsNewPage
+        self.whatsnew_page = WhatsNewPage(lambda: THEMES[self._theme_name()])
+        layout.addWidget(self.whatsnew_page)
+        # 🏁 the AI race (airace.py)
         from .airace_ui import AiRacePage
         self.airace_page = AiRacePage(lambda: THEMES[self._theme_name()], self._load_ai_race)
         layout.addWidget(self.airace_page)
@@ -4463,8 +4472,8 @@ class MyGeekyPanel(QWidget):
         self.news_area.setSpacing(6)
         layout.addWidget(container)
         self.news_box = container
-        self._news_mode = "airace"
-        QTimer.singleShot(0, lambda: self._set_news_mode("airace"))
+        self._news_mode = "whatsnew"
+        QTimer.singleShot(0, lambda: self._set_news_mode("whatsnew"))
         layout.addStretch(1)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -5989,10 +5998,32 @@ class MyGeekyPanel(QWidget):
         dlg.activateWindow()
 
     # ------------------------------------------------------------------ 🛡 admin (the maker only)
-    def _build_admin_tab(self) -> QScrollArea:
+    def _build_admin_tab(self) -> QWidget:
+        """The Admin console: its own menu of sections on the left (the panel opens wide on Admin), one section at a
+        time on the right. TRACE (trace.py) finds what's new, Review holds everything to decide, Publish shows exactly
+        what goes to everyone, Support answers support@mygeeky.org."""
+        console = QWidget()
+        outer = QHBoxLayout(console)
+        outer.setContentsMargins(0, 4, 4, 4)
+        outer.setSpacing(10)
+        self.admin_menu = QVBoxLayout()
+        self.admin_menu.setSpacing(3)
+        self.admin_menu_btns: dict[str, QPushButton] = {}
+        menu = QWidget()
+        menu.setLayout(self.admin_menu)
+        menu.setFixedWidth(150)
+        for part, label, emoji in ADMIN_PARTS:
+            b = QPushButton(f"{emoji}  {label}")
+            b.setCursor(Qt.PointingHandCursor)
+            b.setAccessibleName(f"Admin: {label}")
+            b.clicked.connect(lambda checked=False, pt=part: self._set_admin_part(pt))
+            self.admin_menu_btns[part] = b
+            self.admin_menu.addWidget(b)
+        self.admin_menu.addStretch(1)
+        outer.addWidget(menu)
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(0, 4, 4, 4)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
         actions = QHBoxLayout()
         self.admin_updated = QLabel("")
@@ -6008,8 +6039,9 @@ class MyGeekyPanel(QWidget):
         actions.addWidget(self.admin_undo_btn)
         actions.addWidget(self.admin_refresh_btn)
         layout.addLayout(actions)
-        # six sections, one at a time: the planets under You → Admin choose which (ADMIN_PARTS)
-        self._admin_part = getattr(self, "_admin_part", "overview")
+        self._admin_part = ADMIN_RENAMED.get(getattr(self, "_admin_part", ""), getattr(self, "_admin_part", "dashboard"))
+        if self._admin_part not in {p for p, *_ in ADMIN_PARTS}:
+            self._admin_part = "dashboard"
         self.admin_sections: dict[str, QWidget] = {}
         self.admin_section_heads: dict[str, QLabel] = {}
 
@@ -6026,38 +6058,55 @@ class MyGeekyPanel(QWidget):
             layout.addWidget(box)
             return lay
 
-        overview, review, write, inbox, people, settings = (section(p) for p, *_ in ADMIN_PARTS)
+        dashboard, review, publish, create, outreach, support, inbox, triggers, settings = (section(p) for p, *_ in ADMIN_PARTS)
+        theme_now = lambda: THEMES[self._theme_name()]               # noqa: E731
         self.admin_headers = [QLabel("\U0001f4c8 ADOPTION"), QLabel("\U0001f4ec IDEAS INBOX"),
                               QLabel("\U0001f3af PEOPLE TO INVITE")]
-        # 📊 Overview: adoption, what's waiting, and exactly what Publish would send
-        overview.addWidget(self.admin_headers[0])
+        # 📊 Dashboard: what needs you, adoption, TRACE's plots, today's budgets, the latest actions
+        self.admin_needs_header = QLabel("\U0001f6a9 NEEDS YOU")
+        dashboard.addWidget(self.admin_needs_header)
+        needs_box = QWidget()
+        self.admin_needs = QGridLayout(needs_box)
+        self.admin_needs.setContentsMargins(0, 0, 0, 0)
+        self.admin_needs.setSpacing(6)
+        dashboard.addWidget(needs_box)
+        dashboard.addWidget(self.admin_headers[0])
         tiles = QHBoxLayout()
         tiles.setSpacing(6)
         self.admin_tiles = {k: StatTile(c) for k, c in (("pypi_week", "PyPI / week"), ("installer_downloads", "installs (.exe)"),
                                                         ("stars", "stars"), ("signals_users", "on Signals"))}
         for t_ in self.admin_tiles.values():
             tiles.addWidget(t_, 1)
-        overview.addLayout(tiles)
+        dashboard.addLayout(tiles)
         self.admin_funnel = QLabel("")
         self.admin_funnel.setWordWrap(True)
-        overview.addWidget(self.admin_funnel)
+        dashboard.addWidget(self.admin_funnel)
+        self.admin_trace_header = QLabel("\u26a1 TRACE · THIS WEEK")
+        dashboard.addWidget(self.admin_trace_header)
+        from .trace_ui import NewsReview, TracePlots, TriggersPage
+        self.trace_plots = TracePlots(theme_now)
+        dashboard.addWidget(self.trace_plots)
+        self.admin_budget_header = QLabel("\U0001f4b6 BUDGETS TODAY")
+        dashboard.addWidget(self.admin_budget_header)
         # what the ETag cache saved today: a 304 costs nothing against your limit (ghcache.py)
         self.admin_calls = QLabel("")
         self.admin_calls.setWordWrap(True)
-        overview.addWidget(self.admin_calls)
+        dashboard.addWidget(self.admin_calls)
         self.admin_wisep = QLabel("")                    # WISEP: what the open databases were asked today
         self.admin_wisep.setWordWrap(True)
         self.admin_wisep.setTextFormat(Qt.PlainText)
-        overview.addWidget(self.admin_wisep)
-        self.admin_waiting = QLabel("")
-        self.admin_waiting.setWordWrap(True)
-        self.admin_waiting.setTextFormat(Qt.PlainText)
-        overview.addWidget(self.admin_waiting)
-        self.admin_publish_btn = QPushButton("🚀 Publish")
-        self.admin_publish_btn.setCursor(Qt.PointingHandCursor)
-        self.admin_publish_btn.clicked.connect(self._on_scout_publish)
-        overview.addWidget(self.admin_publish_btn, 0, Qt.AlignLeft)
-        # 📥 Review: listings, Highlight drafts and quizzes, together
+        dashboard.addWidget(self.admin_wisep)
+        self.admin_recent_header = QLabel("\U0001f552 RECENT ACTIVITY")
+        dashboard.addWidget(self.admin_recent_header)
+        self.admin_recent = QLabel("")
+        self.admin_recent.setWordWrap(True)
+        self.admin_recent.setTextFormat(Qt.PlainText)
+        dashboard.addWidget(self.admin_recent)
+        # 📥 Review: TRACE's news, listings, Highlight drafts and quizzes, together
+        self.admin_news_header = QLabel("\U0001f4f0 NEWS TO REVIEW (TRACE)")
+        review.addWidget(self.admin_news_header)
+        self.trace_review = NewsReview(theme_now, self._on_trace_decide)
+        review.addWidget(self.trace_review)
         self.admin_scout_header = QLabel("\U0001f3af LISTINGS TO REVIEW")
         review.addWidget(self.admin_scout_header)
         scout_box = QWidget()
@@ -6068,7 +6117,7 @@ class MyGeekyPanel(QWidget):
         from .highlights_ui import AdminHighlights
         self.admin_hl_header = QLabel("\u2728 HIGHLIGHTS TO REVIEW")
         review.addWidget(self.admin_hl_header)
-        self.admin_highlights = AdminHighlights(lambda: THEMES[self._theme_name()], self._run_async,
+        self.admin_highlights = AdminHighlights(theme_now, self._run_async,
                                                 lambda it, warn: self._open_highlight(it, warn), self._on_scout_publish)
         review.addWidget(self.admin_highlights.drafts)
         self.admin_quiz_header = QLabel("\U0001f4dd QUIZZES")
@@ -6078,16 +6127,50 @@ class MyGeekyPanel(QWidget):
         self.admin_quiz.setContentsMargins(0, 0, 0, 0)
         self.admin_quiz.setSpacing(6)
         review.addWidget(quiz_box)
-        # ✍ Write: Highlights from DOIs, and any answer written elsewhere
+        # 🚀 Publish: exactly what goes to everyone, and what went before
+        self.admin_waiting = QLabel("")
+        self.admin_waiting.setWordWrap(True)
+        self.admin_waiting.setTextFormat(Qt.PlainText)
+        publish.addWidget(self.admin_waiting)
+        self.admin_publish_btn = QPushButton("🚀 Publish")
+        self.admin_publish_btn.setCursor(Qt.PointingHandCursor)
+        self.admin_publish_btn.clicked.connect(self._on_scout_publish)
+        publish.addWidget(self.admin_publish_btn, 0, Qt.AlignLeft)
+        self.admin_history_header = QLabel("\U0001f4dc PUBLISHED BEFORE")
+        publish.addWidget(self.admin_history_header)
+        self.admin_history = QLabel("")
+        self.admin_history.setWordWrap(True)
+        self.admin_history.setTextFormat(Qt.PlainText)
+        publish.addWidget(self.admin_history)
+        # ✍ Create: run TRACE now, write Highlights from DOIs, and any answer written elsewhere
+        self.admin_trace_now = QPushButton("\u26a1 Check feeds and the trigger inbox now")
+        self.admin_trace_now.setCursor(Qt.PointingHandCursor)
+        self.admin_trace_now.clicked.connect(self._on_trace_now)
+        create.addWidget(self.admin_trace_now, 0, Qt.AlignLeft)
         self.admin_write_header = QLabel("\u2728 WRITE HIGHLIGHTS")
-        write.addWidget(self.admin_write_header)
-        write.addWidget(self.admin_highlights.form)
+        create.addWidget(self.admin_write_header)
+        create.addWidget(self.admin_highlights.form)
         self.admin_import_header = QLabel("\U0001f4e5 BRING YOUR OWN ANSWER")
-        write.addWidget(self.admin_import_header)
+        create.addWidget(self.admin_import_header)
         from .admin_ui import ImportBox
-        self.admin_import = ImportBox(lambda: THEMES[self._theme_name()], self._run_async, logic.reviewed_protocols,
-                                      lambda: self._render_admin())
-        write.addWidget(self.admin_import)
+        self.admin_import = ImportBox(theme_now, self._run_async, logic.reviewed_protocols, lambda: self._render_admin())
+        create.addWidget(self.admin_import)
+        # 🤝 Outreach: people to invite
+        outreach.addWidget(self.admin_headers[2])
+        self.admin_hint = QLabel("Ranked by how likely they are to want myGeeKy. Nothing is ever sent from here: "
+                                 "Email opens a draft in your mail app, Copy puts the invite on your clipboard. "
+                                 "Mark them once you've reached out (10 a day, at most).")
+        self.admin_hint.setWordWrap(True)
+        outreach.addWidget(self.admin_hint)
+        prospect_box = QWidget()
+        self.admin_prospects = QVBoxLayout(prospect_box)
+        self.admin_prospects.setContentsMargins(0, 0, 0, 0)
+        self.admin_prospects.setSpacing(6)
+        outreach.addWidget(prospect_box)
+        # ✉ Support: support@mygeeky.org
+        from .support_ui import SupportMailboxForm, SupportPage
+        self.support_page = SupportPage(theme_now, self._run_async, self._toast, lambda: self._render_support())
+        support.addWidget(self.support_page)
         # 💡 Inbox: ideas and problems, and the words people want taught
         inbox.addWidget(self.admin_headers[1])
         inbox_box = QWidget()
@@ -6101,19 +6184,10 @@ class MyGeekyPanel(QWidget):
         self.admin_kw.setWordWrap(True)
         self.admin_kw.setTextFormat(Qt.RichText)
         inbox.addWidget(self.admin_kw)
-        # 🤝 People to invite
-        people.addWidget(self.admin_headers[2])
-        self.admin_hint = QLabel("Ranked by how likely they are to want myGeeKy. Nothing is ever sent from here: "
-                                 "Email opens a draft in your mail app, Copy puts the invite on your clipboard. "
-                                 "Mark them once you've reached out (10 a day, at most).")
-        self.admin_hint.setWordWrap(True)
-        people.addWidget(self.admin_hint)
-        prospect_box = QWidget()
-        self.admin_prospects = QVBoxLayout(prospect_box)
-        self.admin_prospects.setContentsMargins(0, 0, 0, 0)
-        self.admin_prospects.setSpacing(6)
-        people.addWidget(prospect_box)
-        # ⚙ Settings: the DeepSeek key, the sites and field, the mailbox, GitHub's cache
+        # ⚡ Triggers: what sets TRACE off
+        self.triggers_page = TriggersPage(theme_now, self._run_async, self._toast, lambda: self._render_admin())
+        triggers.addWidget(self.triggers_page)
+        # ⚙ Settings: the DeepSeek key, the sites and field, the mailboxes, GitHub's cache, the activity log
         self.admin_settings_note = QLabel("")
         self.admin_settings_note.setWordWrap(True)
         settings.addWidget(self.admin_settings_note)
@@ -6131,6 +6205,16 @@ class MyGeekyPanel(QWidget):
             b.clicked.connect(fn)
             settings.addWidget(b, 0, Qt.AlignLeft)
             self.admin_settings_btns.append(b)
+        self.admin_support_header = QLabel("\u2709 SUPPORT MAILBOX")
+        settings.addWidget(self.admin_support_header)
+        self.support_form = SupportMailboxForm(theme_now, self._run_async, self._toast)
+        settings.addWidget(self.support_form)
+        self.admin_log_header = QLabel("\U0001f4d2 ACTIVITY LOG")
+        settings.addWidget(self.admin_log_header)
+        self.admin_log = QLabel("")
+        self.admin_log.setWordWrap(True)
+        self.admin_log.setTextFormat(Qt.PlainText)
+        settings.addWidget(self.admin_log)
         self._show_admin_part()
         layout.addStretch(1)
         scroll = QScrollArea()
@@ -6141,8 +6225,25 @@ class MyGeekyPanel(QWidget):
         scroll.setStyleSheet("background:transparent; border:none;")
         scroll.viewport().setAutoFillBackground(False)
         page.setAutoFillBackground(False)
+        outer.addWidget(scroll, 1)
+        # TRACE looks for what's new every half hour while the panel runs (within its budget; the maker only)
+        self._trace_timer = QTimer(self)
+        self._trace_timer.timeout.connect(lambda: self._run_async(lambda: logic.trace_run(manual=False),
+                                                                  lambda _r: self._render_admin()))
+        self._trace_timer.start(30 * 60 * 1000)
         QTimer.singleShot(0, self._render_admin)
-        return scroll
+        return console
+
+    def _on_trace_now(self) -> None:
+        self._toast("TRACE is checking the feeds and the trigger inbox…")
+        self._run_async(lambda: logic.trace_run(manual=True),
+                        lambda out: (self._toast((out or {}).get("error") or (out or {}).get("message", "Done.")), self._render_admin()))
+
+    def _on_trace_decide(self, item_id: str, accepted: bool) -> None:
+        self._run_async(lambda: logic.trace_decide(item_id, accepted), lambda _r: self._render_admin())
+
+    def _render_support(self) -> None:
+        self.support_page.set_threads(logic.support_threads())
 
     def _render_admin(self, data: dict[str, Any] | None = None) -> None:
         theme = THEMES[self._theme_name()]
@@ -6201,12 +6302,16 @@ class MyGeekyPanel(QWidget):
         self._render_quizwriter()
         self.admin_highlights.render()
         self._render_admin_summary(theme, data)
+        self._render_console(theme)
         for lbl in self.admin_headers + [self.admin_kw_header, self.admin_scout_header, self.admin_quiz_header,
-                                         self.admin_hl_header, self.admin_write_header, self.admin_import_header]:
+                                         self.admin_hl_header, self.admin_write_header, self.admin_import_header,
+                                         self.admin_needs_header, self.admin_trace_header, self.admin_budget_header,
+                                         self.admin_recent_header, self.admin_news_header, self.admin_history_header,
+                                         self.admin_support_header, self.admin_log_header]:
             lbl.setStyleSheet(f"color:{theme['text']}; font-size:10.5px; font-weight:700; letter-spacing:0.5px; "
                               "margin-top:6px; background:transparent;")
         for lbl in (self.admin_funnel, self.admin_hint, self.admin_updated, self.admin_calls, self.admin_waiting, self.admin_wisep,
-                    self.admin_settings_note):
+                    self.admin_settings_note, self.admin_recent, self.admin_history, self.admin_log):
             lbl.setStyleSheet(f"color:{theme['muted']}; font-size:10.5px; background:transparent;")
         self.admin_refresh_btn.setStyleSheet(
             f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; border:none; "
@@ -6215,23 +6320,70 @@ class MyGeekyPanel(QWidget):
             f"QPushButton {{ background:transparent; color:{theme['link']}; border:none; padding:4px 6px; "
             f"font-size:11px; text-decoration:underline; }}")
 
+    def _render_console(self, theme: dict[str, Any]) -> None:
+        """The console's own parts: Needs you, TRACE's plots and news, Support, history, the activity log, the menu."""
+        _clear_layout(self.admin_needs)
+        needs = logic.admin_needs(self.cfg)
+        if not needs:
+            self.admin_needs.addWidget(_plain(QLabel("Nothing waiting. Enjoy the quiet.")), 0, 0)
+        for i, n in enumerate(needs):
+            b = QPushButton(f"{n['count']}  {n['label']}" + (f"\n{n['hint']}" if n.get("hint") else ""))
+            b.setCursor(Qt.PointingHandCursor)
+            b.setStyleSheet(f"QPushButton {{ background:{theme['card_bg']}; color:{theme['text']}; border:none; "
+                            "border-radius:10px; padding:10px 12px; font-size:12px; font-weight:700; text-align:left; }"
+                            f"QPushButton:hover {{ background:{theme['btn_hover']}; }}")
+            b.clicked.connect(lambda checked=False, pt=n["part"]: self._set_admin_part(pt))
+            self.admin_needs.addWidget(b, i // 4, i % 4)
+        stats = logic.trace_stats()
+        self.trace_plots.set_stats(stats)
+        self.trace_review.set_items(logic.trace_queue())
+        self.triggers_page.render(stats)
+        self._render_support()
+        self.support_form.apply_theme()
+        log = logic.admin_activity(40)
+        line = lambda r: f"{r['at'][:16].replace('T', ' ')}  ·  {r['what']}  ·  {r.get('where', '')}"      # noqa: E731
+        self.admin_recent.setText("\n".join(line(r) for r in log[:6]) or "Nothing yet: accepts, publishes, invites and "
+                                  "replies are written here.")
+        self.admin_log.setText("\n".join(line(r) for r in log) or "Nothing yet.")
+        published = [r for r in log if str(r.get("what", "")).startswith("Published")]
+        self.admin_history.setText("\n".join(line(r) for r in published[:12]) or "Nothing published from this console yet.")
+        self.admin_trace_now.setStyleSheet(f"QPushButton {{ background:{theme['section_btn']}; color:{theme['text']}; "
+                                           "border:none; border-radius:8px; padding:6px 12px; font-size:11.5px; }")
+        for part, b in self.admin_menu_btns.items():
+            on = part == self._admin_part
+            b.setStyleSheet(f"QPushButton {{ background:{theme['section_btn'] if on else 'transparent'}; color:{theme['text']}; "
+                            f"border:none; border-radius:8px; padding:7px 10px; font-size:12px; text-align:left; "
+                            f"font-weight:{'700' if on else '500'}; }} QPushButton:hover {{ background:{theme['btn_hover']}; }}")
+        try:
+            from .. import admin
+            admin.write_summary()                 # the phone's overview: counts only (admin_summary.json)
+        except Exception:
+            pass
+
     def _render_admin_summary(self, theme: dict[str, Any], data: dict[str, Any]) -> None:
         """Each section's heading with its count, what's waiting, and exactly what Publish would send."""
         from .. import highlights
         st = logic.scout_state()
         drafts = highlights.drafts("new")
         quiz = [pid for pid, b in (logic.quizwriter_state().get("batches") or {}).items() if not b.get("verdict")]
-        counts = {"overview": "", "review": f"{len(st['new']) + len(drafts) + len(quiz)} waiting",
-                  "write": "", "inbox": f"{len(data.get('inbox') or [])} ideas",
-                  "people": f"{len(data.get('prospects') or [])} to consider", "settings": ""}
+        from .. import support, trace
+        news, news_ok = trace.queue(), trace.queue("accepted")
+        going_n = len(st["accepted"]) + len(highlights.accepted()) + len(news_ok)
+        counts = {"dashboard": "", "review": f"{len(st['new']) + len(drafts) + len(quiz) + len(news)} waiting",
+                  "publish": f"{going_n} ready", "create": "", "outreach": f"{len(data.get('prospects') or [])} to consider",
+                  "support": f"{len(support.threads('new'))} new", "inbox": f"{len(data.get('inbox') or [])} ideas",
+                  "triggers": f"{trace.stats()['spent_today']} DeepSeek calls today", "settings": ""}
         for p, label, emoji in ADMIN_PARTS:
             head = self.admin_section_heads[p]
             head.setText(f"{emoji} {label.upper()}" + (f"  ·  {counts[p]}" if counts[p] else ""))
             head.setStyleSheet(f"color:{theme['text']}; font-size:13px; font-weight:800; background:transparent;")
-        going = [f"{self.SCOUT_EMOJI.get(c['kind'], '')} {c['item']['title']}" for c in st["accepted"]] + \
-                [f"✨ {d['item']['title']}" for d in highlights.accepted()]
+        host = logic.host_of
+        going = [f"{self.SCOUT_EMOJI.get(c['kind'], '')} {c['item']['title']}  →  {host(c['item'].get('url', ''))}" for c in st["accepted"]] + \
+                [f"✨ {d['item']['title']}  →  {host(d['item'].get('url', ''))}" for d in highlights.accepted()] + \
+                [f"📰 {n['title']}  →  {host(n.get('url', ''))}" for n in news_ok]
         self.admin_waiting.setText(
-            f"Waiting for you in Review: {len(st['new'])} listings, {len(drafts)} Highlights, {len(quiz)} quiz batches."
+            f"Waiting for you in Review: {len(st['new'])} listings, {len(news)} news, {len(drafts)} Highlights, "
+            f"{len(quiz)} quiz batches."
             + ("\n\nPublish would send these to everyone's lists:\n" + "\n".join(f"  {g}" for g in going[:20])
                + (f"\n  …and {len(going) - 20} more" if len(going) > 20 else "") if going
                else "\n\nNothing accepted yet, so Publish has nothing to send."))
@@ -6253,8 +6405,11 @@ class MyGeekyPanel(QWidget):
         self.admin_import.apply_theme()
 
     def _set_admin_part(self, part: str) -> None:
-        self._admin_part = part if part in {p for p, *_ in ADMIN_PARTS} else "overview"
+        part = ADMIN_RENAMED.get(part, part)
+        self._admin_part = part if part in {p for p, *_ in ADMIN_PARTS} else "dashboard"
         self._show_admin_part()
+        if hasattr(self, "admin_menu_btns"):
+            self._render_console(THEMES[self._theme_name()])
         self._nav_mark()
 
     def _show_admin_part(self) -> None:
@@ -6872,13 +7027,15 @@ class MyGeekyPanel(QWidget):
         self._render_scout()
 
     def _on_scout_publish(self) -> None:
-        from .. import highlights
-        st, n_hl = logic.scout_state(), len(highlights.accepted())
+        from .. import highlights, trace
+        st, n_hl, news = logic.scout_state(), len(highlights.accepted()), trace.queue("accepted")
         what = " and ".join(x for x in (f"{len(st['accepted'])} listing(s) to everyone's Chances" if st["accepted"] else "",
-                                        f"{n_hl} Highlight(s) to Grow" if n_hl else "") if x)
+                                        f"{n_hl} Highlight(s) to Grow" if n_hl else "",
+                                        f"{len(news)} news item(s) to What's new" if news else "") if x)
         from urllib.parse import urlsplit
         going = [(c["item"].get("title", ""), c["item"].get("url", "")) for c in st["accepted"]]
         going += [(h.get("title", ""), h.get("url", "")) for h in highlights.accepted()]
+        going += [(n.get("title", ""), n.get("url", "")) for n in news]
         listed = "\n".join(f"• {t[:70]}  →  {urlsplit(u).hostname or '?'}" for t, u in going[:15])
         more = f"\n…and {len(going) - 15} more" if len(going) > 15 else ""
         box = self._box("Publish to mygeeky.org",
@@ -9481,6 +9638,7 @@ class MyGeekyPanel(QWidget):
 
     # ------------------------------------------------------------------ market
     NEWS_HINTS = {
+        "whatsnew": "AI and technology news worth knowing, each item checked against its sources before it's shown.",
         "airace": "",
         "headlines": "What's happening across your work, as titles: AI labs, journals and the tech press, ranked by "
                      "your interests. \U0001f30d = the big picture.<br>" + BADGE_LEGEND,
@@ -9507,6 +9665,10 @@ class MyGeekyPanel(QWidget):
         self.headlines_box.setVisible(mode == "headlines")
         self.news_box.setVisible(mode == "papers")
         self.airace_page.setVisible(mode == "airace")
+        self.whatsnew_page.setVisible(mode == "whatsnew")
+        if mode == "whatsnew":
+            self.whatsnew_page.set_items(logic.whats_new(self.cfg))
+            self._run_async(lambda: logic.whats_new(self.cfg, refresh=True), self.whatsnew_page.set_items)
         self.news_hint.setText(self.NEWS_HINTS[mode])
         self.news_hint.setVisible(bool(self.NEWS_HINTS[mode]))
         if mode == "airace" and self.airace_page.data is not None:

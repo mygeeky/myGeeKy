@@ -116,7 +116,8 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
       leaf('grow', 'highlights', 'Highlights', 'sparkles-outline')] },   // Collaborators hidden while few use Signals (as on the computer)
     { ...G.world, icon: 'earth-outline', children: [
       { id: 'news', label: 'News', icon: 'newspaper-outline', tab: 'news', children: [
-        leaf('news', 'airace', 'AI race', 'flag-outline'), leaf('news', 'headlines', 'Headlines', 'reader-outline'),
+        leaf('news', 'whatsnew', 'What\'s new', 'newspaper-outline'), leaf('news', 'airace', 'AI race', 'flag-outline'),
+        leaf('news', 'headlines', 'Headlines', 'reader-outline'),
         leaf('news', 'discuss', 'Papers & talk', 'chatbubbles-outline')] },
       { id: 'papers', label: 'Papers', icon: 'document-text-outline', tab: 'papers' },
       { id: 'models', label: 'AI models', icon: 'hardware-chip-outline', tab: 'models' },

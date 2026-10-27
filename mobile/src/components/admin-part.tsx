@@ -1,19 +1,16 @@
-// 🛠 Admin, the maker's part of "You", on the phone: a glance, nothing more. Downloads, stars, people on Signals and how
-// much is waiting on the computer, as numbers: no names, no email addresses, no buttons that change anything. Reviewing,
-// inviting, writing and publishing all happen on the computer (the desktop's admin tab). It shows only for the account
-// GitHub says owns the connected data repo (lib/admin.ts adminLogin), so it needs no lock of its own.
+// 🛠 Admin, the maker's part of "You", on the phone: an overview only. Downloads and stars, what's waiting on the
+// computer, and what TRACE noticed this week, as numbers (lib/admin.ts, from the computer's admin_summary.json): no
+// names, no email addresses, no buttons that change anything, no passwords or keys. Reviewing, publishing, support
+// email and everything else happen in the computer's Admin console.
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { StatTiles } from './model-plots';
 import { s, Section, timeAgo } from './ui';
-import { type AdminData, funnel, loadAdmin, loadListings, pendingActions, quizStatus, withPending } from '../lib/admin';
-import { loadLists } from '../lib/curated';
+import { loadSummary, type Summary } from '../lib/admin';
 import { C } from '../lib/theme';
 
-type Glance = { data: AdminData; review: number; quizBatches: number };
-
 export function AdminPart() {
-  const [got, setGot] = useState<Glance | null>(null);
+  const [got, setGot] = useState<Summary | null>(null);
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,46 +18,46 @@ export function AdminPart() {
     setLoading(true);
     setNote('');
     try {
-      const [data, pending, lists] = await Promise.all([loadAdmin(), pendingActions(), loadLists().catch(() => null)]);
-      if (!data) {
-        setGot(null);
-        setNote('Nothing to show: admin_prospects.json is not in your data repo yet, or this is not the maker\'s account.');
-        return;
-      }
-      const [listings, quiz] = await Promise.all([loadListings(pending), quizStatus(lists)]);
-      setGot({ data: { ...data, people: withPending(data.people, pending) }, review: listings?.toReview.length ?? 0,
-               quizBatches: (quiz?.rows ?? []).filter((r) => r.spotCheck).length });
+      const sum = await loadSummary();
+      setGot(sum);
+      if (!sum) setNote('Nothing to show yet: open Admin on your computer once (it writes the overview into your saved data), or this isn\'t the maker\'s GitHub account.');
     } catch (e) {
-      setNote(e instanceof Error ? e.message : 'Could not read your data repo.');
+      setNote(e instanceof Error ? e.message : 'Could not read your saved data.');
     } finally {
       setLoading(false);
     }
   }, []);
   useEffect(() => { Promise.resolve().then(refresh); }, [refresh]);             // after this render, not inside it
 
-  if (!got) return <Text style={s.small}>{loading ? 'Reading your data repo…' : note}</Text>;
-  const { data, review, quizBatches } = got;
-  const ad = data.adoption;
-  const f = funnel(data.people);
+  if (!got) return <Text style={s.small}>{loading ? 'Reading your saved data…' : note}</Text>;
+  const { adoption: ad, waiting: w, invites: f, trace: t } = got;
   const fmt = (v: number | null) => (v === null ? '–' : String(v));
   return (
     <>
       <View style={[s.row, { alignItems: 'center', justifyContent: 'space-between' }]}>
-        <Text style={[s.small, { flex: 1 }]}>{data.updatedAt ? `updated ${timeAgo(data.updatedAt)} on your computer` : ''}</Text>
+        <Text style={[s.small, { flex: 1 }]}>{got.updatedAt ? `updated ${timeAgo(got.updatedAt)} on your computer` : ''}</Text>
         <Text style={a.link} onPress={loading ? undefined : refresh}>{loading ? 'Refreshing…' : 'Refresh'}</Text>
       </View>
-      {note ? <Text style={[s.small, { color: C.amber, marginTop: 4 }]}>{note}</Text> : null}
 
       <Section>📈 DOWNLOADS AND USE</Section>
       <StatTiles tiles={[[fmt(ad.pypi_week), 'PyPI / week'], [fmt(ad.installer_downloads), 'installs (.exe)'],
         [fmt(ad.stars), 'stars'], [fmt(ad.signals_users), 'on Signals']]} />
 
       <Section>🖥 WAITING ON YOUR COMPUTER</Section>
+      <StatTiles tiles={[[String(w.listings + w.news + w.highlights + w.quiz_batches), 'to review'],
+        [String(w.ready_to_publish), 'ready to publish'], [String(w.support), 'support emails'], [String(w.ideas), 'ideas']]} />
       <Text style={s.small}>
-        {review} listings to review · {quizBatches} quiz batches to spot-check · {data.inbox.length} ideas in the inbox ·{' '}
-        {data.keywordRequests.length} keywords to teach · invites: {f.invited} sent, {f.joined} joined
+        {w.listings} listings · {w.news} news · {w.highlights} Highlights · {w.quiz_batches} quiz batches · {w.keywords} keywords to teach
+        {got.lastPublish ? ` · last published ${timeAgo(got.lastPublish)}` : ''}
       </Text>
-      <Text style={[s.small, { marginTop: 6 }]}>Reviewing, inviting, writing and publishing are done in the computer&apos;s admin tab.</Text>
+
+      <Section>⚡ TRACE THIS WEEK</Section>
+      <Text style={s.small}>
+        {t.triggersWeek} triggers · {t.acceptedWeek} accepted · DeepSeek today {t.spentToday} of {t.perDay}
+        {t.rising.length ? `\nRising: ${t.rising.join(' · ')}` : ''}
+      </Text>
+      <Text style={[s.small, { marginTop: 6 }]}>Invites: {f.invited} sent, {f.joined} joined.</Text>
+      <Text style={[s.small, { marginTop: 10, color: C.muted }]}>Reviewing, publishing and support email are done in the Admin console on your computer.</Text>
     </>
   );
 }

@@ -48,7 +48,6 @@ def two_computers(tmp_path, monkeypatch):
     monkeypatch.setattr(sync, "_has_gh", lambda: False)
     monkeypatch.setattr(sync, "export_config", lambda: None)
     monkeypatch.setattr(sync, "import_config", lambda: False)
-    monkeypatch.setattr(sync, "_apply_admin_log", lambda: 0)
     return remote, old, new
 
 

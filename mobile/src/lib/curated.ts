@@ -10,6 +10,7 @@ import { cleanProtocol, type Protocol } from './protocol-shape';
 import { isStale, readCache, writeCache } from './storage';
 import * as taste from './taste';
 import { cleanAll as cleanHighlights, type Highlight } from './highlight-shape';
+import { cleanAll as cleanWhatsNew, type WhatsNew } from './whatsnew-shape';
 
 export const REMOTE_URL = 'https://raw.githubusercontent.com/mygeeky/myGeeKy/main/src/mygeeky/data/curated.json';
 const CHECK_EVERY_HOURS = 6;
@@ -38,7 +39,7 @@ export type Item = {
 };
 export type Said = { name: string; rtl: boolean; title: string; summary?: string; who?: string;
   amount?: string; student?: string };
-export type Lists = { version: string; protocols: Protocol[]; seasons: unknown[]; highlights: Highlight[]; signals_hidden?: string[] } & Record<ListName, Item[]>;
+export type Lists = { version: string; protocols: Protocol[]; seasons: unknown[]; highlights: Highlight[]; whatsnew: WhatsNew[]; signals_hidden?: string[] } & Record<ListName, Item[]>;
 export type Ranked = Item & { score: number; match: string[]; daysLeft: number | null; vote: number };
 
 const text = (v: unknown, n: number) => (typeof v === 'string' || typeof v === 'number' ? String(v).split(/\s+/).join(' ').trim().slice(0, n) : '');
@@ -132,6 +133,7 @@ export function clean(data: any): Lists {
   const out = { version: text(data?.version, 40), protocols: [] as Protocol[],
     seasons: Array.isArray(data?.seasons) ? data.seasons.slice(0, 300) : [],
     highlights: cleanHighlights(data?.highlights),                  // the maker's stories (highlight-shape.ts)
+    whatsnew: cleanWhatsNew(data?.whatsnew),                        // AI and tech news from TRACE (whatsnew-shape.ts)
     // beacons hidden from everyone for breaking the Signals terms (curated.clean)
     signals_hidden: (Array.isArray(data?.signals_hidden) ? data.signals_hidden.slice(0, 500) : [])
       .filter((u: unknown) => typeof u === 'string' && /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(u)) } as Lists;

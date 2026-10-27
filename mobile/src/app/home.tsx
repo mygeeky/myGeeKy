@@ -25,6 +25,7 @@ import { type ChanceMode, ChancesView } from '../components/chances-view';
 import { type GrowMode, GrowView } from '../components/grow-view';
 import { MonthView, rankNews } from '../components/month-view';
 import { AiRaceView } from '../components/ai-race-view';
+import { WhatsNewView } from '../components/whatsnew-view';
 import { CitedByView } from '../components/cited-by-view';
 import { useToast } from '../components/toast';
 import { SignalsView } from '../components/signals-view';
@@ -60,7 +61,7 @@ import { retryWhois } from '../lib/whois-store';
 
 
 const HINT_KEY = 'mygeeky.orbitHinted';
-type NewsPart = 'airace' | 'headlines' | 'discuss';
+type NewsPart = 'whatsnew' | 'airace' | 'headlines' | 'discuss';
 type RepoPart = 'help' | 'rising';
 type YouPart = 'month' | 'model' | 'cited' | 'badges' | 'ideas' | 'admin' | SettingsPart;
 // Settings' pages (the Settings main): You's parts, drawn by components/settings-parts.tsx
@@ -269,7 +270,7 @@ export default function Home() {
       toast(`⚠ ${msg}`);
     })().catch(() => undefined);
   }, [remindKey]);   // eslint-disable-line react-hooks/exhaustive-deps -- once per change of what's red
-  const [newsPart, setNewsPart] = useState<NewsPart>('airace');
+  const [newsPart, setNewsPart] = useState<NewsPart>('whatsnew');
   const [researcherPart, setResearcherPart] = useState('new');
   const [repoPart, setRepoPart] = useState<RepoPart>('help');
   const [youPart, setYouPart] = useState<YouPart>(params.part === 'more' ? 'accounts'
@@ -572,6 +573,8 @@ export default function Home() {
             <HelpView onStart={startTour} labelOf={(m) => find(tree, m === 'home' ? 'feed' : m)?.label ?? m} lang={tour ? 'touring' : 'idle'} />
           ) : !user && NEEDS_GITHUB[sel] ? (
             <GitHubCard why={NEEDS_GITHUB[sel] as string} />
+          ) : sel === 'news' && newsPart === 'whatsnew' ? (
+            <WhatsNewView />
           ) : sel === 'news' && newsPart === 'airace' ? (
             <AiRaceView />
           ) : sel === 'feed' ? (

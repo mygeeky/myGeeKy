@@ -58,10 +58,7 @@ def _settings(down: list[str]) -> None:
 
 def sync_now() -> dict[str, Any]:
     """One sync with Google Drive: {"down": [...], "up": [...]}."""
-    from . import sync
-    result = ss.sync(drive_store(), before_upload=_settings)
-    sync._apply_admin_log()
-    return result
+    return ss.sync(drive_store(), before_upload=_settings)
 
 
 def _set(store: str, repo: str) -> tuple[str, str]:
@@ -106,7 +103,6 @@ def use_drive() -> dict[str, Any]:
     except Exception:
         _set(*old)
         raise
-    sync._apply_admin_log()
     moved = ""
     if before == "github" and sync.is_initialized():
         _mark_repo("drive")
