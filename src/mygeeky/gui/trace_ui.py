@@ -40,17 +40,11 @@ def _label(text: str, css: str, wrap: bool = True) -> QLabel:
 
 
 
-def on_accent(t: dict) -> str:
-    """Text that reads on the theme's accent: dark ink on a light accent, the theme's text on a dark one."""
-    from PySide6.QtGui import QColor as _C
-    c = _C(t["accent"]) if str(t["accent"]).startswith("#") else _C("#888888")
-    return "#0d0d16" if (0.299 * c.red() + 0.587 * c.green() + 0.114 * c.blue()) > 150 else t["text"]
-
 def _button(text: str, t: dict[str, Any], primary: bool = False) -> QPushButton:
     b = QPushButton(text)
     b.setCursor(Qt.PointingHandCursor)
     b.setStyleSheet(f"QPushButton {{ background:{t['accent'] if primary else t['section_btn']}; "
-                    f"color:{on_accent(t) if primary else t['text']}; "
+                    f"color:{t['on_accent'] if primary else t['text']}; "
                     f"border:none; border-radius:8px; padding:5px 11px; font-size:11.5px; "
                     f"font-weight:{'700' if primary else '500'}; }} QPushButton:disabled {{ color:{t['muted']}; }}")
     return b

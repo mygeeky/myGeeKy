@@ -186,6 +186,20 @@ def _no_real_deepseek_key(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _app_palette_back_after_each_test():
+    """A panel sets the whole app's palette and font from its theme (qt_panel._apply_theme): each test starts with
+    the app as it was, whatever theme the test before it used."""
+    app = None
+    if "PySide6.QtWidgets" in sys.modules:
+        app = sys.modules["PySide6.QtWidgets"].QApplication.instance()
+    saved = (app.palette(), app.font()) if app is not None else None
+    yield
+    if saved is not None:
+        app.setPalette(saved[0])
+        app.setFont(saved[1])
+
+
+@pytest.fixture(autouse=True)
 def _no_real_mailbox_passwords(monkeypatch):
     """The mailbox app passwords (job alerts, TRACE's trigger inbox, support@) live in the system keyring: a test gets
     an empty in-memory keyring for them instead, and can never read or write the real ones."""

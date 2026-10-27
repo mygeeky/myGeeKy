@@ -109,6 +109,15 @@ def run(theme_name: str, switched: bool) -> list[dict]:
     logic.is_admin = lambda cfg: True                     # the Admin console is checked too (it reads local files only)
     logic.trace_run = lambda manual=False: {}
     app = QApplication.instance() or QApplication(sys.argv[:1])
+    # a hostile system palette: white text under a light theme, black under a dark one (a computer in dark mode, a light
+    # one). Text that takes its colour from the system instead of the theme then fails here, as it would there.
+    from PySide6.QtGui import QColor, QPalette
+    from mygeeky.gui.app import THEMES
+    hostile = QPalette()
+    ink = QColor("#000000") if THEMES[theme_name].get("dark", True) else QColor("#ffffff")
+    for role in (QPalette.WindowText, QPalette.Text, QPalette.ButtonText, QPalette.ToolTipText, QPalette.PlaceholderText):
+        hostile.setColor(role, ink)
+    app.setPalette(hostile)
     cfg = MyGeekyConfig(github_username="audit", keywords=["gwas", "genomics", "machine learning", "snakemake"],
                         topics=["bioinformatics"], gui_theme="midnight" if switched else theme_name)
     panel = MyGeekyPanel(cfg)

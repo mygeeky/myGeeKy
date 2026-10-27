@@ -83,6 +83,8 @@ THEMES: dict[str, dict[str, Any]] = {
         "title": "#ffffff", "link": "#7fd8ff", "good": "#34d399", "bad": "#f87171", "warn": "#fbbf24",
         "cat_ai": "#ff6fd8", "cat_science": "#34d399", "cat_tech": "#7fd8ff",
         "on_accent": "#15151f", "explore": "#9b87ff", "dark": True,
+        # the panel's font, first one found: each system's own UI font, then good fallbacks (code keeps monospace)
+        "font": ["Segoe UI", "SF Pro Text", "Helvetica Neue", "Inter", "Noto Sans", "Ubuntu", "Cantarell", "Arial"],
     },
     "frosted": {
         # A drop box's list is drawn in its own window, where a translucent colour goes black.
@@ -104,6 +106,8 @@ THEMES: dict[str, dict[str, Any]] = {
         "title": "#14110e", "link": "#0b5f8f", "good": "#047857", "bad": "#b91c1c", "warn": "#a16207",
         "cat_ai": "#a21caf", "cat_science": "#047857", "cat_tech": "#0369a1",
         "on_accent": "#ffffff", "explore": "#6d28d9", "dark": False,
+        # the panel's font, first one found: each system's own UI font, then good fallbacks (code keeps monospace)
+        "font": ["Segoe UI", "SF Pro Text", "Helvetica Neue", "Inter", "Noto Sans", "Ubuntu", "Cantarell", "Arial"],
     },
     "aurora": {
         # A drop box's list is drawn in its own window, where a translucent colour goes black.
@@ -126,6 +130,8 @@ THEMES: dict[str, dict[str, Any]] = {
         "cat_ai": "#ff9ce6", "cat_science": "#6ee7b7", "cat_tech": "#a5f3fc",
         "on_accent": "#1a1030", "explore": "#c4b5fd", "dark": True,
         "swatch_border": "rgba(255,255,255,120)",
+        # the panel's font, first one found: each system's own UI font, then good fallbacks (code keeps monospace)
+        "font": ["Segoe UI", "SF Pro Text", "Helvetica Neue", "Inter", "Noto Sans", "Ubuntu", "Cantarell", "Arial"],
     },
 }
 
@@ -2666,7 +2672,7 @@ def _play_intro_once(cfg: MyGeekyConfig):
     save_config(cfg)                       # once, even if something below fails
     try:
         from .splash import make_splash
-        splash = make_splash()
+        splash = make_splash(dark=THEMES.get(cfg.gui_theme, THEMES["midnight"]).get("dark", True))
         splash.play()
         return splash
     except Exception:

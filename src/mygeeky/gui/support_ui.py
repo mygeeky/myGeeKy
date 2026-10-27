@@ -23,17 +23,11 @@ def _label(text: str, css: str) -> QLabel:
 
 
 
-def on_accent(t: dict) -> str:
-    """Text that reads on the theme's accent: dark ink on a light accent, the theme's text on a dark one."""
-    from PySide6.QtGui import QColor as _C
-    c = _C(t["accent"]) if str(t["accent"]).startswith("#") else _C("#888888")
-    return "#0d0d16" if (0.299 * c.red() + 0.587 * c.green() + 0.114 * c.blue()) > 150 else t["text"]
-
 def _button(text: str, t: dict[str, Any], primary: bool = False) -> QPushButton:
     b = QPushButton(text)
     b.setCursor(Qt.PointingHandCursor)
     b.setStyleSheet(f"QPushButton {{ background:{t['accent'] if primary else t['section_btn']}; "
-                    f"color:{on_accent(t) if primary else t['text']}; "
+                    f"color:{t['on_accent'] if primary else t['text']}; "
                     f"border:none; border-radius:8px; padding:5px 11px; font-size:11.5px; "
                     f"font-weight:{'700' if primary else '500'}; }} QPushButton:disabled {{ color:{t['muted']}; }}")
     return b
@@ -140,7 +134,7 @@ class SupportPage(QWidget):
             b.setStyleSheet(f"QPushButton {{ background:{t['section_btn']}; color:{t['text']}; border:none; "
                             "border-radius:8px; padding:5px 10px; font-size:11px; }")
             b.setEnabled(bool(th) or b is self.fetch_btn)
-        self.send_btn.setStyleSheet(f"QPushButton {{ background:{t['accent']}; color:{on_accent(t)}; border:none; "
+        self.send_btn.setStyleSheet(f"QPushButton {{ background:{t['accent']}; color:{t['on_accent']}; border:none; "
                                     "border-radius:8px; padding:5px 12px; font-size:11.5px; font-weight:700; }")
         self.send_btn.setEnabled(bool(th))
 

@@ -42,6 +42,7 @@ from PySide6.QtGui import (
     QDesktopServices,
     QBrush,
     QColor,
+    QPalette,
     QGuiApplication,
     QIcon,
     QImage,
@@ -3820,9 +3821,9 @@ class MyGeekyPanel(QWidget):
             icon_label.setFixedSize(20, 20)
             icon_label.setScaledContents(True)
             header.addWidget(icon_label)
-        logo = QLabel("myGeeKy")
-        logo.setStyleSheet("font-weight:700; font-size:15px; background:transparent;")
-        header.addWidget(logo)
+        self.logo_label = QLabel("myGeeKy")                # its colour comes from the theme (_apply_theme)
+        self.logo_label.setTextFormat(Qt.PlainText)
+        header.addWidget(self.logo_label)
         header.addStretch(1)
 
         self.idea_btn = QPushButton("\U0001f4a1")
@@ -8025,8 +8026,38 @@ class MyGeekyPanel(QWidget):
     def _theme_name(self) -> str:
         return self.cfg.gui_theme if self.cfg.gui_theme in THEME_NAMES else "midnight"
 
+    def _theme_palette(self, theme: dict[str, Any]) -> QPalette:
+        """The theme as Qt's palette: any text, field or dialog that doesn't set its own colour follows the theme,
+        never the computer's own (a dark system palette made the logo white on the light theme)."""
+        from .trace_ui import qc
+        pal = QPalette()
+        solid, text = qc(theme["solid_bg"]), qc(theme["text"])
+        muted = qc(theme["muted"])
+        for group in (QPalette.Active, QPalette.Inactive, QPalette.Disabled):
+            pal.setColor(group, QPalette.Window, solid)
+            pal.setColor(group, QPalette.Base, solid)
+            pal.setColor(group, QPalette.AlternateBase, solid)
+            pal.setColor(group, QPalette.Button, solid)
+            pal.setColor(group, QPalette.ToolTipBase, solid)
+            for role in (QPalette.WindowText, QPalette.Text, QPalette.ButtonText, QPalette.ToolTipText, QPalette.BrightText):
+                pal.setColor(group, role, muted if group == QPalette.Disabled else text)
+            pal.setColor(group, QPalette.PlaceholderText, muted)
+            pal.setColor(group, QPalette.Highlight, qc(theme["accent"]))
+            pal.setColor(group, QPalette.HighlightedText, qc(theme["on_accent"]))
+            pal.setColor(group, QPalette.Link, qc(theme["link"]))
+        return pal
+
     def _apply_theme(self) -> None:
         theme = THEMES[self._theme_name()]
+        pal = self._theme_palette(theme)
+        app = QApplication.instance()
+        if app is not None:
+            app.setPalette(pal)                    # dialogs, menus and tooltips too
+            font = app.font()
+            font.setFamilies(list(theme.get("font") or []) + font.families())
+            app.setFont(font)
+        self.setPalette(pal)
+        self.logo_label.setStyleSheet(f"color:{theme['title']}; font-weight:700; font-size:15px; background:transparent;")
         self._render_signs()
         self._style_settings_nav()
         self.panel_frame.set_style(theme["bg"], theme["border"], radius=22.0)

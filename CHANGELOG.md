@@ -3,6 +3,11 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **The logo reads on the light theme** (computer). The opening animation's neon, half-transparent letters faded into a light background; on Frosted they now stand on the app icon's dark badge. The header's "myGeeKy" takes the theme's title colour.
+- **Every text follows the theme, not the computer** (computer): the panel now gives Qt the theme's colours and font, so any label, field, menu, tooltip or dialog that doesn't choose its own colour follows the theme. On a computer set to dark mode, some texts were white on Frosted. Each theme also names its font (the system's own UI font first), so the panel looks the same everywhere. The theme check now runs under a "hostile" system colour (white text under a light theme, black under a dark one), so anything that slips back to the computer's colour is caught.
+
 ## 0.39.0 (2026-10-27): What's new, a way back you can see, and the maker's Admin console (phone 1.21.0)
 
 - **📰 What's new, first in News** (computer and phone): AI and technology news worth knowing, each item checked against its sources before it's shown, the newest first and nudged toward your field. It's the same for everyone and found from public sources, never from anything about you.

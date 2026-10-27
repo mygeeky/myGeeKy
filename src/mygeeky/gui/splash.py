@@ -82,8 +82,12 @@ def _qt():
     return locals()
 
 
-def make_splash(size: int = 260):
-    """A small, frameless window in the middle of the screen that plays the animation."""
+BADGE_BG = "#14141f"          # the app icon's dark ground: the neon letters were drawn for it
+
+
+def make_splash(size: int = 260, dark: bool = True):
+    """A small, frameless window in the middle of the screen that plays the animation. On a light theme (`dark`
+    False) it stands on a dark rounded badge, like the app icon: its neon, half-transparent letters vanish on white."""
     q = _qt()
     Qt, QWidget, QPixmap, QPainter = q["Qt"], q["QWidget"], q["QPixmap"], q["QPainter"]
     QTimer, QElapsedTimer, QRectF, QPointF, QColor = q["QTimer"], q["QElapsedTimer"], q["QRectF"], q["QPointF"], q["QColor"]
@@ -124,7 +128,14 @@ def make_splash(size: int = 260):
             s = float(self.width())
             painter = QPainter(self)
             painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
-            # no disc behind it: the ring and letters stand on their own, as the logo does
+            # on a dark theme the ring and letters stand on their own, as the logo does; on a light one they'd fade
+            # into the light behind them, so they get the icon's dark badge
+            if not dark:
+                painter.setPen(q["Qt"].NoPen)
+                ground = QColor(BADGE_BG)
+                ground.setAlphaF(0.94 * self.fade)
+                painter.setBrush(ground)
+                painter.drawRoundedRect(QRectF(0, 0, s, s), s * 0.22, s * 0.22)
             for name in LAYERS:
                 pix = self.layers[name]
                 if pix.isNull():

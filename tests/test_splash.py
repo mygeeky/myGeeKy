@@ -33,11 +33,15 @@ def test_it_plays_once_and_never_stops_myGeeKy_starting(monkeypatch):
     class Fake:
         def play(self):
             played.append(1)
-    monkeypatch.setattr(splash, "make_splash", lambda: Fake())
+    darks = []
+    monkeypatch.setattr(splash, "make_splash", lambda dark=True: (darks.append(dark), Fake())[1])
     cfg = MyGeekyConfig()
-    assert isinstance(logic._play_intro_once(cfg), Fake) and played == [1]
+    assert isinstance(logic._play_intro_once(cfg), Fake) and played == [1] and darks == [True]
+    light = MyGeekyConfig(gui_theme="frosted")
+    logic._play_intro_once(light)
+    assert darks == [True, False]                     # the light theme: the letters stand on the icon's dark badge
     assert cfg.gui_intro_shown and load_config().gui_intro_shown        # remembered on disk
-    assert logic._play_intro_once(cfg) is None and played == [1]        # never again
+    assert logic._play_intro_once(cfg) is None and played == [1, 1]     # never again
 
     def broken():
         raise RuntimeError("no screen")
