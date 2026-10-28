@@ -573,7 +573,7 @@ class GeeKOcRun(ArcadeGame):
                 p.setFont(f)
                 p.setPen(QColor("#c0367f"))
                 p.drawText(QRectF(o["x"] - 40, g + 2 - o["h"] - 18, o["w"] + 80, 16), Qt.AlignCenter, o["label"])
-        if self.hurt <= 0 or int(time.monotonic() * 12) % 2:
+        if self.hurt <= 0 or int(self.hurt * 12) % 2:         # hurt: he blinks, on the game's clock
             self.oc(p, "jump" if self.y < -2 else "stand", 92, g - 8 + self.y, 76)
 
 
@@ -697,7 +697,7 @@ class FlappyGeeKOc(ArcadeGame):
             p.setFont(f)
             p.setPen(QColor("#ffffff"))
             p.drawText(QRectF(12, 8, self.W - 24, self.H * 0.16 - 12), Qt.AlignCenter | Qt.TextWordWrap, nxt["g"]["q"] + "?")
-        if self.hurt <= 0 or int(time.monotonic() * 12) % 2:
+        if self.hurt <= 0 or int(self.hurt * 12) % 2:         # hurt: he blinks, on the game's clock
             self.oc(p, "jump" if self.vy < 0 else "stand", 120, self.y, 66)
 
 

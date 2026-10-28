@@ -220,7 +220,7 @@ const RUN: Spec = {
           </View>
         </View>
       ))}
-      <Oc moment={v.y < -2 ? 'jump' : 'stand'} x={92} y={g - 8 + v.y} size={76} k={k} hidden={v.hurt > 0 && !(Math.floor(v.dist / 12) % 2)} />
+      <Oc moment={v.y < -2 ? 'jump' : 'stand'} x={92} y={g - 8 + v.y} size={76} k={k} hidden={v.hurt > 0 && !(Math.floor(v.hurt * 12) % 2)} />
     </>;
   },
 };
@@ -269,7 +269,7 @@ const FLAPPY: Spec = {
         </View>
       ))}
       {nxt ? <Text style={[st.question, { color: '#fff', top: 10 * k }]}>{nxt.g.q}?</Text> : null}
-      <Oc moment={v.vy < 0 ? 'jump' : 'stand'} x={120} y={v.y} size={66} k={k} />
+      <Oc moment={v.vy < 0 ? 'jump' : 'stand'} x={120} y={v.y} size={66} k={k} hidden={v.hurt > 0 && !(Math.floor(v.hurt * 12) % 2)} />
     </>;
   },
 };
