@@ -232,3 +232,20 @@ def test_accounts_opens_no_window_of_its_own(panel):
              and w.window() is w and not w.inherits("QMenu") and w.windowType() not in (0x0c, 0x13)]   # not popups/tooltips
     assert not [w for w in stray if w.parent() is None and type(w).__name__ in ("QPushButton", "QLabel")], stray
     assert panel.signals_btn.parent() is not None and not panel.signals_btn.isVisible()
+
+
+def test_up_follows_the_panel_even_with_the_menu_pinned_open(panel):
+    """A pinned menu used to send "up" wherever the menu was browsing: "‹ All sections" on Settings, and a dead
+    "‹ Home" on Home. Up always climbs from what the panel shows."""
+    host = panel.rail_host
+    host.toggle_pin()                                               # pinned beside the page, open
+    panel._switch_tab("home")
+    assert not panel.nav_back_text.isVisible() or not panel.nav_back_text.text()               # nothing above Home
+    panel._toggle_settings()                                        # ⚙ → Accounts
+    assert host.state.open_group == "settings" and "Settings" in panel.nav_back_text.text()
+    panel.nav_back_text.click()
+    assert panel._level_node()["id"] == "settings" and panel.level_page.grid.count() > 0
+    panel.nav_back_text.click()
+    assert panel._level_node() is panel.nav_tree
+    panel.nav_back_text.click()
+    assert panel.active_tab == "home" and panel._level_node() is None

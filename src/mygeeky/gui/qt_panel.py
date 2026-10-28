@@ -7588,6 +7588,7 @@ class MyGeekyPanel(QWidget):
             self.content_stack.setCurrentWidget(self.settings_panel)
         elif self.content_stack.currentWidget() is self.settings_panel:
             self.content_stack.setCurrentIndex(self._tab_order.index(self.active_tab))
+        self.rail_host.follow_page()                      # the menu shows where you are now
         self._update_tab_styles()
 
     # ------------------------------------------------------------------ ⚙'s pages
@@ -7606,6 +7607,8 @@ class MyGeekyPanel(QWidget):
         if key == "accounts" and load:
             self._load_setup()
         if hasattr(self, "content_stack") and hasattr(self, "nav_trail"):
+            if self.content_stack.currentWidget() is self.settings_panel:
+                self.rail_host.follow_page()
             self._update_tab_styles()                     # the trail and the menu follow: Settings › Look
 
     def _style_settings_nav(self) -> None:
@@ -10139,6 +10142,8 @@ class MyGeekyPanel(QWidget):
             self._fresh_dirty.add(previous)           # what you saw there makes room next time
         QTimer.singleShot(0, lambda: self._refresh_fresh_tab(name))
         self.content_stack.setCurrentIndex(self._tab_order.index(name))
+        if hasattr(self, "rail_host"):
+            self.rail_host.follow_page()                  # the menu drops down to the page you're on
         if "admin" in (previous, name) and previous != name and self.panel_frame.isVisible():
             self._dock(folded=False)                  # wide for Admin, back to your own width when you leave it
         self._nav_follow()

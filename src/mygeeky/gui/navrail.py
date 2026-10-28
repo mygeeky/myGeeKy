@@ -573,8 +573,14 @@ class RailHost(QWidget):
         """Open at the page you're on: its group dropped down, and its page if it has parts."""
         leaf = self.leaf()
         path = navtree.path(leaf) if leaf else []
-        self.state.open_group = path[1]["id"] if len(path) > 1 else None
+        self.state.open_group = path[1]["id"] if len(path) > 2 else None     # 🏠 Home is a page, not a group to drop down
         self.state.open_page = path[2]["id"] if len(path) > 3 else None
+
+    def follow_page(self) -> None:
+        """A page opened from elsewhere (⚙, a link, a notification): the menu drops down to it."""
+        if self.level() is None:
+            self._follow_leaf()
+            self.apply()
 
     # ---- what the person does
     def tapped(self, nid: str) -> None:
@@ -628,12 +634,9 @@ class RailHost(QWidget):
         return next((g for g in self.tree["children"] if not g["children"]), None)
 
     def _from(self) -> tuple[dict[str, Any] | None, bool]:
-        """Where "up" starts from, and whether that is a page: the menu's level when it's open, else the level the
-        panel shows, else the page you're on."""
-        s = self.state
-        if s.open:
-            nid = s.open_page or s.open_group
-            return (navtree.find(self.tree, nid) if nid else self.tree), False
+        """Where "up" starts from, and whether that is a page: always what the PANEL shows -- the level, else the
+        page -- never where the open menu happens to be browsing (a pinned menu used to send "up" somewhere else:
+        "‹ All sections" on Settings, a dead "‹ Home" on Home)."""
         if self.level() is not None:
             return self.level(), False
         return self.leaf(), True
