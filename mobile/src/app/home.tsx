@@ -199,6 +199,9 @@ function Spark({ values, trend }: { values: number[]; trend: 'up' | 'down' | nul
   );
 }
 
+// a part of Home that throws while drawing shows this (with Try again) instead of closing the app
+export { CrashScreen as ErrorBoundary } from '../components/crash-screen';
+
 export default function Home() {
   const toast = useToast();
   const { settings, token } = useApp();
@@ -453,7 +456,7 @@ export default function Home() {
     return [...inPart.filter(fresh), ...inPart.filter((r) => !fresh(r))];
   });
   const firstSeen = parts.length > 1 ? -1 : rows.findIndex((r) => !fresh(r));
-  const section = SECTIONS[view];
+  const section = SECTIONS[view] ?? SECTIONS.feed;       // never undefined, even for a section an update renamed
   // the heading is the page you're on (a part, if it has one); beside it, where it lives: WORLD › NEWS
   const title = leaf && leaf.part ? leaf.label : section.label;
   const ring = (leaf ? navPath(leaf).slice(1, -1).map((n) => n.label).join(' › ') || navPath(leaf)[1]?.label || '' : '').toUpperCase();

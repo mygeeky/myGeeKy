@@ -71,6 +71,60 @@ def test_the_interest_map_moves_a_while_then_rests(qapp_offscreen):
     assert not m._timer.isActive()
 
 
+def test_games_opened_again_and_again_leak_nothing_and_rest_when_still(qapp_offscreen):
+    """Every game opened and left four times: no widgets pile up and no game timer keeps running after you leave;
+    a game resting on its start card stops repainting; a finished round's delayed result dies with the game."""
+    import time
+    from PySide6.QtCore import QEvent, QTimer
+    from PySide6.QtWidgets import QApplication
+    from mygeeky import gems
+    from mygeeky.config import MyGeekyConfig
+    from mygeeky.gui.qt_panel import MyGeekyPanel
+
+    def settle(seconds=0.0):
+        end = time.time() + seconds
+        while True:
+            QApplication.processEvents()
+            QApplication.sendPostedEvents(None, QEvent.DeferredDelete.value)    # run deleteLater
+            if time.time() >= end:
+                break
+            time.sleep(0.01)
+
+    p = MyGeekyPanel(MyGeekyConfig(github_username="me", keywords=["gwas", "python"]))
+    p.resize(460, 760)
+    p.show()
+    try:
+        p._switch_tab("games")
+        g = p.games_page
+        counts = []
+        for _ in range(4):
+            for gid in gems.GAME_IDS:
+                g.open(gid)
+                settle(0.05)
+                g.show_hub()
+            settle()
+            counts.append(len(QApplication.allWidgets()))
+        assert counts[-1] - counts[0] <= 5, counts
+        assert not [t for t in g.findChildren(QTimer) if t.isActive()]       # nothing left running on the hub
+
+        g.open("run")                                                          # resting on its start card
+        w = g.game_widget
+        settle(0.3)
+        assert w.paused and w._still                                           # drawn once, then no more repaints
+        import sys
+        errors, hook = [], sys.excepthook
+        sys.excepthook = lambda *e: errors.append(e[1])
+        try:
+            w.end()                                                            # a round ends...
+            g.show_hub()                                                       # ...and you leave at once
+            settle(0.7)
+        finally:
+            sys.excepthook = hook
+        assert not errors, errors                                              # its result never reached a deleted game
+    finally:
+        p.close()
+
+
 def test_the_live_ticker_stops_while_hidden(qapp_offscreen):
     from PySide6.QtWidgets import QWidget
     from mygeeky.gui import qt_panel

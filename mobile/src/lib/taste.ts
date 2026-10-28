@@ -99,13 +99,24 @@ export function weights(votes: Record<string, Vote>, kinds?: string[], now = Dat
 }
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// each vote's pattern, made once (a list is ranked against every vote, item after item)
+const voteRes = new Map<string, RegExp>();
+function voteRe(t: string): RegExp {
+  let re = voteRes.get(t);
+  if (!re) {
+    if (voteRes.size >= 5000) voteRes.clear();
+    re = new RegExp(`(^|[^a-z0-9])${esc(t)}s?(?![a-z0-9])`);
+    voteRes.set(t, re);
+  }
+  return re;
+}
 
 /** -1..1: how your votes lean on something with this text and these tags. */
 export function lean(text: string, tags: string[], w: Record<string, number>): number {
   const hay = [(text || '').toLowerCase(), ...tags.map((t) => String(t).toLowerCase().replace(/_/g, ' '))].join(' ');
   let total = 0;
   for (const [t, v] of Object.entries(w)) {
-    if (new RegExp(`(^|[^a-z0-9])${esc(t)}s?(?![a-z0-9])`).test(hay)) total += v;
+    if (voteRe(t).test(hay)) total += v;
   }
   return Math.tanh(total / 2);
 }

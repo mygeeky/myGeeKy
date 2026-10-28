@@ -560,7 +560,10 @@ class AvatarLoader:
                 self._memory[cache_key] = pixmap
                 while len(self._memory) > self.MAX_MEMORY:
                     self._memory.pop(next(iter(self._memory)))
-                on_loaded(pixmap)
+                try:
+                    on_loaded(pixmap)
+                except RuntimeError:                      # the label it was for was redrawn away meanwhile
+                    pass
             if worker in self._workers:
                 self._workers.remove(worker)
 

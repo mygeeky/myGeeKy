@@ -120,7 +120,7 @@ class ArcadeGame(QWidget):
         if self.ended:
             return
         self.ended, self.paused = True, True
-        QTimer.singleShot(450, lambda: self.finished.emit(self.answers, time.monotonic() - self.t0, self.bonus))
+        QTimer.singleShot(450, self, lambda: self.finished.emit(self.answers, time.monotonic() - self.t0, self.bonus))
 
     def _frame(self) -> None:
         now = time.monotonic()
@@ -129,6 +129,10 @@ class ArcadeGame(QWidget):
         self.message_t -= dt
         if not self.paused:
             self.step(dt)
+        still = self.paused and self.message_t <= 0         # a card is up or the round is over: nothing moves
+        if still and getattr(self, "_still", False):
+            return                                          # drawn once already: no need to repaint 60 times a second
+        self._still = still
         self.update()
 
     def _world(self, pos) -> QPointF:

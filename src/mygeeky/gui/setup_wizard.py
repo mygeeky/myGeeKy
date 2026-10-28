@@ -504,10 +504,15 @@ def uninstall(python: str, erase: bool = False) -> list[str]:
 class Worker(QThread):
     line = Signal(str)
     done = Signal(object)
+    # every running worker, so a second click ("Check again", "Read") that replaces self._x never lets Python
+    # destroy a thread still running ("QThread: Destroyed while thread is still running" aborts the process)
+    _running: set["Worker"] = set()
 
     def __init__(self, fn: Callable[["Worker"], Any]) -> None:
         super().__init__()
         self._fn = fn
+        Worker._running.add(self)
+        self.finished.connect(lambda: Worker._running.discard(self))
 
     def run(self) -> None:
         try:

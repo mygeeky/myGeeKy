@@ -26,8 +26,9 @@ type Moves = { viewBox: string; fps: number; poses: Record<string, { parts: stri
 let moves: Moves | null = null;
 const loadMoves = (): Moves => (moves ??= require('../data/geekoc_moves.json') as Moves);   // only once a tour opens
 
-/** GeeKOc in one pose, his arms swimming (tools/geekoc_poses.py made the frames); still with reduce motion. */
-export function GeekMover({ pose, size }: { pose: string; size: number }) {
+/** GeeKOc in one pose, his arms swimming (tools/geekoc_poses.py made the frames); still with reduce motion, and
+ *  while `paused` (a game waiting behind a card: each frame is a fresh drawing, too costly to swim for nobody). */
+export function GeekMover({ pose, size, paused = false }: { pose: string; size: number; paused?: boolean }) {
   const m = loadMoves();
   const p = m.poses[pose] ?? m.poses.wave;
   const frames = useMemo(() => p.frames.map((f) => `<svg viewBox="${m.viewBox}">${f.map((i) => p.parts[i]).join('')}</svg>`), [p, m.viewBox]);
@@ -35,10 +36,10 @@ export function GeekMover({ pose, size }: { pose: string; size: number }) {
   const [still, setStill] = useState(false);
   useEffect(() => { AccessibilityInfo.isReduceMotionEnabled().then(setStill).catch(() => undefined); }, []);
   useEffect(() => {
-    if (still) return;
+    if (still || paused) return;
     const t = setInterval(() => setN((k) => (k + 1) % frames.length), 1000 / m.fps);
     return () => clearInterval(t);
-  }, [frames.length, m.fps, still]);
+  }, [frames.length, m.fps, still, paused]);
   // a fresh drawing for every frame: updating one in place matches its pieces by position, frames differ in how many
   // they have, and an eye could take on a neighbour's settings for a moment and show black
   const k = still ? 0 : n % frames.length;

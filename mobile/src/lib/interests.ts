@@ -70,6 +70,7 @@ function pattern(term: string): RegExp {
   if (!p) {
     const words = term.split(' ').map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     p = new RegExp('\\b' + words.join('[\\s_-]+') + 's?\\b', 'i');
+    if (patterns.size >= 5000) patterns.clear();      // a long session never grows this without end
     patterns.set(term, p);
   }
   return p;

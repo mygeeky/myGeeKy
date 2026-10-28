@@ -3,6 +3,17 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## Unreleased
+
+- **Fewer ways to crash** (computer and phone), found by a crash, memory and Play review of both apps and by stress tests (9,000 random taps on the phone; every page and game opened again and again on the computer):
+  - Phone: a screen that throws while drawing now shows "Something went wrong on this page" with **Try again** and **Clear saved lists and restart**, instead of closing the app (a list cached by an older version could otherwise crash every start).
+  - Phone: unreadable storage at start no longer leaves the loader up forever; a scan that can't be saved lets you scan again.
+  - Computer: pressing "Check again" or "Read" twice in setup could abort it (a thread still running was thrown away).
+  - Computer: a GitHub achievement photo arriving after the badges were redrawn, or leaving a game or the tour in the half second after it ended, raised an error and the crash dialog.
+- **No Home behind Home** (phone): after setup, a scan or a tapped notification, the Home you came from stayed loaded underneath with all its lists (more memory, and Back showed the hidden one). Now there is always exactly one Home, and a notification switches the open one.
+- **Games rest when nothing moves** (computer and phone): before Go, during a question and after a round, a game used to redraw 60 times a second; on the phone a start card took about 45% of the CPU, now about 2%. GeeKOc holds still behind a card. Leaving a game right as it ends no longer saves that round.
+- **Lists ask once, newest first** (phone): at start the profile sharpens several times; a slower answer for an older profile no longer overwrites a newer one. Two pattern caches have a cap, and Qt's log is trimmed like the crash log (computer).
+
 ## 0.40.0 (2026-10-28): Play with GeeKOc, fourteen games, and settings inside the panel (phone 1.22.0)
 
 - **🎮 Games: Play with GeeKOc, fourteen games** (computer and phone). A Games entry in the main menu opens a page of every game with its icon, level, best score and progress: Word Hunter, Rise, GeeKOc goes home, GeeKOc run, Flappy GeeKOc, Whack-a-bug, Real tool or made up?, Gene or Pokémon?, Reviewer 2 attacks, Debug reef, Sort the catch, Fix the figure, Which came first? and Terminal typing (pick a right command; on the computer, type it for a bonus). They run on GEMS, one rulebook on both apps: a core pack of 283 sourced items; rounds picked about 70% from your field, 20% new and 10% due again (spaced repetition), harder items unlocked by level; points, stars, game and player levels; a mistake always says why; the Model learns from the topics you play, by right answers and playing time; new badges: Player, Sharp, Level Up. See docs/GEMS.md.

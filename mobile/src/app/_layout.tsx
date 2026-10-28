@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { CrashScreen } from '../components/crash-screen';
 import { LoadingIntro } from '../components/loading-intro';
 import { ToastProvider } from '../components/toast';
 import { AppProvider } from '../lib/app-state';
@@ -15,6 +16,9 @@ import { C } from '../lib/theme';
 
 // the phone's own splash is just the dark background; the opening animation takes over from it
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// a screen that throws while drawing shows this instead of closing the app
+export const ErrorBoundary = CrashScreen;
 
 export default function RootLayout() {
   // the planets' icons: loaded up front, so they never flash in as empty boxes
@@ -27,7 +31,8 @@ export default function RootLayout() {
   useEffect(() => {
     const open = (r: Notifications.NotificationResponse | null) => {
       const sel = r?.notification.request.content.data?.sel;
-      if (typeof sel === 'string') router.push({ pathname: '/home', params: { sel } });
+      // navigate, not push: an open Home switches to that section (it watches sel) instead of a second Home
+      if (typeof sel === 'string') router.navigate({ pathname: '/home', params: { sel } });
     };
     Notifications.getLastNotificationResponseAsync().then(open).catch(() => undefined);
     const sub = Notifications.addNotificationResponseReceivedListener(open);

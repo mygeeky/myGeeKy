@@ -116,7 +116,7 @@ class TourOverlay(QWidget):
         if target:
             self.go(target)
         self._fill()
-        QTimer.singleShot(420 if target else 0, lambda: self._place(target))     # the page settles, then aim
+        QTimer.singleShot(420 if target else 0, self, lambda: self._place(target))     # the page settles, then aim
 
     def next(self) -> None:
         if self.i >= len(self.steps) - 1:
@@ -280,5 +280,5 @@ class TourOverlay(QWidget):
     def eventFilter(self, obj, ev) -> bool:  # noqa: N802
         if ev.type() == QEvent.Resize:
             self.setGeometry(self.parent().rect())
-            QTimer.singleShot(0, lambda: self._place(tour.at(self.steps[self.i], "desktop") if not self.picking else ""))
+            QTimer.singleShot(0, self, lambda: self._place(tour.at(self.steps[self.i], "desktop") if not self.picking else ""))
         return False

@@ -4,7 +4,7 @@
 // GeeKOc (tap to puff ink and swim up through the right answer's gap). One engine runs them all: the world lives in a
 // ref touched only by the loop and by taps, the screen draws a plain snapshot, and the field is 420 wide in game units
 // (as on the desktop), scaled to the phone. Everything shown comes from the pack: plain text only.
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useApp } from '../lib/app-state';
 import * as G from '../lib/gems';
@@ -42,9 +42,16 @@ export function Pill({ text, x, y, bg, k, ink = '#1a1428', size = 13 }: { text: 
     </View>
   );
 }
-export const Oc = ({ pose, x, y, size, k }: { pose: string; x: number; y: number; size: number; k: number }) => (
-  <View pointerEvents="none" style={{ position: 'absolute', left: (x - size / 2) * k, top: (y - size / 2) * k }}><GeekMover pose={pose} size={size * k} /></View>
-);
+// true while the game waits behind a card (before Go, a question, the end): GeeKOc holds still then
+const Resting = createContext(false);
+export const Oc = ({ pose, x, y, size, k }: { pose: string; x: number; y: number; size: number; k: number }) => {
+  const resting = useContext(Resting);
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: (x - size / 2) * k, top: (y - size / 2) * k }}>
+      <GeekMover pose={pose} size={size * k} paused={resting} />
+    </View>
+  );
+};
 
 // ------------------------------------------------------------------------------------------------ the four games
 const countOnce = (w: World, api: Api, c: any, right: boolean) => {
@@ -290,10 +297,13 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
 
   const [outro, setOutro] = useState<{ title: string; text: string } | null>(null);
   const [ask, setAsk] = useState<(Ask & { done: (right: boolean) => void; picked: number | null }) | null>(null);
+  // the short wait before the result: cleared if you leave, so a round you left is never saved
+  const finishTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(finishTimer.current), []);
   const finishNow = useCallback(() => {
     const m = meta.current;
     setOutro(null);
-    setTimeout(async () => { setResult(await finish(spec.game, m.answers, (Date.now() - m.t0) / 1000, world.current.bonus)); }, 450);
+    finishTimer.current = setTimeout(async () => { setResult(await finish(spec.game, m.answers, (Date.now() - m.t0) / 1000, world.current.bonus)); }, 450);
   }, [spec]);
   const end = useCallback((o?: { title: string; text: string }) => {
     const m = meta.current;
@@ -301,9 +311,10 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
     m.ended = true; m.paused = true;
     if (o) setOutro(o); else finishNow();
   }, [finishNow]);
+  const wake = useRef<() => void>(() => undefined);      // starts the frame loop again after it rested
   const api = useRef<Api>({
     answer: (iid, right, level, terms) => { meta.current.answers.push({ id: iid, right, level, terms: [...terms] }); },
-    say: (t, s = 2.6) => { world.current.msg = t; world.current.msgT = s; },
+    say: (t, s = 2.6) => { world.current.msg = t; world.current.msgT = s; wake.current(); },
     end: () => undefined,
     ask: (q, done) => { meta.current.paused = true; setAsk({ ...q, done, picked: null }); },
   });
@@ -318,21 +329,27 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
   }, [spec, profile]);
 
   useEffect(() => {
-    let raf = 0, last = 0;
+    let raf = 0, last = 0, wasStill = false, running = false;
     const loop = (now: number) => {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
       last = now;
       const w = world.current, m = meta.current;
       if (m.ready && !m.paused) spec.step(w, dt, api.current);
       w.msgT -= dt;
+      // before Go, during a question and after the end nothing moves: draw once, then the loop rests (no frames
+      // at all) until play goes on -- wake() starts it again
+      const still = m.ready && m.paused && w.msgT <= 0;
+      if (still && wasStill) { running = false; last = 0; return; }
       if (m.ready) { setView(spec.snap(w)); setHud(w.hud); setMsg(w.msgT > 0 ? w.msg : ''); }
+      wasStill = still;
       raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    wake.current = () => { if (!running) { running = true; wasStill = false; raf = requestAnimationFrame(loop); } };
+    wake.current();
+    return () => { cancelAnimationFrame(raf); wake.current = () => undefined; };
   }, [spec]);
 
-  const go = () => { const m = meta.current; m.paused = false; m.t0 = Date.now(); setStarted(true); };
+  const go = () => { const m = meta.current; m.paused = false; m.t0 = Date.now(); setStarted(true); wake.current(); };
   const tap = (x: number, y: number) => {
     if (meta.current.paused || !fieldW) return;
     const k = fieldW / W0;
@@ -347,7 +364,7 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
       <Pressable onPressIn={(e) => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)} accessibilityRole="button" accessibilityLabel={spec.title}
                  style={[st.field, { height: fieldH, backgroundColor: spec.bg }]}
                  onLayout={(e) => { const { width, height } = e.nativeEvent.layout; setFieldW(width); world.current.W = W0; world.current.H = Math.max(360, (W0 * height) / width); }}>
-        {view && fieldW ? spec.draw(view, k) : null}
+        <Resting.Provider value={!started || !!ask || !!outro}>{view && fieldW ? spec.draw(view, k) : null}</Resting.Provider>
         {msg ? <Text style={st.msg}>{msg}</Text> : null}
         {outro ? (
           <View style={st.over}>
@@ -378,6 +395,7 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
                   const ok = ask.picked === ask.right;
                   setAsk(null);
                   meta.current.paused = false;
+                  wake.current();
                   ask.done(ok);
                 }}><Text style={st.primaryText}>{ask.picked === ask.right ? ask.go : 'OK'}</Text></Pressable>
               </> : null}

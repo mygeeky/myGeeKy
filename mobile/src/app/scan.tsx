@@ -1,5 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
+import { goHome } from '../components/go-home';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,9 +26,15 @@ export default function Scan() {
       return;
     }
     setMessage(result.settings.username ? `Connected as @${result.settings.username}…` : 'Connected…');
-    await save(result.settings, result.token ?? undefined);
+    try {
+      await save(result.settings, result.token ?? undefined);
+    } catch {
+      setMessage('Could not save on this phone. Try scanning again.');
+      setTimeout(() => (busy.current = false), 1500);     // the scanner listens again
+      return;
+    }
     if (result.saving) await fromPairing(result.saving).catch(() => undefined);
-    router.replace('/home');
+    goHome();
   };
 
   if (!permission) return <View style={st.safe} />;

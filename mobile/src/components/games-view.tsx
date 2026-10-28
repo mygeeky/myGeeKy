@@ -190,6 +190,10 @@ const answer = (w: World, word: string, s: G.Item, right: boolean) => { w.answer
 function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () => void }) {
   const { profile } = useApp();
   const world = useRef<World>(newWorld());           // touched only by the loop and by taps, never while drawing
+  // the round's short waits (the next wave, the end): cleared if you leave, so a round you left is never saved
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const later = (fn: () => void, ms: number) => { timers.current.push(setTimeout(fn, ms)); };
+  useEffect(() => { const list = timers.current; return () => list.forEach(clearTimeout); }, []);
   const [view, setView] = useState<Snap>(() => snapOf(newWorld()));
   const [card, setCard] = useState<'wave' | 'question' | null>('wave');
   const [result, setResult] = useState<Result | null>(null);
@@ -230,8 +234,9 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
     }).catch(() => undefined);
   }, [profile]);
 
+  const wake = useRef<() => void>(() => undefined);      // starts the frame loop again after it rested
   useEffect(() => {
-    let raf = 0, last = Date.now();
+    let raf = 0, last = Date.now(), wasStill = false, running = false;
     const loop = () => {
       const w = world.current;
       const now = Date.now(), dt = Math.min(0.05, (now - last) / 1000);
@@ -255,15 +260,20 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
           else answer(w, k.word, k.set, true);                 // rightly let past
         }
         w.rocks = w.rocks.filter((k) => k.y - k.r <= w.h - 40);
-        if (!w.queue.length && !w.rocks.length) { w.paused = true; setTimeout(between, 300); }
+        if (!w.queue.length && !w.rocks.length) { w.paused = true; later(between, 300); }
       }
       w.msgT -= dt;
       if (w.laser) { w.laser.t -= dt; if (w.laser.t <= 0) w.laser = null; }
+      // a card is up or the round is over: nothing moves, so draw once instead of 60 times a second
+      const still = w.paused && w.msgT <= 0 && !w.laser;
+      if (still && wasStill) { running = false; return; }      // rests (no frames at all) until Go wakes it
       setView(snapOf(w));
+      wasStill = still;
       raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    wake.current = () => { if (!running) { running = true; wasStill = false; last = Date.now(); raf = requestAnimationFrame(loop); } };
+    wake.current();
+    return () => { cancelAnimationFrame(raf); wake.current = () => undefined; };
   }, [between]);
 
   const hit = (key: number) => {
@@ -277,7 +287,7 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
       answer(w, k.word, k.set, false);
       w.shields -= 1; w.mood = 'think';
       w.msg = `${k.word} is ${k.set.what}, not one of the ${w.waves[w.wave].name}.`; w.msgT = 2.8;
-      if (w.shields <= 0) setTimeout(end, 400);
+      if (w.shields <= 0) later(end, 400);
     }
   };
   const [shipX, setShipX] = useState(0);              // where the drag put GeeKOc (only the drawing needs it)
@@ -285,7 +295,7 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
     onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 4,
     onPanResponderMove: (e) => setShipX(e.nativeEvent.locationX),
   }));
-  const go = () => { const w = world.current; setCard(null); w.paused = false; w.spawnIn = 0.3; };
+  const go = () => { const w = world.current; setCard(null); w.paused = false; w.spawnIn = 0.3; wake.current(); };
   const pickQ = (o: string) => {
     if (qPick || !q) return;
     setQPick(o);
@@ -332,7 +342,7 @@ function FieldView({ view, card, q, qPick, shipXRaw, pan, onLayout, onHit, onGo,
         {size.w ? <>
           <View pointerEvents="none" style={[st.saucer, { left: shipX - 44, top: shipY }]} />
           <View pointerEvents="none" style={{ position: 'absolute', left: shipX - 36, top: shipY - 58 }}>
-            <GeekMover pose={view.mood === 'cheer' ? 'cheer' : 'think'} size={72} />
+            <GeekMover pose={view.mood === 'cheer' ? 'cheer' : 'think'} size={72} paused={card !== null} />
           </View>
         </> : null}
         {view.msg ? <Text style={st.msg}>{view.msg}</Text> : null}

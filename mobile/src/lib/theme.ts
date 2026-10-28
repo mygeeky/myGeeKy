@@ -94,6 +94,11 @@ export async function setTheme(name: ThemeName): Promise<boolean> {
   } catch {
     return false;
   }
+  return restartApp();
+}
+
+/** Start the app's JavaScript again (a new theme, or after clearing what broke a screen). */
+export async function restartApp(): Promise<boolean> {
   try {
     const Updates = await import('expo-updates');
     await Updates.reloadAsync();

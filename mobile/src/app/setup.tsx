@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { goHome } from '../components/go-home';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, BackHandler, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text,
   TextInput, View } from 'react-native';
@@ -100,7 +101,7 @@ export default function Setup() {
     setError('');
     try {
       await keep();
-      router.replace('/home');
+      goHome();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -238,7 +239,7 @@ export default function Setup() {
             <Text style={st.ask}>Saved</Text>
             <Text style={st.body}>{saved}</Text>
             <View style={st.push} />
-            <Pressable style={({ pressed }) => [st.primary, pressed && { opacity: 0.85 }]} onPress={() => router.replace('/home')} accessibilityRole="button">
+            <Pressable style={({ pressed }) => [st.primary, pressed && { opacity: 0.85 }]} onPress={() => goHome()} accessibilityRole="button">
               <Text style={st.primaryText}>Continue</Text>
             </Pressable>
           </> : null}
@@ -258,7 +259,7 @@ export default function Setup() {
               <Text style={st.choiceTitle}>A GitHub repository</Text>
               <Text style={st.hint}>If you already use GitHub: a private repo and a token for it, with the picture steps.</Text>
             </Pressable>
-            {github ? <DataConnect onConnected={async () => { await keep(); router.replace('/home'); }} /> : null}
+            {github ? <DataConnect onConnected={async () => { await keep(); goHome(); }} /> : null}
             {error ? <Text style={st.error}>{error}</Text> : null}
             <View style={st.push} />
             <Pressable style={({ pressed }) => [st.notNow, pressed && { opacity: 0.85 }]} onPress={finish} disabled={busy} accessibilityRole="button">

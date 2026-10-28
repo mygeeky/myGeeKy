@@ -337,8 +337,8 @@ def clean_fatal_log(log_dir: Path) -> None:
     except (OSError, ValueError):
         pass
     try:
-        fatal = log_dir / FATAL_LOG
-        if fatal.exists() and fatal.stat().st_size > 200_000:
-            fatal.write_text(fatal.read_text(encoding="utf-8", errors="replace")[-50_000:], encoding="utf-8")
+        for log in (log_dir / FATAL_LOG, log_dir / "qt.log"):      # Qt's critical messages are kept, but not forever
+            if log.exists() and log.stat().st_size > 200_000:
+                log.write_text(log.read_text(encoding="utf-8", errors="replace")[-50_000:], encoding="utf-8")
     except OSError:
         pass

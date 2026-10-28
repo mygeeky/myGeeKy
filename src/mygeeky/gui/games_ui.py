@@ -735,16 +735,20 @@ class WordHunter(QWidget):
             self.shots = [s for s in self.shots if s["life"] > 0 and s["y"] > -20]
             if self.shields <= 0:
                 self.paused = True
-                QTimer.singleShot(500, lambda: self.finished.emit(self.answers, time.monotonic() - self.t0, 0))
+                QTimer.singleShot(500, self, lambda: self.finished.emit(self.answers, time.monotonic() - self.t0, 0))
             elif not self.queue and not self.rocks:
                 self.paused = True
-                QTimer.singleShot(400, self._between)
+                QTimer.singleShot(400, self, self._between)
         for b in self.bits:
             b["x"] += b["vx"] * dt
             b["y"] += b["vy"] * dt
             b["life"] -= dt
         self.bits = [b for b in self.bits if b["life"] > 0]
         self.hud(f"Wave {max(1, self.wave + 1)}/{len(self.waves)} · {'♥' * max(0, self.shields)}{'♡' * (3 - max(0, self.shields))}")
+        still = self.paused and self.message_t <= 0 and not self.bits     # a card is up: nothing moves
+        if still and getattr(self, "_still", False):
+            return                                          # drawn once already: no need to repaint 60 times a second
+        self._still = still
         self.update()
 
     def _boom(self, x: float, y: float, good: bool) -> None:

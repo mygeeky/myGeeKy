@@ -139,7 +139,7 @@ class Rise(ArcadeGame):
                     self.tide = min(max(self.tide, self.me[1] + 140), self.me[1] + 220)
                     if self.row >= len(self.ladder["rows"]):
                         self.paused = True
-                        QTimer.singleShot(400, self._surface)
+                        QTimer.singleShot(400, self, self._surface)
                     else:
                         self._lay_row()
                 else:
@@ -397,7 +397,7 @@ class GoHome(ArcadeGame):
             if self.anim[2] >= 1 and self.at == [self.CW - 1, self.CH - 1] and not self.home:
                 self.home = True
                 self.face = "wave"
-                QTimer.singleShot(400, lambda: self._card(
+                QTimer.singleShot(400, self, lambda: self._card(
                     "GeeKOc is home!", f"{self.right_first} of {self.asked} doors opened on the first try.", "See how you did", self._done))
         self.hud(f"{self.right_first}/{self.asked} doors right")
 

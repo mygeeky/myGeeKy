@@ -51,14 +51,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const [s, t] = await Promise.all([loadSettings(), getToken()]);
+      // storage that can't be read must not keep the loader up forever: go on as a first start
+      const [s, t] = await Promise.all([loadSettings(), getToken()]).catch(() => [null, null] as const);
       setSettings(s);
       setTok(t);
       setReady(true);
       if (!s) return;
       logOpenToday();
       setProfile(quickProfile(s));             // lists start at once from your keywords...
-      setProfile(await withLocalLearning(quickProfile(s)));   // ...with what you opened here (no data repo)...
+      setProfile(await withLocalLearning(quickProfile(s)).catch(() => quickProfile(s)));   // ...with what you opened here (no data repo)...
       try {
         setProfile(await withLocalLearning(await buildProfile(s, t)));  // ...and sharpen when your full profile is ready
       } catch {
@@ -142,20 +143,29 @@ export function useFeed<T>(key: string, hours: number, load: (p: Profile) => Pro
     loaderRef.current = load;
   });
 
+  // at start the profile sharpens 3-4 times, each asking again: only the newest answer is kept, so a slower
+  // answer for an older profile never overwrites a newer one; the same profile isn't asked for twice at once
+  const latest = useRef(0);
+  const asking = useRef<string | null>(null);
   const refresh = useCallback(async () => {
     if (!profile) return;
+    const sig = profileSig(profile);
+    if (asking.current === sig) return;
+    const mine = ++latest.current;
+    asking.current = sig;
     setLoading(true);
     setError(null);
     try {
       const fresh = await loaderRef.current(profile);
+      if (mine !== latest.current) return;
       setData(fresh);
       setAt(new Date().toISOString());
       await writeCache(key, fresh);
-      await writeCache(`${key}:for`, profileSig(profile));
+      await writeCache(`${key}:for`, sig);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (mine === latest.current) setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setLoading(false);
+      if (mine === latest.current) { setLoading(false); asking.current = null; }
     }
   }, [key, profile]);
 
