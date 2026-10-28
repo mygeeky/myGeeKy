@@ -61,6 +61,21 @@ export const GeekStill = memo(function GeekStill({ name, size }: { name: string;
   return <SvgXml key={name} xml={xml} width={size} height={size} />;
 });
 
+/** GeeKOc in a game: every feeling the game has, each drawn once and kept, the one he feels now shown (opacity) --
+ *  swapping between jump and stand several times a second then builds nothing. */
+export const GeekFeels = memo(function GeekFeels({ game, name, size }: { game: string; name: string; size: number }) {
+  const names = useMemo(() => [...new Set(Object.values(loadMoves().games[game] ?? { stand: 'stand' }))], [game]);
+  return (
+    <View style={{ width: size, height: size }}>
+      {names.map((n) => (
+        <View key={n} style={{ position: 'absolute', left: 0, top: 0, opacity: n === name ? 1 : 0 }}>
+          <GeekStill name={n} size={size} />
+        </View>
+      ))}
+    </View>
+  );
+});
+
 type Hole = { x: number; y: number; w: number; h: number };
 
 export function TourOverlay({ steps, kind, onGo, onDone }: {

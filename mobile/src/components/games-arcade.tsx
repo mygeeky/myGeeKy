@@ -4,13 +4,13 @@
 // GeeKOc (tap to puff ink and swim up through the right answer's gap). One engine runs them all: the world lives in a
 // ref touched only by the loop and by taps, the screen draws a plain snapshot, and the field is 420 wide in game units
 // (as on the desktop), scaled to the phone. Everything shown comes from the pack: plain text only.
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useApp } from '../lib/app-state';
 import * as G from '../lib/gems';
 import { finish, roundItems } from '../lib/games-store';
 import { C, tint } from '../lib/theme';
-import { feelingOf, GeekStill } from './tour-overlay';
+import { feelingOf, GeekFeels } from './tour-overlay';
 
 type Result = Awaited<ReturnType<typeof finish>>;
 export type Ask = { title: string; kicker?: string; options: string[]; right: number; why: string; go: string };
@@ -51,7 +51,7 @@ export const Oc = ({ moment = 'stand', x, y, size, k, hidden = false }: { moment
   const { game, feel } = useContext(Feeling);
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: (x - size / 2) * k, top: (y - size / 2) * k, opacity: hidden ? 0 : 1 }}>
-      <GeekStill name={feelingOf(game, feel || moment)} size={size * k} />
+      <GeekFeels game={game} name={feelingOf(game, feel || moment)} size={size * k} />
     </View>
   );
 };
@@ -90,7 +90,7 @@ const WHACK: Spec = {
       }
     });
   },
-  snap: (w) => ({ H: w.H, left: w.left, score: w.score, holes: w.holes.map((h: any) => (h.up ? { label: h.up.c.label, bug: h.up.c.bug } : null)) }),
+  snap: (w) => ({ H: w.H, left: Math.ceil(w.left), score: w.score, holes: w.holes.map((h: any) => (h.up ? { label: h.up.c.label, bug: h.up.c.bug } : null)) }),
   draw: (v, k) => {
     const top = 190, gap = (v.H - top - 40) / 3;
     return <>
@@ -146,22 +146,28 @@ const CATCH: Spec = {
     for (let i = 1; i < nb; i++) if (Math.abs(x - netX(i, nb)) < Math.abs(x - netX(best, nb))) best = i;
     w.cur.lane = best; w.cur.vy = 520;
   },
-  snap: (w) => ({ H: w.H, name: w.set?.name ?? '', bins: w.set?.bins ?? [], cur: w.cur && { ...w.cur }, flash: w.flash && { ...w.flash } }),
+  snap: (w) => ({ H: w.H, name: w.set?.name ?? '', bins: w.set?.bins ?? [], cur: w.cur && { name: w.cur.name, x: Math.round(w.cur.x), y: Math.round(w.cur.y) },
+                  lit: w.flash ? `${w.flash.lane}:${w.flash.ok}` : '' }),
   draw: (v, k) => <>
     <Oc x={50} y={52} size={90} k={k} />
     <Text style={[st.hudBig, { left: 100 * k, top: 30 * k, right: 10 }]}>{v.name}</Text>
-    {v.bins.map((b: string, i: number) => {
-      const nb = v.bins.length, x = netX(i, nb), wNet = W0 / nb - 18, top = v.H - 110;
-      const lit = v.flash && v.flash.lane === i ? (v.flash.ok ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)') : 'rgba(255,255,255,0.05)';
-      return <View key={b} pointerEvents="none">
-        <Text style={{ position: 'absolute', left: (x - wNet / 2) * k, top: (top - 26) * k, width: wNet * k, textAlign: 'center', color: NET_COLORS[i % 3], fontWeight: '800', fontSize: 14 }}>{b}</Text>
-        <View style={{ position: 'absolute', left: (x - wNet / 2) * k, top: top * k, width: wNet * k, height: 90 * k, borderWidth: 2.5, borderColor: NET_COLORS[i % 3],
-                       borderTopWidth: 0, borderBottomLeftRadius: 60 * k, borderBottomRightRadius: 60 * k, backgroundColor: lit }} />
-      </View>;
-    })}
+    <Nets bins={v.bins} H={v.H} lit={v.lit} k={k} />
     {v.cur ? <Pill text={v.cur.name} x={v.cur.x} y={v.cur.y} bg="#ff6fd8" k={k} size={14} /> : null}
   </>,
 };
+
+// the nets: drawn again only when one lights up (a name landed), not while a name falls
+const Nets = memo(function Nets({ bins, H, lit, k }: { bins: string[]; H: number; lit: string; k: number }) {
+  return <>{bins.map((b, i) => {
+    const nb = bins.length, x = netX(i, nb), wNet = W0 / nb - 18, top = H - 110;
+    const bg = lit === `${i}:true` ? 'rgba(52,211,153,0.3)' : lit === `${i}:false` ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.05)';
+    return <View key={b} pointerEvents="none">
+      <Text style={{ position: 'absolute', left: (x - wNet / 2) * k, top: (top - 26) * k, width: wNet * k, textAlign: 'center', color: NET_COLORS[i % 3], fontWeight: '800', fontSize: 14 }}>{b}</Text>
+      <View style={{ position: 'absolute', left: (x - wNet / 2) * k, top: top * k, width: wNet * k, height: 90 * k, borderWidth: 2.5, borderColor: NET_COLORS[i % 3],
+                     borderTopWidth: 0, borderBottomLeftRadius: 60 * k, borderBottomRightRadius: 60 * k, backgroundColor: bg }} />
+    </View>;
+  })}</>;
+});
 
 const BUGS = ['NaN', 'Segfault', '404', 'OOM', 'Merge conflict', 'Typo'];
 const RUN: Spec = {
@@ -199,7 +205,8 @@ const RUN: Spec = {
     w.hud = `${Math.round(w.dist / 10)} m · gate ${Math.min(w.gi, w.gates.length)}/${w.gates.length} · ${'♥'.repeat(Math.max(0, w.lives))}`;
   },
   press: (w) => { if (w.y >= -1) w.vy = -560; },
-  snap: (w) => ({ H: w.H, y: w.y, hurt: w.hurt, dist: w.dist, obs: (w.obs ?? []).map((o: any) => ({ ...o })) }),
+  snap: (w) => ({ H: w.H, y: w.y, hurt: w.hurt, dist: w.dist, obs: (w.obs ?? []).map((o: any) => ({ x: o.x, w: o.w, h: o.h, top: o.top, done: o.done,
+    label: o.label, gate: o.gate && { q: o.gate.q, right: o.gate.right, wrong: o.gate.wrong } })) }),     // only what's drawn: copied every frame
   draw: (v, k) => {
     const g = v.H - 90, nxt = v.obs.find((o: any) => o.gate && !o.done);
     return <>
@@ -257,7 +264,8 @@ const FLAPPY: Spec = {
     w.hud = `gate ${Math.min(w.gi, w.gates.length)}/${w.gates.length} · ${'♥'.repeat(Math.max(0, w.lives))}`;
   },
   press: (w) => { w.vy = -300; },
-  snap: (w) => ({ H: w.H, y: w.y, vy: w.vy, hurt: w.hurt, pipes: (w.pipes ?? []).map((pp: any) => ({ ...pp })) }),
+  snap: (w) => ({ H: w.H, y: w.y, vy: w.vy, hurt: w.hurt, pipes: (w.pipes ?? []).map((pp: any) => ({ x: pp.x, top: pp.top, done: pp.done,
+    g: { q: pp.g.q, right: pp.g.right, wrong: pp.g.wrong } })) }),                                            // only what's drawn: copied every frame
   draw: (v, k) => {
     const [[t0, t1], [b0, b1]] = gaps(v.H), nxt = v.pipes.find((pp: any) => !pp.done);
     return <>
@@ -280,6 +288,19 @@ const SPECS: Record<string, Spec> = { whack: WHACK, catch: CATCH, run: RUN, flap
 export const ARCADE_GAMES = Object.keys(SPECS);
 
 // ------------------------------------------------------------------------------------------------ the engine
+// The frame loop hands each new snapshot to Field alone: the game screen around it (the hud, the cards, the field's
+// frame) is not drawn again sixty times a second.
+type Frames = { get: () => Record<string, any> | null; set: (v: Record<string, any>) => void; sub: (f: () => void) => () => void };
+function newFrames(): Frames {
+  let v: Record<string, any> | null = null;
+  const subs = new Set<() => void>();
+  return { get: () => v, set: (n) => { v = n; subs.forEach((f) => f()); }, sub: (f) => { subs.add(f); return () => { subs.delete(f); }; } };
+}
+function Field({ spec, k, frames }: { spec: Spec; k: number; frames: Frames }) {
+  const view = useSyncExternalStore(frames.sub, frames.get);
+  return view ? <>{spec.draw(view, k)}</> : null;
+}
+
 export function ArcadeGame(props: {
   id: string; onAgain: () => void; onHub: () => void; Result: (p: { r: Result; onAgain: () => void; onHub: () => void }) => ReactNode;
 }) {
@@ -295,7 +316,7 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
   const fieldH = Math.max(380, Math.round(screenH * 0.66));
   const world = useRef<World>({ W: W0, H: 560, msg: '', msgT: 0, bonus: 0, hud: '' });
   const meta = useRef({ answers: [] as G.Answer[], t0: 0, ended: false, ready: false, paused: true });
-  const [view, setView] = useState<Record<string, any> | null>(null);
+  const [frames] = useState(newFrames);             // the field's snapshot: only Field redraws when it changes
   const [hud, setHud] = useState('');
   const [msg, setMsg] = useState('');
   const [feel, setFeel] = useState('');
@@ -333,12 +354,12 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
     spec.load(profile?.weights ?? {}).then((items) => {
       spec.init(items, world.current);
       meta.current.ready = true;
-      setView(spec.snap(world.current));
+      frames.set(spec.snap(world.current));
     }).catch(() => undefined);
-  }, [spec, profile]);
+  }, [spec, profile, frames]);
 
   useEffect(() => {
-    let raf = 0, last = 0, wasStill = false, running = false;
+    let raf = 0, last = 0, wasStill = false, running = false, drawn = '';
     const loop = (now: number) => {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
       last = now;
@@ -349,14 +370,19 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
       // at all) until play goes on -- wake() starts it again
       const still = m.ready && m.paused && w.msgT <= 0;
       if (still && wasStill) { running = false; last = 0; return; }
-      if (m.ready) { setView(spec.snap(w)); setHud(w.hud); setMsg(w.msgT > 0 ? w.msg : ''); setFeel(w.feelT > 0 ? w.feel : ''); }
+      if (m.ready) {
+        // the screen is drawn again only when what it shows changed (a whack-a-bug field between pop-ups, a maze
+        // GeeKOc isn't walking in): the same snapshot is not a new frame
+        const v = spec.snap(w), key = JSON.stringify(v);
+        if (key !== drawn) { drawn = key; frames.set(v); }
+        setHud(w.hud); setMsg(w.msgT > 0 ? w.msg : ''); setFeel(w.feelT > 0 ? w.feel : ''); }
       wasStill = still;
       raf = requestAnimationFrame(loop);
     };
     wake.current = () => { if (!running) { running = true; wasStill = false; raf = requestAnimationFrame(loop); } };
     wake.current();
     return () => { cancelAnimationFrame(raf); wake.current = () => undefined; };
-  }, [spec]);
+  }, [spec, frames]);
 
   const go = () => { const m = meta.current; m.paused = false; m.t0 = Date.now(); setStarted(true); wake.current(); };
   const tap = (x: number, y: number) => {
@@ -373,7 +399,7 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
       <Pressable onPressIn={(e) => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)} accessibilityRole="button" accessibilityLabel={spec.title}
                  style={[st.field, { height: fieldH, backgroundColor: spec.bg }]}
                  onLayout={(e) => { const { width, height } = e.nativeEvent.layout; setFieldW(width); world.current.W = W0; world.current.H = Math.max(360, (W0 * height) / width); }}>
-        <Feeling.Provider value={feeling}>{view && fieldW ? spec.draw(view, k) : null}</Feeling.Provider>
+        <Feeling.Provider value={feeling}>{fieldW ? <Field spec={spec} k={k} frames={frames} /> : null}</Feeling.Provider>
         {msg ? <Text style={st.msg}>{msg}</Text> : null}
         {outro ? (
           <View style={st.over}>

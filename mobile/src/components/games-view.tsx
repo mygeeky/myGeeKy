@@ -8,7 +8,7 @@ import { useApp } from '../lib/app-state';
 import * as G from '../lib/gems';
 import { finish, questions, roundItems, summary, type Question } from '../lib/games-store';
 import { C, tint } from '../lib/theme';
-import { feelingOf, GeekStill } from './tour-overlay';
+import { feelingOf, GeekFeels } from './tour-overlay';
 import { gameIcon } from './game-icons';
 import { CARD_GAMES, CardGame } from './games-cards';
 import { ARCADE_GAMES, ArcadeGame } from './games-arcade';
@@ -342,7 +342,7 @@ function FieldView({ view, card, q, qPick, shipXRaw, pan, onLayout, onHit, onGo,
         {size.w ? <>
           <View pointerEvents="none" style={[st.saucer, { left: shipX - 44, top: shipY }]} />
           <View pointerEvents="none" style={{ position: 'absolute', left: shipX - 36, top: shipY - 58 }}>
-            <GeekStill name={feelingOf('hunter', view.feel || 'stand')} size={72} />
+            <GeekFeels game="hunter" name={feelingOf('hunter', view.feel || 'stand')} size={72} />
           </View>
         </> : null}
         {view.msg ? <Text style={st.msg}>{view.msg}</Text> : null}

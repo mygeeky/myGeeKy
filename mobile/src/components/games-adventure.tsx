@@ -3,7 +3,7 @@
 // the tide rises while you think; at the surface, the pipeline you climbed) and GeeKOc goes home (tap beside GeeKOc to
 // walk; doors ask quiz-bank questions, Basics easy, Core medium, Advanced hard; a wrong answer locks that door, and if
 // there's no other way round it asks a different question). Everything shown comes from the pack: plain text only.
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import { questions, roundItems, type Question } from '../lib/games-store';
 import { ArcadeEngine, Oc, W0, type Api, type Spec, type World } from './games-arcade';
@@ -78,23 +78,30 @@ const RISE: Spec = {
       if (!o.gone && x >= o.x && x <= o.x + o.w && y >= o.y + 20 && y <= o.y + 120) choose(w, i);
     });
   },
-  snap: (w) => ({ H: w.H, cam: w.cam, me: w.me && [...w.me], jump: !!w.jump, row: w.row, name: w.ladder?.name ?? '', tide: w.tide,
+  // whole units for the tide (it creeps up 4 a second) and the camera (it eases in for ever): a frame only when they
+  // visibly move
+  snap: (w) => ({ H: w.H, cam: Math.round(w.cam), me: w.me && [...w.me], jump: !!w.jump, row: w.row, name: w.ladder?.name ?? '', tide: Math.round(w.tide),
                   opts: (w.opts ?? []).map((o: any) => ({ text: o.text, x: o.x, y: o.y, w: o.w, gone: !!o.gone })) }),
   draw: (v, k) => !v.me ? null : <>
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, transform: [{ translateY: -v.cam * k }] }}>
       <View style={{ position: 'absolute', left: (W0 / 2 - 70) * k, top: (v.H - 150 - v.row * ROW + 36) * k, width: 140 * k, height: 12 * k, borderRadius: 6, backgroundColor: '#2f6f7a' }} />
-      {v.opts.map((o: any, i: number) => o.gone ? null : (
-        <View key={i} style={{ position: 'absolute', left: o.x * k, top: (o.y + 36) * k, width: o.w * k, minHeight: 64 * k, borderRadius: 10,
-                               borderWidth: 2, borderColor: v.jump ? '#5a6aa0' : '#ffc457', backgroundColor: '#24304f', padding: 6, justifyContent: 'center' }}>
-          <Text style={{ color: '#f0f0f5', fontWeight: '700', fontSize: 12, textAlign: 'center' }}>{o.text}</Text>
-        </View>
-      ))}
+      <Platforms opts={v.opts} jump={v.jump} k={k} />
       <Oc moment={v.jump ? 'jump' : 'stand'} x={v.me[0]} y={v.me[1]} size={86} k={k} />
       <View style={{ position: 'absolute', left: 0, right: 0, top: v.tide * k, height: 4000, backgroundColor: 'rgba(8,30,70,0.82)' }} />
     </View>
     <Text style={{ position: 'absolute', top: 6, left: 0, right: 0, textAlign: 'center', color: '#f0f0f5', fontWeight: '800', fontSize: 14 }}>Climbing {v.name}</Text>
   </>,
 };
+
+// a row's platforms: drawn again only when one sinks or GeeKOc takes off, not while the tide rises
+const Platforms = memo(function Platforms({ opts, jump, k }: { opts: any[]; jump: boolean; k: number }) {
+  return <>{opts.map((o: any, i: number) => o.gone ? null : (
+    <View key={i} style={{ position: 'absolute', left: o.x * k, top: (o.y + 36) * k, width: o.w * k, minHeight: 64 * k, borderRadius: 10,
+                           borderWidth: 2, borderColor: jump ? '#5a6aa0' : '#ffc457', backgroundColor: '#24304f', padding: 6, justifyContent: 'center' }}>
+      <Text style={{ color: '#f0f0f5', fontWeight: '700', fontSize: 12, textAlign: 'center' }}>{o.text}</Text>
+    </View>
+  ))}</>;
+}, (a, b) => a.jump === b.jump && a.k === b.k && JSON.stringify(a.opts) === JSON.stringify(b.opts));
 
 // ------------------------------------------------------------------------------------------------ GeeKOc goes home
 const CW = 9, CH = 9;
@@ -180,6 +187,27 @@ function walk(w: World, dx: number, dy: number, api: Api) {
   }
   stepTo(w, dx, dy);
 }
+// the maze itself (regions, border, walls): drawn once, never again while GeeKOc walks -- only he and the doors move
+const Walls = memo(function Walls({ right, down, s, ox, oy, k }: { right: boolean[][]; down: boolean[][]; s: number; ox: number; oy: number; k: number }) {
+  const lines: ReactNode[] = [];
+  const ink = '#6a5acd', th = 2.5;
+  for (let x = 0; x < CW; x++) for (let y = 0; y < CH; y++) {
+    if (right[x][y] && x < CW - 1) lines.push(<View key={`r${x}-${y}`} style={{ position: 'absolute', left: (ox + (x + 1) * s) * k - th / 2, top: (oy + y * s) * k, width: th, height: s * k + th / 2, backgroundColor: ink }} />);
+    if (down[x][y] && y < CH - 1) lines.push(<View key={`d${x}-${y}`} style={{ position: 'absolute', left: (ox + x * s) * k, top: (oy + (y + 1) * s) * k - th / 2, width: s * k + th / 2, height: th, backgroundColor: ink }} />);
+  }
+  return <>
+    {['Basics', 'Core', 'Advanced'].map((n, i) => {
+      const x0 = ox + s * Math.floor((i * CW) / 3), x1 = ox + s * Math.floor(((i + 1) * CW) / 3);
+      return <View key={n}>
+        <View style={{ position: 'absolute', left: x0 * k, top: oy * k, width: (x1 - x0) * k, height: s * CH * k, backgroundColor: ['rgba(127,216,255,0.07)', 'rgba(255,196,87,0.07)', 'rgba(255,111,216,0.08)'][i] }} />
+        <Text style={{ position: 'absolute', left: x0 * k, top: (oy - 22) * k, width: (x1 - x0) * k, textAlign: 'center', color: '#a9a9c0', fontWeight: '800', fontSize: 12 }}>{n}</Text>
+      </View>;
+    })}
+    <View style={{ position: 'absolute', left: ox * k, top: oy * k, width: s * CW * k, height: s * CH * k, borderWidth: th, borderColor: ink }} />
+    {lines}
+  </>;
+});
+
 const MAZE: Spec = {
   game: 'maze', title: 'GeeKOc goes home', bg: '#0b0b16',
   howto: 'Tap beside GeeKOc to walk. Doors ask questions: a wrong answer keeps that door shut, so find another way round.',
@@ -207,23 +235,9 @@ const MAZE: Spec = {
   draw: (v, k) => {
     if (!v.right) return null;
     const { s, ox, oy } = cell(v as { H: number });
-    const lines: ReactNode[] = [];
-    const ink = '#6a5acd', th = 2.5;
-    for (let x = 0; x < CW; x++) for (let y = 0; y < CH; y++) {
-      if (v.right[x][y] && x < CW - 1) lines.push(<View key={`r${x}-${y}`} style={{ position: 'absolute', left: (ox + (x + 1) * s) * k - th / 2, top: (oy + y * s) * k, width: th, height: s * k + th / 2, backgroundColor: ink }} />);
-      if (v.down[x][y] && y < CH - 1) lines.push(<View key={`d${x}-${y}`} style={{ position: 'absolute', left: (ox + x * s) * k, top: (oy + (y + 1) * s) * k - th / 2, width: s * k + th / 2, height: th, backgroundColor: ink }} />);
-    }
     const p = v.anim[2], px = v.anim[0] + (v.at[0] - v.anim[0]) * p, py = v.anim[1] + (v.at[1] - v.anim[1]) * p;
     return <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}>
-      {['Basics', 'Core', 'Advanced'].map((n, i) => {
-        const x0 = ox + s * Math.floor((i * CW) / 3), x1 = ox + s * Math.floor(((i + 1) * CW) / 3);
-        return <View key={n}>
-          <View style={{ position: 'absolute', left: x0 * k, top: oy * k, width: (x1 - x0) * k, height: s * CH * k, backgroundColor: ['rgba(127,216,255,0.07)', 'rgba(255,196,87,0.07)', 'rgba(255,111,216,0.08)'][i] }} />
-          <Text style={{ position: 'absolute', left: x0 * k, top: (oy - 22) * k, width: (x1 - x0) * k, textAlign: 'center', color: '#a9a9c0', fontWeight: '800', fontSize: 12 }}>{n}</Text>
-        </View>;
-      })}
-      <View style={{ position: 'absolute', left: ox * k, top: oy * k, width: s * CW * k, height: s * CH * k, borderWidth: th, borderColor: ink }} />
-      {lines}
+      <Walls right={v.right} down={v.down} s={s} ox={ox} oy={oy} k={k} />
       {v.doors.filter((d: any) => d.state !== 'open').map((d: any) => {
         const cx = ox + ((d.a[0] + d.b[0]) / 2 + 0.5) * s, cy = oy + ((d.a[1] + d.b[1]) / 2 + 0.5) * s, horiz = d.k.endsWith(',d');
         return <View key={d.k} style={{ position: 'absolute', backgroundColor: d.state === 'locked' ? '#f87171' : '#ffc457', borderRadius: 4,
