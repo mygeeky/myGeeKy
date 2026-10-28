@@ -598,6 +598,24 @@ export async function recordInterest(item: Learn): Promise<void> {
   } catch { /* learning never gets in the way of opening something */ }
 }
 
+/** Remember terms already weighed (a game round: gems.modelTerms), as interests.record_terms: the same queue and
+ *  event shape as recordInterest. */
+export async function recordTerms(kind: string, terms: Record<string, number>, source = ''): Promise<void> {
+  try {
+    if (!KIND_WEIGHTS[kind]) return;
+    const link = await savingLink();
+    const cached = link ? await cachedBrain() : null;
+    if (cached?.data && !cached.data.learning) return;
+    const clean = Object.fromEntries(Object.entries(terms).slice(0, 12)
+      .filter(([t, w]) => typeof t === 'string' && t.trim() && typeof w === 'number' && w > 0)
+      .map(([t, w]) => [t.slice(0, 40), Math.round(w * 10000) / 10000]));
+    if (!Object.keys(clean).length) return;
+    const event = { at: `${new Date().toISOString().slice(0, 19)}+00:00`, kind, source: source.slice(0, 120), terms: clean };
+    const queue = JSON.parse((await AsyncStorage.getItem(QUEUE_KEY)) ?? '[]');
+    await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify([...(Array.isArray(queue) ? queue : []), event].slice(-LEARN_CAP)));
+  } catch { /* learning never gets in the way of a game */ }
+}
+
 /** Add the queued events and usage lines to your saved data (`src`: where; found here when not given). */
 export async function flushInterests(src?: Source | null): Promise<number> {
   if (flushing) return 0;                                // one at a time, so nothing is sent twice

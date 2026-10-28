@@ -21,6 +21,10 @@ const BADGES: Record<string, [string, string, string, number[]]> = {
   explorer: ['🔭', 'Explorer', 'things you opened from outside your usual interests', [3, 15, 50]],
   wordsmith: ['🔤', 'Wordsmith', "keywords you've set", [3, 8, 15]],
   early: ['🌱', 'Early Adopter', 'joined myGeeKy before 2027', [1]],
+  // Play with GeeKOc (gems.badgeCounts): this phone's rounds, or your computers' and this phone's together
+  player: ['🎮', 'Player', "game rounds you've played", [3, 25, 100]],
+  sharp: ['🎯', 'Sharp', 'right answers in games', [25, 200, 800]],
+  levelup: ['🆙', 'Level Up', "game levels you've gained", [3, 15, 40]],
   // earned on your computer (they come along with "Connect your phone")
   networker: ['🤝', 'Networker', "people you've followed", [1, 10, 30]],
   stargazer: ['⭐', 'Stargazer', "repos you've starred", [1, 10, 50]],
@@ -77,7 +81,8 @@ export type Earned = { id: string; emoji: string; name: string; what: string; co
 
 /** Every badge, at the best tier earned here or on your computer. With your data repo connected,
  *  `fromRepo` holds the desktop's own counts (your computers and this phone together). */
-export async function earned(keywords: number, desktop: string[] = [], fromRepo?: Record<string, number>): Promise<Earned[]> {
+export async function earned(keywords: number, desktop: string[] = [], fromRepo?: Record<string, number>,
+                             games: Record<string, number> = {}): Promise<Earned[]> {
   const fromDesktop: Record<string, number> = {};
   for (const b of desktop) {
     const [id, tier] = b.split(':');
@@ -85,11 +90,12 @@ export async function earned(keywords: number, desktop: string[] = [], fromRepo?
   }
   const u = await load();
   const k = (x: string) => u.clicks.filter((c) => c.kind === x).length;
-  const counts: Record<string, number> = fromRepo ?? {
+  const counts: Record<string, number> = fromRepo ? { ...fromRepo } : {
     active: u.days.length, clicker: u.clicks.length, reader: k('headline') + k('news'), analyst: k('paper'),
     ai: u.clicks.filter((c) => c.cat === 'ai' || c.kind === 'model').length, models: k('model'),
     explorer: u.clicks.filter((c) => c.explore).length, wordsmith: keywords, early: u.first < '2027-01-01' ? 1 : 0,
   };
+  for (const [id, n] of Object.entries(games)) counts[id] = Math.max(counts[id] ?? 0, n);   // games played here
   return Object.entries(BADGES).map(([id, [emoji, name, what, levels]]) => {
     const n = counts[id] ?? 0;
     const reached = Math.max(levels.filter((need) => n >= need).length, fromDesktop[id] ?? 0);

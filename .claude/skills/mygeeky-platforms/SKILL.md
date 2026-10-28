@@ -29,6 +29,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | Phone (`mobile/src/lib/…`) | Desktop (`src/mygeeky/…`) |
 |---|---|
 | `admin.ts` | `admin.py` |
+| `gems.ts` (+ `data/games.json`, `assets/games/`) | `gems.py` (+ `gems_store.py`, `data/games.json`, `gui/assets/game_*.png`) |
 | `badges.ts` | `badges.py` |
 | `collab.ts` | `collab.py` |
 | `contribute.ts` | `contribute.py` |
@@ -119,6 +120,7 @@ The desktop file is the source; the phone copy must be identical or generated fr
 | `src/mygeeky/data/docread.json` | `mobile/src/data/docread.json` (identical) | `test_docread.py` |
 | `src/mygeeky/data/lights.json` | `mobile/src/data/lights.json` (identical) | `tools/lights_build.py` drafts, the maker checks; `test_lights.py` |
 | `src/mygeeky/data/ai_race.json` | `mobile/src/data/ai_race.json` (identical) | `airace.save()` / `.github/workflows/ai-race.yml` write both; `test_airace.py` |
+| `src/mygeeky/data/games.json` | `mobile/src/data/games.json` (identical) | `test_gems.py` (and `gems.validate` / `validate` on both) |
 | `src/mygeeky/data/datasets.json` | `mobile/src/data/datasets.json` (identical) | `datasets.save()` / `.github/workflows/datasets.yml` write both; `test_datasets.py` |
 | `src/mygeeky/data/skill_trends.json` | `mobile/src/data/skill_trends.json` (identical) | `skilltrends.save()` / `.github/workflows/skill-trends.yml` write both; `test_growth.py` |
 

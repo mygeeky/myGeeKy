@@ -49,6 +49,10 @@ BADGES: dict[str, tuple[str, str, str, tuple[int, ...]]] = {
     "ideas": ("💡", "Idea Giver", "ideas and problems you've sent", (1, 3, 10)),
     "everywhere": ("☁️", "Everywhere", "computers in sync (sync set up)", (1,)),
     "early": ("🌱", "Early Adopter", "joined myGeeKy before 2027", (1,)),
+    # Play with GeeKOc (gems.badge_counts)
+    "player": ("🎮", "Player", "game rounds you've played", (3, 25, 100)),
+    "sharp": ("🎯", "Sharp", "right answers in games", (25, 200, 800)),
+    "levelup": ("🆙", "Level Up", "game levels you've gained", (3, 15, 40)),
 }
 
 
@@ -130,7 +134,16 @@ def counts(cfg: MyGeekyConfig) -> dict[str, int]:
         "ideas": sum(1 for e in usage if e.get("what") == "idea"),
         "everywhere": 1 if cfg.sync_repo else 0,
         "early": 1 if first and first < "2027-01-01" else 0,
+        **_game_counts(),
     }
+
+
+def _game_counts() -> dict[str, int]:
+    try:
+        from . import gems_store
+        return gems_store.badge_counts()
+    except Exception:
+        return {"player": 0, "sharp": 0, "levelup": 0}
 
 
 def earned(cfg: MyGeekyConfig) -> list[dict[str, Any]]:

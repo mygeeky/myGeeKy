@@ -517,6 +517,19 @@ def test_a_worker_stays_alive_until_its_thread_has_stopped():
     app.processEvents()
 
 
+def _settle(qapp, panel, done=lambda: True, seconds: float = 10.0) -> None:
+    """Let the panel's background work finish and its results arrive, until `done()` (a full test run is slow:
+    one wait and one pass of the event loop once checked a join before it had happened)."""
+    import time
+    end = time.monotonic() + seconds
+    while True:
+        for w in list(panel._workers):
+            w.wait(50)
+        qapp.processEvents()
+        if (not panel._workers and done()) or time.monotonic() > end:
+            return
+
+
 def test_signals_calls_ruler_and_invite_window(qapp, monkeypatch):
     from mygeeky.config import MyGeekyConfig
     from mygeeky.gui import app as logic
@@ -556,9 +569,7 @@ def test_signals_calls_ruler_and_invite_window(qapp, monkeypatch):
     from mygeeky.beacon import TERMS_VERSION
     panel = MyGeekyPanel(MyGeekyConfig(github_username="me", signals_terms=TERMS_VERSION))   # agreed to the terms
     try:
-        for w in list(panel._workers):
-            w.wait(2000)
-        qapp.processEvents()
+        _settle(qapp, panel)
         root = panel.signals_area.parentWidget()
         field = root.findChildren(FieldCard)[0]
         assert {i["label"] for i in field.map.items} == {"ada/finemap-lite", "bob"}
@@ -571,9 +582,7 @@ def test_signals_calls_ruler_and_invite_window(qapp, monkeypatch):
         note = next(lbl for lbl in card.findChildren(QLabel) if "SuSiE" in lbl.text())
         assert note.textFormat() == Qt.PlainText                                 # a call's note is plain text
         card.join_btn.click()
-        for w in list(panel._workers):
-            w.wait(2000)
-        qapp.processEvents()
+        _settle(qapp, panel, lambda: bool(joined))
         assert joined == ["a1b2c3d4"] and card.call["joined"] and card.leave_btn.isVisibleTo(card)
         card.set_joined(False)
         card.hide_btn.click()
@@ -581,18 +590,14 @@ def test_signals_calls_ruler_and_invite_window(qapp, monkeypatch):
         assert root.findChildren(MyCallCard)[0].call["responders"][0]["login"] == "omar"
 
         field.invite_btn.click()                                                 # the invite window
-        for w in list(panel._workers):
-            w.wait(2000)
-        qapp.processEvents()
+        _settle(qapp, panel, lambda: getattr(panel, '_invite_window', None) is not None)
         win = panel._invite_window
         assert win.repo.currentData() == "gwas-qc" and set(win.payload()["skills"]) == {"gwas", "plink", "python"}
         assert not win.publish.isEnabled()                                       # needs a sentence first
         win.note.setPlainText("A second pair of eyes on the LD-pruning step.")
         assert win.publish.isEnabled()
         win.publish.click()
-        for w in list(panel._workers):
-            w.wait(2000)
-        qapp.processEvents()
+        _settle(qapp, panel, lambda: bool(published))
         assert published and published[0]["repo"] == "gwas-qc" and published[0]["days"] == 60
         win.close()
     finally:

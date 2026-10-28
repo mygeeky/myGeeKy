@@ -1,0 +1,5770 @@
+{
+ "version": 1,
+ "updated": "2026-10-27",
+ "about": "GEMS core pack: the content myGeeKy's games play (src/mygeeky/gems.py validates it; the phone has an identical copy).",
+ "items": [
+  {
+   "id": "ws-scrna",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "single-cell",
+    "rna-seq",
+    "transcriptomics"
+   ],
+   "source": {
+    "title": "scRNA-tools database",
+    "url": "https://www.scrna-tools.org/"
+   },
+   "name": "tools for single-cell RNA-seq",
+   "what": "a single-cell RNA-seq tool",
+   "words": [
+    "Seurat",
+    "Scanpy",
+    "Cell Ranger",
+    "scVI",
+    "Harmony",
+    "Scrublet",
+    "CellBender",
+    "SoupX",
+    "Monocle",
+    "scran",
+    "Squidpy",
+    "CellTypist"
+   ]
+  },
+  {
+   "id": "ws-gwas",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "gwas",
+    "genetics",
+    "statistical genetics"
+   ],
+   "source": {
+    "title": "A tutorial on conducting GWAS (Marees et al., 2018)",
+    "url": "https://doi.org/10.1002/mpr.1608"
+   },
+   "name": "GWAS pipeline tools",
+   "what": "a GWAS tool",
+   "words": [
+    "PLINK",
+    "REGENIE",
+    "SAIGE",
+    "BOLT-LMM",
+    "GCTA",
+    "LDSC",
+    "SuSiE",
+    "METAL",
+    "Beagle",
+    "FUMA",
+    "FINEMAP",
+    "PRS-CS"
+   ]
+  },
+  {
+   "id": "ws-plants",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "plants",
+    "plant biology",
+    "model organisms"
+   ],
+   "source": {
+    "title": "Model organism (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Model_organism"
+   },
+   "name": "model plants",
+   "what": "a model plant",
+   "words": [
+    "Arabidopsis",
+    "Rice",
+    "Maize",
+    "Medicago",
+    "Brachypodium",
+    "Tomato",
+    "Physcomitrium",
+    "Marchantia",
+    "N. benthamiana",
+    "Setaria"
+   ]
+  },
+  {
+   "id": "ws-animals",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "model organisms",
+    "genetics",
+    "developmental biology"
+   ],
+   "source": {
+    "title": "Model organism (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Model_organism"
+   },
+   "name": "model animals",
+   "what": "a model animal",
+   "words": [
+    "Zebrafish",
+    "Drosophila",
+    "C. elegans",
+    "Mouse",
+    "Xenopus",
+    "Rat",
+    "Medaka",
+    "Planarian"
+   ]
+  },
+  {
+   "id": "ws-microbes",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "microbiology",
+    "model organisms"
+   ],
+   "source": {
+    "title": "Model organism (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Model_organism"
+   },
+   "name": "model microbes",
+   "what": "a model microbe",
+   "words": [
+    "E. coli",
+    "Yeast",
+    "B. subtilis",
+    "Chlamydomonas",
+    "Dictyostelium",
+    "Fission yeast",
+    "Neurospora"
+   ]
+  },
+  {
+   "id": "ws-langs",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software"
+   ],
+   "source": {
+    "title": "List of programming languages (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/List_of_programming_languages"
+   },
+   "name": "programming languages",
+   "what": "a programming language",
+   "words": [
+    "Python",
+    "R",
+    "Julia",
+    "Rust",
+    "C++",
+    "Go",
+    "Perl",
+    "Java",
+    "JavaScript",
+    "MATLAB"
+   ]
+  },
+  {
+   "id": "ws-llms",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "ai",
+    "llm",
+    "machine learning"
+   ],
+   "source": {
+    "title": "Large language model (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Large_language_model"
+   },
+   "name": "AI model families",
+   "what": "an AI model family",
+   "words": [
+    "GPT",
+    "Claude",
+    "Gemini",
+    "Llama",
+    "Mistral",
+    "Qwen",
+    "DeepSeek",
+    "Gemma",
+    "Phi"
+   ]
+  },
+  {
+   "id": "ws-pylibs",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "python",
+    "data analysis",
+    "data science"
+   ],
+   "source": {
+    "title": "Python Package Index",
+    "url": "https://pypi.org/"
+   },
+   "name": "Python data libraries",
+   "what": "a Python library",
+   "words": [
+    "pandas",
+    "NumPy",
+    "SciPy",
+    "Matplotlib",
+    "scikit-learn",
+    "seaborn",
+    "Polars",
+    "statsmodels",
+    "Plotly",
+    "Biopython"
+   ]
+  },
+  {
+   "id": "ws-rpkgs",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "r",
+    "data analysis",
+    "statistics"
+   ],
+   "source": {
+    "title": "CRAN and Bioconductor",
+    "url": "https://cran.r-project.org/"
+   },
+   "name": "R packages",
+   "what": "an R package",
+   "words": [
+    "ggplot2",
+    "dplyr",
+    "tidyr",
+    "DESeq2",
+    "edgeR",
+    "limma",
+    "data.table",
+    "Seurat",
+    "lme4",
+    "survival",
+    "readr"
+   ]
+  },
+  {
+   "id": "ws-formats",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "bioinformatics",
+    "sequencing",
+    "genomics"
+   ],
+   "source": {
+    "title": "File formats (UCSC Genome Browser)",
+    "url": "https://genome.ucsc.edu/FAQ/FAQformat.html"
+   },
+   "name": "file formats",
+   "what": "a file format",
+   "words": [
+    "FASTQ",
+    "FASTA",
+    "BAM",
+    "SAM",
+    "CRAM",
+    "VCF",
+    "BED",
+    "GTF",
+    "GFF3",
+    "bigWig",
+    "h5ad"
+   ]
+  },
+  {
+   "id": "ws-tests",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "statistics",
+    "data analysis"
+   ],
+   "source": {
+    "title": "Statistical hypothesis test (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Statistical_hypothesis_test"
+   },
+   "name": "statistical tests",
+   "what": "a statistical test",
+   "words": [
+    "t-test",
+    "Wilcoxon",
+    "Chi-square",
+    "ANOVA",
+    "Fisher's exact",
+    "Mann-Whitney",
+    "Kruskal-Wallis",
+    "Kolmogorov-Smirnov",
+    "Log-rank"
+   ]
+  },
+  {
+   "id": "ws-reduce",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "machine learning",
+    "single-cell",
+    "visualization"
+   ],
+   "source": {
+    "title": "Dimensionality reduction (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Dimensionality_reduction"
+   },
+   "name": "ways to reduce dimensions",
+   "what": "a dimensionality reduction",
+   "words": [
+    "PCA",
+    "UMAP",
+    "t-SNE",
+    "PHATE",
+    "Diffusion maps",
+    "NMF",
+    "ICA",
+    "Autoencoder"
+   ]
+  },
+  {
+   "id": "ws-cluster",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "machine learning",
+    "single-cell",
+    "statistics"
+   ],
+   "source": {
+    "title": "Cluster analysis (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Cluster_analysis"
+   },
+   "name": "clustering methods",
+   "what": "a clustering method",
+   "words": [
+    "k-means",
+    "Leiden",
+    "Louvain",
+    "Hierarchical",
+    "DBSCAN",
+    "HDBSCAN",
+    "Gaussian mixture",
+    "Spectral"
+   ]
+  },
+  {
+   "id": "ws-workflows",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "workflow",
+    "reproducibility",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Awesome Pipeline (curated list)",
+    "url": "https://github.com/pditommaso/awesome-pipeline"
+   },
+   "name": "workflow managers",
+   "what": "a workflow manager",
+   "words": [
+    "Nextflow",
+    "Snakemake",
+    "CWL",
+    "WDL",
+    "Galaxy",
+    "Cromwell",
+    "Airflow",
+    "Prefect"
+   ]
+  },
+  {
+   "id": "ws-seqtech",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "sequencing",
+    "genomics"
+   ],
+   "source": {
+    "title": "DNA sequencing (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/DNA_sequencing"
+   },
+   "name": "sequencing platforms",
+   "what": "a sequencing platform",
+   "words": [
+    "Illumina",
+    "PacBio",
+    "Oxford Nanopore",
+    "Ion Torrent",
+    "MGI",
+    "Element",
+    "Ultima",
+    "Sanger"
+   ]
+  },
+  {
+   "id": "ws-aligners",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "sequencing",
+    "bioinformatics",
+    "rna-seq"
+   ],
+   "source": {
+    "title": "Sequence alignment software (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/List_of_sequence_alignment_software"
+   },
+   "name": "read aligners",
+   "what": "a read aligner",
+   "words": [
+    "BWA",
+    "Bowtie2",
+    "STAR",
+    "HISAT2",
+    "minimap2",
+    "TopHat",
+    "Subread",
+    "NovoAlign"
+   ]
+  },
+  {
+   "id": "ws-dl",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "deep learning",
+    "machine learning",
+    "ai"
+   ],
+   "source": {
+    "title": "Comparison of deep learning software (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Comparison_of_deep_learning_software"
+   },
+   "name": "deep-learning frameworks",
+   "what": "a deep-learning framework",
+   "words": [
+    "PyTorch",
+    "TensorFlow",
+    "JAX",
+    "Keras",
+    "MXNet",
+    "PaddlePaddle",
+    "ONNX Runtime",
+    "Flax"
+   ]
+  },
+  {
+   "id": "ws-browsers",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "genomics",
+    "bioinformatics",
+    "visualization"
+   ],
+   "source": {
+    "title": "Genome browser (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Genome_browser"
+   },
+   "name": "genome browsers",
+   "what": "a genome browser",
+   "words": [
+    "IGV",
+    "UCSC Genome Browser",
+    "Ensembl",
+    "JBrowse",
+    "WashU Browser",
+    "Artemis",
+    "Tablet"
+   ]
+  },
+  {
+   "id": "ws-dbs",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "databases",
+    "bioinformatics",
+    "genomics"
+   ],
+   "source": {
+    "title": "Nucleic Acids Research database issue",
+    "url": "https://academic.oup.com/nar/pages/database_issue"
+   },
+   "name": "biological databases",
+   "what": "a biological database",
+   "words": [
+    "GEO",
+    "SRA",
+    "ENA",
+    "UniProt",
+    "PDB",
+    "GTEx",
+    "gnomAD",
+    "ClinVar",
+    "dbSNP",
+    "KEGG",
+    "Reactome"
+   ]
+  },
+  {
+   "id": "ws-plantdbs",
+   "kind": "wordset",
+   "level": 3,
+   "terms": [
+    "plants",
+    "databases",
+    "genomics"
+   ],
+   "source": {
+    "title": "Plant databases (Ensembl Plants)",
+    "url": "https://plants.ensembl.org/"
+   },
+   "name": "plant databases",
+   "what": "a plant database",
+   "words": [
+    "TAIR",
+    "Gramene",
+    "Phytozome",
+    "Ensembl Plants",
+    "PLAZA",
+    "MaizeGDB",
+    "Sol Genomics Network",
+    "RAP-DB"
+   ]
+  },
+  {
+   "id": "ws-imaging",
+   "kind": "wordset",
+   "level": 2,
+   "terms": [
+    "imaging",
+    "microscopy",
+    "image analysis"
+   ],
+   "source": {
+    "title": "Image analysis (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Image_analysis"
+   },
+   "name": "image analysis tools",
+   "what": "an image analysis tool",
+   "words": [
+    "Fiji",
+    "ImageJ",
+    "CellProfiler",
+    "napari",
+    "QuPath",
+    "ilastik",
+    "Cellpose",
+    "Icy",
+    "StarDist"
+   ]
+  },
+  {
+   "id": "ws-vcs",
+   "kind": "wordset",
+   "level": 1,
+   "terms": [
+    "git",
+    "software",
+    "collaboration"
+   ],
+   "source": {
+    "title": "Git (git-scm.com)",
+    "url": "https://git-scm.com/"
+   },
+   "name": "places to host code",
+   "what": "a code hosting site",
+   "words": [
+    "GitHub",
+    "GitLab",
+    "Bitbucket",
+    "Codeberg",
+    "SourceForge",
+    "Gitea",
+    "Azure Repos"
+   ]
+  },
+  {
+   "id": "ld-gwas",
+   "kind": "ladder",
+   "level": 1,
+   "terms": [
+    "gwas",
+    "genetics",
+    "statistical genetics"
+   ],
+   "source": {
+    "title": "A tutorial on conducting GWAS (Marees et al., 2018)",
+    "url": "https://doi.org/10.1002/mpr.1608"
+   },
+   "name": "a GWAS",
+   "rows": [
+    {
+     "right": "QC: drop samples and SNPs with a low call rate",
+     "wrong": [
+      {
+       "text": "Run the association test on the raw genotypes",
+       "why": "Raw calls give false hits: quality control comes first."
+      }
+     ]
+    },
+    {
+     "right": "plink --bfile data --maf 0.01 --make-bed --out qc",
+     "wrong": [
+      {
+       "text": "plink --bfile data --maf 0.5 --make-bed --out qc",
+       "why": "--maf 0.5 keeps only SNPs whose minor allele is at 50%: almost none."
+      },
+      {
+       "text": "rm -rf raw/",
+       "why": "Never delete the raw data: QC writes new files."
+      }
+     ]
+    },
+    {
+     "right": "PCA to see population structure",
+     "wrong": [
+      {
+       "text": "Fine-map the top hit",
+       "why": "There are no hits yet: fine-mapping comes after the association test."
+      }
+     ]
+    },
+    {
+     "right": "Impute untyped variants from a reference panel",
+     "wrong": [
+      {
+       "text": "Average the genotypes along each chromosome",
+       "why": "Not a step: imputation fills in untyped variants from a reference panel."
+      }
+     ]
+    },
+    {
+     "right": "Test association with covariates and ancestry PCs",
+     "wrong": [
+      {
+       "text": "Leave out the covariates to get more hits",
+       "why": "Without ancestry PCs, population structure shows up as false positives."
+      },
+      {
+       "text": "Test only the SNPs you expect to matter",
+       "why": "A GWAS tests every variant: choosing first biases it."
+      }
+     ]
+    },
+    {
+     "right": "Call a hit at p < 5 × 10⁻⁸",
+     "wrong": [
+      {
+       "text": "Call every SNP with p < 0.05 a hit",
+       "why": "With a million tests, 0.05 gives about 50,000 false hits."
+      }
+     ]
+    },
+    {
+     "right": "Clump by LD, then fine-map each locus",
+     "wrong": [
+      {
+       "text": "Report every significant SNP as its own discovery",
+       "why": "Neighbouring SNPs in LD carry the same signal: one locus, not many."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ld-scrna",
+   "kind": "ladder",
+   "level": 1,
+   "terms": [
+    "single-cell",
+    "rna-seq",
+    "transcriptomics"
+   ],
+   "source": {
+    "title": "Current best practices in single-cell RNA-seq analysis (Luecken & Theis, 2019)",
+    "url": "https://doi.org/10.15252/msb.20188746"
+   },
+   "name": "a single-cell RNA-seq analysis",
+   "rows": [
+    {
+     "right": "cellranger count: reads to a count matrix",
+     "wrong": [
+      {
+       "text": "Cluster the raw FASTQ files",
+       "why": "Reads must be aligned and counted per cell first."
+      }
+     ]
+    },
+    {
+     "right": "Remove empty droplets and ambient RNA",
+     "wrong": [
+      {
+       "text": "Keep every barcode, empty droplets too",
+       "why": "Most barcodes are empty droplets: they would form fake cells."
+      }
+     ]
+    },
+    {
+     "right": "Filter cells by genes detected and % mitochondrial reads",
+     "wrong": [
+      {
+       "text": "Drop every cell with any mitochondrial read",
+       "why": "All cells have some: only a high fraction marks dying cells."
+      }
+     ]
+    },
+    {
+     "right": "sc.pp.normalize_total(adata); sc.pp.log1p(adata)",
+     "wrong": [
+      {
+       "text": "sc.tl.leiden(adata) before normalising",
+       "why": "Clustering raw counts groups cells by sequencing depth, not by type."
+      }
+     ]
+    },
+    {
+     "right": "Variable genes, then PCA, neighbours and UMAP",
+     "wrong": [
+      {
+       "text": "UMAP straight on all 30,000 genes",
+       "why": "Slow and noisy: reduce to variable genes and PCA first."
+      }
+     ]
+    },
+    {
+     "right": "Cluster (Leiden), then find marker genes",
+     "wrong": [
+      {
+       "text": "Name the cell types before clustering",
+       "why": "Types are named from the markers of each cluster, so clusters come first."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ld-bulkrna",
+   "kind": "ladder",
+   "level": 2,
+   "terms": [
+    "rna-seq",
+    "transcriptomics",
+    "differential expression"
+   ],
+   "source": {
+    "title": "RNA-seq workflow: gene-level exploratory analysis and differential expression (Bioconductor)",
+    "url": "https://bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html"
+   },
+   "name": "a bulk RNA-seq experiment",
+   "rows": [
+    {
+     "right": "Check read quality with FastQC",
+     "wrong": [
+      {
+       "text": "Start with the volcano plot",
+       "why": "A volcano plot needs results: you start from the reads."
+      }
+     ]
+    },
+    {
+     "right": "Quantify reads per gene (Salmon or STAR + featureCounts)",
+     "wrong": [
+      {
+       "text": "Count reads per chromosome",
+       "why": "Expression is measured per gene or transcript, not per chromosome."
+      }
+     ]
+    },
+    {
+     "right": "Import raw counts into DESeq2",
+     "wrong": [
+      {
+       "text": "Give DESeq2 counts you've already normalised to TPM",
+       "why": "DESeq2 models raw counts; it normalises them itself."
+      }
+     ]
+    },
+    {
+     "right": "Look at a PCA of samples for outliers and batches",
+     "wrong": [
+      {
+       "text": "Drop samples until the PCA looks tidy",
+       "why": "Removing samples without a reason is cherry-picking."
+      }
+     ]
+    },
+    {
+     "right": "Fit the design, e.g. ~ batch + condition",
+     "wrong": [
+      {
+       "text": "Leave the known batch out of the design",
+       "why": "An unmodelled batch hides or fakes differences."
+      }
+     ]
+    },
+    {
+     "right": "Keep genes at adjusted p (FDR) < 0.05",
+     "wrong": [
+      {
+       "text": "Keep genes at raw p < 0.05",
+       "why": "Over 20,000 genes, raw p-values give hundreds of false positives."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ld-varcall",
+   "kind": "ladder",
+   "level": 2,
+   "terms": [
+    "variant calling",
+    "genomics",
+    "sequencing"
+   ],
+   "source": {
+    "title": "GATK Best Practices (Broad Institute)",
+    "url": "https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows"
+   },
+   "name": "germline variant calling",
+   "rows": [
+    {
+     "right": "Align reads to the reference with BWA-MEM",
+     "wrong": [
+      {
+       "text": "Call variants straight from the FASTQ",
+       "why": "Variants are called from reads placed on the reference."
+      }
+     ]
+    },
+    {
+     "right": "Sort the BAM and mark duplicates",
+     "wrong": [
+      {
+       "text": "Keep PCR duplicates: more reads, more evidence",
+       "why": "Duplicates repeat one molecule and inflate confidence."
+      }
+     ]
+    },
+    {
+     "right": "Recalibrate base qualities (BQSR)",
+     "wrong": [
+      {
+       "text": "Set every base quality to 40",
+       "why": "Faking qualities hides real sequencing errors."
+      }
+     ]
+    },
+    {
+     "right": "Call per sample with HaplotypeCaller in GVCF mode",
+     "wrong": [
+      {
+       "text": "Merge all BAMs into one sample first",
+       "why": "Merging loses which sample has which variant."
+      }
+     ]
+    },
+    {
+     "right": "Joint-genotype the GVCFs together",
+     "wrong": [
+      {
+       "text": "Genotype each sample alone and paste the VCFs",
+       "why": "Joint calling tells a missing call from a reference call."
+      }
+     ]
+    },
+    {
+     "right": "Filter variants (VQSR or hard filters)",
+     "wrong": [
+      {
+       "text": "Publish every raw call",
+       "why": "Unfiltered calls include many artefacts."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ld-ml",
+   "kind": "ladder",
+   "level": 1,
+   "terms": [
+    "machine learning",
+    "ai",
+    "data science"
+   ],
+   "source": {
+    "title": "Rules of Machine Learning (Google)",
+    "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+   },
+   "name": "training a model",
+   "rows": [
+    {
+     "right": "Hold out a test set before anything else",
+     "wrong": [
+      {
+       "text": "Tune the model on all the data, then test on it",
+       "why": "Testing on data the model saw measures memory, not skill."
+      }
+     ]
+    },
+    {
+     "right": "Start with a simple baseline",
+     "wrong": [
+      {
+       "text": "Start with the biggest network you can fit",
+       "why": "Without a baseline you can't tell if the big model helps."
+      }
+     ]
+    },
+    {
+     "right": "Fit preprocessing on the training set only",
+     "wrong": [
+      {
+       "text": "Scale using the mean of all the data",
+       "why": "That leaks test information into training."
+      }
+     ]
+    },
+    {
+     "right": "Choose settings by cross-validation",
+     "wrong": [
+      {
+       "text": "Choose settings by test-set score",
+       "why": "Then the test set is no longer unseen."
+      }
+     ]
+    },
+    {
+     "right": "Report the metric on the untouched test set, once",
+     "wrong": [
+      {
+       "text": "Report the best of many test runs",
+       "why": "Picking the best run overstates performance."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ld-gitpr",
+   "kind": "ladder",
+   "level": 1,
+   "terms": [
+    "git",
+    "github",
+    "open source",
+    "collaboration"
+   ],
+   "source": {
+    "title": "Contributing to a project (GitHub Docs)",
+    "url": "https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project"
+   },
+   "name": "your first pull request",
+   "rows": [
+    {
+     "right": "Fork the repository",
+     "wrong": [
+      {
+       "text": "Push straight to the project's main branch",
+       "why": "You can't, and shouldn't: changes go through a pull request."
+      }
+     ]
+    },
+    {
+     "right": "git clone your fork",
+     "wrong": [
+      {
+       "text": "Download a ZIP and edit it",
+       "why": "A ZIP has no history: you can't make a pull request from it."
+      }
+     ]
+    },
+    {
+     "right": "git switch -c fix-typo",
+     "wrong": [
+      {
+       "text": "Commit on main",
+       "why": "A branch keeps your change separate and easy to update."
+      }
+     ]
+    },
+    {
+     "right": "Commit with a clear message",
+     "wrong": [
+      {
+       "text": "Commit with the message \"stuff\"",
+       "why": "Reviewers read the history: say what changed and why."
+      }
+     ]
+    },
+    {
+     "right": "git push origin fix-typo",
+     "wrong": [
+      {
+       "text": "git push --force origin main",
+       "why": "Force-pushing main rewrites shared history."
+      }
+     ]
+    },
+    {
+     "right": "Open a pull request and describe the change",
+     "wrong": [
+      {
+       "text": "Email the maintainer the files",
+       "why": "A pull request lets them review, discuss and merge."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ld-figure",
+   "kind": "ladder",
+   "level": 2,
+   "terms": [
+    "visualization",
+    "figures",
+    "data analysis"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "name": "a figure for a paper",
+   "rows": [
+    {
+     "right": "Decide the one message the figure must show",
+     "wrong": [
+      {
+       "text": "Put every result into one figure",
+       "why": "A figure with no single message shows nothing clearly."
+      }
+     ]
+    },
+    {
+     "right": "Choose the plot that fits the data (points for few samples)",
+     "wrong": [
+      {
+       "text": "Use a bar chart of means for n = 3",
+       "why": "Bars hide the spread: show the points."
+      }
+     ]
+    },
+    {
+     "right": "Use a colour-blind-safe palette",
+     "wrong": [
+      {
+       "text": "Use red and green for the two groups",
+       "why": "About 1 in 12 men can't tell red from green."
+      }
+     ]
+    },
+    {
+     "right": "Label axes with names and units",
+     "wrong": [
+      {
+       "text": "Leave the axes as x and y",
+       "why": "Readers can't interpret an unlabeled axis."
+      }
+     ]
+    },
+    {
+     "right": "Export as vector (PDF or SVG) at final size",
+     "wrong": [
+      {
+       "text": "Screenshot it at screen resolution",
+       "why": "Screenshots blur when printed or zoomed."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ld-amplicon",
+   "kind": "ladder",
+   "level": 3,
+   "terms": [
+    "microbiome",
+    "metagenomics",
+    "sequencing"
+   ],
+   "source": {
+    "title": "QIIME 2 documentation",
+    "url": "https://docs.qiime2.org/"
+   },
+   "name": "a 16S microbiome study",
+   "rows": [
+    {
+     "right": "Trim primers and check read quality",
+     "wrong": [
+      {
+       "text": "Count species from raw reads",
+       "why": "Primers and poor bases distort every later step."
+      }
+     ]
+    },
+    {
+     "right": "Denoise into ASVs (DADA2)",
+     "wrong": [
+      {
+       "text": "Cluster everything at 80% identity",
+       "why": "So loose a threshold merges distinct taxa."
+      }
+     ]
+    },
+    {
+     "right": "Assign taxonomy with a trained classifier (SILVA)",
+     "wrong": [
+      {
+       "text": "Name taxa by sequence length",
+       "why": "Length says nothing about which organism it is."
+      }
+     ]
+    },
+    {
+     "right": "Rarefy or use compositional methods before comparing",
+     "wrong": [
+      {
+       "text": "Compare raw read counts between samples",
+       "why": "Samples have different depths: raw counts aren't comparable."
+      }
+     ]
+    },
+    {
+     "right": "Test differences in diversity and abundance",
+     "wrong": [
+      {
+       "text": "Report the most abundant taxon as the effect",
+       "why": "Abundance alone isn't a difference between groups."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "gt-01",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "sequencing",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Binary file of aligned reads",
+   "right": "BAM",
+   "wrong": "SAM"
+  },
+  {
+   "id": "gt-02",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "genomics",
+    "variant calling"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Holds variant calls",
+   "right": "VCF",
+   "wrong": "GTF"
+  },
+  {
+   "id": "gt-03",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "python",
+    "programming"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "First index of a Python list",
+   "right": "0",
+   "wrong": "1"
+  },
+  {
+   "id": "gt-04",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "r",
+    "programming"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "First index of an R vector",
+   "right": "1",
+   "wrong": "0"
+  },
+  {
+   "id": "gt-05",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "r"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "R's built-in pipe",
+   "right": "|>",
+   "wrong": ">>"
+  },
+  {
+   "id": "gt-06",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Many tests? Control the…",
+   "right": "FDR",
+   "wrong": "p < 0.05"
+  },
+  {
+   "id": "gt-07",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Git: save a snapshot",
+   "right": "commit",
+   "wrong": "push"
+  },
+  {
+   "id": "gt-08",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Git: send commits to GitHub",
+   "right": "push",
+   "wrong": "pull"
+  },
+  {
+   "id": "gt-09",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Reads with quality scores",
+   "right": "FASTQ",
+   "wrong": "FASTA"
+  },
+  {
+   "id": "gt-10",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "gwas"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "A GWAS hit needs p below",
+   "right": "5×10⁻⁸",
+   "wrong": "0.05"
+  },
+  {
+   "id": "gt-11",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "biology"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Mitochondria have their own…",
+   "right": "DNA",
+   "wrong": "nucleus"
+  },
+  {
+   "id": "gt-12",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "biology",
+    "genetics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "DNA base that pairs with A",
+   "right": "T",
+   "wrong": "G"
+  },
+  {
+   "id": "gt-13",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "biology",
+    "genetics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "RNA uses U instead of",
+   "right": "T",
+   "wrong": "C"
+  },
+  {
+   "id": "gt-14",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "biology",
+    "genetics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Codons are read in groups of",
+   "right": "3",
+   "wrong": "4"
+  },
+  {
+   "id": "gt-15",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "plants"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Model plant with the first plant genome",
+   "right": "Arabidopsis",
+   "wrong": "Maize"
+  },
+  {
+   "id": "gt-16",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "single-cell",
+    "machine learning"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Leiden and Louvain do",
+   "right": "clustering",
+   "wrong": "alignment"
+  },
+  {
+   "id": "gt-17",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "single-cell",
+    "visualization"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "UMAP is mainly for",
+   "right": "visualising",
+   "wrong": "testing"
+  },
+  {
+   "id": "gt-18",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "machine learning"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Overfitting: training score is",
+   "right": "high",
+   "wrong": "low"
+  },
+  {
+   "id": "gt-19",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "machine learning"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Data the model never sees",
+   "right": "test set",
+   "wrong": "train set"
+  },
+  {
+   "id": "gt-20",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "python",
+    "data analysis"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Python's data-frame library",
+   "right": "pandas",
+   "wrong": "dplyr"
+  },
+  {
+   "id": "gt-21",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "r",
+    "visualization"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "R's grammar-of-graphics plots",
+   "right": "ggplot2",
+   "wrong": "seaborn"
+  },
+  {
+   "id": "gt-22",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "rna-seq"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Count reads per gene",
+   "right": "featureCounts",
+   "wrong": "FastQC"
+  },
+  {
+   "id": "gt-23",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Quality report for reads",
+   "right": "FastQC",
+   "wrong": "STAR"
+  },
+  {
+   "id": "gt-24",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "rna-seq"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Spliced RNA-seq aligner",
+   "right": "STAR",
+   "wrong": "BWA"
+  },
+  {
+   "id": "gt-25",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "workflow"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Workflow tool written in Groovy",
+   "right": "Nextflow",
+   "wrong": "Snakemake"
+  },
+  {
+   "id": "gt-26",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "workflow"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Workflow tool based on Python",
+   "right": "Snakemake",
+   "wrong": "Nextflow"
+  },
+  {
+   "id": "gt-27",
+   "kind": "gate",
+   "level": 3,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Test for a 2×2 table of small counts",
+   "right": "Fisher's exact",
+   "wrong": "t-test"
+  },
+  {
+   "id": "gt-28",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Non-parametric test for 2 groups",
+   "right": "Wilcoxon",
+   "wrong": "t-test"
+  },
+  {
+   "id": "gt-29",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "gwas",
+    "genetics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Linkage between nearby SNPs",
+   "right": "LD",
+   "wrong": "HWE"
+  },
+  {
+   "id": "gt-30",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "gwas",
+    "genetics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Genotype ratios check in QC",
+   "right": "HWE",
+   "wrong": "LD"
+  },
+  {
+   "id": "gt-31",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Reads DNA as it passes through a pore",
+   "right": "Nanopore",
+   "wrong": "Illumina"
+  },
+  {
+   "id": "gt-32",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "linux",
+    "shell"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Shell: list files",
+   "right": "ls",
+   "wrong": "cd"
+  },
+  {
+   "id": "gt-33",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "linux",
+    "shell"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Shell: where am I?",
+   "right": "pwd",
+   "wrong": "whoami"
+  },
+  {
+   "id": "gt-34",
+   "kind": "gate",
+   "level": 3,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Undo the last commit, keep changes",
+   "right": "reset --soft",
+   "wrong": "reset --hard"
+  },
+  {
+   "id": "gt-35",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "ai",
+    "deep learning"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Transformer paper title: Attention is…",
+   "right": "all you need",
+   "wrong": "enough"
+  },
+  {
+   "id": "gt-36",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "ai",
+    "proteins"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Protein structure predictor from DeepMind",
+   "right": "AlphaFold",
+   "wrong": "AlphaGo"
+  },
+  {
+   "id": "gt-37",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Gene editing with guide RNA",
+   "right": "CRISPR",
+   "wrong": "PCR"
+  },
+  {
+   "id": "gt-38",
+   "kind": "gate",
+   "level": 1,
+   "terms": [
+    "biology",
+    "lab"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Copies a DNA region exponentially",
+   "right": "PCR",
+   "wrong": "CRISPR"
+  },
+  {
+   "id": "gt-39",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Correlation of -1 means",
+   "right": "perfectly opposite",
+   "wrong": "no relation"
+  },
+  {
+   "id": "gt-40",
+   "kind": "gate",
+   "level": 2,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core questions",
+    "url": "https://mygeeky.org/"
+   },
+   "q": "Median is robust to",
+   "right": "outliers",
+   "wrong": "sample size"
+  },
+  {
+   "id": "cr-b01",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Off-by-one",
+   "bug": true,
+   "why": "A loop that runs one time too many or too few."
+  },
+  {
+   "id": "cr-b02",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Typo",
+   "bug": true,
+   "why": "A misspelt name: the code calls something that doesn't exist."
+  },
+  {
+   "id": "cr-b03",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Memory leak",
+   "bug": true,
+   "why": "Memory that's taken and never given back."
+  },
+  {
+   "id": "cr-b04",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Race condition",
+   "bug": true,
+   "why": "Two things running at once, and the result depends on which wins."
+  },
+  {
+   "id": "cr-b05",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Wrong path",
+   "bug": true,
+   "why": "A file path that only exists on one computer."
+  },
+  {
+   "id": "cr-b06",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Silent NaN",
+   "bug": true,
+   "why": "A missing value that spreads quietly through every sum."
+  },
+  {
+   "id": "cr-b07",
+   "kind": "critter",
+   "level": 2,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Infinite loop",
+   "bug": true,
+   "why": "A loop whose end condition is never met."
+  },
+  {
+   "id": "cr-b08",
+   "kind": "critter",
+   "level": 2,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Hard-coded seed",
+   "bug": true,
+   "why": "Every run looks random but is the same, or results change with no seed at all."
+  },
+  {
+   "id": "cr-b09",
+   "kind": "critter",
+   "level": 2,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Null pointer",
+   "bug": true,
+   "why": "Using something that was never set."
+  },
+  {
+   "id": "cr-b10",
+   "kind": "critter",
+   "level": 2,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Integer overflow",
+   "bug": true,
+   "why": "A number too big for its type wraps around."
+  },
+  {
+   "id": "cr-b11",
+   "kind": "critter",
+   "level": 2,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Data leak",
+   "bug": true,
+   "why": "Test data used in training: scores look better than they are."
+  },
+  {
+   "id": "cr-b12",
+   "kind": "critter",
+   "level": 2,
+   "terms": [
+    "programming",
+    "software",
+    "debugging"
+   ],
+   "source": {
+    "title": "Software bug (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Software_bug"
+   },
+   "label": "Mixed-up columns",
+   "bug": true,
+   "why": "Two columns swapped, so every result is about the wrong variable."
+  },
+  {
+   "id": "cr-f01",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "Unit test",
+   "bug": false,
+   "why": "A small check that catches bugs early."
+  },
+  {
+   "id": "cr-f02",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "Docstring",
+   "bug": false,
+   "why": "Says what a function does and how to use it."
+  },
+  {
+   "id": "cr-f03",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "Code review",
+   "bug": false,
+   "why": "Another pair of eyes before code is merged."
+  },
+  {
+   "id": "cr-f04",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "Type hint",
+   "bug": false,
+   "why": "Says what kind of value a function expects."
+  },
+  {
+   "id": "cr-f05",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "README",
+   "bug": false,
+   "why": "Tells people what the project is and how to run it."
+  },
+  {
+   "id": "cr-f06",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "Version control",
+   "bug": false,
+   "why": "Keeps every change, so you can go back."
+  },
+  {
+   "id": "cr-f07",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "Assertion",
+   "bug": false,
+   "why": "Stops the program the moment something impossible happens."
+  },
+  {
+   "id": "cr-f08",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "Random seed",
+   "bug": false,
+   "why": "Makes a random analysis repeatable."
+  },
+  {
+   "id": "cr-f09",
+   "kind": "critter",
+   "level": 1,
+   "terms": [
+    "programming",
+    "software",
+    "best practices"
+   ],
+   "source": {
+    "title": "Good enough practices in scientific computing (Wilson et al., 2017)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1005510"
+   },
+   "label": "Linter",
+   "bug": false,
+   "why": "Points out likely mistakes as you type."
+  },
+  {
+   "id": "rf-r01",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "workflow",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Snakemake",
+    "url": "https://snakemake.readthedocs.io/"
+   },
+   "name": "Snakemake",
+   "real": true,
+   "fact": "Real: a Python-based workflow manager."
+  },
+  {
+   "id": "rf-r02",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "sequencing",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "FastQC",
+    "url": "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/"
+   },
+   "name": "FastQC",
+   "real": true,
+   "fact": "Real: quality reports for sequencing reads."
+  },
+  {
+   "id": "rf-r03",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "rna-seq",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Kallisto",
+    "url": "https://pachterlab.github.io/kallisto/"
+   },
+   "name": "Kallisto",
+   "real": true,
+   "fact": "Real: fast RNA-seq quantification by pseudoalignment."
+  },
+  {
+   "id": "rf-r04",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "rna-seq",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Salmon",
+    "url": "https://combine-lab.github.io/salmon/"
+   },
+   "name": "Salmon",
+   "real": true,
+   "fact": "Real: transcript quantification for RNA-seq."
+  },
+  {
+   "id": "rf-r05",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "sequencing",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Trimmomatic",
+    "url": "https://github.com/usadellab/Trimmomatic"
+   },
+   "name": "Trimmomatic",
+   "real": true,
+   "fact": "Real: trims adapters and poor-quality ends from reads."
+  },
+  {
+   "id": "rf-r06",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "sequencing",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "MultiQC",
+    "url": "https://multiqc.info/"
+   },
+   "name": "MultiQC",
+   "real": true,
+   "fact": "Real: gathers many QC reports into one."
+  },
+  {
+   "id": "rf-r07",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "genomics",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "BEDTools",
+    "url": "https://bedtools.readthedocs.io/"
+   },
+   "name": "BEDTools",
+   "real": true,
+   "fact": "Real: a toolkit for genome intervals."
+  },
+  {
+   "id": "rf-r08",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "sequencing",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Cutadapt",
+    "url": "https://cutadapt.readthedocs.io/"
+   },
+   "name": "Cutadapt",
+   "real": true,
+   "fact": "Real: removes adapter sequences from reads."
+  },
+  {
+   "id": "rf-r09",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "rna-seq",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "HISAT2",
+    "url": "https://daehwankimlab.github.io/hisat2/"
+   },
+   "name": "HISAT2",
+   "real": true,
+   "fact": "Real: a fast spliced aligner for RNA-seq."
+  },
+  {
+   "id": "rf-r10",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "rna-seq",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "featureCounts",
+    "url": "https://subread.sourceforge.net/"
+   },
+   "name": "featureCounts",
+   "real": true,
+   "fact": "Real: counts reads per gene (part of Subread)."
+  },
+  {
+   "id": "rf-r11",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "genomics",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Picard",
+    "url": "https://broadinstitute.github.io/picard/"
+   },
+   "name": "Picard",
+   "real": true,
+   "fact": "Real: java tools for BAM and VCF files, from the Broad."
+  },
+  {
+   "id": "rf-r12",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "variant calling",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "bcftools",
+    "url": "https://samtools.github.io/bcftools/"
+   },
+   "name": "bcftools",
+   "real": true,
+   "fact": "Real: calls, filters and manipulates variants in VCF/BCF."
+  },
+  {
+   "id": "rf-r13",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "sequencing",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "minimap2",
+    "url": "https://github.com/lh3/minimap2"
+   },
+   "name": "minimap2",
+   "real": true,
+   "fact": "Real: aligns long reads and assemblies fast."
+  },
+  {
+   "id": "rf-r14",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "genomics",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Flye",
+    "url": "https://github.com/mikolmogorov/Flye"
+   },
+   "name": "Flye",
+   "real": true,
+   "fact": "Real: assembles genomes from long reads."
+  },
+  {
+   "id": "rf-r15",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "genomics",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "SPAdes",
+    "url": "https://github.com/ablab/spades"
+   },
+   "name": "SPAdes",
+   "real": true,
+   "fact": "Real: a genome assembler, often for bacteria."
+  },
+  {
+   "id": "rf-r16",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "metagenomics",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Kraken2",
+    "url": "https://github.com/DerrickWood/kraken2"
+   },
+   "name": "Kraken2",
+   "real": true,
+   "fact": "Real: classifies reads by the organism they came from."
+  },
+  {
+   "id": "rf-r17",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "phylogenetics",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "IQ-TREE",
+    "url": "https://www.iqtree.org/"
+   },
+   "name": "IQ-TREE",
+   "real": true,
+   "fact": "Real: builds phylogenetic trees by maximum likelihood."
+  },
+  {
+   "id": "rf-r18",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "phylogenetics",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "MAFFT",
+    "url": "https://mafft.cbrc.jp/alignment/software/"
+   },
+   "name": "MAFFT",
+   "real": true,
+   "fact": "Real: multiple sequence alignment."
+  },
+  {
+   "id": "rf-r19",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "proteins",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "HMMER",
+    "url": "https://hmmer.org/"
+   },
+   "name": "HMMER",
+   "real": true,
+   "fact": "Real: searches sequences with profile hidden Markov models."
+  },
+  {
+   "id": "rf-r20",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "genomics",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "BUSCO",
+    "url": "https://busco.ezlab.org/"
+   },
+   "name": "BUSCO",
+   "real": true,
+   "fact": "Real: measures how complete a genome assembly is."
+  },
+  {
+   "id": "rf-r21",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "single-cell",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "Scrublet",
+    "url": "https://github.com/swolock/scrublet"
+   },
+   "name": "Scrublet",
+   "real": true,
+   "fact": "Real: finds doublets in single-cell data."
+  },
+  {
+   "id": "rf-r22",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "python"
+   ],
+   "source": {
+    "title": "Polars",
+    "url": "https://pola.rs/"
+   },
+   "name": "Polars",
+   "real": true,
+   "fact": "Real: a fast DataFrame library for Python and Rust."
+  },
+  {
+   "id": "rf-r23",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "machine learning"
+   ],
+   "source": {
+    "title": "Optuna",
+    "url": "https://optuna.org/"
+   },
+   "name": "Optuna",
+   "real": true,
+   "fact": "Real: tunes hyperparameters automatically."
+  },
+  {
+   "id": "rf-r24",
+   "kind": "realfake",
+   "level": 2,
+   "terms": [
+    "python"
+   ],
+   "source": {
+    "title": "Ruff",
+    "url": "https://docs.astral.sh/ruff/"
+   },
+   "name": "Ruff",
+   "real": true,
+   "fact": "Real: a very fast Python linter."
+  },
+  {
+   "id": "rf-f01",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Fastaroni",
+   "real": false,
+   "fact": "Made up (sadly)."
+  },
+  {
+   "id": "rf-f02",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "PlinkyWinky",
+   "real": false,
+   "fact": "Made up: PLINK is real, PlinkyWinky is not."
+  },
+  {
+   "id": "rf-f03",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Trimbletron",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f04",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "VCFancy",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f05",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Alignosaurus",
+   "real": false,
+   "fact": "Made up, though it should exist."
+  },
+  {
+   "id": "rf-f06",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Readweaver 3000",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f07",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Bamberry Pie",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f08",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "GenoGoblin",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f09",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Clusterella",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f10",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Mappletini",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f11",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Sequinator 9000",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f12",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Splicey McSpliceface",
+   "real": false,
+   "fact": "Made up."
+  },
+  {
+   "id": "rf-f13",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Cutadapt Pro Max",
+   "real": false,
+   "fact": "Made up: Cutadapt is real, the Pro Max isn't."
+  },
+  {
+   "id": "rf-f14",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "DESeq3000",
+   "real": false,
+   "fact": "Made up: DESeq2 is real."
+  },
+  {
+   "id": "rf-f15",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Scanpyjamas",
+   "real": false,
+   "fact": "Made up: Scanpy is real."
+  },
+  {
+   "id": "rf-f16",
+   "kind": "realfake",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core (an invented name)",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Seuratouille",
+   "real": false,
+   "fact": "Made up: Seurat is real."
+  },
+  {
+   "id": "gm-g01",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Sonic hedgehog",
+    "url": "https://www.ncbi.nlm.nih.gov/gene/6469"
+   },
+   "name": "Sonic hedgehog",
+   "answer": "gene",
+   "fact": "A real gene (SHH), named after the video-game hedgehog; it shapes limbs and the brain."
+  },
+  {
+   "id": "gm-g02",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Pikachurin",
+    "url": "https://en.wikipedia.org/wiki/Pikachurin"
+   },
+   "name": "Pikachurin",
+   "answer": "gene",
+   "fact": "A real retina protein (gene EGFLAM), named after Pikachu for its quick signalling."
+  },
+  {
+   "id": "gm-g03",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Lunatic fringe",
+    "url": "https://www.ncbi.nlm.nih.gov/gene/3955"
+   },
+   "name": "Lunatic fringe",
+   "answer": "gene",
+   "fact": "A real gene (LFNG) of the Notch pathway."
+  },
+  {
+   "id": "gm-g04",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Mothers against decapentaplegic",
+    "url": "https://en.wikipedia.org/wiki/Mothers_against_decapentaplegic"
+   },
+   "name": "Mothers against decapentaplegic",
+   "answer": "gene",
+   "fact": "Real: the fly gene that gave the SMAD family its name."
+  },
+  {
+   "id": "gm-g05",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Gene nomenclature: whimsical fly gene names (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Gene_nomenclature"
+   },
+   "name": "Tinman",
+   "answer": "gene",
+   "fact": "A real fly gene: without it the heart never forms, like the Tin Man."
+  },
+  {
+   "id": "gm-g06",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Gene nomenclature: whimsical fly gene names (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Gene_nomenclature"
+   },
+   "name": "Cheap date",
+   "answer": "gene",
+   "fact": "A real fly gene: mutant flies get drunk on very little alcohol."
+  },
+  {
+   "id": "gm-g07",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Gene nomenclature: whimsical fly gene names (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Gene_nomenclature"
+   },
+   "name": "Sunday driver",
+   "answer": "gene",
+   "fact": "A real fly gene for transport along nerve fibres, which crawls when it's broken."
+  },
+  {
+   "id": "gm-g08",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Spock1",
+    "url": "https://www.ncbi.nlm.nih.gov/gene/6695"
+   },
+   "name": "Spock1",
+   "answer": "gene",
+   "fact": "A real human gene (SPOCK1), a proteoglycan."
+  },
+  {
+   "id": "gm-g09",
+   "kind": "genemon",
+   "level": 2,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Son of sevenless",
+    "url": "https://www.ncbi.nlm.nih.gov/gene/6654"
+   },
+   "name": "Son of sevenless",
+   "answer": "gene",
+   "fact": "A real gene (SOS1): it switches on Ras in cell signalling."
+  },
+  {
+   "id": "gm-g10",
+   "kind": "genemon",
+   "level": 2,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Hedgehog",
+    "url": "https://en.wikipedia.org/wiki/Hedgehog_signaling_pathway"
+   },
+   "name": "Hedgehog",
+   "answer": "gene",
+   "fact": "A real fly gene: mutant larvae are covered in spiky bristles."
+  },
+  {
+   "id": "gm-g11",
+   "kind": "genemon",
+   "level": 2,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Frizzled",
+    "url": "https://en.wikipedia.org/wiki/Frizzled"
+   },
+   "name": "Frizzled",
+   "answer": "gene",
+   "fact": "A real gene family: receptors for Wnt signals; mutant flies have frizzled hairs."
+  },
+  {
+   "id": "gm-g12",
+   "kind": "genemon",
+   "level": 2,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Dishevelled",
+    "url": "https://en.wikipedia.org/wiki/Dishevelled"
+   },
+   "name": "Dishevelled",
+   "answer": "gene",
+   "fact": "A real gene (DVL) in Wnt signalling, named for messy fly hairs."
+  },
+  {
+   "id": "gm-g13",
+   "kind": "genemon",
+   "level": 2,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Gene nomenclature: whimsical fly gene names (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Gene_nomenclature"
+   },
+   "name": "Groucho",
+   "answer": "gene",
+   "fact": "A real fly gene, named after Groucho Marx for the bushy bristles over the eyes."
+  },
+  {
+   "id": "gm-g14",
+   "kind": "genemon",
+   "level": 2,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Toll",
+    "url": "https://en.wikipedia.org/wiki/Toll-like_receptor"
+   },
+   "name": "Toll",
+   "answer": "gene",
+   "fact": "A real gene: German for 'great!', which its discoverers shouted."
+  },
+  {
+   "id": "gm-g15",
+   "kind": "genemon",
+   "level": 2,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Gene nomenclature: whimsical fly gene names (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Gene_nomenclature"
+   },
+   "name": "Indy",
+   "answer": "gene",
+   "fact": "A real fly gene: 'I'm not dead yet' - mutants live longer."
+  },
+  {
+   "id": "gm-g16",
+   "kind": "genemon",
+   "level": 2,
+   "terms": [
+    "genetics",
+    "biology"
+   ],
+   "source": {
+    "title": "Gene nomenclature: whimsical fly gene names (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/Gene_nomenclature"
+   },
+   "name": "Armadillo",
+   "answer": "gene",
+   "fact": "A real fly gene, the fly version of beta-catenin."
+  },
+  {
+   "id": "gm-p01",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Jigglypuff_(Pok%C3%A9mon)"
+   },
+   "name": "Jigglypuff",
+   "answer": "pokemon",
+   "fact": "Jigglypuff is a Pokémon."
+  },
+  {
+   "id": "gm-p02",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Magikarp_(Pok%C3%A9mon)"
+   },
+   "name": "Magikarp",
+   "answer": "pokemon",
+   "fact": "Magikarp is a Pokémon."
+  },
+  {
+   "id": "gm-p03",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Psyduck_(Pok%C3%A9mon)"
+   },
+   "name": "Psyduck",
+   "answer": "pokemon",
+   "fact": "Psyduck is a Pokémon."
+  },
+  {
+   "id": "gm-p04",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Snorlax_(Pok%C3%A9mon)"
+   },
+   "name": "Snorlax",
+   "answer": "pokemon",
+   "fact": "Snorlax is a Pokémon."
+  },
+  {
+   "id": "gm-p05",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Exeggcute_(Pok%C3%A9mon)"
+   },
+   "name": "Exeggcute",
+   "answer": "pokemon",
+   "fact": "Exeggcute is a Pokémon."
+  },
+  {
+   "id": "gm-p06",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Wobbuffet_(Pok%C3%A9mon)"
+   },
+   "name": "Wobbuffet",
+   "answer": "pokemon",
+   "fact": "Wobbuffet is a Pokémon."
+  },
+  {
+   "id": "gm-p07",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Slowpoke_(Pok%C3%A9mon)"
+   },
+   "name": "Slowpoke",
+   "answer": "pokemon",
+   "fact": "Slowpoke is a Pokémon."
+  },
+  {
+   "id": "gm-p08",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Shuckle_(Pok%C3%A9mon)"
+   },
+   "name": "Shuckle",
+   "answer": "pokemon",
+   "fact": "Shuckle is a Pokémon."
+  },
+  {
+   "id": "gm-p09",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Bulbasaur_(Pok%C3%A9mon)"
+   },
+   "name": "Bulbasaur",
+   "answer": "pokemon",
+   "fact": "Bulbasaur is a Pokémon."
+  },
+  {
+   "id": "gm-p10",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Togepi_(Pok%C3%A9mon)"
+   },
+   "name": "Togepi",
+   "answer": "pokemon",
+   "fact": "Togepi is a Pokémon."
+  },
+  {
+   "id": "gm-p11",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Gengar_(Pok%C3%A9mon)"
+   },
+   "name": "Gengar",
+   "answer": "pokemon",
+   "fact": "Gengar is a Pokémon."
+  },
+  {
+   "id": "gm-p12",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Lapras_(Pok%C3%A9mon)"
+   },
+   "name": "Lapras",
+   "answer": "pokemon",
+   "fact": "Lapras is a Pokémon."
+  },
+  {
+   "id": "gm-p13",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Geodude_(Pok%C3%A9mon)"
+   },
+   "name": "Geodude",
+   "answer": "pokemon",
+   "fact": "Geodude is a Pokémon."
+  },
+  {
+   "id": "gm-p14",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Tentacool_(Pok%C3%A9mon)"
+   },
+   "name": "Tentacool",
+   "answer": "pokemon",
+   "fact": "Tentacool is a Pokémon."
+  },
+  {
+   "id": "gm-p15",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Voltorb_(Pok%C3%A9mon)"
+   },
+   "name": "Voltorb",
+   "answer": "pokemon",
+   "fact": "Voltorb is a Pokémon."
+  },
+  {
+   "id": "gm-p16",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Wooper_(Pok%C3%A9mon)"
+   },
+   "name": "Wooper",
+   "answer": "pokemon",
+   "fact": "Wooper is a Pokémon."
+  },
+  {
+   "id": "gm-p17",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Sudowoodo_(Pok%C3%A9mon)"
+   },
+   "name": "Sudowoodo",
+   "answer": "pokemon",
+   "fact": "Sudowoodo is a Pokémon."
+  },
+  {
+   "id": "gm-p18",
+   "kind": "genemon",
+   "level": 1,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "Pokémon (Bulbapedia)",
+    "url": "https://bulbapedia.bulbagarden.net/wiki/Smeargle_(Pok%C3%A9mon)"
+   },
+   "name": "Smeargle",
+   "answer": "pokemon",
+   "fact": "Smeargle is a Pokémon."
+  },
+  {
+   "id": "rv-01",
+   "kind": "review",
+   "level": 1,
+   "terms": [
+    "experimental design"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Where is the control group?",
+   "right": "Add an untreated control, shown beside the treatment",
+   "wrong": [
+    "Controls are old-fashioned",
+    "The effect is obvious without one"
+   ]
+  },
+  {
+   "id": "rv-02",
+   "kind": "review",
+   "level": 1,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "n = 3 per group?!",
+   "right": "Add replicates, and show every data point, not just the mean",
+   "wrong": [
+    "Three is a lucky number",
+    "Remove the error bars so nobody asks"
+   ]
+  },
+  {
+   "id": "rv-03",
+   "kind": "review",
+   "level": 1,
+   "terms": [
+    "statistics",
+    "genomics"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "You tested 20,000 genes at p < 0.05.",
+   "right": "Correct for multiple testing (e.g. control the FDR)",
+   "wrong": [
+    "Only report the significant ones",
+    "Use p < 0.06 instead"
+   ]
+  },
+  {
+   "id": "rv-04",
+   "kind": "review",
+   "level": 1,
+   "terms": [
+    "peer review"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Please cite my 14 papers.",
+   "right": "Cite the ones that are relevant, and politely decline the rest",
+   "wrong": [
+    "Cite all 14, and 3 more to be safe",
+    "Cite none, out of spite"
+   ]
+  },
+  {
+   "id": "rv-05",
+   "kind": "review",
+   "level": 1,
+   "terms": [
+    "reproducibility"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Is the code available?",
+   "right": "Share code and data in a public repository with a DOI",
+   "wrong": [
+    "Available on reasonable request",
+    "The code is in my head"
+   ]
+  },
+  {
+   "id": "rv-06",
+   "kind": "review",
+   "level": 1,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Correlation is not causation.",
+   "right": "Call it an association, or add an experiment that tests the cause",
+   "wrong": [
+    "Bold the word 'causes'",
+    "Add more correlations"
+   ]
+  },
+  {
+   "id": "rv-07",
+   "kind": "review",
+   "level": 1,
+   "terms": [
+    "visualization"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "The y axis starts at 95.",
+   "right": "Start it at zero, or say clearly why not",
+   "wrong": [
+    "Make the bars 3D",
+    "Remove the axis entirely"
+   ]
+  },
+  {
+   "id": "rv-08",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "experimental design"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Were the samples randomised?",
+   "right": "Describe how samples were assigned at random, and blinding",
+   "wrong": [
+    "We chose the healthiest ones for treatment",
+    "Randomness is overrated"
+   ]
+  },
+  {
+   "id": "rv-09",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Which statistical test did you use?",
+   "right": "Name the test, its assumptions, and the software version",
+   "wrong": [
+    "A standard one",
+    "The one that gave p < 0.05"
+   ]
+  },
+  {
+   "id": "rv-10",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "machine learning"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Your model was tuned on the test set.",
+   "right": "Re-split, tune by cross-validation, and test once on held-out data",
+   "wrong": [
+    "Report it anyway: the score is great",
+    "Call the test set a validation set"
+   ]
+  },
+  {
+   "id": "rv-11",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "genomics",
+    "experimental design"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "The batch effect matches your groups.",
+   "right": "Admit the confound, and re-run with groups spread across batches",
+   "wrong": [
+    "Remove batch from the methods",
+    "Normalise until it disappears"
+   ]
+  },
+  {
+   "id": "rv-12",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "reproducibility"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Only significant results are shown.",
+   "right": "Report all pre-specified analyses, including the null results",
+   "wrong": [
+    "Null results are boring",
+    "Move them to a private folder"
+   ]
+  },
+  {
+   "id": "rv-13",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "statistics"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "The sample size wasn't justified.",
+   "right": "Add a power analysis, or explain how n was chosen",
+   "wrong": [
+    "We stopped when p hit 0.05",
+    "We used all the mice we had left"
+   ]
+  },
+  {
+   "id": "rv-14",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "visualization"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Units are missing on the axes.",
+   "right": "Add names and units to every axis",
+   "wrong": [
+    "Readers can guess",
+    "Units are implied"
+   ]
+  },
+  {
+   "id": "rv-15",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "gwas"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "Your GWAS ignores population structure.",
+   "right": "Add ancestry principal components or a mixed model",
+   "wrong": [
+    "Only use the hits that look real",
+    "Population structure is a myth"
+   ]
+  },
+  {
+   "id": "rv-16",
+   "kind": "review",
+   "level": 2,
+   "terms": [
+    "single-cell"
+   ],
+   "source": {
+    "title": "Ten simple rules for reviewers (Bourne & Korngreen, 2006)",
+    "url": "https://doi.org/10.1371/journal.pcbi.0020110"
+   },
+   "comment": "The UMAP clusters are called cell types without markers.",
+   "right": "Show the marker genes that define each type",
+   "wrong": [
+    "UMAPs speak for themselves",
+    "Colour them more brightly"
+   ]
+  },
+  {
+   "id": "sn-01",
+   "kind": "snippet",
+   "level": 1,
+   "terms": [
+    "python",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "import pandas as pd",
+    "df = pd.read_csv(\"counts.csv\")",
+    "top = df.sort_values(\"count\", ascending=False)",
+    "print(top.head(10)"
+   ],
+   "bug": 3,
+   "why": "The last line never closes its bracket: print(top.head(10))."
+  },
+  {
+   "id": "sn-02",
+   "kind": "snippet",
+   "level": 1,
+   "terms": [
+    "r",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "R",
+   "lines": [
+    "library(dplyr)",
+    "hits <- results %>%",
+    "  filter(pval = 0.05) %>%",
+    "  arrange(pval)"
+   ],
+   "bug": 2,
+   "why": "A comparison needs <= (or ==): a single = inside filter() is an error."
+  },
+  {
+   "id": "sn-03",
+   "kind": "snippet",
+   "level": 1,
+   "terms": [
+    "python",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "genes = [\"TP53\", \"BRCA1\", \"EGFR\"]",
+    "for i in range(1, len(genes)):",
+    "    print(genes[i])"
+   ],
+   "bug": 1,
+   "why": "range(1, ...) starts at 1, so TP53, the first gene, is never printed."
+  },
+  {
+   "id": "sn-04",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "shell",
+    "linux",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Shell",
+   "lines": [
+    "for f in *.fastq",
+    "do",
+    "  gzip \"$f\" done"
+   ],
+   "bug": 2,
+   "why": "done must start its own command: gzip \"$f\"; done, or put done on its own line."
+  },
+  {
+   "id": "sn-05",
+   "kind": "snippet",
+   "level": 1,
+   "terms": [
+    "python",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "def mean(xs):",
+    "    total = 0",
+    "    for x in xs:",
+    "        total += x",
+    "    return total / len(x)"
+   ],
+   "bug": 4,
+   "why": "It divides by len(x), one number, instead of len(xs), the list."
+  },
+  {
+   "id": "sn-06",
+   "kind": "snippet",
+   "level": 1,
+   "terms": [
+    "r",
+    "statistics",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "R",
+   "lines": [
+    "x <- c(4, 8, NA, 15)",
+    "avg <- mean(x)",
+    "cat(\"Mean:\", avg)"
+   ],
+   "bug": 1,
+   "why": "mean() of a vector with NA is NA: use mean(x, na.rm = TRUE)."
+  },
+  {
+   "id": "sn-07",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "python",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "import numpy as np",
+    "a = np.array([1, 2, 3])",
+    "b = np.array([1, 2])",
+    "print(a + b)"
+   ],
+   "bug": 3,
+   "why": "Arrays of length 3 and 2 can't be added: shapes must match or broadcast."
+  },
+  {
+   "id": "sn-08",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "sql",
+    "databases",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "SQL",
+   "lines": [
+    "SELECT gene, COUNT(*)",
+    "FROM variants",
+    "WHERE chrom = 'chr7'",
+    "ORDER BY gene;"
+   ],
+   "bug": 0,
+   "why": "COUNT(*) with gene needs GROUP BY gene, or the query fails."
+  },
+  {
+   "id": "sn-09",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "python",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "scores = {}",
+    "for name in [\"ada\", \"bo\", \"ada\"]:",
+    "    scores[name] += 1",
+    "print(scores)"
+   ],
+   "bug": 2,
+   "why": "scores[name] doesn't exist yet: use scores.get(name, 0) + 1 or a Counter."
+  },
+  {
+   "id": "sn-10",
+   "kind": "snippet",
+   "level": 1,
+   "terms": [
+    "r",
+    "visualization",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "R",
+   "lines": [
+    "df <- read.csv('data.csv')",
+    "df$ratio <- df$a / df$b",
+    "summary(df$Ratio)"
+   ],
+   "bug": 2,
+   "why": "R names are case-sensitive: the column is ratio, not Ratio."
+  },
+  {
+   "id": "sn-11",
+   "kind": "snippet",
+   "level": 3,
+   "terms": [
+    "shell",
+    "sequencing",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Shell",
+   "lines": [
+    "#!/bin/bash",
+    "for s in sample1 sample2",
+    "do",
+    "  bwa mem ref.fa $s.fq > $s.sam",
+    "done",
+    "samtools sort *.sam"
+   ],
+   "bug": 5,
+   "why": "samtools sort takes one file at a time: loop over the SAM files."
+  },
+  {
+   "id": "sn-12",
+   "kind": "snippet",
+   "level": 3,
+   "terms": [
+    "python",
+    "machine learning",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "from sklearn.preprocessing import StandardScaler",
+    "X = StandardScaler().fit_transform(X_all)",
+    "X_train, X_test = X[:800], X[800:]"
+   ],
+   "bug": 1,
+   "why": "Scaling with all the data leaks test information: fit the scaler on the training rows only."
+  },
+  {
+   "id": "sn-13",
+   "kind": "snippet",
+   "level": 1,
+   "terms": [
+    "python",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "with open('reads.txt') as f:",
+    "    lines = f.readlines()",
+    "for line in lines:",
+    "    if line.startswith('>')",
+    "        print(line)"
+   ],
+   "bug": 3,
+   "why": "An if needs a colon at the end: if line.startswith('>'):"
+  },
+  {
+   "id": "sn-14",
+   "kind": "snippet",
+   "level": 3,
+   "terms": [
+    "r",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "R",
+   "lines": [
+    "for (i in 1:length(x)) {",
+    "  y[i] <- x[i] * 2",
+    "}"
+   ],
+   "bug": 0,
+   "why": "If x is empty, 1:length(x) is c(1, 0) and the loop runs twice: use seq_along(x)."
+  },
+  {
+   "id": "sn-15",
+   "kind": "snippet",
+   "level": 3,
+   "terms": [
+    "shell",
+    "linux",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Shell",
+   "lines": [
+    "cd results",
+    "rm -rf $OUTDIR/*",
+    "echo done"
+   ],
+   "bug": 1,
+   "why": "If OUTDIR is empty, this becomes rm -rf /*: check the variable or use ${OUTDIR:?}."
+  },
+  {
+   "id": "sn-16",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "python",
+    "reproducibility",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "import random",
+    "random.seed(1)",
+    "split = random.random()",
+    "random.seed()",
+    "model.fit(data)"
+   ],
+   "bug": 3,
+   "why": "random.seed() with no value resets to a random seed: the run is no longer repeatable."
+  },
+  {
+   "id": "sn-17",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "sql",
+    "databases",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "SQL",
+   "lines": [
+    "SELECT *",
+    "FROM samples",
+    "WHERE tissue = NULL;"
+   ],
+   "bug": 2,
+   "why": "Nothing equals NULL: use WHERE tissue IS NULL."
+  },
+  {
+   "id": "sn-18",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "python",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Python",
+   "lines": [
+    "values = [3, 1, 2]",
+    "sorted_values = values.sort()",
+    "print(sorted_values[0])"
+   ],
+   "bug": 1,
+   "why": "list.sort() sorts in place and returns None: use sorted(values)."
+  },
+  {
+   "id": "sn-19",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "r",
+    "visualization",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "R",
+   "lines": [
+    "library(ggplot2)",
+    "ggplot(df, aes(x = dose, y = response))",
+    "  + geom_point()"
+   ],
+   "bug": 2,
+   "why": "The + must end the previous line, not start the next: R ends the command early."
+  },
+  {
+   "id": "sn-20",
+   "kind": "snippet",
+   "level": 2,
+   "terms": [
+    "shell",
+    "sequencing",
+    "programming",
+    "debugging"
+   ],
+   "source": {
+    "title": "Debugging (The Carpentries)",
+    "url": "https://swcarpentry.github.io/python-novice-inflammation/11-debugging.html"
+   },
+   "lang": "Shell",
+   "lines": [
+    "zcat reads.fastq.gz | wc -l",
+    "echo $(( $(zcat reads.fastq.gz | wc -l) / 2 )) reads"
+   ],
+   "bug": 1,
+   "why": "A FASTQ record is 4 lines, not 2: divide by 4."
+  },
+  {
+   "id": "so-lang",
+   "kind": "sort",
+   "level": 1,
+   "terms": [
+    "programming",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core sorting sets",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Which language is it for?",
+   "bins": [
+    "R",
+    "Python",
+    "Command line"
+   ],
+   "things": [
+    [
+     "ggplot2",
+     0
+    ],
+    [
+     "dplyr",
+     0
+    ],
+    [
+     "DESeq2",
+     0
+    ],
+    [
+     "Seurat",
+     0
+    ],
+    [
+     "limma",
+     0
+    ],
+    [
+     "pandas",
+     1
+    ],
+    [
+     "Scanpy",
+     1
+    ],
+    [
+     "NumPy",
+     1
+    ],
+    [
+     "PyTorch",
+     1
+    ],
+    [
+     "Biopython",
+     1
+    ],
+    [
+     "grep",
+     2
+    ],
+    [
+     "awk",
+     2
+    ],
+    [
+     "sed",
+     2
+    ],
+    [
+     "samtools",
+     2
+    ],
+    [
+     "bcftools",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "so-organism",
+   "kind": "sort",
+   "level": 1,
+   "terms": [
+    "model organisms",
+    "biology"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core sorting sets",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "What kind of model organism?",
+   "bins": [
+    "Plant",
+    "Animal",
+    "Microbe"
+   ],
+   "things": [
+    [
+     "Arabidopsis",
+     0
+    ],
+    [
+     "Rice",
+     0
+    ],
+    [
+     "Maize",
+     0
+    ],
+    [
+     "Medicago",
+     0
+    ],
+    [
+     "Zebrafish",
+     1
+    ],
+    [
+     "Drosophila",
+     1
+    ],
+    [
+     "C. elegans",
+     1
+    ],
+    [
+     "Mouse",
+     1
+    ],
+    [
+     "E. coli",
+     2
+    ],
+    [
+     "Yeast",
+     2
+    ],
+    [
+     "B. subtilis",
+     2
+    ],
+    [
+     "Chlamydomonas",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "so-formats",
+   "kind": "sort",
+   "level": 2,
+   "terms": [
+    "sequencing",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core sorting sets",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "What does the file hold?",
+   "bins": [
+    "Reads",
+    "Alignments",
+    "Variants"
+   ],
+   "things": [
+    [
+     "FASTQ",
+     0
+    ],
+    [
+     "unaligned BAM",
+     0
+    ],
+    [
+     "SAM",
+     1
+    ],
+    [
+     "BAM",
+     1
+    ],
+    [
+     "CRAM",
+     1
+    ],
+    [
+     "VCF",
+     2
+    ],
+    [
+     "BCF",
+     2
+    ],
+    [
+     "gVCF",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "so-stats",
+   "kind": "sort",
+   "level": 2,
+   "terms": [
+    "statistics",
+    "data analysis"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core sorting sets",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Test, model or picture?",
+   "bins": [
+    "Test",
+    "Model",
+    "Picture"
+   ],
+   "things": [
+    [
+     "t-test",
+     0
+    ],
+    [
+     "Wilcoxon",
+     0
+    ],
+    [
+     "Chi-square",
+     0
+    ],
+    [
+     "Linear regression",
+     1
+    ],
+    [
+     "Mixed model",
+     1
+    ],
+    [
+     "Random forest",
+     1
+    ],
+    [
+     "Histogram",
+     2
+    ],
+    [
+     "Box plot",
+     2
+    ],
+    [
+     "Volcano plot",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "so-ml",
+   "kind": "sort",
+   "level": 2,
+   "terms": [
+    "machine learning",
+    "ai"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core sorting sets",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Which kind of learning?",
+   "bins": [
+    "Supervised",
+    "Unsupervised",
+    "Reinforcement"
+   ],
+   "things": [
+    [
+     "Classification",
+     0
+    ],
+    [
+     "Regression",
+     0
+    ],
+    [
+     "Random forest",
+     0
+    ],
+    [
+     "Clustering",
+     1
+    ],
+    [
+     "PCA",
+     1
+    ],
+    [
+     "k-means",
+     1
+    ],
+    [
+     "Q-learning",
+     2
+    ],
+    [
+     "Policy gradient",
+     2
+    ],
+    [
+     "AlphaGo self-play",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "so-omics",
+   "kind": "sort",
+   "level": 3,
+   "terms": [
+    "genomics",
+    "biology"
+   ],
+   "source": {
+    "title": "myGeeKy GEMS core sorting sets",
+    "url": "https://mygeeky.org/"
+   },
+   "name": "Which molecule does it measure?",
+   "bins": [
+    "DNA",
+    "RNA",
+    "Protein"
+   ],
+   "things": [
+    [
+     "WGS",
+     0
+    ],
+    [
+     "ChIP-seq",
+     0
+    ],
+    [
+     "ATAC-seq",
+     0
+    ],
+    [
+     "RNA-seq",
+     1
+    ],
+    [
+     "scRNA-seq",
+     1
+    ],
+    [
+     "Ribo-seq",
+     1
+    ],
+    [
+     "Mass spectrometry",
+     2
+    ],
+    [
+     "Western blot",
+     2
+    ],
+    [
+     "ELISA",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "fg-truncated",
+   "kind": "figure",
+   "level": 1,
+   "terms": [
+    "visualization",
+    "figures"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "draw": "truncated",
+   "right": "The y axis starts at 95, so a small difference looks huge",
+   "wrong": [
+    "The bars should be pink",
+    "There are too few bars",
+    "Bar charts can't show percentages"
+   ]
+  },
+  {
+   "id": "fg-rainbow",
+   "kind": "figure",
+   "level": 1,
+   "terms": [
+    "visualization",
+    "figures"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "draw": "rainbow",
+   "right": "A rainbow colour map on ordered values: fake edges, unreadable for colour-blind readers",
+   "wrong": [
+    "The heat map needs more rows",
+    "The colours are too bright for a dark page",
+    "Heat maps can't show expression"
+   ]
+  },
+  {
+   "id": "fg-noerror",
+   "kind": "figure",
+   "level": 1,
+   "terms": [
+    "visualization",
+    "figures"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "draw": "noerror",
+   "right": "Means of n = 3 with no error bars or points: you can't judge the spread",
+   "wrong": [
+    "The bars should be sorted by height",
+    "Three groups are too many",
+    "The labels should be in capitals"
+   ]
+  },
+  {
+   "id": "fg-dualaxis",
+   "kind": "figure",
+   "level": 1,
+   "terms": [
+    "visualization",
+    "figures"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "draw": "dualaxis",
+   "right": "Two y axes with different scales: the lines' crossing means nothing",
+   "wrong": [
+    "The lines should be thicker",
+    "There should be a third line",
+    "Time should be on the y axis"
+   ]
+  },
+  {
+   "id": "fg-pie3d",
+   "kind": "figure",
+   "level": 2,
+   "terms": [
+    "visualization",
+    "figures"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "draw": "pie3d",
+   "right": "A 3D pie: the tilt makes the front slices look bigger than they are",
+   "wrong": [
+    "Pies should always have six slices",
+    "The colours should be grey",
+    "The legend is too small"
+   ]
+  },
+  {
+   "id": "fg-overplot",
+   "kind": "figure",
+   "level": 2,
+   "terms": [
+    "visualization",
+    "figures"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "draw": "overplot",
+   "right": "Thousands of points on top of each other: you can't see where most of them are",
+   "wrong": [
+    "The points should be squares",
+    "It needs a title in bold",
+    "Scatter plots are out of date"
+   ]
+  },
+  {
+   "id": "fg-spaghetti",
+   "kind": "figure",
+   "level": 2,
+   "terms": [
+    "visualization",
+    "figures"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "draw": "spaghetti",
+   "right": "Twelve lines in similar colours: no one can follow a single one",
+   "wrong": [
+    "The lines should be dashed",
+    "Line plots need a grid",
+    "The x axis should be logarithmic"
+   ]
+  },
+  {
+   "id": "fg-nolabels",
+   "kind": "figure",
+   "level": 2,
+   "terms": [
+    "visualization",
+    "figures"
+   ],
+   "source": {
+    "title": "Ten simple rules for better figures (Rougier et al., 2014)",
+    "url": "https://doi.org/10.1371/journal.pcbi.1003833"
+   },
+   "draw": "nolabels",
+   "right": "No axis names or units: there's no telling what is measured",
+   "wrong": [
+    "The dots are too small",
+    "The background should be white",
+    "It should be a bar chart"
+   ]
+  },
+  {
+   "id": "yr-01",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "programming",
+    "python"
+   ],
+   "source": {
+    "title": "History of Python (Wikipedia)",
+    "url": "https://en.wikipedia.org/wiki/History_of_Python"
+   },
+   "name": "Python",
+   "year": 1991,
+   "event": "first public release"
+  },
+  {
+   "id": "yr-02",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "programming",
+    "r"
+   ],
+   "source": {
+    "title": "R",
+    "url": "https://www.r-project.org/about.html"
+   },
+   "name": "R",
+   "year": 1993,
+   "event": "first appeared"
+  },
+  {
+   "id": "yr-03",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "programming"
+   ],
+   "source": {
+    "title": "Perl",
+    "url": "https://www.perl.org/about.html"
+   },
+   "name": "Perl",
+   "year": 1987,
+   "event": "first release"
+  },
+  {
+   "id": "yr-04",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "linux"
+   ],
+   "source": {
+    "title": "Linux",
+    "url": "https://en.wikipedia.org/wiki/Linux_kernel"
+   },
+   "name": "Linux",
+   "year": 1991,
+   "event": "first kernel release"
+  },
+  {
+   "id": "yr-05",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "Git",
+    "url": "https://git-scm.com/book/en/v2/Getting-Started-A-Short-History-of-Git"
+   },
+   "name": "Git",
+   "year": 2005,
+   "event": "first release"
+  },
+  {
+   "id": "yr-06",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "GitHub",
+    "url": "https://en.wikipedia.org/wiki/GitHub"
+   },
+   "name": "GitHub",
+   "year": 2008,
+   "event": "launched"
+  },
+  {
+   "id": "yr-07",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "software"
+   ],
+   "source": {
+    "title": "Docker",
+    "url": "https://en.wikipedia.org/wiki/Docker_(software)"
+   },
+   "name": "Docker",
+   "year": 2013,
+   "event": "first release"
+  },
+  {
+   "id": "yr-08",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "programming"
+   ],
+   "source": {
+    "title": "Julia",
+    "url": "https://julialang.org/blog/2012/02/why-we-created-julia/"
+   },
+   "name": "Julia",
+   "year": 2012,
+   "event": "first public release"
+  },
+  {
+   "id": "yr-09",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "programming"
+   ],
+   "source": {
+    "title": "Rust",
+    "url": "https://blog.rust-lang.org/2015/05/15/Rust-1.0.html"
+   },
+   "name": "Rust",
+   "year": 2015,
+   "event": "1.0 release"
+  },
+  {
+   "id": "yr-10",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "BLAST",
+    "url": "https://doi.org/10.1016/S0022-2836(05)80360-2"
+   },
+   "name": "BLAST",
+   "year": 1990,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-11",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "gwas"
+   ],
+   "source": {
+    "title": "PLINK",
+    "url": "https://doi.org/10.1086/519795"
+   },
+   "name": "PLINK",
+   "year": 2007,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-12",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "SAMtools",
+    "url": "https://doi.org/10.1093/bioinformatics/btp352"
+   },
+   "name": "SAMtools",
+   "year": 2009,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-13",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "BWA",
+    "url": "https://doi.org/10.1093/bioinformatics/btp324"
+   },
+   "name": "BWA",
+   "year": 2009,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-14",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "variant calling"
+   ],
+   "source": {
+    "title": "GATK",
+    "url": "https://doi.org/10.1101/gr.107524.110"
+   },
+   "name": "GATK",
+   "year": 2010,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-15",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "rna-seq"
+   ],
+   "source": {
+    "title": "STAR",
+    "url": "https://doi.org/10.1093/bioinformatics/bts635"
+   },
+   "name": "STAR",
+   "year": 2013,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-16",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "rna-seq"
+   ],
+   "source": {
+    "title": "DESeq2",
+    "url": "https://doi.org/10.1186/s13059-014-0550-8"
+   },
+   "name": "DESeq2",
+   "year": 2014,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-17",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "single-cell"
+   ],
+   "source": {
+    "title": "Seurat",
+    "url": "https://doi.org/10.1038/nbt.3192"
+   },
+   "name": "Seurat",
+   "year": 2015,
+   "event": "first paper published"
+  },
+  {
+   "id": "yr-18",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "single-cell"
+   ],
+   "source": {
+    "title": "Scanpy",
+    "url": "https://doi.org/10.1186/s13059-017-1382-0"
+   },
+   "name": "Scanpy",
+   "year": 2018,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-19",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "workflow"
+   ],
+   "source": {
+    "title": "Snakemake",
+    "url": "https://doi.org/10.1093/bioinformatics/bts480"
+   },
+   "name": "Snakemake",
+   "year": 2012,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-20",
+   "kind": "year",
+   "level": 1,
+   "terms": [
+    "workflow"
+   ],
+   "source": {
+    "title": "Nextflow",
+    "url": "https://doi.org/10.1038/nbt.3820"
+   },
+   "name": "Nextflow",
+   "year": 2017,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-21",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "machine learning"
+   ],
+   "source": {
+    "title": "scikit-learn",
+    "url": "https://jmlr.org/papers/v12/pedregosa11a.html"
+   },
+   "name": "scikit-learn",
+   "year": 2011,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-22",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "deep learning"
+   ],
+   "source": {
+    "title": "TensorFlow",
+    "url": "https://en.wikipedia.org/wiki/TensorFlow"
+   },
+   "name": "TensorFlow",
+   "year": 2015,
+   "event": "open-sourced"
+  },
+  {
+   "id": "yr-23",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "deep learning"
+   ],
+   "source": {
+    "title": "PyTorch",
+    "url": "https://en.wikipedia.org/wiki/PyTorch"
+   },
+   "name": "PyTorch",
+   "year": 2016,
+   "event": "first release"
+  },
+  {
+   "id": "yr-24",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "ai",
+    "deep learning"
+   ],
+   "source": {
+    "title": "Transformer",
+    "url": "https://arxiv.org/abs/1706.03762"
+   },
+   "name": "Transformer",
+   "year": 2017,
+   "event": "'Attention Is All You Need' posted"
+  },
+  {
+   "id": "yr-25",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "ai",
+    "llm"
+   ],
+   "source": {
+    "title": "BERT",
+    "url": "https://arxiv.org/abs/1810.04805"
+   },
+   "name": "BERT",
+   "year": 2018,
+   "event": "paper posted"
+  },
+  {
+   "id": "yr-26",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "ai",
+    "llm"
+   ],
+   "source": {
+    "title": "ChatGPT",
+    "url": "https://openai.com/index/chatgpt/"
+   },
+   "name": "ChatGPT",
+   "year": 2022,
+   "event": "launched"
+  },
+  {
+   "id": "yr-27",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "ai",
+    "proteins"
+   ],
+   "source": {
+    "title": "AlphaFold 2",
+    "url": "https://doi.org/10.1038/s41586-021-03819-2"
+   },
+   "name": "AlphaFold 2",
+   "year": 2021,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-28",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "visualization",
+    "machine learning"
+   ],
+   "source": {
+    "title": "t-SNE",
+    "url": "https://jmlr.org/papers/v9/vandermaaten08a.html"
+   },
+   "name": "t-SNE",
+   "year": 2008,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-29",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "visualization",
+    "single-cell"
+   ],
+   "source": {
+    "title": "UMAP",
+    "url": "https://arxiv.org/abs/1802.03426"
+   },
+   "name": "UMAP",
+   "year": 2018,
+   "event": "paper posted"
+  },
+  {
+   "id": "yr-30",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "single-cell"
+   ],
+   "source": {
+    "title": "Leiden algorithm",
+    "url": "https://doi.org/10.1038/s41598-019-41695-z"
+   },
+   "name": "Leiden algorithm",
+   "year": 2019,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-31",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "biology",
+    "lab"
+   ],
+   "source": {
+    "title": "PCR",
+    "url": "https://en.wikipedia.org/wiki/Polymerase_chain_reaction"
+   },
+   "name": "PCR",
+   "year": 1983,
+   "event": "invented by Kary Mullis"
+  },
+  {
+   "id": "yr-32",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "Sanger sequencing",
+    "url": "https://doi.org/10.1073/pnas.74.12.5463"
+   },
+   "name": "Sanger sequencing",
+   "year": 1977,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-33",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "genetics"
+   ],
+   "source": {
+    "title": "CRISPR-Cas9 editing",
+    "url": "https://doi.org/10.1126/science.1225829"
+   },
+   "name": "CRISPR-Cas9 editing",
+   "year": 2012,
+   "event": "paper published"
+  },
+  {
+   "id": "yr-34",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "genomics"
+   ],
+   "source": {
+    "title": "Human genome draft",
+    "url": "https://doi.org/10.1038/35057062"
+   },
+   "name": "Human genome draft",
+   "year": 2001,
+   "event": "published"
+  },
+  {
+   "id": "yr-35",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "plants",
+    "genomics"
+   ],
+   "source": {
+    "title": "Arabidopsis genome",
+    "url": "https://doi.org/10.1038/35048692"
+   },
+   "name": "Arabidopsis genome",
+   "year": 2000,
+   "event": "published"
+  },
+  {
+   "id": "yr-36",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "gwas"
+   ],
+   "source": {
+    "title": "First GWAS (AMD)",
+    "url": "https://doi.org/10.1126/science.1109557"
+   },
+   "name": "First GWAS (AMD)",
+   "year": 2005,
+   "event": "published"
+  },
+  {
+   "id": "yr-37",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "research"
+   ],
+   "source": {
+    "title": "arXiv",
+    "url": "https://info.arxiv.org/about/index.html"
+   },
+   "name": "arXiv",
+   "year": 1991,
+   "event": "launched"
+  },
+  {
+   "id": "yr-38",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "research"
+   ],
+   "source": {
+    "title": "bioRxiv",
+    "url": "https://www.biorxiv.org/about-biorxiv"
+   },
+   "name": "bioRxiv",
+   "year": 2013,
+   "event": "launched"
+  },
+  {
+   "id": "yr-39",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "research"
+   ],
+   "source": {
+    "title": "ORCID",
+    "url": "https://info.orcid.org/what-is-orcid/"
+   },
+   "name": "ORCID",
+   "year": 2012,
+   "event": "launched"
+  },
+  {
+   "id": "yr-40",
+   "kind": "year",
+   "level": 2,
+   "terms": [
+    "research"
+   ],
+   "source": {
+    "title": "Zenodo",
+    "url": "https://about.zenodo.org/"
+   },
+   "name": "Zenodo",
+   "year": 2013,
+   "event": "launched"
+  },
+  {
+   "id": "cm-01",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell",
+    "sequencing"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Count the lines of reads.fastq.gz",
+   "right": [
+    "zcat reads.fastq.gz | wc -l",
+    "gunzip -c reads.fastq.gz | wc -l"
+   ],
+   "wrong": {
+    "cmd": "wc -l reads.fastq.gz",
+    "why": "It counts lines in the compressed bytes, not in the reads."
+   }
+  },
+  {
+   "id": "cm-02",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Index the sorted BAM sample.bam",
+   "right": [
+    "samtools index sample.bam",
+    "samtools index -b sample.bam"
+   ],
+   "wrong": {
+    "cmd": "samtools sort sample.bam",
+    "why": "sort sorts the reads; it doesn't make an index."
+   }
+  },
+  {
+   "id": "cm-03",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Show the first 10 lines of variants.vcf",
+   "right": [
+    "head variants.vcf",
+    "head -n 10 variants.vcf"
+   ],
+   "wrong": {
+    "cmd": "tail variants.vcf",
+    "why": "tail shows the last lines."
+   }
+  },
+  {
+   "id": "cm-04",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Make a branch called fix and switch to it",
+   "right": [
+    "git checkout -b fix",
+    "git switch -c fix"
+   ],
+   "wrong": {
+    "cmd": "git branch fix",
+    "why": "It makes the branch but leaves you where you were."
+   }
+  },
+  {
+   "id": "cm-05",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Find lines containing chr7 in calls.txt",
+   "right": [
+    "grep chr7 calls.txt",
+    "grep -F chr7 calls.txt"
+   ],
+   "wrong": {
+    "cmd": "find chr7 calls.txt",
+    "why": "find looks for files by name, not text inside them."
+   }
+  },
+  {
+   "id": "cm-06",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Make the folder data/raw, parents included",
+   "right": [
+    "mkdir -p data/raw",
+    "mkdir --parents data/raw"
+   ],
+   "wrong": {
+    "cmd": "mkdir data/raw",
+    "why": "It fails if data doesn't exist yet."
+   }
+  },
+  {
+   "id": "cm-07",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Copy the folder raw to backup",
+   "right": [
+    "cp -r raw backup",
+    "cp -R raw backup"
+   ],
+   "wrong": {
+    "cmd": "cp raw backup",
+    "why": "Without -r, cp skips a directory."
+   }
+  },
+  {
+   "id": "cm-08",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "shell",
+    "bioinformatics"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Count the sequences in seqs.fa",
+   "right": [
+    "grep -c '>' seqs.fa",
+    "grep -c '^>' seqs.fa"
+   ],
+   "wrong": {
+    "cmd": "wc -l seqs.fa",
+    "why": "A sequence can span many lines: count the > headers."
+   }
+  },
+  {
+   "id": "cm-09",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Sort in.bam by position into sorted.bam",
+   "right": [
+    "samtools sort -o sorted.bam in.bam",
+    "samtools sort in.bam -o sorted.bam"
+   ],
+   "wrong": {
+    "cmd": "samtools index in.bam",
+    "why": "index needs a sorted BAM; it doesn't sort."
+   }
+  },
+  {
+   "id": "cm-10",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Stage every change",
+   "right": [
+    "git add -A",
+    "git add --all"
+   ],
+   "wrong": {
+    "cmd": "git push",
+    "why": "push sends commits; it doesn't stage anything."
+   }
+  },
+  {
+   "id": "cm-11",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Unstage file.py but keep the change",
+   "right": [
+    "git restore --staged file.py",
+    "git reset file.py"
+   ],
+   "wrong": {
+    "cmd": "git rm file.py",
+    "why": "git rm deletes the file."
+   }
+  },
+  {
+   "id": "cm-12",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "git"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "See the history, one line per commit",
+   "right": [
+    "git log --oneline",
+    "git log --pretty=oneline"
+   ],
+   "wrong": {
+    "cmd": "git status",
+    "why": "status shows the working tree, not the history."
+   }
+  },
+  {
+   "id": "cm-13",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "hpc"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Submit job.sh to SLURM",
+   "right": [
+    "sbatch job.sh",
+    "sbatch ./job.sh"
+   ],
+   "wrong": {
+    "cmd": "squeue job.sh",
+    "why": "squeue lists jobs; it doesn't submit one."
+   }
+  },
+  {
+   "id": "cm-14",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "hpc"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "List your own SLURM jobs",
+   "right": [
+    "squeue -u $USER",
+    "squeue --me"
+   ],
+   "wrong": {
+    "cmd": "sinfo",
+    "why": "sinfo shows the cluster's nodes, not your jobs."
+   }
+  },
+  {
+   "id": "cm-15",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Unpack data.tar.gz",
+   "right": [
+    "tar -xzf data.tar.gz",
+    "tar xzf data.tar.gz"
+   ],
+   "wrong": {
+    "cmd": "tar -czf data.tar.gz",
+    "why": "-c creates an archive; it doesn't unpack one."
+   }
+  },
+  {
+   "id": "cm-16",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Make run.sh executable",
+   "right": [
+    "chmod +x run.sh",
+    "chmod u+x run.sh"
+   ],
+   "wrong": {
+    "cmd": "chown +x run.sh",
+    "why": "chown changes the owner, not permissions."
+   }
+  },
+  {
+   "id": "cm-17",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Count each value in column 1 of a.tsv",
+   "right": [
+    "cut -f1 a.tsv | sort | uniq -c",
+    "cut -f1 a.tsv | sort | uniq -c | sort -nr"
+   ],
+   "wrong": {
+    "cmd": "cut -f1 a.tsv | uniq -c",
+    "why": "uniq only merges neighbours: sort first."
+   }
+  },
+  {
+   "id": "cm-18",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Download https://example.org/a.txt to a file",
+   "right": [
+    "wget https://example.org/a.txt",
+    "curl -O https://example.org/a.txt"
+   ],
+   "wrong": {
+    "cmd": "curl https://example.org/a.txt",
+    "why": "Without -O, curl prints the file to the screen."
+   }
+  },
+  {
+   "id": "cm-19",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Search src for TODO, in every file",
+   "right": [
+    "grep -r TODO src",
+    "grep -rn TODO src"
+   ],
+   "wrong": {
+    "cmd": "grep TODO src",
+    "why": "Without -r, grep can't read a directory."
+   }
+  },
+  {
+   "id": "cm-20",
+   "kind": "command",
+   "level": 3,
+   "terms": [
+    "variant calling"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Show only the header of calls.vcf.gz",
+   "right": [
+    "bcftools view -h calls.vcf.gz",
+    "zcat calls.vcf.gz | grep '^#'"
+   ],
+   "wrong": {
+    "cmd": "bcftools view -H calls.vcf.gz",
+    "why": "-H (capital) drops the header and shows the records."
+   }
+  },
+  {
+   "id": "cm-21",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "sequencing"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Count the reads in in.bam",
+   "right": [
+    "samtools view -c in.bam",
+    "samtools flagstat in.bam"
+   ],
+   "wrong": {
+    "cmd": "samtools view in.bam | head",
+    "why": "That prints ten reads; it doesn't count them."
+   }
+  },
+  {
+   "id": "cm-22",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "r"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Run analysis.R from the terminal",
+   "right": [
+    "Rscript analysis.R",
+    "R CMD BATCH analysis.R"
+   ],
+   "wrong": {
+    "cmd": "R analysis.R",
+    "why": "R ignores the file name and opens the console."
+   }
+  },
+  {
+   "id": "cm-23",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "software"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Start an Ubuntu container with a shell",
+   "right": [
+    "docker run -it ubuntu bash",
+    "docker run --rm -it ubuntu bash"
+   ],
+   "wrong": {
+    "cmd": "docker build ubuntu",
+    "why": "build makes an image from a Dockerfile; it doesn't run one."
+   }
+  },
+  {
+   "id": "cm-24",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "workflow"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Dry-run a Snakemake workflow",
+   "right": [
+    "snakemake -n",
+    "snakemake --dry-run"
+   ],
+   "wrong": {
+    "cmd": "snakemake --cores 1",
+    "why": "That actually runs it."
+   }
+  },
+  {
+   "id": "cm-25",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "python"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Install pandas with pip",
+   "right": [
+    "pip install pandas",
+    "python -m pip install pandas"
+   ],
+   "wrong": {
+    "cmd": "pip get pandas",
+    "why": "pip has no get command."
+   }
+  },
+  {
+   "id": "cm-26",
+   "kind": "command",
+   "level": 1,
+   "terms": [
+    "python",
+    "software"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Activate the conda environment gwas",
+   "right": [
+    "conda activate gwas",
+    "mamba activate gwas"
+   ],
+   "wrong": {
+    "cmd": "conda create -n gwas",
+    "why": "create makes a new environment; it doesn't switch to one."
+   }
+  },
+  {
+   "id": "cm-27",
+   "kind": "command",
+   "level": 2,
+   "terms": [
+    "shell"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "See how much space results/ uses",
+   "right": [
+    "du -sh results",
+    "du -sh results/"
+   ],
+   "wrong": {
+    "cmd": "df -h results",
+    "why": "df shows the free space of the whole disk."
+   }
+  },
+  {
+   "id": "cm-28",
+   "kind": "command",
+   "level": 3,
+   "terms": [
+    "shell",
+    "hpc"
+   ],
+   "source": {
+    "title": "The Unix Shell (Software Carpentry)",
+    "url": "https://swcarpentry.github.io/shell-novice/"
+   },
+   "task": "Keep run.sh running after you log out",
+   "right": [
+    "nohup ./run.sh &",
+    "nohup bash run.sh &"
+   ],
+   "wrong": {
+    "cmd": "./run.sh",
+    "why": "It stops when the terminal closes."
+   }
+  }
+ ]
+}

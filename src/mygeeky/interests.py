@@ -43,6 +43,7 @@ KIND_WEIGHTS = {
     "repo": 1.0,      # clicked a repo (Repos, Market)
     "news": 0.8,
     "person": 0.7,    # clicked a suggested person
+    "play": 0.8,      # a round of a game: the topics played, by right answers and playing time (gems.model_terms)
 }
 TERMS_PER_EVENT = 12
 MIN_LEARNED_WEIGHT = 1.0   # one stray click shouldn't redirect anything
@@ -105,6 +106,19 @@ def record(kind: str, text: str = "", topics: Iterable[str] = (), source: str = 
     event = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "kind": kind,
              "source": source[:120], "terms": terms}
     append_jsonl(INTEREST_EVENTS_FILE, event)
+
+
+def record_terms(kind: str, terms: dict[str, float], source: str = "", cfg: MyGeekyConfig | None = None) -> None:
+    """Remember terms already weighed (a game round: gems.model_terms), the same event shape as `record`."""
+    if cfg is not None and not cfg.interest_learning:
+        return
+    clean = {str(t)[:40]: round(float(w), 4) for t, w in list(terms.items())[:TERMS_PER_EVENT]
+             if isinstance(t, str) and t.strip() and isinstance(w, (int, float)) and w > 0}
+    if not clean or kind not in KIND_WEIGHTS:
+        return
+    ensure_dirs()
+    append_jsonl(INTEREST_EVENTS_FILE, {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "kind": kind,
+                                        "source": source[:120], "terms": clean})
 
 
 def load_events() -> list[dict[str, Any]]:

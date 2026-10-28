@@ -1,7 +1,7 @@
 // Learning from what you open: interests.py (extract_terms, learned_terms, blend_learned), ported. Pure, so a test
 // runs it in Node against the desktop (tests/test_learn_locally.py); model-repo.ts keeps and syncs the events.
 
-export const KIND_WEIGHTS: Record<string, number> = { fork: 2.5, join: 2.5, follow: 2.0, star: 1.5, like: 1.5, repo: 1.0, news: 0.8, person: 0.7 };
+export const KIND_WEIGHTS: Record<string, number> = { fork: 2.5, join: 2.5, follow: 2.0, star: 1.5, like: 1.5, repo: 1.0, news: 0.8, person: 0.7, play: 0.8 };
 export const MIN_LEARNED_WEIGHT = 1.0;
 export const TERMS_PER_EVENT = 12;
 const WORD = /[a-z][a-z0-9+#.-]{2,}/g;
