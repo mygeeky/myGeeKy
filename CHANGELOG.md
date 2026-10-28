@@ -3,7 +3,7 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.40.0 (2026-10-28): Play with GeeKOc, fourteen games, and settings inside the panel (phone 1.22.0)
 
 - **🎮 Games: Play with GeeKOc, fourteen games** (computer and phone). A Games entry in the main menu opens a page of every game with its icon, level, best score and progress: Word Hunter, Rise, GeeKOc goes home, GeeKOc run, Flappy GeeKOc, Whack-a-bug, Real tool or made up?, Gene or Pokémon?, Reviewer 2 attacks, Debug reef, Sort the catch, Fix the figure, Which came first? and Terminal typing (pick a right command; on the computer, type it for a bonus). They run on GEMS, one rulebook on both apps: a core pack of 283 sourced items; rounds picked about 70% from your field, 20% new and 10% due again (spaced repetition), harder items unlocked by level; points, stars, game and player levels; a mistake always says why; the Model learns from the topics you play, by right answers and playing time; new badges: Player, Sharp, Level Up. See docs/GEMS.md.
 - **The folded menu fits short screens** (computer): its tiles get closer together instead of making the panel taller than the screen (with no GitHub account the panel needed 836 px; now 372).
