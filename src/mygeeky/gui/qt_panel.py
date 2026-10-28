@@ -3847,10 +3847,8 @@ class MyGeekyPanel(QWidget):
         header.addWidget(self.fold_btn)
         panel_layout.addLayout(header)
 
-        self.settings_panel = self._build_settings_panel()
+        self.settings_panel = self._build_settings_panel()     # a page among the others (content_stack, below)
         self._show_settings_page("accounts", load=False)
-        self.settings_panel.setVisible(False)
-        panel_layout.addWidget(self.settings_panel, 1)
 
         self.update_banner = self._build_update_banner()
         self.update_banner.setVisible(False)
@@ -3972,6 +3970,7 @@ class MyGeekyPanel(QWidget):
         from .navrail import LevelPage
         self.level_page = LevelPage(self.rail_host)        # a level shown in the panel: going up from a page
         self.content_stack.addWidget(self.level_page)
+        self.content_stack.addWidget(self.settings_panel)   # ⚙: a page like the others, the menu and ‹ back still there
         self.content_stack.setCurrentIndex(self._tab_order.index(self.active_tab))   # opens on Home
 
         outer.addWidget(self.panel_frame)
@@ -7579,19 +7578,13 @@ class MyGeekyPanel(QWidget):
             self.wisep_section.refresh()                  # today's numbers, as of now
 
     def _settings_mode(self, opening: bool) -> None:
-        """⚙ open: it has the panel to itself, the page and the rows above it (who's signed in, the badges, where
-        you are) step aside, so a short screen still shows the settings; closed, they come back as they were."""
-        self.settings_panel.setVisible(opening)
-        self.rail_host.setVisible(not opening)
-        rows = (self.status_label, self.start_holder, self.badge_strip, self.nav_head, self.tab_bar)
+        """⚙ is a page in the panel like any other: the side menu, "‹ Settings" and the trail (Settings › Accounts)
+        stay, so there's always a way back. Closing it (⚙ again) returns to the page you were on."""
         if opening:
-            self._before_settings = {w: w.isVisibleTo(self) for w in rows}
-            for w in rows:
-                w.hide()
-        else:
-            for w, shown in (getattr(self, "_before_settings", None) or {}).items():
-                w.setVisible(shown)
-            self._before_settings = {}
+            self.content_stack.setCurrentWidget(self.settings_panel)
+        elif self.content_stack.currentWidget() is self.settings_panel:
+            self.content_stack.setCurrentIndex(self._tab_order.index(self.active_tab))
+        self._update_tab_styles()
 
     # ------------------------------------------------------------------ ⚙'s pages
     def _show_settings_page(self, key: str, load: bool = True) -> None:
@@ -7608,6 +7601,8 @@ class MyGeekyPanel(QWidget):
             self.settings_scroll.verticalScrollBar().setValue(0)
         if key == "accounts" and load:
             self._load_setup()
+        if hasattr(self, "content_stack") and hasattr(self, "nav_trail"):
+            self._update_tab_styles()                     # the trail and the menu follow: Settings › Look
 
     def _style_settings_nav(self) -> None:
         if not hasattr(self, "settings_nav"):
@@ -8182,6 +8177,9 @@ class MyGeekyPanel(QWidget):
                 "researchers": getattr(getattr(self, "researchers_page", None), "part", "")}.get(tab, "")
 
     def _nav_leaf(self) -> dict[str, Any] | None:
+        stack = getattr(self, "content_stack", None)
+        if stack is not None and stack.currentWidget() is getattr(self, "settings_panel", None):
+            return navtree.leaf_for(self.nav_tree, "settings", getattr(self, "_settings_page", "accounts"))
         tab = getattr(self, "active_tab", "")
         return navtree.leaf_for(self.nav_tree, tab, self._nav_part(tab))
 

@@ -155,20 +155,38 @@ def test_up_a_level_takes_the_panel_to_that_level_then_home(panel):
     assert panel.active_tab == "home" and panel._level_node() is None and not panel.nav_back_text.isVisible()
 
 
+def _tiles(panel):
+    """The level page's tiles now (from its grid, not the old ones still waiting to be deleted)."""
+    g = panel.level_page.grid
+    return [g.itemAt(i).widget() for i in range(g.count())]
+
+
 def test_a_level_tile_opens_its_page_or_its_own_level(panel):
-    from mygeeky.gui.navrail import LevelTile
     host = panel.rail_host
     host.open_at("grow")
     host.tapped("grow:skills")
     host.up()                                                       # Grow's pages
-    tiles = {w.nd["id"]: w for w in panel.level_page.findChildren(LevelTile) if not w.isHidden()}
+    tiles = {w.nd["id"]: w for w in _tiles(panel)}
     tiles["grow:data"]._on_click()                                  # Data has parts: its own level
     assert panel._level_node()["id"] == "grow:data" and host.up_target()["label"] == "Grow"
-    from PySide6.QtWidgets import QApplication
-    QApplication.processEvents()                                    # new tiles show on the next pass of the loop
-    first = next(w for w in panel.level_page.findChildren(LevelTile) if not w.isHidden())
-    first._on_click()                                               # a part: the page opens
+    _tiles(panel)[0]._on_click()                                    # a part: the page opens
     assert panel._level_node() is None and panel.active_tab == "grow" and panel._grow_mode.startswith("data")
+
+
+def test_settings_is_a_page_in_the_panel_with_a_way_back(panel):
+    from mygeeky import navtree
+    panel._nav_open(navtree.find(panel.nav_tree, "grow:skills"))
+    panel._nav_open(navtree.find(panel.nav_tree, "settings:accounts"))
+    assert panel.content_stack.currentWidget() is panel.settings_panel
+    assert panel.rail_host.isVisibleTo(panel) and panel.nav_head.isVisibleTo(panel)          # the menu and ‹ back stay
+    assert panel.nav_trail.text() == "Settings \u203a Accounts" and "Settings" in panel.nav_back_text.text()
+    panel.settings_nav["look"].click()
+    assert panel.nav_trail.text() == "Settings \u203a Look and window"
+    panel.nav_back_text.click()                                     # up: the Settings level, in the panel
+    assert panel._level_node()["id"] == "settings"
+    panel._toggle_settings()
+    panel._toggle_settings()                                        # ⚙ closes back to the page you were on
+    assert panel.content_stack.currentWidget() is not panel.settings_panel and panel.active_tab == "grow"
 
 
 def test_the_pin_stands_up_when_pinned_and_leans_when_not(panel):
