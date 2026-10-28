@@ -218,3 +218,17 @@ def test_admin_widens_the_panel_and_leaving_it_brings_it_back(qapp_offscreen, mo
     QApplication.processEvents()
     assert p.width() == normal                                       # your own width again
     p.close()
+
+
+def test_accounts_opens_no_window_of_its_own(panel):
+    """Opening Accounts with Signals on once showed a hidden, parentless "Turn Signals off" button as its own empty
+    window beside the panel. Nothing in ⚙ may become a window."""
+    from PySide6.QtWidgets import QApplication
+    from mygeeky import navtree
+    panel._nav_open(navtree.find(panel.nav_tree, "settings:accounts"))
+    panel._render_setup({"signals": True, "beacon_token": True, "version": "test"})
+    QApplication.processEvents()
+    stray = [w for w in QApplication.topLevelWidgets() if w.isVisible() and w is not panel and w.isWindow()
+             and w.window() is w and not w.inherits("QMenu") and w.windowType() not in (0x0c, 0x13)]   # not popups/tooltips
+    assert not [w for w in stray if w.parent() is None and type(w).__name__ in ("QPushButton", "QLabel")], stray
+    assert panel.signals_btn.parent() is not None and not panel.signals_btn.isVisible()

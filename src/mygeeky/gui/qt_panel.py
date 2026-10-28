@@ -7322,11 +7322,15 @@ class MyGeekyPanel(QWidget):
         from .accounts_ui import AccountsSection
         self.accounts_section = AccountsSection(lambda: THEMES[self._theme_name()], self._account_action)
         pages["accounts"].addWidget(self.accounts_section)
-        # what the setup summary and the Signals switch report into (no longer shown: the cards say it)
-        self.setup_label = QLabel("")
+        # what the setup summary and the Signals switch report into (no longer shown: the cards say it). They belong
+        # to ⚙ and stay hidden: a widget with no parent that is ever shown opens as a window of its own (it did:
+        # an empty "Turn Signals off" window beside the panel)
+        self.setup_label = QLabel("", content)
         self.setup_label.setTextFormat(Qt.RichText)
-        self.signals_btn = QPushButton("")
-        self.pair_btn = QPushButton("\U0001f4f1 Connect your phone")
+        self.signals_btn = QPushButton("", content)
+        self.pair_btn = QPushButton("\U0001f4f1 Connect your phone", content)
+        for w in (self.setup_label, self.signals_btn, self.pair_btn):
+            w.hide()
 
         layout = pages["data"]
         legal = QHBoxLayout()                              # Play asks for the privacy policy inside the app; the phone has it too
@@ -7756,9 +7760,7 @@ class MyGeekyPanel(QWidget):
             f"<div style='font-size:11px; font-weight:600; color:{theme['text']}; margin-bottom:4px'>Your setup</div>"
             f"<table style='font-size:10.5px'>{''.join(rows)}</table>")
         self.setup_label.setStyleSheet("background:transparent;")
-        can = info.get("signals") or info.get("beacon_token")
-        self.signals_btn.setVisible(bool(can))
-        self.signals_btn.setEnabled(True)
+        self.signals_btn.setEnabled(True)                 # never shown: the Accounts card has the Signals button
         self.signals_btn.setText("Turn Signals off" if info.get("signals") else "Turn Signals on")
         self.signals_btn.setStyleSheet(
             f"QPushButton {{ background:{theme['btn_bg']}; color:{theme['text']}; border:none; border-radius:7px; "

@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **No stray "Turn Signals off" window** (computer). Opening Accounts with Signals on also opened a small, nearly empty window beside the panel: an old hidden button being shown with nowhere to sit. It no longer appears.
 - **Settings open inside the panel** (computer). Opening Accounts or any other settings page took over the whole panel: the side menu, the way back and where-you-are disappeared, and only ⚙ again closed it. Settings is now a page like the others: the menu stays, the trail says Settings › Accounts, "‹ Settings" goes up a level, and ⚙ still opens and closes it, returning to the page you were on.
 - **Up a level takes the panel there** (computer). "‹ Grow" beside Grow › Skills used to move only the menu; now the panel shows that level too: Grow's pages as tiles with their counts, then all sections, then Home, as the phone's orbit does when you go back. A tile opens its page, or its own level when it has parts (Data). The menu moves with it.
 - **The logo reads on the light theme** (computer). The opening animation's neon, half-transparent letters faded into a light background; on Frosted they now stand on the app icon's dark badge. The header's "myGeeKy" takes the theme's title colour.
