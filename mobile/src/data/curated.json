@@ -1,5 +1,5 @@
 {
- "version": "2026-10-27T09:00:31Z",
+ "version": "2026-10-28T09:40:22Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -52,57 +52,6 @@
      "rtl": false,
      "title": "统计遗传学博士后 - Casale 组",
      "summary": "Human Technopole 正在招聘一名统计遗传学博士后，开发计算方法，利用群体规模的人类遗传学和多模态分子数据，将人类遗传变异与生物学功能联系起来。"
-    }
-   }
-  },
-  {
-   "id": "the-university-of-texas-md-anderson-cancer-center-postdoctor-2026",
-   "title": "Postdoctoral Fellowships in Computational Biology",
-   "url": "https://www.nature.com/naturecareers/job/12862160/postdoctoral-fellowships-in-computational-biology-/?LinkSource=PremiumListing",
-   "keywords": [
-    "computational biology",
-    "cancer genomics",
-    "tumor evolution",
-    "bioinformatics",
-    "statistics",
-    "sequencing data"
-   ],
-   "summary": "Postdoctoral fellowships in computational biology in the Cancer Genomics and Evolution Laboratory of Peter Van Loo at the University of Texas MD Anderson Cancer Center, focused on large-scale cancer genomics and evolution.",
-   "deadline": "2026-10-27",
-   "org": "The University of Texas MD Anderson Cancer Center",
-   "place": "Houston, Texas (US)",
-   "type": "postdoc",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "زمالات ما بعد الدكتوراه في علم الأحياء الحسابي",
-     "summary": "زمالات ما بعد الدكتوراه في علم الأحياء الحسابي في مختبر Cancer Genomics and Evolution Laboratory لـ Peter Van Loo في University of Texas MD Anderson Cancer Center، تركز على علم الجينوم والتطور السرطاني واسع النطاق."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Bourses postdoctorales en biologie computationnelle",
-     "summary": "Bourses postdoctorales en biologie computationnelle dans le Cancer Genomics and Evolution Laboratory de Peter Van Loo à l'University of Texas MD Anderson Cancer Center, axées sur la génomique et l'évolution du cancer à grande échelle."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Postdoktoranden-Stipendien in Computational Biology",
-     "summary": "Postdoktoranden-Stipendien in Computational Biology im Cancer Genomics and Evolution Laboratory von Peter Van Loo am University of Texas MD Anderson Cancer Center, mit Schwerpunkt auf groß angelegter Krebsgenomik und Evolution."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Becas postdoctorales en biología computacional",
-     "summary": "Becas postdoctorales en biología computacional en el Cancer Genomics and Evolution Laboratory de Peter Van Loo en el University of Texas MD Anderson Cancer Center, centradas en genómica y evolución del cáncer a gran escala."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "计算生物学博士后奖学金",
-     "summary": "德克萨斯大学MD安德森癌症中心Peter Van Loo的Cancer Genomics and Evolution Laboratory的计算生物学博士后奖学金，专注于大规模癌症基因组学和进化。"
     }
    }
   },
