@@ -658,13 +658,12 @@ class FlappyGeeKOc(ArcadeGame):
             elif pp["x"] + 54 <= gx - 14:
                 pp["done"] = True
         self.pipes = [pp for pp in self.pipes if pp["x"] > -80]
-        if self.y > self.H - 12 or self.y < 8:
-            if self.hurt <= 0:
-                self.lives -= 1
-                self.hurt = 1.0
-                self.feel("sad")
-                self.say("Careful: stay in the water!", 1.2)
-            self.y, self.vy = self.H / 2, -120
+        # the edges cost nothing: he stops at the surface and pushes off the sea floor (only the coral and a wrong gap
+        # take a life; tapping a little too often used to end a round at the first gate)
+        if self.y < 8:
+            self.y, self.vy = 8.0, max(self.vy, 0.0)
+        elif self.y > self.H - 12:
+            self.y, self.vy = self.H - 12, -260.0
         if self.lives <= 0 or (self.gi >= len(self.gates) and not self.pipes):
             self.end()
         self.hud(f"gate {min(self.gi, len(self.gates))}/{len(self.gates)} · {'♥' * max(0, self.lives)}")

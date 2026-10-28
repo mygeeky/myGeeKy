@@ -250,7 +250,9 @@ const FLAPPY: Spec = {
       } else if (pp.x + 54 <= gx - 14) pp.done = true;
     }
     w.pipes = w.pipes.filter((pp: any) => pp.x > -80);
-    if (w.y > w.H - 12 || w.y < 8) { if (w.hurt <= 0) { w.lives -= 1; w.hurt = 1; api.feel('sad'); api.say('Careful: stay in the water!', 1.2); } w.y = w.H / 2; w.vy = -120; }
+    // the edges cost nothing: he stops at the surface and pushes off the sea floor (only the coral and a wrong gap
+    // take a life; tapping a little too often used to end a round at the first gate)
+    if (w.y < 8) { w.y = 8; w.vy = Math.max(w.vy, 0); } else if (w.y > w.H - 12) { w.y = w.H - 12; w.vy = -260; }
     if (w.lives <= 0 || (w.gi >= w.gates.length && !w.pipes.length)) api.end();
     w.hud = `gate ${Math.min(w.gi, w.gates.length)}/${w.gates.length} · ${'♥'.repeat(Math.max(0, w.lives))}`;
   },

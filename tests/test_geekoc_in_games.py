@@ -179,3 +179,22 @@ def test_a_whole_round_plays_and_geekoc_answers_what_you_do(qapp_offscreen, draw
     changes = sum(1 for a, b in zip(feelings, feelings[1:]) if a != b)
     assert changes >= 3, (gid, changes)
     assert changes < len(feelings) / 3, (gid, changes, len(feelings))
+
+
+def test_flappy_edges_cost_no_life(qapp_offscreen):
+    """Tapping too often (or not at all) never ends a round by itself: the surface and the sea floor are free, only
+    the coral and a wrong gap take a life."""
+    w = _game("flappy")
+    try:
+        w.go()
+        for flap in (True, False):                        # five seconds tapping all the time, then five not at all
+            for _ in range(100):
+                if flap:
+                    w.flap()
+                w.step(0.05)
+                w.pipes.clear()                           # no coral in the way: only the edges
+                assert 8 <= w.y <= w.H - 12
+        assert w.lives == 3 and not w.ended
+    finally:
+        _gone(w)
+

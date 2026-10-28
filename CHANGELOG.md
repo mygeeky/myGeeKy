@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Flappy GeeKOc is fairer** (computer and phone): the surface and the sea floor no longer cost a life. GeeKOc stops at the surface and pushes off the floor; only the coral and a wrong gap take a life. Tapping a little too often used to end a round at the first gate.
 - **The orbit's dotted rings hold still** (phone): they used to turn, which kept the phone redrawing 60 times a second while the orbit or the dock was open (16% CPU on the emulator; 2.5% now).
 - **GeeKOc shows how he feels in the games** (computer and phone): in the seven games he's in, he stands still and changes only when something happens: he **jumps** (run, flappy, Rise), is **happy** for a moment after a right answer and **sad** after a wrong one or a fall. Two new drawings of him, jump and sad. On the phone a game used about half as much CPU (101% → 56% on the emulator in Whack-a-bug): his arms used to be redrawn eight times a second. When he's hurt he blinks on the game's own clock, and on the phone he now blinks in Flappy too, as on the computer.
 - **Fewer ways to crash** (computer and phone), found by a crash, memory and Play review of both apps and by stress tests (9,000 random taps on the phone; every page and game opened again and again on the computer):
