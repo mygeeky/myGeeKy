@@ -30,12 +30,16 @@ def _label(text: str, css: str) -> QLabel:
     return lbl
 
 
-def _oc(p: QPainter, pose: str, x: float, y: float, size: float) -> None:
-    """GeeKOc in a pose, his arms swimming (the tour's frames)."""
+def _oc(p: QPainter, game: str, moment: str, x: float, y: float, size: float) -> None:
+    """GeeKOc still, in the feeling his game shows at this moment (tour_ui.feeling): a picture drawn once at the size
+    it lands on the screen, so a frame only copies it."""
     try:
-        from .tour_ui import _frames
-        frames = _frames(pose)
-        frames[int(time.monotonic() * 8) % len(frames)].render(p, QRectF(x - size / 2, y - size / 2, size, size))
+        from .tour_ui import feeling, still
+        px = max(16, round(size * p.worldTransform().m11() * p.device().devicePixelRatioF() / 8) * 8)
+        p.save()
+        p.setRenderHint(QPainter.SmoothPixmapTransform)
+        p.drawPixmap(QRectF(x - size / 2, y - size / 2, size, size), still(feeling(game, moment), px), QRectF(0, 0, px, px))
+        p.restore()
     except Exception:
         pass
 
@@ -71,6 +75,7 @@ class ArcadeGame(QWidget):
         self.answers: list[dict[str, Any]] = []
         self.paused, self.ended, self.bonus = True, False, 0
         self.message, self.message_t = "", 0.0
+        self.feeling, self.feeling_t = "", 0.0             # "happy" or "sad" for a moment after something happened
         self.t0 = time.monotonic()
         self.overlay: QWidget | None = None
         self.timer = QTimer(self)
@@ -113,6 +118,13 @@ class ArcadeGame(QWidget):
     def say(self, text: str, secs: float = 2.6) -> None:
         self.message, self.message_t = text, secs
 
+    def feel(self, name: str, secs: float = 1.0) -> None:
+        self.feeling, self.feeling_t = name, secs
+
+    def oc(self, p: QPainter, moment: str, x: float, y: float, size: float) -> None:
+        """GeeKOc: happy or sad for a second after something happened, else the moment the game is in."""
+        _oc(p, self.GAME, self.feeling if self.feeling_t > 0 else moment, x, y, size)
+
     def answer(self, iid: str, right: bool, level: int, terms: list[str]) -> None:
         self.answers.append({"id": iid, "right": right, "level": level, "terms": list(terms)})
 
@@ -128,6 +140,7 @@ class ArcadeGame(QWidget):
         self.last = now
         self.message_t -= dt
         if not self.paused:
+            self.feeling_t -= dt                            # held while paused: he ends the round as he felt
             self.step(dt)
         still = self.paused and self.message_t <= 0         # a card is up or the round is over: nothing moves
         if still and getattr(self, "_still", False):
@@ -285,16 +298,18 @@ class WhackABug(ArcadeGame):
                 if c["bug"]:
                     self.score += 10
                     self._count(c, True)
+                    self.feel("happy")
                 else:
                     self.score = max(0, self.score - 15)
                     self._count(c, False)
+                    self.feel("sad")
                     self.say(f"You whacked a {c['label'].lower()}: {c['why'][0].lower()}{c['why'][1:]}")
                 return
 
     def draw(self, p: QPainter) -> None:
         self._layout()
         p.fillRect(QRectF(0, 0, self.W, self.H), QColor("#2b1d3a"))
-        _oc(p, "point", 52, 54, 92)
+        self.oc(p, "stand", 52, 54, 92)
         p.setPen(QColor("#f0f0f5"))
         f = QFont(p.font())
         f.setPixelSize(15)
@@ -375,6 +390,7 @@ class SortTheCatch(ArcadeGame):
             self.right += ok
             self.answer(f"{self.set['id']}:{c['name']}", ok, self.set["level"], self.set["terms"])
             self.flash = (c["lane"], ok, 0.8)
+            self.feel("happy" if ok else "sad")
             if not ok:
                 self.say(f"{c['name']} goes in “{self.set['bins'][c['bin']]}”.")
             self._next()
@@ -406,7 +422,7 @@ class SortTheCatch(ArcadeGame):
 
     def draw(self, p: QPainter) -> None:
         p.fillRect(QRectF(0, 0, self.W, self.H), QColor("#071628"))
-        _oc(p, "point", 50, 50, 88)
+        self.oc(p, "stand", 50, 50, 88)
         f = QFont(p.font())
         f.setPixelSize(15)
         f.setBold(True)
@@ -503,14 +519,17 @@ class GeeKOcRun(ArcadeGame):
                 self.answer(g["id"], ok, g["level"], g["terms"])
                 if ok:
                     self.bonus += 5
+                    self.feel("happy")
                 else:
                     self.lives -= 1
                     self.hurt = 1.0
+                    self.feel("sad")
                     self.say(f"{g['q']}? {g['right']}.")
             elif "label" in o and o["x"] < px + 16 and o["x"] + o["w"] > px - 16 and -self.y < o["h"] - 6:
                 o["done"] = True
                 self.lives -= 1
                 self.hurt = 1.0
+                self.feel("sad")
                 self.say(f"Ouch: {o['label']}!", 1.2)
         self.obs = [o for o in self.obs if o["x"] + o["w"] > -40]
         if self.lives <= 0 or (self.gi >= len(self.gates) and not any("gate" in o and not o.get("done") for o in self.obs)):
@@ -555,7 +574,7 @@ class GeeKOcRun(ArcadeGame):
                 p.setPen(QColor("#c0367f"))
                 p.drawText(QRectF(o["x"] - 40, g + 2 - o["h"] - 18, o["w"] + 80, 16), Qt.AlignCenter, o["label"])
         if self.hurt <= 0 or int(time.monotonic() * 12) % 2:
-            _oc(p, "jet" if self.y < -2 else "wave", 92, g - 8 + self.y, 76)
+            self.oc(p, "jump" if self.y < -2 else "stand", 92, g - 8 + self.y, 76)
 
 
 # ------------------------------------------------------------------------------------------------ Flappy GeeKOc
@@ -618,6 +637,7 @@ class FlappyGeeKOc(ArcadeGame):
                 if not in_top and not in_low and self.hurt <= 0:
                     self.lives -= 1
                     self.hurt = 1.0
+                    self.feel("sad")
                     self.say("Bonk! Into the coral.", 1.2)
                     self.y, self.vy = (t0 + t1) / 2 if pp["top"] else (b0 + b1) / 2, -100
                 elif in_top or in_low:
@@ -629,9 +649,11 @@ class FlappyGeeKOc(ArcadeGame):
                 self.answer(g["id"], ok, g["level"], g["terms"])
                 if ok:
                     self.bonus += 5
+                    self.feel("happy")
                 else:
                     self.lives -= 1
                     self.hurt = 1.0
+                    self.feel("sad")
                     self.say(f"{g['q']}? {g['right']}.")
             elif pp["x"] + 54 <= gx - 14:
                 pp["done"] = True
@@ -640,6 +662,7 @@ class FlappyGeeKOc(ArcadeGame):
             if self.hurt <= 0:
                 self.lives -= 1
                 self.hurt = 1.0
+                self.feel("sad")
                 self.say("Careful: stay in the water!", 1.2)
             self.y, self.vy = self.H / 2, -120
         if self.lives <= 0 or (self.gi >= len(self.gates) and not self.pipes):
@@ -675,7 +698,7 @@ class FlappyGeeKOc(ArcadeGame):
             p.setPen(QColor("#ffffff"))
             p.drawText(QRectF(12, 8, self.W - 24, self.H * 0.16 - 12), Qt.AlignCenter | Qt.TextWordWrap, nxt["g"]["q"] + "?")
         if self.hurt <= 0 or int(time.monotonic() * 12) % 2:
-            _oc(p, "jet" if self.vy < 0 else "cheer", 120, self.y, 66)
+            self.oc(p, "jump" if self.vy < 0 else "stand", 120, self.y, 66)
 
 
 GAMES = {"whack": WhackABug, "catch": SortTheCatch, "run": GeeKOcRun, "flappy": FlappyGeeKOc}

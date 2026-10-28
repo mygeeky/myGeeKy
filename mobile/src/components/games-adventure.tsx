@@ -43,7 +43,7 @@ const RISE: Spec = {
     w.cam += (w.camTo - w.cam) * Math.min(1, dt * 4);
     if (!w.jump) {
       w.tide -= dt * 4;                                   // gentle: about 27 s a row, as on the desktop
-      if (w.tide < w.me[1] + 30) { api.say('The tide caught GeeKOc.', 3); api.end(); return; }
+      if (w.tide < w.me[1] + 30) { api.say('The tide caught GeeKOc.', 3); api.feel('sad'); api.end(); return; }
     } else {
       const j = w.jump;
       j.t = Math.min(1, j.t + dt / 0.55);
@@ -56,7 +56,7 @@ const RISE: Spec = {
         const rid = `${w.ladder.id}:${w.row}`;
         if (o.ok) {
           if (w.first) api.answer(rid, true, w.ladder.level, w.ladder.terms);
-          w.row += 1; w.camTo = -w.row * ROW;
+          w.row += 1; w.camTo = -w.row * ROW; api.feel('happy');
           w.tide = Math.min(Math.max(w.tide, w.me[1] + 140), w.me[1] + 220);
           if (w.row >= w.ladder.rows.length) {
             const steps = w.ladder.rows.map((r: any, i: number) => `${i + 1}. ${r.right}`).join('\n');
@@ -64,7 +64,7 @@ const RISE: Spec = {
           } else layRow(w);
         } else {
           if (w.first) api.answer(rid, false, w.ladder.level, w.ladder.terms);
-          w.first = false; w.mistakes += 1; o.gone = true;
+          w.first = false; w.mistakes += 1; o.gone = true; api.feel('sad', 1.4);
           api.say(o.why, 3.6);
           w.jump = { from: [...w.me], to: [W0 / 2, rowY(w, w.row)], t: 0, opt: null };
         }
@@ -89,7 +89,7 @@ const RISE: Spec = {
           <Text style={{ color: '#f0f0f5', fontWeight: '700', fontSize: 12, textAlign: 'center' }}>{o.text}</Text>
         </View>
       ))}
-      <Oc pose={v.jump ? 'jet' : 'wave'} x={v.me[0]} y={v.me[1]} size={86} k={k} />
+      <Oc moment={v.jump ? 'jump' : 'stand'} x={v.me[0]} y={v.me[1]} size={86} k={k} />
       <View style={{ position: 'absolute', left: 0, right: 0, top: v.tide * k, height: 4000, backgroundColor: 'rgba(8,30,70,0.82)' }} />
     </View>
     <Text style={{ position: 'absolute', top: 6, left: 0, right: 0, textAlign: 'center', color: '#f0f0f5', fontWeight: '800', fontSize: 14 }}>Climbing {v.name}</Text>
@@ -152,7 +152,7 @@ function build(w: World, weights: Record<string, number>) {
     const [x, y] = path[i - 1], [nx, ny] = path[i];
     w.doors[key(x, y, nx - x, ny - y)] = { state: 'shut', a: [x, y], b: [nx, ny] };
   }
-  Object.assign(w, { at: [0, 0], anim: [0, 0, 1], face: 'wave', home: false, asked: 0, rightFirst: 0, built: true });
+  Object.assign(w, { at: [0, 0], anim: [0, 0, 1], home: false, asked: 0, rightFirst: 0, built: true });
 }
 function stepTo(w: World, dx: number, dy: number) { w.anim = [w.at[0], w.at[1], 0]; w.at = [w.at[0] + dx, w.at[1] + dy]; }
 function walk(w: World, dx: number, dy: number, api: Api) {
@@ -160,7 +160,7 @@ function walk(w: World, dx: number, dy: number, api: Api) {
   const [x, y] = w.at;
   if (!isOpen(w, x, y, dx, dy)) return;
   const d = w.doors[key(x, y, dx, dy)];
-  if (d && d.state === 'locked') { api.say('This door stays shut: find another way round.'); w.face = 'think'; return; }
+  if (d && d.state === 'locked') { api.say('This door stays shut: find another way round.'); api.feel('sad'); return; }
   if (d && d.state === 'shut') {
     const region = Math.min(2, Math.floor((d.b[0] * 3) / CW));
     const pool: Question[] = w.pools[region].length ? w.pools[region] : w.pools[1].length ? w.pools[1] : w.pools[0];
@@ -171,8 +171,8 @@ function walk(w: World, dx: number, dy: number, api: Api) {
               why: q.why, go: 'Through the door ›' }, (ok) => {
       w.asked += 1; if (ok) w.rightFirst += 1;
       api.answer(q.id, ok, ({ easy: 1, medium: 2, hard: 3 } as Record<string, number>)[(q as any).level] ?? 1, PROTOCOL_TERMS[q.protocol] ?? []);
-      if (ok) { d.state = 'open'; w.face = 'cheer'; stepTo(w, dx, dy); return; }
-      d.state = 'locked'; w.face = 'think';
+      if (ok) { d.state = 'open'; api.feel('happy'); stepTo(w, dx, dy); return; }
+      d.state = 'locked'; api.feel('sad', 1.6);
       if (!pathHome(w, w.at[0], w.at[1], (k) => w.doors[k]?.state === 'locked')) { d.state = 'shut'; api.say('No other way round here: this door will ask a different question.', 3.2); }
       else api.say("That door stays shut now. There's another way round.");
     });
@@ -190,7 +190,7 @@ const MAZE: Spec = {
     if (w.anim[2] < 1) {
       w.anim[2] = Math.min(1, w.anim[2] + dt * 7);
       if (w.anim[2] >= 1 && w.at[0] === CW - 1 && w.at[1] === CH - 1 && !w.home) {
-        w.home = true; w.face = 'wave';
+        w.home = true; api.feel('happy', 99);              // home: happy to the end
         api.end({ title: 'GeeKOc is home!', text: `${w.rightFirst} of ${w.asked} doors opened on the first try.` });
       }
     }
@@ -202,7 +202,7 @@ const MAZE: Spec = {
     const dx = x - (ox + (w.at[0] + 0.5) * s), dy = y - (oy + (w.at[1] + 0.5) * s);
     if (Math.abs(dx) > Math.abs(dy)) walk(w, dx > 0 ? 1 : -1, 0, api); else walk(w, 0, dy > 0 ? 1 : -1, api);
   },
-  snap: (w) => (!w.built ? { H: w.H } : { H: w.H, right: w.right, down: w.down, face: w.face, at: [...w.at], anim: [...w.anim],
+  snap: (w) => (!w.built ? { H: w.H } : { H: w.H, right: w.right, down: w.down, at: [...w.at], anim: [...w.anim],
     doors: Object.entries(w.doors).map(([k, d]: [string, any]) => ({ k, state: d.state, a: d.a, b: d.b })) }),
   draw: (v, k) => {
     if (!v.right) return null;
@@ -230,7 +230,7 @@ const MAZE: Spec = {
           left: (horiz ? cx - s / 2 + 5 : cx - 4) * k, top: (horiz ? cy - 4 : cy - s / 2 + 5) * k, width: (horiz ? s - 10 : 8) * k, height: (horiz ? 8 : s - 10) * k }} />;
       })}
       <Text style={{ position: 'absolute', left: (ox + (CW - 1) * s) * k, top: (oy + (CH - 1) * s) * k, width: s * k, height: s * k, textAlign: 'center', fontSize: s * 0.6 * k }}>🏠</Text>
-      <Oc pose={v.face} x={ox + (px + 0.5) * s} y={oy + (py + 0.5) * s} size={s * 1.3} k={k} />
+      <Oc x={ox + (px + 0.5) * s} y={oy + (py + 0.5) * s} size={s * 1.3} k={k} />
     </View>;
   },
 };

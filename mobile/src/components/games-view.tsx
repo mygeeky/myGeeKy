@@ -8,7 +8,7 @@ import { useApp } from '../lib/app-state';
 import * as G from '../lib/gems';
 import { finish, questions, roundItems, summary, type Question } from '../lib/games-store';
 import { C, tint } from '../lib/theme';
-import { GeekMover } from './tour-overlay';
+import { feelingOf, GeekStill } from './tour-overlay';
 import { gameIcon } from './game-icons';
 import { CARD_GAMES, CardGame } from './games-cards';
 import { ARCADE_GAMES, ArcadeGame } from './games-arcade';
@@ -166,14 +166,14 @@ type Rock = { key: number; x: number; y: number; vx: number; vy: number; r: numb
 type World = {
   sets: G.Item[]; waves: G.Item[]; wave: number; shields: number; rocks: Rock[]; queue: [string, G.Item][];
   spawnIn: number; paused: boolean; msg: string; msgT: number; laser: null | { x: number; y: number; t: number };
-  answers: G.Answer[]; t0: number; key: number; mood: string; ended: boolean; w: number; h: number;
+  answers: G.Answer[]; t0: number; key: number; feel: string; feelT: number; ended: boolean; w: number; h: number;
 };
 type Snap = { rocks: Rock[]; laser: World['laser']; msg: string; shields: number; wave: number; waves: number;
-              set: G.Item | null; mood: string };
+              set: G.Item | null; feel: string };
 const newWorld = (): World => ({ sets: [], waves: [], wave: 0, shields: 3, rocks: [], queue: [], spawnIn: 0, paused: true,
-  msg: '', msgT: 0, laser: null, answers: [], t0: 0, key: 0, mood: 'cheer', ended: false, w: 0, h: 0 });
+  msg: '', msgT: 0, laser: null, answers: [], t0: 0, key: 0, feel: '', feelT: 0, ended: false, w: 0, h: 0 });
 const snapOf = (w: World): Snap => ({ rocks: w.rocks.map((r) => ({ ...r })), laser: w.laser && { ...w.laser },
-  msg: w.msgT > 0 ? w.msg : '', shields: w.shields, wave: w.wave, waves: w.waves.length, set: w.waves[w.wave] ?? null, mood: w.mood });
+  msg: w.msgT > 0 ? w.msg : '', shields: w.shields, wave: w.wave, waves: w.waves.length, set: w.waves[w.wave] ?? null, feel: w.feelT > 0 ? w.feel : '' });
 
 function buildWave(w: World) {
   const ws = w.waves[w.wave];
@@ -242,7 +242,7 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
       const now = Date.now(), dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       if (!w.paused && w.w) {
-        w.spawnIn -= dt;
+        w.spawnIn -= dt; w.feelT -= dt;
         if (w.queue.length && w.spawnIn <= 0) {
           const [word, s] = w.queue.pop()!;
           const r = Math.max(28, word.length * 4.6 + 14);
@@ -256,7 +256,7 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
           if (k.x < k.r || k.x > w.w - k.r) k.vx *= -1;
         }
         for (const k of w.rocks.filter((k) => k.y - k.r > w.h - 40)) {
-          if (k.good) { answer(w, k.word, k.set, false); w.msg = `Missed: ${k.word} is one of the ${w.waves[w.wave].name}.`; w.msgT = 2.6; }
+          if (k.good) { answer(w, k.word, k.set, false); w.feel = 'sad'; w.feelT = 1.2; w.msg = `Missed: ${k.word} is one of the ${w.waves[w.wave].name}.`; w.msgT = 2.6; }
           else answer(w, k.word, k.set, true);                 // rightly let past
         }
         w.rocks = w.rocks.filter((k) => k.y - k.r <= w.h - 40);
@@ -282,10 +282,10 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
     if (w.paused || !k) return;
     w.rocks = w.rocks.filter((x) => x !== k);
     w.laser = { x: k.x, y: k.y, t: 0.15 };
-    if (k.good) { answer(w, k.word, k.set, true); w.mood = 'cheer'; }
+    if (k.good) { answer(w, k.word, k.set, true); w.feel = 'happy'; w.feelT = 1; }
     else {
       answer(w, k.word, k.set, false);
-      w.shields -= 1; w.mood = 'think';
+      w.shields -= 1; w.feel = 'sad'; w.feelT = 1.2;
       w.msg = `${k.word} is ${k.set.what}, not one of the ${w.waves[w.wave].name}.`; w.msgT = 2.8;
       if (w.shields <= 0) later(end, 400);
     }
@@ -342,7 +342,7 @@ function FieldView({ view, card, q, qPick, shipXRaw, pan, onLayout, onHit, onGo,
         {size.w ? <>
           <View pointerEvents="none" style={[st.saucer, { left: shipX - 44, top: shipY }]} />
           <View pointerEvents="none" style={{ position: 'absolute', left: shipX - 36, top: shipY - 58 }}>
-            <GeekMover pose={view.mood === 'cheer' ? 'cheer' : 'think'} size={72} paused={card !== null} />
+            <GeekStill name={feelingOf('hunter', view.feel || 'stand')} size={72} />
           </View>
         </> : null}
         {view.msg ? <Text style={st.msg}>{view.msg}</Text> : null}

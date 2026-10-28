@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from PySide6.QtCore import QByteArray, QEvent, QRect, QRectF, Qt, QTimer
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
@@ -36,6 +36,28 @@ def _frames(pose: str) -> tuple[QSvgRenderer, ...]:
     return tuple(QSvgRenderer(QByteArray(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{m["viewBox"]}">'
                                          f'{"".join(p["parts"][i] for i in f)}</svg>'.encode()))
                  for f in p["frames"])
+
+
+def feeling(game: str, moment: str) -> str:
+    """Which still feeling GeeKOc shows in a game at a moment ("stand", "jump", "happy", "sad": tools/geekoc_poses.py
+    GAME_FEELINGS, the phone's lib too)."""
+    games = _moves().get("games", {})
+    g = games.get(game) or {}
+    return g.get(moment) or g.get("stand") or "stand"
+
+
+@lru_cache(maxsize=48)
+def still(name: str, px: int) -> QPixmap:
+    """A still feeling drawn once at px x px: a game paints this picture each frame, never the drawing itself."""
+    m = _moves()
+    svg = m["feelings"].get(name) or m["feelings"]["stand"]
+    pm = QPixmap(px, px)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    QSvgRenderer(QByteArray(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{m["viewBox"]}">{svg}</svg>'.encode())).render(p)
+    p.end()
+    return pm
 
 
 class GeekOcMover(QWidget):

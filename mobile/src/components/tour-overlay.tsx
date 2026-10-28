@@ -4,7 +4,7 @@
 // Home does the moving (onGo opens the page and the orbit, or scrolls Settings); the places a spotlight can sit
 // register themselves here with spot('id').
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path, Rect, SvgXml } from 'react-native-svg';
 import * as T from '../lib/tour';
@@ -22,13 +22,13 @@ const spots = new Map<string, Measurable>();
 export const spot = (id: string) => (r: Measurable | null) => { if (r) spots.set(id, r); };   // a gone one measures 0: ignored
 export const spotOf = (id: string): Measurable | undefined => spots.get(id);
 
-type Moves = { viewBox: string; fps: number; poses: Record<string, { parts: string[]; frames: number[][] }> };
+type Moves = { viewBox: string; fps: number; poses: Record<string, { parts: string[]; frames: number[][] }>;
+  feelings: Record<string, string>; games: Record<string, Record<string, string>> };
 let moves: Moves | null = null;
 const loadMoves = (): Moves => (moves ??= require('../data/geekoc_moves.json') as Moves);   // only once a tour opens
 
-/** GeeKOc in one pose, his arms swimming (tools/geekoc_poses.py made the frames); still with reduce motion, and
- *  while `paused` (a game waiting behind a card: each frame is a fresh drawing, too costly to swim for nobody). */
-export function GeekMover({ pose, size, paused = false }: { pose: string; size: number; paused?: boolean }) {
+/** GeeKOc in one pose, his arms swimming (tools/geekoc_poses.py made the frames); still with reduce motion. */
+export function GeekMover({ pose, size }: { pose: string; size: number }) {
   const m = loadMoves();
   const p = m.poses[pose] ?? m.poses.wave;
   const frames = useMemo(() => p.frames.map((f) => `<svg viewBox="${m.viewBox}">${f.map((i) => p.parts[i]).join('')}</svg>`), [p, m.viewBox]);
@@ -36,15 +36,30 @@ export function GeekMover({ pose, size, paused = false }: { pose: string; size: 
   const [still, setStill] = useState(false);
   useEffect(() => { AccessibilityInfo.isReduceMotionEnabled().then(setStill).catch(() => undefined); }, []);
   useEffect(() => {
-    if (still || paused) return;
+    if (still) return;
     const t = setInterval(() => setN((k) => (k + 1) % frames.length), 1000 / m.fps);
     return () => clearInterval(t);
-  }, [frames.length, m.fps, still, paused]);
+  }, [frames.length, m.fps, still]);
   // a fresh drawing for every frame: updating one in place matches its pieces by position, frames differ in how many
   // they have, and an eye could take on a neighbour's settings for a moment and show black
   const k = still ? 0 : n % frames.length;
   return <SvgXml key={`${pose}:${k}`} xml={frames[k]} width={size} height={size} />;
 }
+
+/** Which still feeling GeeKOc shows in a game at a moment ("stand", "jump", "happy", "sad": tools/geekoc_poses.py
+ *  GAME_FEELINGS; the desktop's tour_ui.feeling). */
+export const feelingOf = (game: string, moment: string): string => {
+  const g = loadMoves().games[game] ?? {};
+  return g[moment] ?? g.stand ?? 'stand';
+};
+
+/** GeeKOc still, in one feeling: a single drawing, drawn again only when the feeling or the size changes -- in a
+ *  game the screen redraws every frame, and this part of it is left alone. */
+export const GeekStill = memo(function GeekStill({ name, size }: { name: string; size: number }) {
+  const m = loadMoves();
+  const xml = useMemo(() => `<svg viewBox="${m.viewBox}">${m.feelings[name] ?? m.feelings.stand}</svg>`, [m, name]);
+  return <SvgXml key={name} xml={xml} width={size} height={size} />;
+});
 
 type Hole = { x: number; y: number; w: number; h: number };
 

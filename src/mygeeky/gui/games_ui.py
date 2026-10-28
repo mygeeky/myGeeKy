@@ -488,7 +488,7 @@ class WordHunter(QWidget):
         self.ship_x, self.target_x, self.keys = self.W / 2, None, set()
         self.spawn_in, self.cool, self.paused = 0.0, 0.0, True
         self.message, self.message_t = "", 0.0
-        self.mood = "cheer"
+        self.feeling, self.feeling_t = "", 0.0          # GeeKOc happy or sad for a moment after a hit
         self.timer = QTimer(self)
         self.timer.setInterval(16)
         self.timer.timeout.connect(self.step)
@@ -688,6 +688,7 @@ class WordHunter(QWidget):
                 self.ship_x += max(-380 * dt, min(380 * dt, (self.target_x - self.ship_x) * 6 * dt))
             self.ship_x = max(40, min(self.W - 40, self.ship_x))
             self.cool -= dt
+            self.feeling_t -= dt
             self.spawn_in -= dt
             if self.queue and self.spawn_in <= 0:
                 word, wset = self.queue.pop()
@@ -717,17 +718,18 @@ class WordHunter(QWidget):
                         self._boom(r["x"], r["y"], r["good"])
                         if r["good"]:
                             self._answer(r["word"], r["set"], True)
-                            self.mood = "cheer"
+                            self.feeling, self.feeling_t = "happy", 1.0
                         else:
                             self.shields -= 1
                             self._answer(r["word"], r["set"], False)
-                            self.mood = "think"
+                            self.feeling, self.feeling_t = "sad", 1.2
                             self._say(f"{r['word']} is {r['set']['what']}, not one of the {self.set['name']}.")
             for r in self.rocks:
                 if not r.get("dead") and r["y"] - r["r"] > self.H:
                     r["dead"] = True
                     if r["good"]:
                         self._answer(r["word"], r["set"], False)
+                        self.feeling, self.feeling_t = "sad", 1.2
                         self._say(f"Missed: {r['word']} is one of the {self.set['name']}.")
                     else:
                         self._answer(r["word"], r["set"], True)            # rightly let past
@@ -815,13 +817,8 @@ class WordHunter(QWidget):
         p.setBrush(QColor("#2b1053"))
         for i in range(-2, 3):
             p.drawEllipse(QPointF(x + i * 17, y + 10), 2.8, 2.8)
-        try:
-            from .tour_ui import _frames
-            frames = _frames("cheer" if self.mood == "cheer" else "think")
-            fr = frames[int(time.monotonic() * 8) % len(frames)]
-            fr.render(p, QRectF(x - 40, y - 64, 80, 80))
-        except Exception:
-            pass
+        from .games_arcade import _oc
+        _oc(p, "hunter", self.feeling if self.feeling_t > 0 else "stand", x, y - 24, 80)
         if self.message_t > 0 and self.message:
             f.setPixelSize(12)
             p.setFont(f)

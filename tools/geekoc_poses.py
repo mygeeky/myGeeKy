@@ -36,6 +36,31 @@ POSES = {
 # the tour's poses (data/tour.json): each a loop of FRAMES drawings, one sway of the arms
 MOVES = {"wave": "happy", "point": "curious", "think": "happy", "cheer": "excited", "present": "proud"}
 FRAMES = 8
+# GeeKOc in the games: a few still feelings, one drawing each, so a game swaps a picture only when something happens
+# (a jump, a right answer, a fall) instead of drawing a new one eight times a second. name -> (body pose, face[, how far up he's
+# drawn: the jump's bundle is long]); a body pose is a name from geekoc.js or the numbers of a new one. Jump: the arms snap into one
+# streamlined bundle (the welcome's jet). Sad: the arms hang, drawn in, and his face worries.
+FEELINGS = {
+    "stand": ("idle", "happy"),
+    "point": ("point", "curious"),
+    "wave": ("wave", "excited"),
+    "think": ("think", "thinking"),
+    "swim": ("swim", "curious"),
+    "jump": ({"swing": [-36, -27, -17, -7, 7, 17, 27, 36], "curl": [16, 12, 9, 6, -6, -9, -12, -16], "len": 1.06}, "excited", -40),
+    "happy": ("cheer", "excited"),
+    "sad": ({"swing": [-30, -20, -8, 0, 0, 8, 20, 30], "curl": [24, 18, 12, 6, -6, -12, -18, -24], "len": 0.9}, "worried"),
+}
+# which feeling each game shows for each moment: "stand" while nothing happens, "jump" while he's in the air, "happy"
+# for a right answer, "sad" for a wrong one or a fall. Both apps read this (games_arcade.py, games-arcade.tsx).
+GAME_FEELINGS = {
+    "whack": {"stand": "point", "happy": "happy", "sad": "sad"},
+    "catch": {"stand": "point", "happy": "happy", "sad": "sad"},
+    "run": {"stand": "stand", "jump": "jump", "happy": "happy", "sad": "sad"},
+    "flappy": {"stand": "swim", "jump": "jump", "happy": "happy", "sad": "sad"},
+    "rise": {"stand": "wave", "jump": "jump", "happy": "happy", "sad": "sad"},
+    "maze": {"stand": "wave", "happy": "happy", "sad": "sad"},
+    "hunter": {"stand": "think", "happy": "happy", "sad": "sad"},
+}
 MOVES_OUT = [ROOT / "src" / "mygeeky" / "data" / "geekoc_moves.json", ROOT / "mobile" / "src" / "data" / "geekoc_moves.json"]
 
 DRAW = """
@@ -91,6 +116,16 @@ for (let f = 0; f < J; f++) {
 process.stdout.write(JSON.stringify(out));
 """
 JET_FRAMES = 20
+
+FEEL = """
+const fs = require('fs'); global.window = global; eval(fs.readFileSync(process.argv[1], 'utf8'));
+const G = global.GeekOc, feelings = JSON.parse(process.argv[2]), out = {};
+for (const [name, [pose, face, up]] of Object.entries(feelings)) {
+  out[name] = G.markup(G.build({ pose: typeof pose === 'string' ? G.POSES[pose] : pose, face, still: true, at: [0, up || 0] }),
+                       { id: 'gf' + name });
+}
+process.stdout.write(JSON.stringify(out));
+"""
 
 
 def _thin(m: re.Match) -> str:
@@ -156,7 +191,12 @@ def moves() -> dict[str, object]:
                         parts.append(piece)
             out.append(row)
         poses[name] = {"parts": parts, "frames": out}
-    return {"viewBox": "0 0 620 620", "fps": 8, "poses": poses}
+    drawn = json.loads(subprocess.run(["node", "-e", FEEL, str(KIT), json.dumps(FEELINGS)], check=True, capture_output=True,
+                                      text=True).stdout)
+    feelings = {name: _unclip(re.sub(r"-?\d+\.\d+", lambda m: str(round(float(m.group()))) if abs(float(m.group())) >= 2
+                                     else m.group(), markup)) for name, markup in drawn.items()}
+    assert all(f in feelings for game in GAME_FEELINGS.values() for f in game.values())
+    return {"viewBox": "0 0 620 620", "fps": 8, "poses": poses, "feelings": feelings, "games": GAME_FEELINGS}
 
 
 def build() -> dict[str, object]:

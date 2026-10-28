@@ -20,7 +20,7 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QVBoxLayout
 
 from .. import gems, gems_store
-from .games_arcade import ArcadeGame, _label, _oc
+from .games_arcade import ArcadeGame, _label
 
 # a quiz protocol, as the field terms GEMS uses (for the Model and for picking questions from your field)
 PROTOCOL_TERMS = {
@@ -116,6 +116,7 @@ class Rise(ArcadeGame):
             self.tide -= dt * 4                      # gentle: about 27 s a row before it reaches GeeKOc
             if self.tide < self.me[1] + 30:
                 self.say("The tide caught GeeKOc.", 3)
+                self.feel("sad")
                 self.end()
                 return
         else:
@@ -134,6 +135,7 @@ class Rise(ArcadeGame):
                     if self.first_try:
                         self.answer(rid, True, self.ladder["level"], self.ladder["terms"])
                     self.row += 1
+                    self.feel("happy")
                     self.cam_to = -self.row * self.ROW
                     # a step up buys breathing room: the tide drops back to between 140 and 220 below GeeKOc
                     self.tide = min(max(self.tide, self.me[1] + 140), self.me[1] + 220)
@@ -147,6 +149,7 @@ class Rise(ArcadeGame):
                         self.answer(rid, False, self.ladder["level"], self.ladder["terms"])
                     self.first_try = False
                     self.mistakes += 1
+                    self.feel("sad", 1.4)
                     o["gone"] = True
                     self.say(o["why"], 3.6)
                     self.jump = {"from": list(self.me), "to": [self.W / 2, self._y(self.row)], "t": 0.0, "opt": None}
@@ -183,7 +186,7 @@ class Rise(ArcadeGame):
             p.drawRoundedRect(r, 10, 10)
             p.setPen(QColor("#f0f0f5"))
             p.drawText(r.adjusted(6, 4, -6, -4), Qt.AlignCenter | Qt.TextWordWrap, o["text"])
-        _oc(p, "jet" if self.jump else "cheer" if self.row and not self.opts[0].get("gone") else "wave", self.me[0], self.me[1], 86)
+        self.oc(p, "jump" if self.jump else "stand", self.me[0], self.me[1], 86)
         p.setBrush(QColor(8, 30, 70, 210))
         p.setPen(Qt.NoPen)
         p.drawRect(QRectF(0, self.tide, self.W, self.H + 4000))
@@ -237,7 +240,6 @@ class GoHome(ArcadeGame):
             self.doors[self._key(x, y, nx - x, ny - y)] = {"state": "shut", "a": (x, y), "b": (nx, ny)}
         self.at = [0, 0]
         self.anim = [0.0, 0.0, 1.0]                            # from x, from y, progress
-        self.face = "wave"
         self.home = False
         self.right_first = self.asked = 0
 
@@ -311,7 +313,7 @@ class GoHome(ArcadeGame):
         d = self.doors.get(k)
         if d and d["state"] == "locked":
             self.say("This door stays shut: find another way round.")
-            self.face = "think"
+            self.feel("sad")
             return
         if d and d["state"] == "shut":
             self._ask(d, dx, dy)
@@ -380,11 +382,11 @@ class GoHome(ArcadeGame):
         self.setFocus()
         if ok:
             d["state"] = "open"
-            self.face = "cheer"
+            self.feel("happy")
             self._step(dx, dy)
             return
         d["state"] = "locked"
-        self.face = "think"
+        self.feel("sad", 1.6)
         if self._path(self.at[0], self.at[1], lambda k: self.doors.get(k, {}).get("state") == "locked") is None:
             d["state"] = "shut"
             self.say("No other way round here: this door will ask a different question.", 3.2)
@@ -396,7 +398,7 @@ class GoHome(ArcadeGame):
             self.anim[2] = min(1.0, self.anim[2] + dt * 7)
             if self.anim[2] >= 1 and self.at == [self.CW - 1, self.CH - 1] and not self.home:
                 self.home = True
-                self.face = "wave"
+                self.feel("happy", 99)                       # home: happy to the end
                 QTimer.singleShot(400, self, lambda: self._card(
                     "GeeKOc is home!", f"{self.right_first} of {self.asked} doors opened on the first try.", "See how you did", self._done))
         self.hud(f"{self.right_first}/{self.asked} doors right")
@@ -444,7 +446,7 @@ class GoHome(ArcadeGame):
         k = self.anim[2]
         px = self.anim[0] + (self.at[0] - self.anim[0]) * k
         py = self.anim[1] + (self.at[1] - self.anim[1]) * k
-        _oc(p, self.face, ox + (px + 0.5) * s, oy + (py + 0.5) * s, s * 1.3)
+        self.oc(p, "stand", ox + (px + 0.5) * s, oy + (py + 0.5) * s, s * 1.3)
 
 
 GAMES = {"rise": Rise, "maze": GoHome}

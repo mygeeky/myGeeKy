@@ -4,18 +4,19 @@
 // GeeKOc (tap to puff ink and swim up through the right answer's gap). One engine runs them all: the world lives in a
 // ref touched only by the loop and by taps, the screen draws a plain snapshot, and the field is 420 wide in game units
 // (as on the desktop), scaled to the phone. Everything shown comes from the pack: plain text only.
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useApp } from '../lib/app-state';
 import * as G from '../lib/gems';
 import { finish, roundItems } from '../lib/games-store';
 import { C, tint } from '../lib/theme';
-import { GeekMover } from './tour-overlay';
+import { feelingOf, GeekStill } from './tour-overlay';
 
 type Result = Awaited<ReturnType<typeof finish>>;
 export type Ask = { title: string; kicker?: string; options: string[]; right: number; why: string; go: string };
 export type Api = {
   answer: (id: string, right: boolean, level: number, terms: string[]) => void; say: (t: string, s?: number) => void;
+  feel: (name: 'happy' | 'sad', s?: number) => void;                  // GeeKOc happy or sad for a moment
   end: (outro?: { title: string; text: string }) => void;              // an outro: a card before the result (Rise's pipeline)
   ask: (q: Ask, done: (right: boolean) => void) => void;                // a question over the field (the maze's doors)
 };
@@ -42,13 +43,15 @@ export function Pill({ text, x, y, bg, k, ink = '#1a1428', size = 13 }: { text: 
     </View>
   );
 }
-// true while the game waits behind a card (before Go, a question, the end): GeeKOc holds still then
-const Resting = createContext(false);
-export const Oc = ({ pose, x, y, size, k }: { pose: string; x: number; y: number; size: number; k: number }) => {
-  const resting = useContext(Resting);
+// the game on screen and how GeeKOc feels right now ('happy', 'sad' or '' for none): Oc reads it
+const Feeling = createContext({ game: '', feel: '' });
+/** GeeKOc still: happy or sad for a moment after something happened, else the moment the game is in ("stand",
+ *  "jump"). `hidden` blinks him (hurt) without taking the drawing away. */
+export const Oc = ({ moment = 'stand', x, y, size, k, hidden = false }: { moment?: string; x: number; y: number; size: number; k: number; hidden?: boolean }) => {
+  const { game, feel } = useContext(Feeling);
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: (x - size / 2) * k, top: (y - size / 2) * k }}>
-      <GeekMover pose={pose} size={size * k} paused={resting} />
+    <View pointerEvents="none" style={{ position: 'absolute', left: (x - size / 2) * k, top: (y - size / 2) * k, opacity: hidden ? 0 : 1 }}>
+      <GeekStill name={feelingOf(game, feel || moment)} size={size * k} />
     </View>
   );
 };
@@ -82,8 +85,8 @@ const WHACK: Spec = {
       const hx = W0 / 2 + ((i % 3) - 1) * (W0 / 3.2), hy = top + gap * Math.floor(i / 3) + gap * 0.6;
       if (h.up && Math.abs(x - hx) < 58 && y > hy - 80 && y < hy + 30) {
         const c = h.up.c; h.up = null;
-        if (c.bug) { w.score += 10; countOnce(w, api, c, true); }
-        else { w.score = Math.max(0, w.score - 15); countOnce(w, api, c, false); api.say(`You whacked a ${c.label.toLowerCase()}: ${c.why[0].toLowerCase()}${c.why.slice(1)}`); }
+        if (c.bug) { w.score += 10; countOnce(w, api, c, true); api.feel('happy'); }
+        else { w.score = Math.max(0, w.score - 15); countOnce(w, api, c, false); api.feel('sad'); api.say(`You whacked a ${c.label.toLowerCase()}: ${c.why[0].toLowerCase()}${c.why.slice(1)}`); }
       }
     });
   },
@@ -91,7 +94,7 @@ const WHACK: Spec = {
   draw: (v, k) => {
     const top = 190, gap = (v.H - top - 40) / 3;
     return <>
-      <Oc pose="point" x={54} y={56} size={96} k={k} />
+      <Oc x={54} y={56} size={96} k={k} />
       <Text style={[st.hudBig, { left: 104 * k, top: 40 * k }]}>{Math.max(0, Math.ceil(v.left))} s left · {v.score}</Text>
       {v.holes.map((h: any, i: number) => {
         const hx = W0 / 2 + ((i % 3) - 1) * (W0 / 3.2), hy = top + gap * Math.floor(i / 3) + gap * 0.6;
@@ -129,6 +132,7 @@ const CATCH: Spec = {
       w.right += ok ? 1 : 0;
       api.answer(`${w.set.id}:${c.name}`, ok, w.set.level, w.set.terms);
       w.flash = { lane: c.lane, ok, t: 0.8 };
+      api.feel(ok ? 'happy' : 'sad');
       if (!ok) api.say(`${c.name} goes in “${w.set.bins[c.bin]}”.`);
       w.cur = null;
     }
@@ -144,7 +148,7 @@ const CATCH: Spec = {
   },
   snap: (w) => ({ H: w.H, name: w.set?.name ?? '', bins: w.set?.bins ?? [], cur: w.cur && { ...w.cur }, flash: w.flash && { ...w.flash } }),
   draw: (v, k) => <>
-    <Oc pose="point" x={50} y={52} size={90} k={k} />
+    <Oc x={50} y={52} size={90} k={k} />
     <Text style={[st.hudBig, { left: 100 * k, top: 30 * k, right: 10 }]}>{v.name}</Text>
     {v.bins.map((b: string, i: number) => {
       const nb = v.bins.length, x = netX(i, nb), wNet = W0 / nb - 18, top = v.H - 110;
@@ -185,9 +189,9 @@ const RUN: Spec = {
         o.done = true;
         const ok = (w.y < -60) === o.top;
         api.answer(o.gate.id, ok, o.gate.level, o.gate.terms);
-        if (ok) w.bonus += 5; else { w.lives -= 1; w.hurt = 1; api.say(`${o.gate.q}? ${o.gate.right}.`); }
+        if (ok) { w.bonus += 5; api.feel('happy'); } else { w.lives -= 1; w.hurt = 1; api.feel('sad'); api.say(`${o.gate.q}? ${o.gate.right}.`); }
       } else if (o.label && o.x < px + 16 && o.x + o.w > px - 16 && -w.y < o.h - 6) {
-        o.done = true; w.lives -= 1; w.hurt = 1; api.say(`Ouch: ${o.label}!`, 1.2);
+        o.done = true; w.lives -= 1; w.hurt = 1; api.feel('sad'); api.say(`Ouch: ${o.label}!`, 1.2);
       }
     }
     w.obs = w.obs.filter((o: any) => o.x + o.w > -40);
@@ -216,7 +220,7 @@ const RUN: Spec = {
           </View>
         </View>
       ))}
-      {v.hurt <= 0 || Math.floor(v.dist / 12) % 2 ? <Oc pose={v.y < -2 ? 'jet' : 'wave'} x={92} y={g - 8 + v.y} size={76} k={k} /> : null}
+      <Oc moment={v.y < -2 ? 'jump' : 'stand'} x={92} y={g - 8 + v.y} size={76} k={k} hidden={v.hurt > 0 && !(Math.floor(v.dist / 12) % 2)} />
     </>;
   },
 };
@@ -236,17 +240,17 @@ const FLAPPY: Spec = {
       if (pp.done) continue;
       if (pp.x < gx + 14 && pp.x + 54 > gx - 14) {
         const inTop = w.y > t0 && w.y < t1, inLow = w.y > b0 && w.y < b1;
-        if (!inTop && !inLow && w.hurt <= 0) { w.lives -= 1; w.hurt = 1; api.say('Bonk! Into the coral.', 1.2); w.y = pp.top ? (t0 + t1) / 2 : (b0 + b1) / 2; w.vy = -100; }
+        if (!inTop && !inLow && w.hurt <= 0) { w.lives -= 1; w.hurt = 1; api.feel('sad'); api.say('Bonk! Into the coral.', 1.2); w.y = pp.top ? (t0 + t1) / 2 : (b0 + b1) / 2; w.vy = -100; }
         else if (inTop || inLow) pp.gap = inTop ? 'top' : 'low';
       } else if (pp.x + 54 <= gx - 14 && pp.gap) {
         pp.done = true;
         const ok = (pp.gap === 'top') === pp.top;
         api.answer(pp.g.id, ok, pp.g.level, pp.g.terms);
-        if (ok) w.bonus += 5; else { w.lives -= 1; w.hurt = 1; api.say(`${pp.g.q}? ${pp.g.right}.`); }
+        if (ok) { w.bonus += 5; api.feel('happy'); } else { w.lives -= 1; w.hurt = 1; api.feel('sad'); api.say(`${pp.g.q}? ${pp.g.right}.`); }
       } else if (pp.x + 54 <= gx - 14) pp.done = true;
     }
     w.pipes = w.pipes.filter((pp: any) => pp.x > -80);
-    if (w.y > w.H - 12 || w.y < 8) { if (w.hurt <= 0) { w.lives -= 1; w.hurt = 1; api.say('Careful: stay in the water!', 1.2); } w.y = w.H / 2; w.vy = -120; }
+    if (w.y > w.H - 12 || w.y < 8) { if (w.hurt <= 0) { w.lives -= 1; w.hurt = 1; api.feel('sad'); api.say('Careful: stay in the water!', 1.2); } w.y = w.H / 2; w.vy = -120; }
     if (w.lives <= 0 || (w.gi >= w.gates.length && !w.pipes.length)) api.end();
     w.hud = `gate ${Math.min(w.gi, w.gates.length)}/${w.gates.length} · ${'♥'.repeat(Math.max(0, w.lives))}`;
   },
@@ -265,7 +269,7 @@ const FLAPPY: Spec = {
         </View>
       ))}
       {nxt ? <Text style={[st.question, { color: '#fff', top: 10 * k }]}>{nxt.g.q}?</Text> : null}
-      <Oc pose={v.vy < 0 ? 'jet' : 'cheer'} x={120} y={v.y} size={66} k={k} />
+      <Oc moment={v.vy < 0 ? 'jump' : 'stand'} x={120} y={v.y} size={66} k={k} />
     </>;
   },
 };
@@ -292,6 +296,8 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
   const [view, setView] = useState<Record<string, any> | null>(null);
   const [hud, setHud] = useState('');
   const [msg, setMsg] = useState('');
+  const [feel, setFeel] = useState('');
+  const feeling = useMemo(() => ({ game: spec.game, feel }), [spec.game, feel]);
   const [started, setStarted] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
@@ -315,6 +321,7 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
   const api = useRef<Api>({
     answer: (iid, right, level, terms) => { meta.current.answers.push({ id: iid, right, level, terms: [...terms] }); },
     say: (t, s = 2.6) => { world.current.msg = t; world.current.msgT = s; wake.current(); },
+    feel: (name, s = 1) => { world.current.feel = name; world.current.feelT = s; },
     end: () => undefined,
     ask: (q, done) => { meta.current.paused = true; setAsk({ ...q, done, picked: null }); },
   });
@@ -334,13 +341,13 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
       last = now;
       const w = world.current, m = meta.current;
-      if (m.ready && !m.paused) spec.step(w, dt, api.current);
+      if (m.ready && !m.paused) { w.feelT = (w.feelT ?? 0) - dt; spec.step(w, dt, api.current); }   // held while paused
       w.msgT -= dt;
       // before Go, during a question and after the end nothing moves: draw once, then the loop rests (no frames
       // at all) until play goes on -- wake() starts it again
       const still = m.ready && m.paused && w.msgT <= 0;
       if (still && wasStill) { running = false; last = 0; return; }
-      if (m.ready) { setView(spec.snap(w)); setHud(w.hud); setMsg(w.msgT > 0 ? w.msg : ''); }
+      if (m.ready) { setView(spec.snap(w)); setHud(w.hud); setMsg(w.msgT > 0 ? w.msg : ''); setFeel(w.feelT > 0 ? w.feel : ''); }
       wasStill = still;
       raf = requestAnimationFrame(loop);
     };
@@ -364,7 +371,7 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
       <Pressable onPressIn={(e) => tap(e.nativeEvent.locationX, e.nativeEvent.locationY)} accessibilityRole="button" accessibilityLabel={spec.title}
                  style={[st.field, { height: fieldH, backgroundColor: spec.bg }]}
                  onLayout={(e) => { const { width, height } = e.nativeEvent.layout; setFieldW(width); world.current.W = W0; world.current.H = Math.max(360, (W0 * height) / width); }}>
-        <Resting.Provider value={!started || !!ask || !!outro}>{view && fieldW ? spec.draw(view, k) : null}</Resting.Provider>
+        <Feeling.Provider value={feeling}>{view && fieldW ? spec.draw(view, k) : null}</Feeling.Provider>
         {msg ? <Text style={st.msg}>{msg}</Text> : null}
         {outro ? (
           <View style={st.over}>
