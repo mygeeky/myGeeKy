@@ -236,7 +236,7 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
 
   const wake = useRef<() => void>(() => undefined);      // starts the frame loop again after it rested
   useEffect(() => {
-    let raf = 0, last = Date.now(), wasStill = false, running = false;
+    let raf = 0, last = Date.now(), wasStill = false, running = false, drawnAt = 0;
     const loop = () => {
       const w = world.current;
       const now = Date.now(), dt = Math.min(0.05, (now - last) / 1000);
@@ -267,7 +267,9 @@ function WordHunterPhone({ onAgain, onHub }: { onAgain: () => void; onHub: () =>
       // a card is up or the round is over: nothing moves, so draw once instead of 60 times a second
       const still = w.paused && w.msgT <= 0 && !w.laser;
       if (still && wasStill) { running = false; return; }      // rests (no frames at all) until Go wakes it
-      setView(snapOf(w));
+      // drawn 30 times a second: the rocks still move every frame on the real clock, only every other picture is
+      // skipped (the last one before a rest is always drawn)
+      if (still || now - drawnAt >= 29) { drawnAt = now; setView(snapOf(w)); }
       wasStill = still;
       raf = requestAnimationFrame(loop);
     };

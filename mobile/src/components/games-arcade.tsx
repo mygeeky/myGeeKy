@@ -23,6 +23,7 @@ export type Api = {
 export type World = Record<string, any> & { W: number; H: number; msg: string; msgT: number; bonus: number; hud: string };
 export type Spec = {
   game: string; title: string; howto: string; bg: string;
+  fps?: number;                       // how often the screen is drawn (the game itself still steps every frame); 60 if not said
   load: (weights: Record<string, number>) => Promise<G.Item[]>;
   init: (items: G.Item[], w: World) => void;
   step: (w: World, dt: number, api: Api) => void;
@@ -113,7 +114,7 @@ const WHACK: Spec = {
 const NET_COLORS = ['#7fd8ff', '#ffc457', '#34d399'];
 const netX = (i: number, n: number) => W0 / 2 + (i - (n - 1) / 2) * (W0 / n);
 const CATCH: Spec = {
-  game: 'catch', title: 'Sort the catch', bg: '#071628', howto: 'Names fall one at a time. Tap the net each one belongs in.',
+  game: 'catch', title: 'Sort the catch', bg: '#071628', fps: 30, howto: 'Names fall one at a time. Tap the net each one belongs in.',
   load: (wts) => roundItems('catch', 'sort', 1, wts),
   init: (items, w) => { w.set = items[0]; w.things = shuffle(w.set.things as [string, number][]).slice(0, 10); w.cur = null; w.flash = null; w.n = 0; w.right = 0; },
   step: (w, dt, api) => {
@@ -171,7 +172,7 @@ const Nets = memo(function Nets({ bins, H, lit, k }: { bins: string[]; H: number
 
 const BUGS = ['NaN', 'Segfault', '404', 'OOM', 'Merge conflict', 'Typo'];
 const RUN: Spec = {
-  game: 'run', title: 'GeeKOc run', bg: '#f4efe9',
+  game: 'run', title: 'GeeKOc run', bg: '#f4efe9', fps: 30,
   howto: 'Tap to jump. Jump the bugs. At a gate, jump for the top answer or stay low for the bottom one.',
   load: (wts) => roundItems('run', 'gate', 8, wts),
   init: (items, w) => { Object.assign(w, { gates: items, gi: 0, y: 0, vy: 0, obs: [], speed: 200, dist: 0, nextObs: 1.4, nextGate: 3.5, lives: 3, hurt: 0 }); },
@@ -234,7 +235,7 @@ const RUN: Spec = {
 
 const gaps = (H: number) => [[H * 0.16, H * 0.16 + 120], [H * 0.84 - 120, H * 0.84]] as const;
 const FLAPPY: Spec = {
-  game: 'flappy', title: 'Flappy GeeKOc', bg: '#0b3b5e',
+  game: 'flappy', title: 'Flappy GeeKOc', bg: '#0b3b5e', fps: 30,
   howto: 'Tap to puff ink and swim up. Fly through the gap of the right answer; the coral costs a life.',
   load: (wts) => roundItems('flappy', 'gate', 8, wts),
   init: (items, w) => { Object.assign(w, { gates: items, gi: 0, y: 200, vy: 0, pipes: [], next: 0.8, lives: 3, hurt: 0 }); },
@@ -359,7 +360,7 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
   }, [spec, profile, frames]);
 
   useEffect(() => {
-    let raf = 0, last = 0, wasStill = false, running = false, drawn = '';
+    let raf = 0, last = 0, wasStill = false, running = false, drawn = '', drawnAt = 0;
     const loop = (now: number) => {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
       last = now;
@@ -370,7 +371,12 @@ export function ArcadeEngine({ spec, onAgain, onHub, Result }: {
       // at all) until play goes on -- wake() starts it again
       const still = m.ready && m.paused && w.msgT <= 0;
       if (still && wasStill) { running = false; last = 0; return; }
-      if (m.ready) {
+      // games where something moves all the time draw 30 times a second (spec.fps): the world still steps every frame
+      // on the real clock, so nothing is slower; only every other picture is skipped. The last one before a rest is
+      // always drawn.
+      const due = !spec.fps || still || now - drawnAt >= 1000 / spec.fps - 4;
+      if (m.ready && due) {
+        drawnAt = now;
         // the screen is drawn again only when what it shows changed (a whack-a-bug field between pop-ups, a maze
         // GeeKOc isn't walking in): the same snapshot is not a new frame
         const v = spec.snap(w), key = JSON.stringify(v);
