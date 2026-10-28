@@ -57,7 +57,7 @@ def test_the_panel_tree_has_every_tab():
     t = panel_tree(True, True)
     tabs = {n["tab"] for n in nt.walk(t) if n["tab"]} - {"settings"}          # ⚙ Settings' pages: the ⚙ panel's, not tabs
     assert tabs == set(TABS), "every tab is somewhere under a group"
-    assert [g["id"] for g in t["children"]] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["settings"]   # 🏠 Home, the groups, ⚙ Settings
+    assert [g["id"] for g in t["children"]] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["games", "settings"]   # 🏠 Home, the groups, 🎮 Games, ⚙ Settings
     assert [c["id"] for c in nt.find(t, "settings")["children"]] == [
         "settings:accounts", "settings:profile", "settings:look", "settings:notify", "settings:data", "help"], "Accounts first, Help last"
     assert "admin" not in {n["tab"] for n in nt.walk(panel_tree(False, False))}
@@ -91,11 +91,11 @@ out({ groups: N.GROUPS, root: N.ROOT_LABEL, levels: ids.map((id: string) => N.le
     assert said["taps"] == [nt.tap(t, *x) for x in taps]
     assert said["rows"] == [nt.rows(n) for n in (2, 6, 7, 8)]
     assert said["leaf"] == ["repos:rising", "news:airace", None]
-    assert said["phoneGroups"] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["settings"]   # 🏠 Home first, ⚙ Settings last, as on the computer
+    assert said["phoneGroups"] == ["feed"] + [g["id"] for g in nt.GROUPS] + ["games", "settings"]   # 🏠 Home first, 🎮 Games, ⚙ Settings last, as on the computer
     assert said["phoneSettings"] == ["accounts", "profile", "look", "notify", "data", "help"]   # the same pages as ⚙'s
     assert said["phoneCircle"] == ["researchers", "live", "people", "activity", "signals"]   # no GitHub: what works first
     assert said["phoneTabs"] == sorted(["you", "grow", "news", "papers", "models", "launches", "live", "people", "activity",
-                                        "signals", "repos", "chances", "researchers", "feed", "help"])
+                                        "signals", "repos", "chances", "researchers", "feed", "help", "games"])
 
 
 def test_the_panel_row_goes_in_and_out(monkeypatch):

@@ -29,7 +29,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | Phone (`mobile/src/lib/…`) | Desktop (`src/mygeeky/…`) |
 |---|---|
 | `admin.ts` | `admin.py` |
-| `gems.ts` (+ `data/games.json`, `assets/games/`) | `gems.py` (+ `gems_store.py`, `data/games.json`, `gui/assets/game_*.png`) |
+| `gems.ts`, `games-store.ts` (+ `components/games-view.tsx`, `data/games.json`, `assets/games/`) | `gems.py`, `gems_store.py` (+ `gui/games_ui.py`, `data/games.json`, `gui/assets/game_*.png`) |
 | `badges.ts` | `badges.py` |
 | `collab.ts` | `collab.py` |
 | `contribute.ts` | `contribute.py` |

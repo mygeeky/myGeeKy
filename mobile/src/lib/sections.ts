@@ -16,7 +16,7 @@ import { C, BADGES, tint } from './theme';
 
 export type IconName = keyof typeof Ionicons.glyphMap;
 export type SectionId = 'feed' | 'live' | 'people' | 'researchers' | 'activity' | 'signals' | 'grow' | 'news' | 'papers' | 'repos' | 'models' | 'launches'
-  | 'chances' | 'you' | 'market' | 'discuss' | 'help';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
+  | 'chances' | 'you' | 'market' | 'discuss' | 'help' | 'games';     // market: Repos → 📈 Rising, discuss: News → Papers & discussions
 
 export type Section = { id: SectionId; label: string; color: string; icon: IconName; about: string };
 
@@ -38,6 +38,7 @@ export const SECTIONS: Record<SectionId, Section> = {
   discuss: { id: 'discuss', label: 'News', color: '#eab308', icon: 'chatbubbles-outline', about: 'New preprints and discussions matching your interests: arXiv, bioRxiv and Hacker News.' },
   you: { id: 'you', label: 'You', color: '#ffd24a', icon: 'person-outline', about: 'Your month and rank, your model, your badges and your settings.' },
   help: { id: 'help', label: 'Help', color: '#2dd4bf', icon: 'help-circle-outline', about: 'Tours with GeeKOc, and answers to how and why myGeeKy works.' },
+  games: { id: 'games', label: 'Games', color: '#a873f5', icon: 'game-controller-outline', about: 'Play with GeeKOc: short games from your own field.' },
 };
 
 export const INNER: SectionId[] = ['live', 'people', 'activity', 'signals', 'grow'];

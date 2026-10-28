@@ -11,6 +11,7 @@ import { Dict, lookup } from '../lib/interests';
 import { badgeCounts, type Brain, cachedBrain, disconnectModel, localEvents, queuedUsage, savingLink, syncModel } from '../lib/model-repo';
 import { loadDictionary } from '../lib/profile';
 import { C, medal } from '../lib/theme';
+import { badgeCounts as gameBadges } from '../lib/games-store';
 
 
 export function ModelPart() {
@@ -210,7 +211,7 @@ export function BadgesPart() {
       const show = async (brain: Brain | null | undefined) => {
         // connected: the desktop's own counts (achievements.counts), your computers and this phone together
         const fromRepo = brain?.usage ? badgeCounts(brain, await queuedUsage()) : undefined;
-        setMine(await earned(settings?.keywords.length ?? 0, settings?.desktopBadges ?? [], fromRepo));
+        setMine(await earned(settings?.keywords.length ?? 0, settings?.desktopBadges ?? [], fromRepo, await gameBadges().catch(() => ({}))));
       };
       const cached = await cachedBrain();
       await show(cached?.data);

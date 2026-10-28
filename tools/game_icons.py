@@ -2,6 +2,7 @@
 GEMS order: src/mygeeky/gems.py GAMES) and write one transparent PNG per game for both apps.
 
     python tools/game_icons.py ~/Downloads/sheet.jpeg
+    python tools/game_icons.py --hub ~/Downloads/geekoc-playing.jpeg     (the Games entry's own icon)
 
 Each tile is found as a block of non-white pixels; the white outside its rounded corners becomes transparent
 (flooded in from the tile's own edge, so white inside the drawing stays). Output, 256 px:
@@ -99,5 +100,27 @@ def main(sheet: str) -> None:
         print(f"{game['id']:10} {box}")
 
 
+def hub(picture: str) -> None:
+    """The Games entry's own icon (GeeKOc playing): one picture on white, cropped to the drawing, the white around
+    it transparent. Written as gui/assets/games_hub.png and mobile/assets/games/hub.png."""
+    img = QImage(picture)
+    if img.isNull():
+        raise SystemExit(f"can't read {picture}")
+    a = _array(img)
+    ink = (a[:, :, :3] < WHITE).any(axis=2)
+    ys, xs = np.where(ink)
+    sq = cut(a, (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1))
+    sq = np.ascontiguousarray(sq)
+    q = QImage(sq.data, sq.shape[1], sq.shape[0], sq.shape[1] * 4, QImage.Format_RGBA8888).copy()
+    q = q.scaled(SIZE, SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    q.save(str(ROOT / "src/mygeeky/gui/assets/games_hub.png"))
+    (ROOT / "mobile/assets/games").mkdir(parents=True, exist_ok=True)
+    q.save(str(ROOT / "mobile/assets/games/hub.png"))
+    print("hub", q.width(), q.height())
+
+
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else str(Path.home() / "Downloads/Gemini_Generated_Image_svw6q4svw6q4svw6.jpeg"))
+    if len(sys.argv) > 2 and sys.argv[1] == "--hub":
+        hub(sys.argv[2])
+    else:
+        main(sys.argv[1] if len(sys.argv) > 1 else str(Path.home() / "Downloads/Gemini_Generated_Image_svw6q4svw6q4svw6.jpeg"))

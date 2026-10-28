@@ -19,7 +19,7 @@ from typing import Any, Callable
 from PySide6.QtCore import QByteArray, QPointF, QRectF, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QPainter, QPen, QPixmap, QShortcut
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QToolButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QSizePolicy, QToolButton, QVBoxLayout, QWidget
 
 from .. import navtree
 
@@ -201,7 +201,13 @@ class FoldedTile(_Clickable):
     def __init__(self, rail: "NavRail", nd: dict[str, Any]) -> None:
         self.rail, self.nd = rail, nd
         super().__init__(lambda: rail.open_at(nd["id"]), rail.tip(nd))
-        self.setFixedSize(QSize(FOLDED_W - 6, 42))
+        self.setFixedWidth(FOLDED_W - 6)
+        self.setMinimumHeight(32)               # 42 when there's room; closer together on a short screen, so the
+        self.setMaximumHeight(42)               # folded menu never makes the panel taller than the screen
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        return QSize(FOLDED_W - 6, 42)
 
     def paintEvent(self, e) -> None:  # noqa: N802
         r, nd = self.rail, self.nd
@@ -213,7 +219,7 @@ class FoldedTile(_Clickable):
             p.setPen(Qt.NoPen)
             p.setBrush(bg)
             p.drawRoundedRect(QRectF(self.rect()).adjusted(2, 2, -2, -2), 9, 9)
-        side = 30
+        side = min(30, self.height() - 8)
         tile = QRectF((self.width() - side) / 2, (self.height() - side) / 2 + 2, side, side)
         path, emoji = r.icon_of(nd)
         paint_tile(p, tile, QColor(nd["color"]), path, emoji, filled=nd["id"] in r.path_ids, sub=False,
@@ -227,7 +233,7 @@ class VerticalLabel(QWidget):
     def __init__(self, rail: "NavRail") -> None:
         super().__init__()
         self.rail = rail
-        self.setMinimumHeight(40)
+        self.setMinimumHeight(0)                # it gives way first when the screen is short
 
     def paintEvent(self, e) -> None:  # noqa: N802
         leaf = self.rail.leaf()

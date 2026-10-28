@@ -22,6 +22,7 @@ import { C } from '../lib/theme';
 import { loadWins } from '../lib/wins';
 import { useToast } from './toast';
 import { GeekLoader, useHold } from './geek-loader';
+import { badgeCounts as gameBadges } from '../lib/games-store';
 
 const POSES = geekocData.poses as Record<string, string>;
 const CARD_MAX = 380;
@@ -50,7 +51,7 @@ async function extras(keywords: number) {
   const protocols = [...views.filter((v) => v.doneCount < v.total), ...views.filter((v) => v.doneCount >= v.total)].map((v) => ({
     title: v.title, steps: v.stages.map((st) => [st.title, st.status === 'done' || st.status === 'known'] as [string, boolean]) }));
   const level = (t: string) => TIERS.indexOf(t as typeof TIERS[number]) + 1;
-  const badges = (await earned(keywords).catch(() => [])).filter((b) => b.tier)
+  const badges = (await earned(keywords, [], undefined, await gameBadges().catch(() => ({}))).catch(() => [])).filter((b) => b.tier)
     .sort((a, b) => level(b.tier) - level(a.tier) || (a.name < b.name ? -1 : 1)).map((b) => [b.emoji, b.name, b.tier]);
   return { protocols, badges, sent, received, github: gh.events ?? [], langs: gh.langs ?? {} };
 }

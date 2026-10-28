@@ -127,6 +127,7 @@ export function phoneTree(hasGitHub: boolean, admin: boolean): Node {
     { ...G.chances, icon: 'briefcase-outline', children: [
       leaf('chances', 'seasons', 'Seasons', 'calendar-outline'), leaf('chances', 'jobs', 'Jobs', 'briefcase-outline'),
       leaf('chances', 'funding', 'Funding', 'cash-outline'), leaf('chances', 'conferences', 'Conferences', 'mic-outline')] },
+    { id: 'games', label: 'Games', icon: 'game-controller-outline', tab: 'games', color: '#a873f5' },   // 🎮 Play with GeeKOc (games-view.tsx)
     // ⚙ Settings, the last: Accounts first (what's connected, what needs you), then the rest, and ❓ Help (GeeKOc's tours
     // and the answers), as on the computer. The pages are You's parts (components/settings-parts.tsx).
     { id: 'settings', label: 'Settings', icon: 'settings-outline', color: '#2dd4bf', children: [

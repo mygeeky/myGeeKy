@@ -26,6 +26,8 @@ app; its rules are shared.
 | Which came first? | names with the year something happened |
 | Terminal typing | a task, two right commands and one wrong one; the computer types the right one, the phone picks |
 
+The screens: `gui/games_ui.py` (the hub, Word Hunter, Terminal typing), `games_cards.py` (the six card games), `games_arcade.py` (the four arcade games) and `games_adventure.py` (Rise, the maze) on the computer; `components/games-view.tsx`, `games-cards.tsx`, `games-arcade.tsx` and `games-adventure.tsx` on the phone. `tests/test_games_ui.py` plays a round of each on the computer.
+
 Adding a game: a row in `GAMES` on both apps, its icon (`tools/game_icons.py` cuts a 4 × 4 sheet), and a screen per
 app. If it needs a new kind of content, add the kind to `KINDS` and its check to `validate` on both apps.
 

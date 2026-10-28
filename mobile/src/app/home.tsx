@@ -47,6 +47,7 @@ import { checkTokens, SETTINGS_URL, type TokenState } from '../lib/tokens';
 import { reminder, signs as makeSigns, state as signState } from '../lib/signs';
 import { cards as accountCards, todo as accountsTodo } from '../lib/accounts';
 import { StatusSigns } from '../components/status-signs';
+import { GamesView } from '../components/games-view';
 import { recordInterest, savingLink, type SavingLink } from '../lib/model-repo';
 import { loadSeen, markSeen } from '../lib/seen';
 import { DOCK_IDLE_DEFAULT, dockIdleMs } from '../lib/prefs';
@@ -224,7 +225,7 @@ export default function Home() {
     repos: [repos, market], models: [models], launches: [launches], you: [], grow: [], chances: [], market: [market], discuss: [discuss],
     researchers: [],                                  // its own refresh (lib/researchers.ts, through WISEP)
     feed: [],                                         // 🏠 built from the others' saved copies (lib/feed-store.ts)
-    help: [],                                         // ❓ GeeKOc's tours and the answers: nothing to fetch
+    help: [], games: [],                                         // ❓ GeeKOc's tours and the answers: nothing to fetch
   };
 
   // a link can open a planet directly: mygeeky:///home?sel=news&fold=1&open=first
@@ -569,6 +570,8 @@ export default function Home() {
                 : youPart === 'profile' ? <ProfilePart go={goTo} /> : youPart === 'look' ? <LookPart /> : youPart === 'notify' ? <NotifyPart />
                 : youPart === 'data' ? <DataPart /> : <AccountsPart go={goTo} />}
             </View>
+          ) : sel === 'games' ? (
+            <GamesView />
           ) : sel === 'help' ? (
             <HelpView onStart={startTour} labelOf={(m) => find(tree, m === 'home' ? 'feed' : m)?.label ?? m} lang={tour ? 'touring' : 'idle'} />
           ) : !user && NEEDS_GITHUB[sel] ? (

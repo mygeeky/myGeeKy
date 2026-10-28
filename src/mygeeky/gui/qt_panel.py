@@ -1608,6 +1608,9 @@ GROUP_ICONS = {
     "world": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
     "circle": PLANETS["suggestions"][1],
     "feed": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",     # 🏠 Home, the first page
+    "games": ("M6 11h4M8 9v4M15 12h.01M18 10h.01M17.32 5H6.68a4 4 0 0 0-3.98 3.59C2.6 9.42 2 14.46 2 16a3 3 0 0 0 3 3"
+              "c1 0 1.5-.5 2-1l1.41-1.41A2 2 0 0 1 9.83 16h4.34a2 2 0 0 1 1.41.59L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3"
+              "c0-1.55-.6-6.58-.69-7.26A4 4 0 0 0 17.32 5z"),     # 🎮 Games: a game controller, a line icon like the others
     "settings": ("M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 "
                  "1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-2.82-1.17l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 "
                  "1.65 0 0 0 3 13H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83"
@@ -3568,6 +3571,7 @@ TABS = {
     "model": ("\U0001f9e0", "Model"),
     "badges": ("\U0001f3c5", "Badges"),
     "admin": ("\U0001f6e1", "Admin"),
+    "games": ("\U0001f3ae", "Games"),
     "help": ("\u2753", "Help"),
 }
 
@@ -3648,6 +3652,7 @@ def panel_tree(has_github: bool, is_admin: bool) -> dict[str, Any]:
         group("circle", [circle[k] for k in navtree.ordered(list(circle), has_github, NEEDS_GITHUB_TABS)]),
         group("repos", [n("repos", "Help out", tab="repos"), n("market:repos", "Rising", icon="\U0001f4c8", tab="market", part="repos")]),
         group("chances", modes("chances", MyGeekyPanel.CHANCE_MODES)),
+        n("games", "Games", "#a873f5", tab="games"),      # 🎮 Play with GeeKOc (games_ui.py): a page of its own, every game
         # ⚙ Settings, the last: its pages (the ⚙ panel's, Accounts first) and ❓ Help (GeeKOc's tours and the answers)
         n("settings", "Settings", "#2dd4bf", children=[
             *(n(f"settings:{key}", label, icon=icon, tab="settings", part=key) for key, (label, icon, _about) in SETTINGS_PAGES.items()),
@@ -3961,7 +3966,7 @@ class MyGeekyPanel(QWidget):
                  "researchers": self._build_researchers_tab(),
                  "signals": self._build_signals_tab(), "grow": self._build_grow_tab(),
                  "chances": self._build_chances_tab(), "model": self._build_you_tab(),
-                 "badges": self._build_badges_tab(), "help": self._build_help_tab()}
+                 "badges": self._build_badges_tab(), "games": self._build_games_tab(), "help": self._build_help_tab()}
         if self._is_admin:
             pages["admin"] = self._build_admin_tab()
         self._tab_order = [name for name in tabs if name in pages]
@@ -3994,6 +3999,12 @@ class MyGeekyPanel(QWidget):
         self.home_page = HomePage(self.cfg, lambda: THEMES[self._theme_name()], self._run_async, logic.open_link, go,
                                   label, color, lambda: self.panel_frame.isVisible() and self.isVisible())
         return self.home_page
+
+    def _build_games_tab(self) -> QWidget:
+        """🎮 Games (games_ui.py): Play with GeeKOc, every game on the GEMS rules."""
+        from .games_ui import GamesPage
+        self.games_page = GamesPage(self.cfg, lambda: THEMES[self._theme_name()], self._toast)
+        return self.games_page
 
     def _build_help_tab(self) -> QWidget:
         """❓ Help (help_ui.py): GeeKOc's tours again, and the answers to how and why myGeeKy works."""
@@ -10143,6 +10154,8 @@ class MyGeekyPanel(QWidget):
             self.researchers_page.shown()
         if name == "home":
             self.home_page.shown()
+        if name == "games":
+            self.games_page.shown()
         if name == "chances" and getattr(self, "_chances_pending", False):
             self._render_chances()
         if name in getattr(self, "_notify_dots", set()):     # the notification's dot: seen now
