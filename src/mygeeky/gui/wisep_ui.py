@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 from .. import wisep
 
@@ -62,7 +62,6 @@ class WisepSection(QWidget):
         lay.addWidget(self.head)
         lay.addWidget(self.about)
         lay.addWidget(self.numbers)
-        row = QHBoxLayout()
         self.mode_btn = QPushButton("")
         self.mode_btn.setToolTip("Auto: it decides alone once it has proven itself (14 days, 40% answered from what it "
                                  "kept). Always / Never: your choice. Click to change.")
@@ -75,13 +74,9 @@ class WisepSection(QWidget):
         self.key_btn.setToolTip("A free OpenAlex key gives you your own daily budget instead of the one everyone on "
                                 "your network shares. Kept in this computer's credential store.")
         self.key_btn.clicked.connect(self.key_menu)
-        for b in (self.mode_btn, self.key_btn):
-            b.setCursor(Qt.PointingHandCursor)
-            row.addWidget(b)
-        row.addStretch(1)
-        lay.addLayout(row)
-        self.forget_btn.setCursor(Qt.PointingHandCursor)            # on its own line: three fit no panel's width
-        lay.addWidget(self.forget_btn, 0, Qt.AlignLeft)
+        for b in (self.mode_btn, self.key_btn, self.forget_btn):   # one to a line: side by side they made ⚙ wider
+            b.setCursor(Qt.PointingHandCursor)                       # than the space beside a pinned menu
+            lay.addWidget(b, 0, Qt.AlignLeft)
         self.refresh()
 
     def refresh(self) -> None:

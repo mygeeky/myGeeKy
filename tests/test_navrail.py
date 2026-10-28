@@ -180,7 +180,8 @@ def test_settings_is_a_page_in_the_panel_with_a_way_back(panel):
     assert panel.content_stack.currentWidget() is panel.settings_panel
     assert panel.rail_host.isVisibleTo(panel) and panel.nav_head.isVisibleTo(panel)          # the menu and ‹ back stay
     assert panel.nav_trail.text() == "Settings \u203a Accounts" and "Settings" in panel.nav_back_text.text()
-    panel.settings_nav["look"].click()
+    panel._nav_open(navtree.find(panel.nav_tree, "settings:look"))       # the side menu moves between settings pages
+    assert not hasattr(panel, "settings_nav")                       # no second row of page buttons inside ⚙
     assert panel.nav_trail.text() == "Settings \u203a Look and window"
     panel.nav_back_text.click()                                     # up: the Settings level, in the panel
     assert panel._level_node()["id"] == "settings"

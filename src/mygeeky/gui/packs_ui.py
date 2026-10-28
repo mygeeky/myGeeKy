@@ -102,7 +102,9 @@ class PackSection(QWidget):
         following = rs.load()["following"]
         field = packs.make(self.cfg, {"field"})["f"]
         self.boxes["words"].setText(f"Keywords and topics ({len(self.cfg.keywords) + len(self.cfg.topics)})")
-        self.boxes["field"].setText("Research field" + (f" ({', '.join(field[:2])}…)" if field else " (none yet)"))
+        # short, so ⚙ fits beside a pinned menu (a checkbox never wraps): the field's names are in its tooltip
+        self.boxes["field"].setText("Research field" + (f" ({len(field)} area{'s' if len(field) != 1 else ''})" if field else " (none yet)"))
+        self.boxes["field"].setToolTip(", ".join(field))
         self.boxes["people"].setText(f"Researchers you follow ({len(following)})")
         p = self.pack()
         codes = packs.codes(p)

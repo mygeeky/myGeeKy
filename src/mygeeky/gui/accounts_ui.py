@@ -78,6 +78,14 @@ class AccountsSection(QWidget):
         b.clicked.connect(lambda _checked=False: on_click())
         return b
 
+    def _cols(self) -> int:
+        return 1 if self.isVisible() and self.width() < 300 else 2      # not laid out yet: two
+
+    def resizeEvent(self, e) -> None:  # noqa: N802
+        super().resizeEvent(e)
+        if (e.oldSize().width() >= 300) != (e.size().width() >= 300) and e.oldSize().width() > 0:
+            self.render()                    # the buttons go one or two to a row
+
     def _toggle(self, key: str) -> None:
         self.unfolded ^= {key}
         self.render()
@@ -124,11 +132,12 @@ class AccountsSection(QWidget):
             if not on or c["key"] in self.unfolded:
                 col.addWidget(self._label(c["why"], f"color:{t['text']}; font-size:11px; background:transparent;"))
                 buttons = c.get("actions") or ACTIONS.get((c["key"], c["state"]), [])
-                grid = QGridLayout()                 # two to a row: a 360px panel never grows wider for them
+                grid = QGridLayout()                 # two to a row, one when narrow (beside a pinned menu)
                 grid.setSpacing(6)
+                cols = self._cols()
                 for i, (label, action, kind) in enumerate(buttons):
-                    grid.addWidget(self._button(label, kind, lambda a=action: self.act(a)), i // 2, i % 2)
-                if len(buttons) == 1:
+                    grid.addWidget(self._button(label, kind, lambda a=action: self.act(a)), i // cols, i % cols)
+                if len(buttons) == 1 and cols == 2:
                     grid.setColumnStretch(1, 1)
                 if buttons:
                     col.addLayout(grid)

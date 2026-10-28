@@ -5,6 +5,7 @@ What changed in each myGeeKy release. Versions before 0.20.0 are described in
 
 ## Unreleased
 
+- **Settings pages without a second menu, and they fit** (computer). Each settings page had its own row of buttons for the other settings pages, though the side menu already lists them: the row is gone. Beside a pinned menu some settings were cut off on the right; the account buttons now go one to a row when narrow, the WISEP buttons one to a line, and the pack's research field is short (its names in the tooltip).
 - **Up a level works with the menu pinned** (computer). With the side menu pinned open, "‹ back" climbed from wherever the menu was browsing, not from the page: on Settings it said "‹ All sections", and on Home it showed a "‹ Home" that did nothing. It now always climbs from what the panel shows, and the menu drops down to the page you open.
 - **No stray "Turn Signals off" window** (computer). Opening Accounts with Signals on also opened a small, nearly empty window beside the panel: an old hidden button being shown with nowhere to sit. It no longer appears.
 - **Settings open inside the panel** (computer). Opening Accounts or any other settings page took over the whole panel: the side menu, the way back and where-you-are disappeared, and only ⚙ again closed it. Settings is now a page like the others: the menu stays, the trail says Settings › Accounts, "‹ Settings" goes up a level, and ⚙ still opens and closes it, returning to the page you were on.

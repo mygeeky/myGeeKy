@@ -7121,18 +7121,9 @@ class MyGeekyPanel(QWidget):
         main = QVBoxLayout(content)
         main.setContentsMargins(10, 10, 10, 10)
         main.setSpacing(8)
-        # its pages, as on the phone: buttons to move between them (the side menu steps aside while ⚙ is open), the
-        # page's name and what it holds, then the page; only the open one is shown, so ⚙ is as tall as that page
-        nav = QGridLayout()
-        nav.setSpacing(4)
-        self.settings_nav: dict[str, QPushButton] = {}
-        for i, (key, (label, icon, _about)) in enumerate(SETTINGS_PAGES.items()):
-            b = QPushButton(f"{icon} {label}".replace("&", "&&"))   # a single & would underline the next letter
-            b.setCursor(Qt.PointingHandCursor)
-            b.clicked.connect(lambda _checked=False, k=key: self._show_settings_page(k))
-            self.settings_nav[key] = b
-            nav.addWidget(b, i // 3, i % 3)
-        main.addLayout(nav)
+        # its pages: the page's name and what it holds, then the page; only the open one is shown, so ⚙ is as tall as
+        # that page. You move between them with the side menu (Settings › Accounts, Look…), as on the phone: no second
+        # row of page buttons here
         self.settings_title = QLabel("")
         self.settings_title.setTextFormat(Qt.PlainText)
         self.settings_about = QLabel("")
@@ -7601,7 +7592,7 @@ class MyGeekyPanel(QWidget):
         label, icon, about = SETTINGS_PAGES[key]
         self.settings_title.setText(f"{icon} {label}")
         self.settings_about.setText(about)
-        self._style_settings_nav()
+        self._style_settings_title()
         if hasattr(self, "settings_scroll"):
             self.settings_scroll.verticalScrollBar().setValue(0)
         if key == "accounts" and load:
@@ -7611,16 +7602,10 @@ class MyGeekyPanel(QWidget):
                 self.rail_host.follow_page()
             self._update_tab_styles()                     # the trail and the menu follow: Settings › Look
 
-    def _style_settings_nav(self) -> None:
-        if not hasattr(self, "settings_nav"):
+    def _style_settings_title(self) -> None:
+        if not hasattr(self, "settings_about"):
             return
         t = THEMES[self._theme_name()]
-        for k, b in self.settings_nav.items():
-            on = k == getattr(self, "_settings_page", "accounts")
-            bg, fg = (t["accent"], t["on_accent"]) if on else (t["btn_bg"], t["text"])
-            b.setStyleSheet(f"QPushButton {{ background:{bg}; color:{fg}; border:none; border-radius:9px; padding:4px 6px; "
-                            f"font-size:10.5px; font-weight:{800 if on else 600}; }} QPushButton:hover {{ background:{t['btn_hover']}; "
-                            f"color:{t['text']}; }}")
         self.settings_title.setStyleSheet(f"color:{t['title']}; font-size:15px; font-weight:800; background:transparent; margin-top:4px;")
         self.settings_about.setStyleSheet(f"color:{t['muted']}; font-size:11px; background:transparent;")
 
@@ -8062,7 +8047,7 @@ class MyGeekyPanel(QWidget):
         self.setPalette(pal)
         self.logo_label.setStyleSheet(f"color:{theme['title']}; font-weight:700; font-size:15px; background:transparent;")
         self._render_signs()
-        self._style_settings_nav()
+        self._style_settings_title()
         self.panel_frame.set_style(theme["bg"], theme["border"], radius=22.0)
         self.panel_frame.setStyleSheet(
             f"QLabel {{ color:{theme['text']}; }}"
