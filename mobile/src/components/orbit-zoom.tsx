@@ -8,7 +8,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { spot } from './tour-overlay';
 import { level, path, type Node } from '../lib/nav-tree';
-import { DashedOrbit, RING_GAP, useOrbitSpin } from './dashed-orbit';
+import { DashedOrbit, RING_GAP } from './dashed-orbit';
 import { C, tint } from '../lib/theme';
 
 /** The orbit's height for a screen width: the rings take this share, the rest is for the list. */
@@ -27,7 +27,6 @@ export function OrbitZoom({ width, height, at, open, counts, onTap, onJump, youL
   onTap: (id: string) => void; onJump: (id: string) => void; youLetter: string; hint: boolean;
 }) {
   const lvl = level(at);
-  const spin = useOrbitSpin();
   const onPath = new Set(path(open).map((n) => n.id));
   const trail = path(at);
   const cx = width / 2, cy = height / 2 + 18;
@@ -83,7 +82,7 @@ export function OrbitZoom({ width, height, at, open, counts, onTap, onJump, youL
                      style={{ position: 'absolute', left: x - labelW / 2, top: y - p / 2, width: labelW, alignItems: 'center' }}>
             <View style={[st.planet, { width: p, height: p, borderRadius: p / 2, borderColor: n.color, backgroundColor: on ? n.color : C.raised },
                           on && { shadowColor: n.color, shadowOpacity: 0.8, shadowRadius: 12, elevation: 8 }]}>
-              {n.children.length ? <DashedOrbit size={p} color={n.color} spin={spin} /> : null}
+              {n.children.length ? <DashedOrbit size={p} color={n.color} /> : null}
               <Ionicons name={n.icon as never} size={Math.round(p * 0.44)} color={on ? '#0d0d16' : n.color} />
               {count ? <View style={st.count}><Text style={st.countText}>{count > 99 ? '99+' : count}</Text></View> : null}
             </View>

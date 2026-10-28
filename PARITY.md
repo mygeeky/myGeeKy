@@ -17,8 +17,8 @@ platforms; remove it when the last one is done. See `.claude/skills/mygeeky-plat
 - 2026-10-18 · **Connecting the phone without a GitHub username**: the desktop refuses to make the pairing code
   (`gui/app.py` `phone_pairing`) and the phone refuses a code without one (`lib/pairing.ts`). Both sides must
   change together.
-- 2026-10-21 · **A dotted ring on planets that open into more**: the phone's orbit and folded dock draw a slowly
-  turning dashed ring around a planet with parts (`components/dashed-orbit.tsx`; none in the centre). The desktop's
+- 2026-10-21 · **A dotted ring on planets that open into more**: the phone's orbit and folded dock draw a still
+  dashed ring around a planet with parts (`components/dashed-orbit.tsx`; none in the centre). The desktop's
   planet row still shows the old small mark. Behind: the desktop.
 
 ## Checked, nothing to do

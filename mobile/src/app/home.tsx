@@ -14,7 +14,7 @@ import { BackHandler, Image, LayoutAnimation, Linking, NativeScrollEvent, Native
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polyline } from 'react-native-svg';
 import { darker, OrbitZoom, orbitHeight } from '../components/orbit-zoom';
-import { DashedOrbit, RING_GAP, useOrbitSpin } from '../components/dashed-orbit';
+import { DashedOrbit, RING_GAP } from '../components/dashed-orbit';
 import { find, firstLeaf, leafFor, level, path as navPath, phoneTree, rows as dockRows, tap as navTap, walk } from '../lib/nav-tree';
 import { HelpView } from '../components/help-view';
 import { UnfoldHandle } from '../components/unfold-handle';
@@ -480,7 +480,6 @@ export default function Home() {
 
   // the icon dock folds down to a thin handle when you leave it alone; one tap brings it back
   const [dockOpen, setDockOpen] = useState(true);
-  const spin = useOrbitSpin(collapsed && dockOpen);  // the dock's dotted rings (planets that open into more), only while shown
   const [dockTouched, setDockTouched] = useState(0);
   const fold = () => {                                    // the rings fold away: the dock first, then idle
     if (!collapsed) setDockOpen(true);
@@ -634,7 +633,7 @@ export default function Home() {
                     <View style={[st.dockDot, { width: dot, height: dot, borderRadius: dot / 2, borderColor: it.color,
                                                 backgroundColor: it.back ? darker(it.color) : on ? it.color : C.raised }]}>
                       <Ionicons name={it.icon as never} size={Math.round(dot * 0.46)} color={it.back ? '#fff' : on ? '#0d0d16' : it.color} />
-                      {it.more ? <DashedOrbit size={dot} color={it.color} spin={spin} /> : null}
+                      {it.more ? <DashedOrbit size={dot} color={it.color} /> : null}
                       {n && !it.back ? <View style={st.dockCount}><Text style={st.dockCountText}>{n > 99 ? '99+' : n}</Text></View> : null}
                     </View>
                     <Text style={[st.dockLabel, on && { color: it.color }, it.back && { color: C.text, fontWeight: '800' }, it.more && { marginTop: 3 + RING_GAP }]} numberOfLines={1}>
