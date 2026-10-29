@@ -1,0 +1,50 @@
+name: Join the map of scientists
+description: Ask to be shown on mygeeky.org among the scientists who use and support myGeeKy.
+title: "Join the map: "
+labels: ["join-the-map"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for using myGeeKy. Everything you write here is public, and it is shown on mygeeky.org exactly as you
+        give it, once the maker accepts it. You can ask to be removed at any time (comment on this issue, or email
+        support@mygeeky.org).
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: As you want it shown.
+    validations:
+      required: true
+  - type: input
+    id: role
+    attributes:
+      label: Role
+      placeholder: PhD student in plant genomics
+    validations:
+      required: true
+  - type: input
+    id: place
+    attributes:
+      label: Institution or city
+      placeholder: Lund University
+  - type: input
+    id: link
+    attributes:
+      label: A link about you (https)
+      description: ORCID, your lab page or your own website.
+      placeholder: https://orcid.org/0000-0002-1825-0097
+  - type: input
+    id: fields
+    attributes:
+      label: Your fields, up to six words, separated by commas
+      placeholder: GWAS, single cell, R, statistics
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Consent
+      options:
+        - label: I agree that the name, role, institution, link and fields above are shown publicly on mygeeky.org.
+          required: true

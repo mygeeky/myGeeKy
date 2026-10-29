@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -56,10 +57,56 @@ def version() -> str:
     return re.search(r'^version = "([^"]+)"', text, re.M).group(1)
 
 
+def scientists() -> list[dict]:
+    """website/scientists.json, checked: only the fields the page shows, plain text, an https link, at most six fields.
+    A wrong entry stops the build (the maker fixes it) rather than reaching the page."""
+    import json
+    items = json.loads((ROOT / "website/scientists.json").read_text(encoding="utf-8")).get("scientists", [])
+    out = []
+    for i, p in enumerate(items):
+        def text(key: str, most: int, need: bool = False) -> str:
+            v = p.get(key, "")
+            if not isinstance(v, str) or len(v) > most or (need and not v.strip()):
+                raise SystemExit(f"website/scientists.json, entry {i + 1}: '{key}' must be text, at most {most} characters")
+            return v.strip()
+        link = text("link", 200)
+        if link and not link.startswith("https://"):
+            raise SystemExit(f"website/scientists.json, entry {i + 1}: the link must start with https://")
+        fields = p.get("fields", [])
+        if not isinstance(fields, list) or not 1 <= len(fields) <= 6 or not all(isinstance(f, str) and 0 < len(f) <= 30 for f in fields):
+            raise SystemExit(f"website/scientists.json, entry {i + 1}: 1 to 6 fields, each at most 30 characters")
+        out.append({"name": text("name", 80, True), "role": text("role", 80), "place": text("place", 80), "link": link,
+                    "fields": [f.strip() for f in fields], "since": text("since", 7)})
+    return out
+
+
+def fields_covered() -> list[str]:
+    """What the word map shows until scientists join: the broad fields myGeeKy covers and its most used field words
+    (the app's own dictionary, data/keywords.json)."""
+    import json
+    sys.path.insert(0, str(ROOT / "src"))
+    from mygeeky import datasets
+    broad = [label for key, label, _icon, _about in datasets.FIELD_PARTS if key not in ("for-you", "new")]
+    terms = json.loads((ROOT / "src/mygeeky/data/keywords.json").read_text(encoding="utf-8"))["terms"]
+    labels = sorted({t["label"] for t in terms.values() if 2 < len(t["label"]) <= 18 and not any(c.isdigit() for c in t["label"])},
+                    key=lambda w: (-len(terms.get(w.replace(" ", "-"), {}).get("related", [])), w))
+    words: list[str] = []
+    for _field, pattern in datasets.FIELD_WORDS:          # about three of the dictionary's words for each field
+        words += [w for w in labels if re.search(pattern, w, re.I) and w not in words][:3]
+    return broad + [w for w in words if w.lower() not in {b.lower() for b in broad}]
+
+
+def map_data() -> str:
+    import json
+    text = json.dumps({"scientists": scientists(), "fields": fields_covered()}, ensure_ascii=False)
+    return text.replace("</", "<\\/")        # never closes the <script> it sits in
+
+
 def main() -> None:
     shutil.rmtree(OUT, ignore_errors=True)
     (OUT / "img").mkdir(parents=True)
     html = (ROOT / "website/index.html").read_text(encoding="utf-8").replace("{{VERSION}}", version())
+    html = html.replace("{{MAP_DATA}}", map_data())
     (OUT / "index.html").write_text(html, encoding="utf-8")
     for page in ("privacy.html", "terms.html", "delete.html", "orcid/index.html"):   # other pages (delete: Play's deletion URL)
         (OUT / page).parent.mkdir(parents=True, exist_ok=True)

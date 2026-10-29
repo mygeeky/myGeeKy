@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>myGeeKy · your geeky friend who helps you grow, quietly</title>
-<meta name="description" content="myGeeKy helps you see what is moving in your field, learn what comes next, meet the people working on the same problems, and catch opportunities while they are still open. It runs on your computer, only suggests, and never acts for you. Free and open source.">
+<meta name="description" content="myGeeKy helps you see what is moving in your field, learn what comes next, meet the people working on the same problems, catch opportunities while they are still open, and play games made from your own field. On your phone and your computer. It only suggests and never acts for you. Free and open source.">
 <meta property="og:title" content="myGeeKy">
-<meta property="og:description" content="Your geeky friend who helps you grow, quietly: see, learn, meet and catch, in one small panel on the edge of your screen.">
+<meta property="og:description" content="Your geeky friend who helps you grow, quietly: on your phone and as a small panel on the edge of your screen.">
 <meta property="og:image" content="https://mygeeky.org/img/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -15,21 +15,20 @@
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
   :root {
-    --bg: #141416;            /* the charcoal behind the character, so the picture blends in */
-    --card: rgba(255, 255, 255, 0.045);
-    --card-hi: rgba(255, 255, 255, 0.08);
-    --line: rgba(255, 255, 255, 0.10);
+    --bg: #141416;
+    --card: rgba(255, 255, 255, 0.05);
+    --card-hi: rgba(255, 255, 255, 0.09);
+    --line: rgba(255, 255, 255, 0.11);
     --text: #f2f2f7;
-    --muted: rgba(242, 242, 247, 0.66);
+    --muted: rgba(242, 242, 247, 0.68);
     --pink: #ff6fd8;
     --violet: #7a5cff;
     --cyan: #7fd8ff;
     --green: #34d399;
     --amber: #ffc457;
-    --red: #f87171;
-    --gold: #e0ad4a;          /* the video's dark gold, for names */
     --grad: linear-gradient(100deg, var(--pink), var(--violet) 55%, var(--cyan));
-    --radius: 20px;
+    --radius: 18px;
+    --c: var(--violet);                 /* the open planet's colour */
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -38,1037 +37,656 @@
   a { color: var(--cyan); text-decoration: none; }
   a:hover { text-decoration: underline; }
   img { max-width: 100%; display: block; }
-  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 16px; }
-  code, pre, .mono { font-family: "JetBrains Mono", Consolas, monospace; }
-  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 6px; }
-
-  /* the living background: drifting aurora + a starfield canvas */
-  #sky { position: fixed; inset: 0; z-index: -2; width: 100%; height: 100%; }
-  .aurora { position: fixed; inset: -20%; z-index: -3; filter: blur(90px); opacity: .22;
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  code, pre { font-family: "JetBrains Mono", Consolas, monospace; }
+  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 8px; }
+  .g { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .eyebrow { font-size: 13px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--c); }
+  h1, h2, h3 { line-height: 1.12; margin: 0; letter-spacing: -.02em; }
+  h2 { font-size: clamp(28px, 4.4vw, 44px); }
+  .sub { color: var(--muted); font-size: 17px; max-width: 640px; }
+  .center { text-align: center; }
+  .center .sub { margin-left: auto; margin-right: auto; }
+  section { padding: 72px 0; }
+  .aurora { position: fixed; inset: -20%; z-index: -3; filter: blur(90px); opacity: .2; pointer-events: none;
             background: radial-gradient(40% 35% at 20% 25%, rgba(255,111,216,.35), transparent 70%),
-                        radial-gradient(35% 30% at 80% 20%, rgba(122,92,255,.40), transparent 70%),
-                        radial-gradient(40% 35% at 60% 85%, rgba(127,216,255,.22), transparent 70%);
-            animation: drift 28s ease-in-out infinite alternate; }
-  @keyframes drift { to { transform: translate3d(4%, -3%, 0) rotate(8deg) scale(1.08); } }
+                        radial-gradient(35% 30% at 80% 20%, rgba(122,92,255,.4), transparent 70%),
+                        radial-gradient(40% 35% at 60% 85%, rgba(127,216,255,.22), transparent 70%); }
 
-  /* nav */
-  nav { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px) saturate(140%);
-        background: rgba(20, 20, 22, 0.72); border-bottom: 1px solid var(--line); }
-  nav .wrap { display: flex; align-items: center; gap: 20px; height: 62px; }
+  /* header */
+  header.top { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(14px) saturate(140%);
+               background: rgba(20, 20, 22, .74); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 14px; height: 60px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; color: var(--text); }
   .brand:hover { text-decoration: none; }
   .brand img { width: 30px; height: 30px; }
-  nav .links { margin-left: auto; display: flex; gap: 22px; font-size: 14.5px; align-items: center; }
-  nav .links a { color: var(--muted); }
-  nav .links a:hover { color: var(--text); text-decoration: none; }
-  nav .links .btn { padding: 8px 14px; font-size: 13.5px; color: var(--text); }
+  header.top nav { margin-left: auto; display: flex; gap: 18px; align-items: center; }
+  header.top nav a { color: var(--muted); font-size: 15px; }
+  header.top nav a:hover { color: var(--text); text-decoration: none; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border-radius: 14px;
+         font-weight: 700; font-size: 15px; color: var(--text); background: var(--card); border: 1px solid var(--line); }
+  .btn:hover { background: var(--card-hi); text-decoration: none; }
+  .btn.primary { background: linear-gradient(120deg, var(--pink), var(--violet)); border: 0; color: #fff;
+                 box-shadow: 0 10px 30px rgba(122, 92, 255, .35); }
+  header.top .btn { padding: 8px 14px; font-size: 14px; }
 
-  /* buttons */
-  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 14px;
-         font-weight: 650; font-size: 15px; color: var(--text); border: 1px solid var(--line);
-         background: var(--card); transition: transform .2s, background .2s, box-shadow .2s; }
-  .btn:hover { text-decoration: none; transform: translateY(-2px); background: var(--card-hi); }
-  .btn.primary { background: var(--grad); background-size: 200% 100%; border: none;
-                 box-shadow: 0 10px 40px rgba(255, 111, 216, 0.30); animation: shimmer 6s linear infinite; }
-  .btn.primary:hover { box-shadow: 0 14px 50px rgba(255, 111, 216, 0.45); }
-  @keyframes shimmer { to { background-position: 200% 0; } }
+  /* hero: the orbit is the menu */
+  .hero { padding: 30px 0 10px; position: relative; }
+  .hero h1 { font-size: clamp(30px, 5.2vw, 56px); text-align: center; max-width: 820px; margin: 0 auto; }
+  .hero .lead { text-align: center; color: var(--muted); font-size: clamp(16px, 2vw, 18px); max-width: 700px; margin: 14px auto 0; }
+  #net { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; opacity: .5; pointer-events: none; }
+  .orbit { position: relative; width: min(92vw, 560px); aspect-ratio: 1; margin: 18px auto 0; }
+  .orbit .ring { position: absolute; inset: 15%; border-radius: 50%; border: 2px dashed rgba(255, 255, 255, .16); }
+  .orbit .core { position: absolute; left: 50%; top: 50%; width: 38%; aspect-ratio: 1; transform: translate(-50%, -50%);
+                 border-radius: 50%; border: 0; padding: 0; cursor: pointer; color: var(--text);
+                 background: radial-gradient(circle at 50% 40%, rgba(122, 92, 255, .32), rgba(122, 92, 255, .05) 70%);
+                 box-shadow: 0 0 0 2px rgba(255, 255, 255, .08) inset; }
+  .orbit .core canvas { width: 100%; height: 100%; display: block; }
+  .orbit .core .tag { position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); font-size: 12px; font-weight: 800;
+                      letter-spacing: .12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .planet { position: absolute; width: 21%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+            border: 2px solid var(--p); background: rgba(20, 20, 22, .82); color: var(--text); cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0;
+            font: inherit; transition: transform .2s, box-shadow .2s, background .2s; }
+  .planet .ico { font-size: clamp(20px, 4.6vw, 30px); line-height: 1; }
+  .planet .name { font-size: clamp(11px, 2.4vw, 14px); font-weight: 800; }
+  .planet:hover { transform: translate(-50%, -50%) scale(1.06); }
+  .planet[aria-selected="true"] { background: var(--p); color: #141416; box-shadow: 0 0 0 6px color-mix(in srgb, var(--p) 25%, transparent), 0 10px 40px color-mix(in srgb, var(--p) 45%, transparent); }
+  .orbit-hint { text-align: center; color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .ctas { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 22px; }
+  .pip { display: inline-flex; align-items: center; gap: 10px; margin: 14px auto 0; padding: 8px 8px 8px 14px; border-radius: 12px;
+         background: rgba(0, 0, 0, .35); border: 1px solid var(--line); font-size: 14px; }
+  .pip button { background: var(--card-hi); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px;
+                font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .hero .meta { text-align: center; }
 
-  /* hero: the words on the left, GeekOc alive on the right */
-  .hero { padding: 64px 0 20px; position: relative; }
-  .hero .wrap.row { display: block; }
-  .hero .wrap:not(.row) { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 32px; align-items: center; }
-  /* the badge and the pill: centred over everything, the first thing you see */
-  .hero .wrap.badge-row { display: flex; flex-direction: column; align-items: center; gap: 18px; margin-bottom: 34px; }
-  .hero .logo { width: 150px; height: 150px; animation: float 6s ease-in-out infinite;
-                filter: drop-shadow(0 14px 40px rgba(255,111,216,.5)); }
-  @keyframes float { 50% { transform: translateY(-8px) rotate(-2deg); } }
-  .pill { display: inline-flex; gap: 10px; align-items: center; padding: 10px 22px; border-radius: 99px;
-          border: 1px solid var(--line); background: var(--card); font-size: 17px; color: var(--muted); }
-  .pill b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  h1 { font-size: clamp(38px, 5.6vw, 66px); line-height: 1.04; margin: 0 0 20px; font-weight: 900; letter-spacing: -0.035em; text-wrap: balance; }
-  .g { background: var(--grad); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
-       color: transparent; animation: shimmer 8s linear infinite; }
-  .lead { font-size: clamp(17px, 1.9vw, 20px); color: var(--muted); max-width: 600px; margin: 0 0 28px; }
-  .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
-  .pip { margin: 20px 0 0; display: inline-flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px;
-         border-radius: 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--line); font-size: 14.5px; max-width: 100%; }
-  .pip .dollar { color: var(--pink); }
-  .pip button { cursor: pointer; border: none; border-radius: 8px; padding: 6px 10px; color: var(--text);
-                background: rgba(255,255,255,.1); font: 600 12.5px Inter, sans-serif; }
-  .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
-  .note a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.3); }
-  .geek { position: relative; aspect-ratio: 1 / 1; width: 100%; max-width: 480px; justify-self: center; }
-  .geek canvas { width: 100%; height: 100%; display: block; cursor: grab; }
-  .geek::before { content: ""; position: absolute; inset: 14%; border-radius: 50%; background: var(--grad);
-                  filter: blur(70px); opacity: .25; z-index: -1; }
-  .geek .says { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); white-space: nowrap;
-                font-size: 13px; color: var(--muted); background: rgba(0,0,0,.35); border: 1px solid var(--line);
-                border-radius: 99px; padding: 5px 12px; }
+  /* the story a planet opens */
+  #stories { padding: 26px 0 40px; scroll-margin-top: 70px; }
+  .story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 36px; align-items: center;
+           padding: 30px; border-radius: 26px; background: var(--card); border: 1px solid var(--line);
+           border-top: 3px solid var(--c); }
+  .js .story:not(.open) { display: none; }
+  .no-js .story + .story { margin-top: 20px; }
+  .story h2 { font-size: clamp(26px, 3.6vw, 38px); margin-top: 6px; }
+  .story .quote { font-style: italic; color: var(--muted); margin: 10px 0 0; }
+  .ticks { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 10px; }
+  .ticks li { position: relative; padding-left: 26px; }
+  .ticks li::before { content: "✦"; position: absolute; left: 0; color: var(--c); }
+  .shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  .shots.one { grid-template-columns: minmax(0, 1fr); }
+  .shots figure { margin: 0; }
+  .shots img { border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
+  .shots figcaption { color: var(--muted); font-size: 13px; text-align: center; margin-top: 8px; }
+  .story .more { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .story .more button { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 999px;
+                        padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+  .story .more button:hover { color: var(--text); border-color: rgba(255, 255, 255, .3); }
 
-  /* the four promises, under the hero */
-  .four { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 44px; }
-  .four a { display: grid; gap: 6px; align-content: start; padding: 20px; border-radius: var(--radius); color: var(--text);
-            background: var(--card); border: 1px solid var(--line); position: relative; overflow: hidden;
-            transition: transform .3s, border-color .3s, background .3s; }
-  .four a::after { content: ""; position: absolute; inset: auto -40% -70% auto; width: 200px; height: 200px; border-radius: 50%;
-                   background: var(--c); opacity: .16; filter: blur(46px); }
-  .four a:hover { text-decoration: none; transform: translateY(-4px); border-color: rgba(255,255,255,.22); background: var(--card-hi); }
-  .four .ico { font-size: 28px; }
-  .four b { font-size: 19px; }
-  .four span { color: var(--muted); font-size: 14.5px; }
-  .four i { font-style: normal; font-size: 13px; color: var(--c); margin-top: 4px; }
+  /* scientists: a network and a word map */
+  #scientists { --c: var(--cyan); }
+  .map-card { margin-top: 30px; border-radius: 26px; border: 1px solid var(--line); background: rgba(0, 0, 0, .25);
+              position: relative; overflow: hidden; }
+  #map { display: block; width: 100%; height: clamp(320px, 52vw, 520px); }
+  .map-empty { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; max-width: 360px;
+               padding: 20px 22px; border-radius: 18px; background: rgba(20, 20, 22, .86); border: 1px solid var(--line); }
+  .map-empty b { font-size: 18px; display: block; margin-bottom: 6px; }
+  .map-empty p { color: var(--muted); margin: 0 0 14px; font-size: 15px; }
+  .map-tip { position: absolute; pointer-events: none; padding: 10px 12px; border-radius: 12px; background: rgba(20, 20, 22, .94);
+             border: 1px solid var(--line); font-size: 14px; max-width: 260px; display: none; }
+  .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
+  .person { padding: 14px 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+  .person b { display: block; }
+  .person span { color: var(--muted); font-size: 14px; display: block; }
+  .person .f { margin-top: 6px; color: var(--cyan); font-size: 13px; }
+  .join { margin-top: 18px; text-align: center; color: var(--muted); }
 
-  /* sections */
-  section { padding: 84px 0; position: relative; }
-  .eyebrow { color: var(--pink); font-weight: 700; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; }
-  h2 { font-size: clamp(30px, 4vw, 46px); line-height: 1.1; margin: 10px 0 14px; letter-spacing: -0.025em; font-weight: 800; text-wrap: balance; }
-  h3 { text-wrap: balance; }
-  .sub { color: var(--muted); max-width: 690px; margin: 0 0 40px; font-size: 17.5px; }
-  .center { text-align: center; }
-  .center .sub { margin-left: auto; margin-right: auto; }
-
-  /* a pillar's opening: big emoji, the promise, and GeekOc's line */
-  .pillar-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; margin-bottom: 42px; max-width: 880px; }
-  .pillar-head .big { width: 84px; height: 84px; border-radius: 26px; display: grid; place-items: center; font-size: 42px;
-                      background: var(--card); border: 1px solid var(--line); box-shadow: inset 0 -3px 0 var(--c); }
-  .pillar-head h2 { margin: 6px 0 8px; }
-  .pillar-head .eyebrow { color: var(--c); }
-  .quote { margin: 0; color: var(--muted); font-size: 17px; font-style: italic; }
-  .quote::before { content: "GeekOc: "; font-style: normal; font-weight: 700; color: var(--text); font-size: 14px; }
-  .pillar + .pillar { border-top: 1px solid var(--line); }
-
-  /* reveal on scroll */
-  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.8,.2,1); }
-  .reveal.in { opacity: 1; transform: none; }
-
-  /* feature rows */
-  .feature { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
-  .feature + .feature, .feature + .three, .three + .feature { margin-top: 70px; }
-  .feature.flip .copy { order: 2; }
-  .feature .pic { display: flex; justify-content: center; position: relative; }
-  .feature .pic img { max-width: 380px; width: 100%; border-radius: 24px; box-shadow: 0 40px 100px rgba(0,0,0,.55); }
-  .feature .pic.phone img { max-width: 290px; border-radius: 30px; }
-  .feature .pic { flex-direction: column; align-items: center; }
-  .where { margin-top: 14px; font-size: 13px; color: var(--muted); letter-spacing: .02em; }
-  #phone .pic img { max-width: 620px; border-radius: 18px; }
-  .phones { display: flex; gap: 18px; overflow-x: auto; padding: 8px 4px 22px; margin-top: 46px; scroll-snap-type: x proximity; }
-  .phones figure { flex: 0 0 190px; margin: 0; scroll-snap-align: center; text-align: center; }
-  .phones img { width: 100%; border-radius: 22px; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
-  .phones figcaption { margin-top: 10px; font-size: 13.5px; color: var(--muted); }
-  .feature h3 { font-size: clamp(22px, 2.6vw, 30px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -.015em; }
-  .feature .sub { margin-bottom: 18px; font-size: 16.5px; }
-  .ticks { list-style: none; padding: 0; margin: 0; }
-  .ticks li { padding: 7px 0 7px 32px; position: relative; color: var(--muted); }
-  .ticks li::before { content: "✦"; position: absolute; left: 6px; color: var(--pink); }
-  .ticks b { color: var(--text); }
-  .emoji-row { font-size: 30px; letter-spacing: 10px; margin: 2px 0 14px; }
-  .emoji-row span { display: inline-block; animation: bob 2.4s ease-in-out infinite; }
-  .emoji-row span:nth-child(2) { animation-delay: .2s } .emoji-row span:nth-child(3) { animation-delay: .4s }
-  .emoji-row span:nth-child(4) { animation-delay: .6s } .emoji-row span:nth-child(5) { animation-delay: .8s }
-  @keyframes bob { 50% { transform: translateY(-8px); } }
-  .badge-p { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--green);
-             color: #06281c; font-weight: 900; font-size: 13px; vertical-align: -4px; }
-  .sources { margin-top: 18px; font-size: 13.5px; color: var(--muted); }
-  .sources b { color: var(--text); }
-
-  /* interactive tab showcase */
-  .show { display: grid; grid-template-columns: 1fr 400px; gap: 56px; align-items: center; }
-  .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: center; }
-  .tabbtn { text-align: left; cursor: pointer; border: 1px solid transparent; background: transparent; color: var(--text);
-            border-radius: 16px; padding: 14px 18px; font: inherit; transition: background .25s, border-color .25s; position: relative; overflow: hidden; }
-  .tabbtn b { font-size: 16.5px; }
-  .tabbtn span { display: block; color: var(--muted); font-size: 14px; max-height: 0; overflow: hidden; transition: max-height .4s; }
-  .tabbtn.on { background: var(--card-hi); border-color: var(--line); }
-  .tabbtn.on span { max-height: 90px; }
-  .tabbtn .prog { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--grad); }
-  .tabbtn.on .prog { animation: prog var(--dur, 6s) linear forwards; }
-  @keyframes prog { to { width: 100%; } }
-  .frame { position: relative; aspect-ratio: 760 / 870; }
-  .frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; border-radius: 26px;
-               opacity: 0; transform: scale(.97) translateY(10px); transition: opacity .6s, transform .6s; }
-  .frame img.on { opacity: 1; transform: none; }
-  .frame::before { content: ""; position: absolute; inset: 8% -8%; background: var(--grad); filter: blur(80px); opacity: .22; z-index: -1; }
-  .tabcap { display: none; }
-
-  /* the live interest map */
-  .mapcard { background: var(--card); border: 1px solid var(--line); border-radius: 28px; padding: 10px; max-width: 460px; width: 100%; margin: 0 auto; }
-  #map { width: 100%; aspect-ratio: 1 / 1; display: block; }
-  .legend { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding: 4px 0 12px; }
-  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
-
-  /* cards */
-  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
-  .card h3 { margin: 0 0 8px; font-size: 17.5px; }
-  .card p { margin: 0; color: var(--muted); font-size: 15px; }
-  .card .ico { font-size: 28px; margin-bottom: 6px; }
-  .card .first { margin-top: 10px; font-size: 13.5px; color: var(--text); }
-  .card .first b { color: var(--cyan); }
-
-  /* who it's for */
-  .why { display: grid; grid-template-columns: minmax(220px, 360px) 1fr; gap: 44px; align-items: center; margin-bottom: 40px; }
-  .why img { width: 100%; height: auto; aspect-ratio: 1;          /* no frame: its charcoal is the page's own */
-            -webkit-mask-image: radial-gradient(closest-side, #000 78%, transparent 100%);
-                    mask-image: radial-gradient(closest-side, #000 78%, transparent 100%); }
-  .alone { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 22px; margin: 22px 0 0; padding: 0; list-style: none; }
-  .alone li { color: var(--muted); font-size: 15px; }
-  .alone b { color: var(--text); display: block; }
-  .scope { color: var(--muted); font-size: 14.5px; max-width: 820px; margin: 26px auto 0; text-align: center; }
-
-  /* never */
-  .never { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
-  .never .card { padding: 22px 18px; text-align: center; display: grid; gap: 8px; align-content: start; }
-  .never .badge { width: 64px; height: 64px; margin: 0 auto 6px; border-radius: 50%; display: grid; place-items: center;
-                  background: linear-gradient(135deg, var(--violet), #d648aa); box-shadow: 0 10px 30px rgba(122,92,255,.35); }
-  .never .badge svg { width: 30px; height: 30px; stroke: #fff; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .never h3 { margin: 0; font-size: 16.5px; }
-  .never h3 em { font-style: normal; color: var(--gold); }
-  .never p { font-size: 14px; }
-  .tokens { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 40px; }
-  .tok { border-radius: var(--radius); padding: 26px; border: 1px solid var(--line); background: var(--card); }
-  .tok h3 { margin: 0 0 4px; font-size: 20px; }
-  .tok .role { color: var(--muted); font-size: 14.5px; margin-bottom: 14px; }
-  .tok dl { margin: 0; display: grid; grid-template-columns: 130px 1fr; gap: 8px 14px; font-size: 14.5px; }
-  .tok dt { color: var(--muted); }
-  .tok dd { margin: 0; }
-  .tok .no { color: var(--red); }
-  .tok.read { box-shadow: inset 0 3px 0 var(--cyan); }
-  .tok.write { box-shadow: inset 0 3px 0 var(--pink); }
+  /* promises */
+  #never { --c: var(--pink); }
+  .promises { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 30px; }
+  .promise { padding: 18px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
+  .promise b { display: block; font-size: 17px; margin-bottom: 6px; }
+  .promise b em { font-style: normal; color: var(--pink); }
+  .promise p { margin: 0; color: var(--muted); font-size: 14.5px; }
 
   /* install */
-  .install { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .install .card { padding: 28px; }
-  .install h3 { font-size: 20px; }
-  .install ol { margin: 10px 0 0; padding-left: 20px; color: var(--muted); }
-  .install ol b { color: var(--text); }
-  pre { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--line);
-        overflow-x: auto; font-size: 13.5px; line-height: 1.55; color: var(--text); }
-  .then { text-align: center; color: var(--muted); margin: 26px auto 0; max-width: 680px; }
-  .then b { color: var(--text); }
+  #install { --c: var(--green); scroll-margin-top: 60px; }
+  .tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+  .tabs button { padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--text);
+                 font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--green); color: #0f1712; border-color: transparent; }
+  .panel { max-width: 720px; margin: 18px auto 0; padding: 24px; border-radius: var(--radius); background: var(--card);
+           border: 1px solid var(--line); }
+  .js .panel:not(.open) { display: none; }
+  .panel h3 { margin-bottom: 10px; font-size: 20px; }
+  .panel ol { margin: 0; padding-left: 20px; }
+  .panel pre { background: rgba(0, 0, 0, .4); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; overflow-x: auto;
+               font-size: 14px; margin: 8px 0; }
+  .panel p { color: var(--muted); margin: 10px 0 0; }
+  .then { max-width: 720px; margin: 18px auto 0; color: var(--muted); text-align: center; }
 
-  /* video */
-  .video { position: relative; max-width: 920px; margin: 0 auto; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden;
-           border: 1px solid var(--line); box-shadow: 0 40px 120px rgba(122,92,255,.25); background: #000; cursor: pointer; }
-  .video img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s, filter .6s; }
-  .video:hover img { transform: scale(1.03); filter: brightness(1.1); }
-  .video .play { position: absolute; right: 4%; bottom: 7%; width: 92px; height: 92px; border-radius: 50%; border: none;  /* in the corner: GeekOc and the words stay clear */
-                 background: var(--grad); box-shadow: 0 0 0 0 rgba(255,111,216,.6); animation: pulse 2.2s infinite; cursor: pointer; }
-  .video .play::after { content: ""; position: absolute; left: 37px; top: 29px; border-style: solid; border-width: 17px 0 17px 28px;
-                        border-color: transparent transparent transparent #fff; }
-  @keyframes pulse { 70% { box-shadow: 0 0 0 26px rgba(255,111,216,0); } 100% { box-shadow: 0 0 0 0 rgba(255,111,216,0); } }
-  .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  /* video, ideas, footer */
+  .video-link { display: block; max-width: 820px; margin: 26px auto 0; border-radius: 22px; overflow: hidden; position: relative;
+                border: 1px solid var(--line); }
+  .video-link::after { content: "▶"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 78px; height: 78px;
+                       border-radius: 50%; background: rgba(255, 255, 255, .92); color: #141416; font-size: 30px; display: grid;
+                       place-items: center; padding-left: 6px; }
+  footer { border-top: 1px solid var(--line); padding: 30px 0 110px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  footer .links { margin-left: auto; display: flex; gap: 16px; flex-wrap: wrap; }
+  details#code-signing { max-width: 760px; margin: 0 auto; padding: 0 16px 40px; color: var(--muted); font-size: 15px; }
+  details#code-signing summary { cursor: pointer; color: var(--text); font-weight: 700; }
 
-  /* ideas */
-  .ideas { display: flex; gap: 28px; align-items: center; justify-content: center; flex-wrap: wrap; text-align: left;
-           background: linear-gradient(120deg, rgba(255,196,87,.10), rgba(255,111,216,.08)); border: 1px solid var(--line);
-           border-radius: 28px; padding: 34px; }
-  .lamp { font-size: 64px; animation: glow 3s ease-in-out infinite; }
-  @keyframes glow { 50% { filter: drop-shadow(0 0 22px rgba(255,196,87,.9)); transform: rotate(-6deg); } }
-
-  .final { text-align: center; padding: 100px 0 110px; }
-  .final .ctas { justify-content: center; }
-  .platforms { display: flex; gap: 34px; justify-content: center; flex-wrap: wrap; margin: 34px 0 0; color: var(--muted); font-size: 14px; }
-  .platforms div { display: grid; justify-items: center; gap: 8px; }
-  .platforms svg { width: 40px; height: 40px; }
-  #code-signing { padding-top: 40px; }
-  footer { border-top: 1px solid var(--line); padding: 36px 0 56px; color: var(--muted); font-size: 14px; }
-  footer .wrap { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
-  footer .links { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; }
-
-  @media (max-width: 960px) {
-    .hero .wrap:not(.row) { grid-template-columns: minmax(0, 1fr); text-align: center; }
-    .hero .logo { width: 120px; height: 120px; }
-    .lead { margin-left: auto; margin-right: auto; }
-    .ctas { justify-content: center; }
-    .geek { max-width: 340px; grid-row: 1; }
-    .four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .four a:last-child:nth-child(odd) { grid-column: 1 / -1; }   /* five pillars: the last one takes the row */
-    .show, .feature, .why { grid-template-columns: minmax(0, 1fr); gap: 34px; }
-    .show .frame { max-width: 400px; width: 100%; margin: 0 auto; }
-    .feature.flip .copy { order: 0; }
-    .three, .tokens, .install { grid-template-columns: 1fr; }
-    .never { grid-template-columns: 1fr 1fr; }
-    .why img { max-width: 300px; margin: 0 auto; }
-    /* the tour: a swipeable row of chips above the picture, its caption below */
-    .tabs { display: flex; flex-direction: row; overflow-x: auto; scroll-snap-type: x proximity; gap: 6px; padding: 2px 2px 10px;
-            scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
-            mask-image: linear-gradient(90deg, #000 85%, transparent); }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tabbtn { flex: 0 0 auto; padding: 8px 14px; border-radius: 99px; border-color: var(--line); scroll-snap-align: center; }
-    .tabbtn b { font-size: 14.5px; }
-    .tabbtn span { display: none; }
-    .tabcap { display: block; text-align: center; color: var(--muted); margin: 14px auto 0; max-width: 400px; font-size: 15px; }
+  /* phones: one column, and a button that's always within reach */
+  .sticky-get { display: none; }
+  @media (max-width: 900px) {
+    header.top nav a:not(.btn) { display: none; }
+    .story { grid-template-columns: minmax(0, 1fr); padding: 22px 18px; gap: 24px; }
+    .promises { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    section { padding: 54px 0; }
   }
-  @media (max-width: 600px) {
-    html, body { overflow-x: clip; }
-    nav .links a:not(.btn) { display: none; }
-    nav .wrap { height: 56px; }
-    h1 { font-size: clamp(32px, 10vw, 44px); }
-    .lead { font-size: 16.5px; }
-    .ctas .btn { flex: 1 1 130px; justify-content: center; padding: 12px 10px; font-size: 14.5px; white-space: nowrap; }
-    .ctas .btn.primary { flex-basis: 100%; }
-    .four { grid-template-columns: minmax(0, 1fr); }
-    .never { grid-template-columns: minmax(0, 1fr); }
-    .hero .logo { width: 96px; height: 96px; }
-    .pill { font-size: 14.5px; padding: 8px 16px; }
-    .geek { max-width: 260px; }
-    .alone { grid-template-columns: 1fr; }
-    .pillar-head { grid-template-columns: 1fr; gap: 12px; }
-    .pillar-head .big { width: 64px; height: 64px; font-size: 32px; border-radius: 20px; }
-    h2 { font-size: clamp(26px, 8vw, 34px); }
-    .sub { font-size: 16px; margin-bottom: 28px; }
-    .feature .pic img { max-width: 320px; }
-    .video .play { width: 72px; height: 72px; }
-    .video .play::after { left: 29px; top: 22px; border-width: 14px 0 14px 22px; }
-    .ideas { padding: 24px; gap: 14px; text-align: center; }
-    .lamp { font-size: 52px; }
-    .final { padding: 70px 0 80px; }
-    .hero { padding-top: 36px; }
-    section { padding: 60px 0; }
-    .tok dl { grid-template-columns: 1fr; gap: 2px; }
-    .tok dd { margin-bottom: 8px; }
+  @media (max-width: 560px) {
+    .promises { grid-template-columns: minmax(0, 1fr); }
+    .shots { gap: 10px; }
+    .sticky-get { display: flex; position: fixed; left: 16px; right: 16px; bottom: 14px; z-index: 40; }
+    .map-empty { position: static; transform: none; margin: 0 auto 16px; }
+    .sticky-get .btn { flex: 1; padding: 14px; font-size: 16px; }
     footer .links { margin-left: 0; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
-    .reveal { opacity: 1; transform: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
-<body>
+<body class="no-js">
 <div class="aurora" aria-hidden="true"></div>
-<canvas id="sky" aria-hidden="true"></canvas>
+<a href="#stories" style="position:absolute;left:-999px">Skip to the stories</a>
 
-<nav>
+<header class="top">
   <div class="wrap">
-    <a class="brand" href="#"><img src="img/icon_64.png" alt="">myGeeKy</a>
-    <div class="links">
-      <a href="#see">See</a>
-      <a href="#learn">Learn</a>
-      <a href="#meet">Meet</a>
-      <a href="#catch">Catch</a>
-      <a href="#play">Play</a>
+    <a class="brand" href="#top"><img src="img/icon_64.png" alt="">myGeeKy</a>
+    <nav>
+      <a href="#stories">What it does</a>
+      <a href="#scientists">Scientists</a>
       <a href="#never">Privacy</a>
       <a href="https://github.com/mygeeky/myGeeKy">GitHub</a>
       <a class="btn primary" href="#install">Get it</a>
-    </div>
-  </div>
-</nav>
-
-<header class="hero">
-  <div class="wrap row badge-row">
-    <img class="logo" src="img/icon_256.png" alt="The myGeeKy badge: the name inside a ring of two arms hugging">
-    <div class="pill">✨ <b>Free and open source</b> · v{{VERSION}}</div>
-  </div>
-  <div class="wrap">
-    <div>
-      <h1>Your geeky friend who helps you <span class="g">grow, quietly.</span></h1>
-      <p class="lead">myGeeKy reads your CV, your repos and your ORCID &amp; Google Scholar papers, then helps you
-        <b>see</b> what is moving in your field, <b>learn</b> what comes next, <b>meet</b> the people working on the
-        same problems and <b>catch</b> opportunities while they are still open. On your phone, and as a small panel on
-        the edge of your desktop. It only suggests; it never acts for you.</p>
-      <div class="ctas">
-        <a class="btn primary" href="https://github.com/mygeeky/myGeeKy/releases/latest/download/MyGeeKySetup-{{VERSION}}.exe">⬇ Download for Windows</a>
-        <a class="btn" href="#phone">📱 On your phone</a>
-        <a class="btn" href="#video">▶ Watch the video</a>
-        <a class="btn" href="https://github.com/mygeeky/myGeeKy">★ GitHub</a>
-      </div>
-      <div class="pip mono"><span class="dollar">$</span><code id="pip">pip install mygeeky</code><button type="button" id="copy">Copy</button></div>
-      <p class="note">Windows installer · <a href="#install">one line on Linux and macOS</a> · or pip anywhere ·
-        <a href="#code-signing">about code signing</a></p>
-    </div>
-    <div class="geek">
-      <canvas id="geekoc" role="img" aria-label="GeekOc, the myGeeKy octopus, floating and blinking"></canvas>
-      <span class="says" id="says" aria-hidden="true">Hello. I'm GeekOc.</span>
-    </div>
-  </div>
-  <div class="wrap row">
-    <div class="four">
-      <a href="#see" style="--c:var(--cyan)" class="reveal"><span class="ico">👀</span><b>See</b><span>what is moving in your field, ranked for you</span><i>Research · Market · News →</i></a>
-      <a href="#learn" style="--c:var(--green)" class="reveal"><span class="ico">🌱</span><b>Learn</b><span>what comes next, as a road map that skips what you know</span><i>Rising skills · Protocols · Quizzes →</i></a>
-      <a href="#meet" style="--c:var(--pink)" class="reveal"><span class="ico">👥</span><b>Meet</b><span>the people working on the same problems</span><i>People · Live · Signals →</i></a>
-      <a href="#catch" style="--c:var(--amber)" class="reveal"><span class="ico">🎯</span><b>Catch</b><span>jobs, funding and conferences while they are open</span><i>Chances · Seasons →</i></a>
-      <a href="#play" style="--c:var(--violet)" class="reveal"><span class="ico">🎮</span><b>Play</b><span>fourteen short games made from your own field</span><i>Play with GeeKOc →</i></a>
-    </div>
+    </nav>
   </div>
 </header>
 
-<!-- ======================================================================= PHONE -->
-<section id="phone">
-  <div class="wrap feature">
-    <div class="copy reveal">
-      <div class="eyebrow">On your phone</div>
-      <h2>Your world, in orbit</h2>
-      <p class="sub">Home in the middle, and around it six planets: You, Grow, World, Circle, Repos and Chances. A planet
-        with a dotted ring opens into more; tap it and its own pages circle around it.</p>
+<!-- ======================================================================= HERO: the orbit is the menu -->
+<section class="hero" id="top">
+  <canvas id="net" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <h1>Your geeky friend who helps you <span class="g">grow, quietly.</span></h1>
+    <p class="lead">On your phone and as a small panel on your computer. It reads your field, then shows you what
+      matters, and it only suggests: it never acts for you. Tap a planet.</p>
+
+    <div class="orbit" role="tablist" aria-label="What myGeeKy does">
+      <div class="ring" aria-hidden="true"></div>
+      <button class="core" role="tab" id="t-home" aria-controls="home" aria-selected="true" aria-label="What myGeeKy is">
+        <canvas id="geekoc" aria-hidden="true"></canvas><span class="tag">myGeeKy</span>
+      </button>
+      <!-- six planets, the app's own groups and colours (navtree.py) -->
+      <button class="planet" role="tab" id="t-you" aria-controls="you" aria-selected="false" style="--p:#ffd24a;left:50%;top:15%"><span class="ico">🧑‍🔬</span><span class="name">You</span></button>
+      <button class="planet" role="tab" id="t-grow" aria-controls="grow" aria-selected="false" style="--p:#4ade80;left:80.3%;top:32.5%"><span class="ico">🌱</span><span class="name">Grow</span></button>
+      <button class="planet" role="tab" id="t-world" aria-controls="world" aria-selected="false" style="--p:#eab308;left:80.3%;top:67.5%"><span class="ico">🌍</span><span class="name">World</span></button>
+      <button class="planet" role="tab" id="t-chances" aria-controls="chances" aria-selected="false" style="--p:#f472b6;left:50%;top:85%"><span class="ico">🎯</span><span class="name">Chances</span></button>
+      <button class="planet" role="tab" id="t-games" aria-controls="games" aria-selected="false" style="--p:#a873f5;left:19.7%;top:67.5%"><span class="ico">🎮</span><span class="name">Games</span></button>
+      <button class="planet" role="tab" id="t-circle" aria-controls="circle" aria-selected="false" style="--p:#ff6fd8;left:19.7%;top:32.5%"><span class="ico">👥</span><span class="name">Circle</span></button>
+    </div>
+    <p class="orbit-hint" id="hint">Tap a planet to see what it does</p>
+
+    <div class="ctas">
+      <a class="btn primary" href="https://github.com/mygeeky/myGeeKy/releases/latest/download/MyGeeKySetup-{{VERSION}}.exe">⬇ Download for Windows</a>
+      <a class="btn" href="#install">🐧 Linux · 🍎 macOS · 📱 Android</a>
+    </div>
+    <div class="meta"><div class="pip"><code id="pip">pip install mygeeky</code><button type="button" id="copy">Copy</button></div></div>
+  </div>
+</section>
+
+<!-- ======================================================================= THE STORIES -->
+<div id="stories" class="wrap">
+
+  <article class="story open" id="home" role="tabpanel" aria-labelledby="t-home" style="--c:#a78bfa">
+    <div>
+      <div class="eyebrow">myGeeKy · free and open source · v{{VERSION}}</div>
+      <h2>One quiet friend for your whole field</h2>
+      <p class="quote">GeeKOc: “I read the twenty sites, so you read one.”</p>
       <ul class="ticks">
-        <li>Home gathers the best of everything and learns what you enjoy; each planet shows how much new it holds</li>
-        <li>Protocols, quizzes, verified jobs, funding and conferences, rising skills and papers, your month</li>
-        <li>Tap something to read and the orbit folds away into a slim dock</li>
-        <li>GeeKOc walks you in: link GitHub or ORCID, or skip both, or bring your desktop over with one scan</li>
-        <li>For Android, coming to Google Play soon</li>
+        <li>Give it a few keywords, a CV, your ORCID or your GitHub, or nothing at all: it learns from what you open</li>
+        <li>It ranks everything <b>on your device</b>. No server, no account, no telemetry</li>
+        <li>It only suggests. You follow, apply and write by hand, always</li>
+        <li>Your phone and your computer share it, through your own Google Drive or a private repo, if you want</li>
+      </ul>
+      <div class="more">
+        <button type="button" data-go="you">🧑‍🔬 You</button><button type="button" data-go="grow">🌱 Grow</button>
+        <button type="button" data-go="world">🌍 World</button><button type="button" data-go="circle">👥 Circle</button>
+        <button type="button" data-go="chances">🎯 Chances</button><button type="button" data-go="games">🎮 Games</button>
+      </div>
+    </div>
+    <div class="shots">
+      <figure><img src="img/phone.png" alt="The phone app: Home with its orbit of planets" loading="lazy"><figcaption>📱 On your phone</figcaption></figure>
+      <figure><img src="img/research.png" alt="The panel on the computer, showing research rising in your field" loading="lazy"><figcaption>🖥 On your computer</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="story" id="you" role="tabpanel" aria-labelledby="t-you" style="--c:#ffd24a">
+    <div>
+      <div class="eyebrow">You</div>
+      <h2>See what myGeeKy knows about you</h2>
+      <p class="quote">“Here's your month: three protocols started, one quiz passed, and someone cited you.”</p>
+      <ul class="ticks">
+        <li><b>Model:</b> your field in the middle, what you've been into lately pulsing further out, new territory on the edge. Correct it whenever it's wrong</li>
+        <li>Interests fade with a 30-day half-life, and 20% always stays open for new territory, so you never end up in a bubble</li>
+        <li><b>My month:</b> your rank from Soldier to General, and a card to share</li>
+        <li><b>Cited by</b> and badges for what you've done</li>
       </ul>
     </div>
-    <div class="pic reveal"><img src="img/phone.png" alt="The myGeeKy phone app: Home with its orbit of planets, verified jobs, and protocols" loading="lazy"></div>
-  </div>
-  <div class="wrap phones reveal" aria-label="More of the phone app">
-    <figure><img src="img/phone-home.png" alt="Home, with its orbit of planets" loading="lazy"><figcaption>Home</figcaption></figure>
-    <figure><img src="img/phone-protocols.png" alt="A protocol: its steps, its quiz and what to learn from" loading="lazy"><figcaption>Protocols</figcaption></figure>
-    <figure><img src="img/phone-quiz.png" alt="A quiz question answered, with the sentence from its source" loading="lazy"><figcaption>Quiz</figcaption></figure>
-    <figure><img src="img/phone-jobs.png" alt="Verified jobs matched to you" loading="lazy"><figcaption>Jobs</figcaption></figure>
-    <figure><img src="img/phone-skills.png" alt="Rising skills in your field, as rockets" loading="lazy"><figcaption>Rising skills</figcaption></figure>
-    <figure><img src="img/phone-papers.png" alt="Papers rising in your field" loading="lazy"><figcaption>Papers</figcaption></figure>
-    <figure><img src="img/phone-month.png" alt="My month: your rank and your month's card" loading="lazy"><figcaption>My month</figcaption></figure>
-  </div>
-</section>
+    <div class="shots">
+      <figure><img src="img/model.png" alt="Your model drawn as a living map" loading="lazy"><figcaption>Your model</figcaption></figure>
+      <figure><img src="img/phone-month.png" alt="My month: your rank and your month's card" loading="lazy"><figcaption>My month</figcaption></figure>
+    </div>
+  </article>
 
-<section id="tour">
-  <div class="wrap center reveal">
-    <div class="eyebrow">And on your desktop</div>
-    <h2>A panel on the <span class="g">edge of your screen</span>, with even more</h2>
-    <p class="sub">Everything the phone has, with room for more: your field's repos as a daily market, Research with the
-      code and people behind each paper, Live and Activity, Signals, your Model drawn as a map, and the setup that
-      makes your private sync repo and turns on Signals. Always on top, in three glass themes; close it and nothing
-      keeps running. Click a tab, or just watch.</p>
-  </div>
-  <div class="wrap show reveal">
-    <div class="tabs" id="tabs"></div>
-    <div><div class="frame" id="frame"></div><p class="tabcap" id="tabcap"></p></div>
-  </div>
-</section>
+  <article class="story" id="grow" role="tabpanel" aria-labelledby="t-grow" style="--c:#4ade80">
+    <div>
+      <div class="eyebrow">Grow</div>
+      <h2>Learn what comes next, with a road map</h2>
+      <p class="quote">“You haven't used Nextflow yet, and five repos near your work just did. Shall we start?”</p>
+      <ul class="ticks">
+        <li><b>Rising skills</b> in your field that are missing from you</li>
+        <li><b>Protocols</b> turn any skill into steps, and skip what you already know; 14 reviewed by hand</li>
+        <li><b>Quizzes</b> where every question quotes the real source that proves its answer</li>
+        <li>Free courses and books, datasets to practise on, and ✨ highlights: papers retold as short news</li>
+      </ul>
+    </div>
+    <div class="shots">
+      <figure><img src="img/phone-protocols.png" alt="A protocol as a road map of steps" loading="lazy"><figcaption>A protocol</figcaption></figure>
+      <figure><img src="img/phone-quiz.png" alt="A quiz question with the sentence from its source" loading="lazy"><figcaption>A quiz, with its source</figcaption></figure>
+    </div>
+  </article>
 
-<!-- ======================================================================= SEE -->
-<section id="see" class="pillar" style="--c:var(--cyan)">
+  <article class="story" id="world" role="tabpanel" aria-labelledby="t-world" style="--c:#eab308">
+    <div>
+      <div class="eyebrow">World</div>
+      <h2>See what is moving in your field</h2>
+      <p class="quote">“Two papers near your work are gaining citations fastest this month.”</p>
+      <ul class="ticks">
+        <li>Papers gaining citations fastest, the code behind them and the people behind the code</li>
+        <li>News from arXiv, bioRxiv and Hacker News, kept only when it really matches you, and saying why</li>
+        <li>Your field's repos as a daily market, models trending on Hugging Face, and the AI race</li>
+        <li>It reads OpenAlex, arXiv, bioRxiv, PyPI, Hugging Face, ORCID, Google Scholar and GitHub</li>
+      </ul>
+    </div>
+    <div class="shots">
+      <figure><img src="img/research.png" alt="Research: papers rising in your field" loading="lazy"><figcaption>Research</figcaption></figure>
+      <figure><img src="img/news.png" alt="News matched to your interests" loading="lazy"><figcaption>News</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="story" id="circle" role="tabpanel" aria-labelledby="t-circle" style="--c:#ff6fd8">
+    <div>
+      <div class="eyebrow">Circle</div>
+      <h2>Meet the people working on the same problems</h2>
+      <p class="quote">“These four work on what you work on, and they tend to follow back.”</p>
+      <ul class="ticks">
+        <li>Researchers who share your work and are likely to follow back; celebrities and dormant accounts skipped</li>
+        <li><b>Live:</b> what your circle built in the last hour, and repos worth your first pull request</li>
+        <li><b>Researchers</b> who publish, and the leading lights near your field</li>
+        <li><b>Signals:</b> a private, wordless thank-you; 🤝 “let's collaborate” stays hidden until it's mutual</li>
+      </ul>
+    </div>
+    <div class="shots">
+      <figure><img src="img/live.png" alt="Live: what the people near your work did in the last hour" loading="lazy"><figcaption>Live</figcaption></figure>
+      <figure><img src="img/signals.png" alt="Signals between myGeeKy users (example people)" loading="lazy"><figcaption>Signals (example people)</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="story" id="chances" role="tabpanel" aria-labelledby="t-chances" style="--c:#f472b6">
+    <div>
+      <div class="eyebrow">Chances</div>
+      <h2>Catch the opportunities while they are open</h2>
+      <p class="quote">“Two deadlines this week. Both still open; I checked the page myself.”</p>
+      <ul class="ticks">
+        <li>Jobs, funding and conferences, each <b>checked against its own page</b> before you see it</li>
+        <li>Sorted by deadline, and gone the moment it passes</li>
+        <li>Listings in Arabic, French, German, Spanish or Chinese, read and translated</li>
+        <li><b>Seasons:</b> the scholarships that come back every year, months ahead, with what to prepare</li>
+      </ul>
+    </div>
+    <div class="shots">
+      <figure><img src="img/phone-jobs.png" alt="Verified jobs matched to you" loading="lazy"><figcaption>Jobs</figcaption></figure>
+      <figure><img src="img/chances-seasons.png" alt="Seasons: a scholarship that comes back every year" loading="lazy"><figcaption>Seasons</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="story" id="games" role="tabpanel" aria-labelledby="t-games" style="--c:#a873f5">
+    <div>
+      <div class="eyebrow">Games</div>
+      <h2>Play your field, with GeeKOc</h2>
+      <p class="quote">“Real tool or made up? Snakemake, yes. Bioflux, no. And now you know why.”</p>
+      <ul class="ticks">
+        <li><b>Fourteen short games</b> made from your own field: GeeKOc run, Rise, Sort the catch, Whack-a-bug, Gene or Pokémon?…</li>
+        <li>Every question has a level, field terms and a source</li>
+        <li>A mistake always says why, and what you play teaches your model</li>
+        <li>GeeKOc jumps, cheers and sulks along with you</li>
+      </ul>
+    </div>
+    <div class="shots">
+      <figure><img src="img/games.png" alt="The fourteen games, each with your level and best score" loading="lazy"><figcaption>Fourteen games</figcaption></figure>
+      <figure><img src="img/games-run.png" alt="GeeKOc run: GeeKOc jumping before a gate that asks a question" loading="lazy"><figcaption>GeeKOc run</figcaption></figure>
+    </div>
+  </article>
+</div>
+
+<!-- ======================================================================= SCIENTISTS -->
+<section id="scientists">
+  <div class="wrap center">
+    <div class="eyebrow">Scientists</div>
+    <h2>The scientists who use and support myGeeKy</h2>
+    <p class="sub">Each dot is a scientist who asked to be shown; each word is a field they work in. Scientists who share
+      a field are joined through it.</p>
+  </div>
   <div class="wrap">
-    <div class="pillar-head reveal">
-      <div class="big" aria-hidden="true">👀</div>
-      <div>
-        <div class="eyebrow">See</div>
-        <h2>See what is moving in your field</h2>
-        <p class="quote">“I read the twenty sites, so you read one.”</p>
+    <div class="map-card">
+      <canvas id="map" role="img" aria-label="A network of the scientists who use myGeeKy, joined through the fields they work in"></canvas>
+      <div class="map-tip" id="tip"></div>
+      <div class="map-empty" id="empty" hidden>
+        <b>Be the first on the map</b>
+        <p>These are the fields myGeeKy covers. Use myGeeKy for your research? Ask to be shown here.</p>
+        <a class="btn primary" href="https://github.com/mygeeky/myGeeKy/issues/new?template=join-the-map.yml">Join the map</a>
       </div>
     </div>
-
-    <div class="feature">
-      <div class="copy reveal">
-        <h3>The papers behind the code, and the people behind the papers</h3>
-        <p class="sub">Matched to your own research topics, not a generic popularity list.</p>
-        <ul class="ticks">
-          <li>Papers in your field gaining citations fastest, measured in citations per month</li>
-          <li>New tools whose code is on GitHub. Click a paper to see its repo and the people working on it</li>
-          <li>A green <span class="badge-p">P</span> on any repo that has a published paper</li>
-          <li>Your field's repos as a <b>daily market</b>: stars, commits and downloads, and what rose and fell since yesterday</li>
-          <li><b>Models</b> trending on Hugging Face in your field</li>
-        </ul>
-        <p class="sources">It reads <b>OpenAlex, arXiv, bioRxiv, Hacker News, PyPI, Hugging Face, Product Hunt, ORCID,
-          Google Scholar</b> and <b>GitHub</b>. GitHub is one of them, not the point.</p>
-      </div>
-      <div class="pic reveal"><img src="img/research.png" alt="Research view: papers rising in your field" loading="lazy"><span class="where">🖥 On your desktop</span></div>
-    </div>
-
-    <div class="feature flip">
-      <div class="copy reveal">
-        <h3>What's new in your field, not everyone's</h3>
-        <p class="sub">Fresh items from arXiv, bioRxiv and Hacker News, kept only when they genuinely match your
-          interests: two of your terms, or one exact phrase.</p>
-        <ul class="ticks">
-          <li>Each item says why it's there ("matches gwas, fine mapping")</li>
-          <li>🔭 items from outside your bubble are marked, on purpose</li>
-        </ul>
-      </div>
-      <div class="pic reveal"><img src="img/news.png" alt="News tab" loading="lazy"><span class="where">🖥 On your desktop</span></div>
-    </div>
-
-    <div class="feature">
-      <div class="copy reveal">
-        <h3>And see <span class="g">what myGeeKy knows</span> about you</h3>
-        <p class="sub">The Model tab draws it as a living map: you in the middle, your research field around you, what
-          you've been into lately pulsing further out, and today's new territory on the edge. Correct it whenever it's wrong.</p>
-        <ul class="ticks">
-          <li>Clicks teach it a little, stars and forks more, follows the most</li>
-          <li>Interests fade with a 30-day half-life, so it follows you as you change</li>
-          <li>🔭 20% always stays open for new territory, so you never end up in a bubble</li>
-          <li>A separate model learns who follows <em>you</em> back</li>
-        </ul>
-      </div>
-      <div class="reveal">
-        <div class="mapcard"><canvas id="map" width="600" height="600" aria-label="An animated interest map"></canvas>
-          <div class="legend"><span><i style="background:var(--cyan)"></i>your field</span><span><i style="background:var(--pink)"></i>lately into</span><span><i style="border:2px dashed var(--violet)"></i>new territory</span></div></div>
-      </div>
-    </div>
-
-    <div class="three">
-      <div class="card reveal"><h3><span style="color:var(--green)">●</span> Keywords that mean something</h3><p>Add "AI"
-        and myGeeKy also looks for LLMs, deep learning and AI agents. Add "GWAS" and it brings in genomics and
-        statistical genetics.</p></div>
-      <div class="card reveal"><h3><span style="color:var(--red)">●</span> Your own words still work</h3><p>Words not in
-        the dictionary work as plain words, and are passed on, through your beacon or with one click, so the next
-        dictionary learns them.</p></div>
-      <div class="card reveal"><h3>🔁 It keeps learning</h3><p>A new dictionary reaches everyone by itself, at most once
-        a week. No server, nothing hidden: the model is a few hundred lines you can read.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ======================================================================= LEARN -->
-<section id="learn" class="pillar" style="--c:var(--green)">
-  <div class="wrap">
-    <div class="pillar-head reveal">
-      <div class="big" aria-hidden="true">🌱</div>
-      <div>
-        <div class="eyebrow">Learn</div>
-        <h2>Learn what comes next, with a road map to get there</h2>
-        <p class="quote">“You haven't used Nextflow yet, and five repos near your work just did. Shall we start?”</p>
-      </div>
-    </div>
-
-    <div class="feature">
-      <div class="copy reveal">
-        <h3>Any skill becomes a road map</h3>
-        <p class="sub">Rising Skills shows what's growing in your field and missing from you. A protocol turns any skill
-          into steps: R basics → statistics with R → a real project to rerun → your own work.</p>
-        <ul class="ticks">
-          <li>A short check <b>skips what you already know</b>: your own repos as evidence, a quiz, or "I can do these"</li>
-          <li>Each step comes with repos, papers, free books and 📘 guides from a project's own documentation</li>
-          <li><b>14 reviewed protocols</b>: Git, algorithms, a first web app, machine learning, a first pull request ·
-            R, Python, GWAS, Nextflow, single-cell RNA-seq · Excel to R, statistics for experiments, figures for
-            papers, images into numbers with Fiji</li>
-          <li>Any other skill: built from GitHub, papers and protocol journals by a small model (about 400 KB) on your device</li>
-          <li>📚 Free courses, books and tutorials, picked by hand; 🎉 wins: new stars, forks and citations of your work</li>
-        </ul>
-      </div>
-      <div class="pic phone reveal"><img src="img/phone-protocols.png" alt="A protocol shown as a road map of steps, with its quiz" loading="lazy"><span class="where">📱 On your phone</span></div>
-    </div>
-
-    <div class="feature flip">
-      <div class="copy reveal">
-        <h3>Ten questions, and <span class="g">not one of them invented</span></h3>
-        <p class="sub">Every protocol has a question bank. An attempt draws ten at random: half basics, then applied,
-          and a few of the mistakes people really make.</p>
-        <ul class="ticks">
-          <li>Each question was written from one real source and quotes the sentence that proves the answer, and shows
-            you that source once you've answered</li>
-          <li>Code questions are run, and sums recomputed, before a question ships</li>
-          <li>Only your best score counts, one attempt a day, and 🚩 drops a question you think is wrong</li>
-          <li><b>Nothing about you goes online unless you ask.</b> Your name and your scores are two separate choices,
-            agreed by writing <code>accept</code> on a GitHub issue from your own account; <code>withdraw</code> undoes it</li>
-          <li>Low scores are never shown anywhere: the top three of the month and the first people to finish a
-            protocol are all the page ever lists</li>
-        </ul>
-      </div>
-      <div class="pic phone reveal"><img src="img/phone-quiz.png" alt="A quiz question, answered: why that answer is right, and the source it came from" loading="lazy"><span class="where">📱 On your phone</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ======================================================================= MEET -->
-<section id="meet" class="pillar" style="--c:var(--pink)">
-  <div class="wrap">
-    <div class="pillar-head reveal">
-      <div class="big" aria-hidden="true">👥</div>
-      <div>
-        <div class="eyebrow">Meet</div>
-        <h2>Meet the people working on the same problems</h2>
-        <p class="quote">“These four work on what you work on, and they tend to follow back.”</p>
-      </div>
-    </div>
-
-    <div class="feature">
-      <div class="copy reveal">
-        <h3>Friends, not followers</h3>
-        <p class="sub">Researchers who share your work and are likely to follow you back, plus domain experts who rarely
-          follow anyone. Celebrities, mass-followers and dormant accounts are skipped.</p>
-        <ul class="ticks">
-          <li><b>Live:</b> what your circle pushed in the last hour, one card per person</li>
-          <li><b>Repos</b> worth your first pull request: starter issues, and maintainers who actually merge outside work</li>
-          <li><b>You follow, star and message by hand, always.</b> myGeeKy introduces; it never acts for you</li>
-        </ul>
-      </div>
-      <div class="pic reveal"><img src="img/live.png" alt="Live tab: what the people near your work did in the last hour" loading="lazy"><span class="where">🖥 On your desktop</span></div>
-    </div>
-
-    <div class="feature flip">
-      <div class="copy reveal">
-        <h3>Signals: gratitude, not small talk</h3>
-        <div class="emoji-row" aria-hidden="true"><span>🙏</span><span>📚</span><span>⭐</span><span>👀</span><span>🤝</span></div>
-        <p class="sub">A quiet way to tell someone their work mattered to you: no server, no text, nothing to moderate,
-          and nothing to answer.</p>
-        <ul class="ticks">
-          <li><b>Private:</b> each signal is encrypted so only its recipient can read it. Nobody can see who you
-            signalled, or who didn't answer</li>
-          <li><b>No reply needed:</b> every signal says so, and you never see "unanswered"</li>
-          <li><b>🤝 only if you both want it:</b> "let's collaborate" stays hidden until it's mutual</li>
-          <li><b>Courteous by design:</b> once a month per person, a few new people a week, a "not taking signals"
-            switch, mute and block</li>
-        </ul>
-      </div>
-      <div class="pic reveal"><img src="img/signals.png" alt="Signals tab (example people)" loading="lazy"><span class="where">🖥 On your desktop</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ======================================================================= CATCH -->
-<section id="catch" class="pillar" style="--c:var(--amber)">
-  <div class="wrap">
-    <div class="pillar-head reveal">
-      <div class="big" aria-hidden="true">🎯</div>
-      <div>
-        <div class="eyebrow">Catch</div>
-        <h2>Catch the opportunities while they are still open</h2>
-        <p class="quote">“Two deadlines this week. Both still open; I checked the page myself.”</p>
-      </div>
-    </div>
-
-    <div class="feature">
-      <div class="copy reveal">
-        <h3>Verified jobs, funding and conferences</h3>
-        <p class="sub">PhD places, postdocs, fellowships, travel grants and meetings in your field, and internships,
-          hackathons and software jobs. Each one is checked against its own page before you see it.</p>
-        <ul class="ticks">
-          <li>Sorted by <b>deadline</b>, and <b>gone the moment it passes</b>: never a list of things you're already too late for</li>
-          <li>A listing in Arabic, French, German, Spanish or Chinese is read, translated and still checked, then shown in English</li>
-          <li>Matched to you on your own device: nobody learns what you looked at</li>
-          <li>👍 / 👎 teach your model; 🚩 tells the maker one looks fake</li>
-        </ul>
-      </div>
-      <div class="pic phone reveal"><img src="img/phone-jobs.png" alt="Chances: verified jobs matched to you" loading="lazy"><span class="where">📱 On your phone</span></div>
-    </div>
-
-    <div class="feature flip">
-      <div class="copy reveal">
-        <h3>🗓 Seasons, for the ones that come back every year</h3>
-        <p class="sub">A scholarship doesn't stop being real when it closes: it returns next April, and the preparing
-          takes longer than the applying.</p>
-        <ul class="ticks">
-          <li>“Expected in about 12 weeks”, while there is still time to get transcripts certified and a proposal written</li>
-          <li>It tells you <b>how many years of evidence</b> stand behind that expectation</li>
-          <li>It never pretends to know next year's date: a window read on a page says <b>open now</b>, anything ahead says <b>expected</b></li>
-        </ul>
-      </div>
-      <div class="pic reveal"><img src="img/chances-seasons.png" alt="Seasons: a scholarship that comes back every year, with the weeks of preparation it needs" loading="lazy"><span class="where">🖥 On your desktop</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ======================================================================= PLAY -->
-<section id="play" class="pillar" style="--c:var(--violet)">
-  <div class="wrap">
-    <div class="pillar-head reveal">
-      <div class="big" aria-hidden="true">🎮</div>
-      <div>
-        <div class="eyebrow">Play</div>
-        <h2>Play your field, with GeeKOc</h2>
-        <p class="quote">“Real tool or made up? Snakemake, yes. Bioflux, no. And now you know why.”</p>
-      </div>
-    </div>
-
-    <div class="feature">
-      <div class="copy reveal">
-        <h3>Fourteen short games made from your own field</h3>
-        <p class="sub">Jump the bugs in GeeKOc run, steer names into the right net, climb a pipeline in Rise, find the
-          way home through doors that ask questions, whack the bugs and spare the good practices.</p>
-        <ul class="ticks">
-          <li>Every question has a <b>level, field terms and a source</b></li>
-          <li>A mistake <b>always says why</b></li>
-          <li>What you play teaches your Model; GeeKOc jumps, cheers and sulks along with you</li>
-          <li>On your computer and your phone, the same games and the same answers</li>
-        </ul>
-      </div>
-      <div class="pic reveal"><img src="img/games-run.png" alt="GeeKOc run: GeeKOc jumping a bug, with a gate ahead asking a question" loading="lazy"><span class="where">🖥 On your desktop</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ======================================================================= WHO -->
-<section id="forwho">
-  <div class="wrap">
-    <div class="why reveal">
-      <img src="img/character.jpg" alt="A geek in a hoodie working on a laptop against a brick wall, a myGeeKy sticker on the lid" width="600" height="600" loading="lazy">
-      <div>
-        <div class="eyebrow">Who it's for</div>
-        <h2>For anyone who <span class="g">works alone</span></h2>
-        <p class="sub" style="margin-bottom:0">The student in a lab where nobody else writes code. The researcher in a
-          city with nobody in their field. You might be the only one in your building who does this; you are not the
-          only one in the world.</p>
-        <ul class="alone">
-          <li><b>🔕 No noise</b>No feed, no likes, no streaks. No notifications unless you switch them on.</li>
-          <li><b>👋 Friends, not followers</b>People near your work, and who's likely to answer.</li>
-          <li><b>🚪 Nobody sees you looking</b>No account, no sign-up, no telemetry.</li>
-          <li><b>🌙 It waits</b>Close it and nothing keeps running, unless you asked to be notified. It never pings you to come back.</li>
-        </ul>
-      </div>
-    </div>
-    <div class="three">
-      <div class="card reveal"><div class="ico">💻</div>
-        <h3>You mostly write code</h3>
-        <p>Repos that welcome your pull requests, people building what you build, the tools rising in your corner of
-          software, and interviews, internships and hackathons under 🎯 Chances.</p>
-        <p class="first">Start with: <b>Git and GitHub for working with others</b></p>
-      </div>
-      <div class="card reveal"><div class="ico">📊</div>
-        <h3>You analyse your own experiments</h3>
-        <p>No repos needed: it reads your CV and your papers. The gentlest protocols start where you are, a
-          spreadsheet of results, and end with a figure and a test you can defend.</p>
-        <p class="first">Start with: <b>From Excel to R, with your own data</b></p>
-      </div>
-      <div class="card reveal"><div class="ico">🧬</div>
-        <h3>You analyse data</h3>
-        <p>Papers gaining citations fastest with their code, pipelines and methods rising in your field, and the
-          postdocs, fellowships and conferences that fit your topics.</p>
-        <p class="first">Start with: <b>R for data analysis</b></p>
-      </div>
-    </div>
-    <p class="scope">You say which fits you best when you set it up, and change it whenever you like; your model
-      learns from what you actually open. <b>Code, data, statistics, figures and pipelines, never laboratory protocols
-      or bench instructions</b>: it can't review bench safety or know your lab's rules, so it stays out of it.</p>
+    <div class="people" id="people"></div>
+    <p class="join" id="join">Use myGeeKy for your research? <a href="https://github.com/mygeeky/myGeeKy/issues/new?template=join-the-map.yml">Ask to join the map</a>
+      or email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>. Only what you write is shown, and you can leave any time.</p>
   </div>
 </section>
 
 <!-- ======================================================================= NEVER -->
 <section id="never">
-  <div class="wrap center reveal">
+  <div class="wrap center">
     <div class="eyebrow">Privacy &amp; trust</div>
     <h2>What it will <span class="g">never</span> do</h2>
-    <p class="sub">“I keep all of this on your computer. I never post for you, and I never tell anyone you were here.”
-      <a href="privacy.html">Read the privacy policy</a>.</p>
+    <p class="sub">Every promise here is a file you can check: myGeeKy is MIT-licensed and open to read.
+      <a href="privacy.html">The privacy policy</a>.</p>
   </div>
-  <div class="wrap never">
-    <div class="card reveal"><div class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></div>
-      <h3><em>Never</em> acts as you.</h3><p>It never follows, stars, forks, posts or comments: there is no code for it anywhere in the project.</p></div>
-    <div class="card reveal"><div class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg></div>
-      <h3><em>Never</em> leaves your machine.</h3><p>The model that ranks it all runs on your computer. No server, no account, no telemetry.</p></div>
-    <div class="card reveal"><div class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5"/></svg></div>
-      <h3><em>Never</em> holds your keys.</h3><p>Tokens live in your system's keyring, checked for least privilege, never logged or printed.</p></div>
-    <div class="card reveal"><div class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 16 2 2 4-4"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg></div>
-      <h3><em>Never</em> takes your data.</h3><p>It stays on your devices, plus your own Google Drive or a private repo you own if you want them shared.</p></div>
-    <div class="card reveal"><div class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><path d="m16 19 2 2 4-4"/></svg></div>
-      <h3><em>Never</em> sends anything behind your back.</h3><p>If it breaks, you read the whole report first, personal details stripped, and you decide.</p></div>
+  <div class="wrap promises">
+    <div class="promise"><b><em>Never</em> acts as you</b><p>It never follows, stars, posts or comments. There is no code for it.</p></div>
+    <div class="promise"><b><em>Never</em> leaves your device</b><p>The model runs on your computer or phone. No server, no telemetry.</p></div>
+    <div class="promise"><b><em>Never</em> holds your keys</b><p>Tokens stay in your system's keyring, checked for least privilege.</p></div>
+    <div class="promise"><b><em>Never</em> takes your data</b><p>Shared only through your own Google Drive or a private repo, if you want.</p></div>
+    <div class="promise"><b><em>Never</em> sends behind your back</b><p>If it breaks, you read the whole report first, and you decide.</p></div>
   </div>
-  <div class="wrap tokens">
-    <div class="tok read reveal"><h3>🔍 Token 1 · read-only</h3><div class="role">Reads public profiles, repos and followers.</div>
-      <dl><dt>Repositories</dt><dd>Public repositories</dd><dt>Permissions</dt><dd>Followers: Read-only</dd>
-        <dt>Refused if</dt><dd class="no">it can write to any repo, can follow people, or is your Signals token</dd></dl></div>
-    <div class="tok write reveal"><h3>✍️ Token 2 · Signals <span style="color:var(--muted);font-weight:500;font-size:15px">(optional)</span></h3>
-      <div class="role">Writes your <code>mygeeky-beacon</code> repo, and nothing else.</div>
-      <dl><dt>Repositories</dt><dd>Only <code>mygeeky-beacon</code></dd><dt>Permissions</dt><dd>Contents: Read and write</dd>
-        <dt>Refused if</dt><dd class="no">it can't write to the beacon, or is token 1 again</dd></dl></div>
-  </div>
-  <p class="then reveal">Setup checks what each token can actually do, and refuses one that doesn't fit its job. A GitHub
-    account is optional: it unlocks who'd follow you back, your activity and Signals; everything else works without one.
-    <b>MIT-licensed and open to read</b>: every promise here is a file you can check.</p>
 </section>
 
 <!-- ======================================================================= INSTALL -->
 <section id="install">
-  <div class="wrap center reveal">
+  <span id="get" aria-hidden="true"></span>                   <!-- the app's update window links here (updates.py) -->
+  <div class="wrap center">
     <div class="eyebrow">Get it</div>
     <h2>Up and running in <span class="g">two minutes</span></h2>
   </div>
-  <div class="wrap install">
-    <div class="card reveal">
-      <h3>🪟 Windows</h3>
-      <ol>
-        <li>Download <b><a href="https://github.com/mygeeky/myGeeKy/releases/latest/download/MyGeeKySetup-{{VERSION}}.exe">MyGeeKySetup.exe</a></b></li>
-        <li><b>Next → Next → Finish</b></li>
-      </ol>
-      <p style="margin-top:12px">Nothing needs installing first: it sets up Python and Git for you, no admin rights.
-        If Windows says <em>“Windows protected your PC”</em> (not code-signed yet), click <b>More info → Run anyway</b>.</p>
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Your system">
+      <button role="tab" aria-selected="true" aria-controls="i-win" id="b-win">🪟 Windows</button>
+      <button role="tab" aria-selected="false" aria-controls="i-nix" id="b-nix">🐧 Linux · 🍎 macOS</button>
+      <button role="tab" aria-selected="false" aria-controls="i-phone" id="b-phone">📱 Android</button>
     </div>
-    <div class="card reveal">
-      <h3>🐧 Linux · macOS · anywhere</h3>
+    <div class="panel open" id="i-win" role="tabpanel" aria-labelledby="b-win">
+      <h3>🪟 Windows</h3>
+      <ol><li>Download <b><a href="https://github.com/mygeeky/myGeeKy/releases/latest/download/MyGeeKySetup-{{VERSION}}.exe">MyGeeKySetup.exe</a></b></li>
+        <li><b>Next → Next → Finish</b></li></ol>
+      <p>Nothing to install first, no admin rights. If Windows says “Windows protected your PC” (not code-signed yet),
+        click <b>More info → Run anyway</b>.</p>
+    </div>
+    <div class="panel" id="i-nix" role="tabpanel" aria-labelledby="b-nix">
+      <h3>🐧 Linux · 🍎 macOS · anywhere</h3>
       <pre>curl -fsSL https://mygeeky.org/install.sh | sh</pre>
-      <p style="margin-top:12px">or with pip:</p>
+      <p>or with pip:</p>
       <pre>pip install mygeeky
 mygeeky setup</pre>
-      <p style="margin-top:12px">Run the one-liner again to update. Macs get <b>myGeeKy.app</b> in Launchpad and Spotlight.</p>
+      <p>Run the one-liner again to update. Macs get <b>myGeeKy.app</b> in Launchpad and Spotlight.</p>
     </div>
+    <div class="panel" id="i-phone" role="tabpanel" aria-labelledby="b-phone">
+      <h3>📱 Android</h3>
+      <p>Coming to Google Play soon. Meanwhile, the test version is on every
+        <a href="https://github.com/mygeeky/myGeeKy/releases/latest">GitHub release</a>.
+        Already use myGeeKy on your computer? One scan brings your profile over.</p>
+    </div>
+    <p class="then"><b>Then type what you work on, or nothing at all.</b> No ORCID, no GitHub? No account needed: myGeeKy
+      learns your field from what you open and like, and you can link GitHub, ORCID or Google Drive any time later.</p>
   </div>
-  <p class="then reveal"><b>Then just type what you work on.</b> That's the whole setup: the panel opens, and the first
-    run sets up its own window by itself.</p>
-  <p class="then reveal">No ORCID, no GitHub? <b>No account needed.</b> On the computer choose <b>👤 Continue as guest</b>;
-    on the phone, GeeKOc asks one thing a screen and you can skip GitHub and ORCID. Then give a few keywords, or none at
-    all: myGeeKy learns your field from what you open and like. You can sign in with GitHub or ORCID any time later.</p>
-  <p class="then reveal">Or <b>📝 drop a CV, thesis or abstract</b>: myGeeKy picks out your field, your methods and the
-    people you've written with, read on your device, and you keep what's right. Papers but no ORCID? <b>📄 Find my
-    papers</b> by your name and institution.</p>
 </section>
 
 <!-- ======================================================================= VIDEO -->
-<section id="video">
-  <div class="wrap center reveal">
+<section id="video" style="--c:var(--cyan)">
+  <div class="wrap center">
     <div class="eyebrow">Watch</div>
     <h2>Every feature, install, and a tour</h2>
-    <p class="sub">From a fresh computer to your first suggestions, protocols and chances.</p>
   </div>
-  <div class="wrap reveal">
-    <div class="video" id="yt" role="button" tabindex="0" aria-label="Play the myGeeKy video">
-      <img src="img/video-thumbnail.png" alt="" loading="lazy"><button class="play" aria-label="Play" tabindex="-1"></button>
-    </div>
+  <div class="wrap">
+    <a class="video-link" href="https://youtu.be/u1qmX5PtMdE" aria-label="Watch the myGeeKy video on YouTube"><img src="img/video-thumbnail.png" alt="" loading="lazy"></a>
+    <p class="then">Got an idea or a problem? Click 💡 in the app, or email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>.</p>
   </div>
 </section>
 
-<section>
-  <div class="wrap reveal">
-    <div class="ideas">
-      <div class="lamp">💡</div>
-      <div><h2 style="margin:0 0 6px;font-size:clamp(24px,3vw,32px)">Got an idea? A problem?</h2>
-        <p style="margin:0;color:var(--muted);max-width:560px">Click 💡 in the panel. Your browser opens a ready-to-send
-          issue in <a href="https://github.com/mygeeky/myGeeKy-ideas">myGeeKy-ideas</a>, and you press Submit.
-          Nothing is sent until you do. Or email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="final">
-  <div class="wrap reveal">
-    <img src="img/icon_256.png" alt="" style="width:96px;margin:0 auto 20px">
-    <h2>Grow, <span class="g">quietly.</span></h2>
-    <p class="sub" style="margin:0 auto 30px">Free, open source, and yours.</p>
-    <div class="ctas">
-      <a class="btn primary" href="https://github.com/mygeeky/myGeeKy/releases/latest/download/MyGeeKySetup-{{VERSION}}.exe">⬇ Download for Windows</a>
-      <a class="btn" href="https://pypi.org/project/mygeeky/">🐍 pip install mygeeky</a>
-    </div>
-    <div class="platforms" aria-label="Runs on">
-      <div><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 3 L7 37 L23 20 Z" fill="#4285f4"/><path d="M7 3 L28 15 L23 20 Z" fill="#34a853"/><path d="M7 37 L28 25 L23 20 Z" fill="#ea4335"/><path d="M28 15 L36 20 L28 25 L23 20 Z" fill="#fbbc04"/></svg>Google Play <span style="opacity:.7">(soon)</span></div>
-      <div><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="16" height="16" fill="#0078d4"/><rect x="21" y="3" width="16" height="16" fill="#0078d4"/><rect x="3" y="21" width="16" height="16" fill="#0078d4"/><rect x="21" y="21" width="16" height="16" fill="#0078d4"/></svg>Windows</div>
-      <div><svg viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><rect x="7" y="8" width="26" height="18" rx="2"/><path d="M3 31 h34" stroke-linecap="round"/></svg>macOS</div>
-      <div><svg viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10 l9 10 l-9 10"/><path d="M19 30 h15"/></svg>Linux</div>
-    </div>
-  </div>
-</section>
-
-<section id="code-signing">
-  <div class="wrap reveal" style="max-width:760px">
-    <div class="eyebrow">Code signing policy</div>
-    <h2 style="font-size:clamp(24px,4vw,32px)">How Windows releases are signed</h2>
-    <p class="sub" style="margin-bottom:18px">Windows releases of myGeeKy will be signed through the
-      <a href="https://signpath.org">SignPath Foundation</a>'s free code signing program for open-source projects
-      (application pending). Until approved, releases are unsigned.</p>
-    <ul class="ticks">
-      <li>Only binaries built by this project's public
-        <a href="https://github.com/mygeeky/myGeeKy/blob/main/.github/workflows/release.yml">GitHub Actions workflow</a>
-        from the source in <a href="https://github.com/mygeeky/myGeeKy">github.com/mygeeky/myGeeKy</a>
-        will be signed.</li>
-      <li><b>Committers and reviewers:</b> Alsamman M. Alsamman</li>
-      <li><b>Approvers:</b> Alsamman M. Alsamman</li>
-      <li><b>Privacy:</b> this program will not transfer any information to other networked systems unless specifically
-        requested by the user or the person installing or operating it. Its job is to read public data from GitHub and
-        research services for the account you set up, and to check PyPI for updates once a day; it sends no personal data
-        or telemetry. See the <a href="privacy.html">privacy policy</a>.</li>
-    </ul>
-  </div>
-</section>
+<details id="code-signing">
+  <summary>Code signing policy: how Windows releases are signed</summary>
+  <p>Windows releases of myGeeKy will be signed through the <a href="https://signpath.org">SignPath Foundation</a>'s
+    free code signing program for open-source projects (application pending). Until approved, releases are unsigned.</p>
+  <ul>
+    <li>Only binaries built by this project's public
+      <a href="https://github.com/mygeeky/myGeeKy/blob/main/.github/workflows/release.yml">GitHub Actions workflow</a>
+      from the source in <a href="https://github.com/mygeeky/myGeeKy">github.com/mygeeky/myGeeKy</a> will be signed.</li>
+    <li><b>Committers and reviewers:</b> Alsamman M. Alsamman. <b>Approvers:</b> Alsamman M. Alsamman.</li>
+    <li><b>Privacy:</b> this program will not transfer any information to other networked systems unless specifically
+      requested by the user or the person installing or operating it. It reads public data from GitHub and research
+      services for the account you set up, and checks PyPI for updates once a day; it sends no personal data or
+      telemetry. See the <a href="privacy.html">privacy policy</a>.</li>
+  </ul>
+</details>
 
 <footer>
   <div class="wrap">
-    <span>© myGeeKy · MIT License · made by a bioinformatician who doesn't have Facebook, for everyone who
-      builds things at a computer</span>
+    <span>© myGeeKy · MIT License · made by a bioinformatician, for everyone who builds things at a computer</span>
     <div class="links">
       <a href="https://github.com/mygeeky/myGeeKy">GitHub</a>
       <a href="https://github.com/mygeeky/myGeeKy/blob/main/docs/GUIDE.md">Guide</a>
       <a href="https://pypi.org/project/mygeeky/">PyPI</a>
-      <a href="https://youtu.be/u1qmX5PtMdE">Video</a>
-      <a href="https://github.com/mygeeky/myGeeKy-ideas">Ideas</a>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Signals terms</a>
       <a href="delete.html">Delete your data</a>
-      <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>
       <a href="#code-signing">Code signing</a>
     </div>
   </div>
 </footer>
 
+<div class="sticky-get"><a class="btn primary" href="#install">Get myGeeKy</a></div>
+
+<script type="application/json" id="map-data">{{MAP_DATA}}</script>
 <script src="geekoc/geekoc.js"></script>
 <script src="geekoc/geekoc-canvas.js"></script>
 <script>
 (() => {
+  document.body.classList.replace("no-js", "js");
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
-  // copy pip command
-  document.getElementById("copy").addEventListener("click", async (e) => {
-    try { await navigator.clipboard.writeText(document.getElementById("pip").textContent);
-          e.target.textContent = "Copied"; setTimeout(() => (e.target.textContent = "Copy"), 1500); } catch (_) {}
+  // ---- the orbit: a planet opens its story underneath (and the address says which, for sharing)
+  const tabs = $$(".orbit [role=tab]");
+  const open = (id, scroll) => {
+    if (!document.getElementById(id)) id = "home";
+    tabs.forEach((t) => t.setAttribute("aria-selected", String(t.getAttribute("aria-controls") === id)));
+    $$(".story").forEach((s) => s.classList.toggle("open", s.id === id));
+    $("#hint").textContent = id === "home" ? "Tap a planet to see what it does" : "Tap GeeKOc to go back";
+    if (scroll) $("#stories").scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => { const id = t.getAttribute("aria-controls"); history.replaceState(null, "", id === "home" ? "#top" : "#" + id); open(id, innerWidth < 900); });
+    t.addEventListener("keydown", (e) => {                       // arrows move round the orbit
+      const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (!k) return;
+      e.preventDefault();
+      const n = tabs[(i + k + tabs.length) % tabs.length]; n.focus(); n.click();
+    });
+  });
+  $$("[data-go]").forEach((b) => b.addEventListener("click", () => { history.replaceState(null, "", "#" + b.dataset.go); open(b.dataset.go, true); }));
+  const OLD = { see: "world", learn: "grow", meet: "circle", catch: "chances", play: "games", phone: "home", tour: "home" };   // the old page's sections
+  const fromHash = () => { let id = location.hash.slice(1); id = OLD[id] || id; if ($$(".story").some((s) => s.id === id)) open(id, true); };
+  addEventListener("hashchange", fromHash); fromHash();
+
+  // ---- install tabs
+  const itabs = $$(".tabs [role=tab]");
+  itabs.forEach((t) => t.addEventListener("click", () => {
+    itabs.forEach((x) => x.setAttribute("aria-selected", String(x === t)));
+    $$(".panel").forEach((p) => p.classList.toggle("open", p.id === t.getAttribute("aria-controls")));
+  }));
+  if (/Mac|Linux|X11/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent)) $("#b-nix").click();
+  if (/Android/.test(navigator.userAgent)) $("#b-phone").click();
+
+  $("#copy").addEventListener("click", async (e) => {
+    try { await navigator.clipboard.writeText($("#pip").textContent); e.target.textContent = "Copied"; setTimeout(() => (e.target.textContent = "Copy"), 1500); } catch (_) {}
   });
 
-  // reveal on scroll
-  const io = new IntersectionObserver((es) => es.forEach((e) => {
-    if (!e.isIntersecting) return;
-    e.target.classList.add("in"); io.unobserve(e.target);
-  }), { threshold: 0.12 });
-  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
-
-  // GeekOc in the hero: the website's own rig and arm physics. He hovers, his moods take turns, and his
-  // arms lean towards your pointer when it comes near (and a click gives an arm a little shove).
+  // ---- GeeKOc in the middle of the orbit (the website's own rig), still when you prefer less motion
   (() => {
-    const G = window.GeekOc, C = window.GeekOcCanvas, cv = document.getElementById("geekoc");
-    if (!G || !C || !G.Life || !cv) { cv && (cv.parentElement.style.display = "none"); return; }
-    const STAGE = [-40, 10, 700, 660];
-    const view = C.stage(cv, STAGE);
+    const G = window.GeekOc, C = window.GeekOcCanvas, cv = $("#geekoc");
+    if (!G || !C || !G.Life || !cv) return;
+    const STAGE = [-40, 10, 700, 660], view = C.stage(cv, STAGE);
     view.fit(); addEventListener("resize", () => view.fit());
     const life = G.alive({ stiff: 0.16, droop: 0.2 });
-    const moods = [["happy", "Hello. I'm GeekOc."], ["curious", "I read the twenty sites, so you read one."],
-                   ["thinking", "Shall we learn something new?"], ["excited", "Two deadlines this week, both still open."],
-                   ["wink", "I never post for you."]];
-    const says = document.getElementById("says");
-    let mood = 0, clock = 0, last = 0;
-    if (!still) setInterval(() => { mood = (mood + 1) % moods.length; says.textContent = moods[mood][1]; }, 4200);
-    const toStage = (e) => {             // pointer position in the character's own units
-      const r = cv.getBoundingClientRect(), k = Math.min(r.width / STAGE[2], r.height / STAGE[3]);
-      const ox = (r.width - STAGE[2] * k) / 2, oy = (r.height - STAGE[3] * k) / 2;
-      return [(e.clientX - r.left - ox) / k + STAGE[0], (e.clientY - r.top - oy) / k + STAGE[1]];
-    };
-    cv.addEventListener("pointermove", (e) => { const [x, y] = toStage(e); life.notice(x, y); });
-    cv.addEventListener("pointerleave", () => life.notice());
-    cv.addEventListener("click", () => { for (let i = 0; i < 8; i++) life.poke(i, (Math.random() - .5) * 40, -20 - Math.random() * 20); });
+    let clock = 0, last = 0;
     const frame = (now) => {
       const dt = last ? Math.min((now - last) / 1000, 0.05) : 1 / 60;
       last = now; clock += dt;
       const m = life.follow("hover", clock);
-      life.step(m.pose, moods[mood][0], dt);
-      view.clear();
-      C.draw(view.ctx, life.parts(m.pose, moods[mood][0]));
-      if (!still) requestAnimationFrame(frame);
+      life.step(m.pose, "happy", dt);
+      view.clear(); C.draw(view.ctx, life.parts(m.pose, "happy"));
+      if (!still && !document.hidden) requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && !still) { last = 0; requestAnimationFrame(frame); } });
   })();
 
-  // starfield
-  const sky = document.getElementById("sky"), sx = sky.getContext("2d");
-  let stars = [];
-  const size = () => { sky.width = innerWidth * devicePixelRatio; sky.height = innerHeight * devicePixelRatio;
-    stars = Array.from({ length: Math.min(160, innerWidth / 8) }, () => ({ x: Math.random(), y: Math.random(),
-      r: Math.random() * 1.3 + .2, p: Math.random() * 6.28, s: Math.random() * .0002 + .00005 })); };
-  size(); addEventListener("resize", size);
-  const twinkle = (t) => {
-    sx.clearRect(0, 0, sky.width, sky.height);
-    for (const s of stars) {
-      const a = .25 + .35 * Math.sin(t / 900 + s.p);
-      sx.fillStyle = `rgba(255,255,255,${a})`;
-      sx.beginPath(); sx.arc(s.x * sky.width, ((s.y + t * s.s) % 1) * sky.height, s.r * devicePixelRatio, 0, 6.28); sx.fill();
-    }
-    if (!still) requestAnimationFrame(twinkle);
-  };
-  requestAnimationFrame(twinkle);
+  // ---- the scientists: a network (people joined through shared fields) and a word map (fields sized by people)
+  const data = JSON.parse($("#map-data").textContent);
+  const people = data.scientists || [], fieldsCovered = data.fields || [];
+  const count = {};
+  people.forEach((p) => (p.fields || []).forEach((f) => (count[f.toLowerCase()] = (count[f.toLowerCase()] || 0) + 1)));
+  const words = people.length ? Object.keys(count) : fieldsCovered.map((f) => f.toLowerCase());
+  const palette = ["#7fd8ff", "#ff6fd8", "#4ade80", "#ffc457", "#a873f5", "#f472b6", "#eab308"];
 
-  // tab showcase
-  const TABS = [
-    ["live", "Live", "Your circle's activity and top suggestions, scrolling live."],
-    ["market", "Market", "Your field's repos as a stock race: stars, commits, downloads."],
-    ["research", "Research", "Rising papers, the code behind them, and the people."],
-    ["news", "News", "arXiv, bioRxiv and Hacker News about your interests."],
-    ["activity", "Activity", "One card per person: what they're building right now."],
-    ["signals", "Signals", "Private thank-yous from fellow users; 🤝 only when mutual (example people)."],
-    ["grow-skills", "Grow", "Rising skills in your field, and what's missing from you."],
-    ["grow-protocols", "Protocols", "A road map for any skill; the step you're on makes room for itself."],
-    ["grow-quiz", "Quiz", "Every protocol's quiz in one place, with your best scores."],
-    ["chances-jobs", "Chances", "Verified jobs, funding and conferences, matched to you."],
-    ["chances-seasons", "Seasons", "The scholarships that come back every year, months ahead."],
-    ["model", "Model", "What myGeeKy knows about you, drawn as a living map."],
-    ["games", "Games", "Fourteen short games from your own field, with GeeKOc."],
-  ];
-  const tabs = document.getElementById("tabs"), frameEl = document.getElementById("frame");
-  let cur = 0, timer;
-  TABS.forEach(([key, name, text], i) => {
-    const b = document.createElement("button"); b.className = "tabbtn"; b.type = "button";
-    b.innerHTML = `<b>${name}</b><span>${text}</span><i class="prog"></i>`;
-    b.addEventListener("click", () => go(i, true)); tabs.appendChild(b);
-    const im = document.createElement("img"); im.src = `img/${key}.png`; im.alt = `${name} tab`; im.loading = "lazy";
-    frameEl.appendChild(im);
-  });
-  const go = (i, user) => {
-    cur = i;
-    [...tabs.children].forEach((b, k) => { b.classList.toggle("on", k === i); const p = b.querySelector(".prog");
-      p.style.animation = "none"; void p.offsetWidth; p.style.animation = ""; });
-    [...frameEl.children].forEach((im, k) => im.classList.toggle("on", k === i));
-    document.getElementById("tabcap").textContent = TABS[i][2];
-    if (tabs.scrollWidth > tabs.clientWidth + 4) {   // phones: keep the active chip in view
-      const b = tabs.children[i];
-      tabs.scrollTo({ left: b.offsetLeft - tabs.clientWidth / 2 + b.offsetWidth / 2, behavior: still ? "auto" : "smooth" });
+  function layout(w, h, nodes, edges, steps) {                    // a small force layout, run once (no animation needed)
+    nodes.forEach((n, i) => { const a = i * 2.39996; const r = 0.35 * Math.min(w, h) * Math.sqrt((i + 0.5) / nodes.length);
+                              n.x = w / 2 + r * Math.cos(a); n.y = h / 2 + r * Math.sin(a); n.vx = n.vy = 0; });
+    for (let s = 0; s < steps; s++) {
+      for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j]; let dx = a.x - b.x, dy = a.y - b.y; const d2 = Math.max(dx * dx + dy * dy, 40);
+        const f = 1800 / d2; dx *= f / Math.sqrt(d2); dy *= f / Math.sqrt(d2);
+        a.vx += dx; a.vy += dy; b.vx -= dx; b.vy -= dy;
+      }
+      edges.forEach(([a, b]) => { const dx = b.x - a.x, dy = b.y - a.y; a.vx += dx * 0.02; a.vy += dy * 0.02; b.vx -= dx * 0.02; b.vy -= dy * 0.02; });
+      nodes.forEach((n) => { n.vx += (w / 2 - n.x) * 0.004; n.vy += (h / 2 - n.y) * 0.004;
+                             const half = n.kind === "word" ? Math.min(w / 2 - 8, n.label.length * 4.6 + 8) : 18;   // the whole word inside the frame
+                             n.x = Math.min(w - half, Math.max(half, n.x + n.vx * 0.5)); n.y = Math.min(h - 18, Math.max(18, n.y + n.vy * 0.5)); n.vx *= 0.6; n.vy *= 0.6; });
     }
-    clearTimeout(timer);
-    if (!still) timer = setTimeout(() => go((cur + 1) % TABS.length), user ? 12000 : 6000);
-    tabs.style.setProperty("--dur", user ? "12s" : "6s");
-  };
-  go(0);
-
-  // the interest map, drawn live
-  const cv = document.getElementById("map"), c = cv.getContext("2d");
-  const field = ["genomics", "population genetics", "GWAS", "plant biology", "bioinformatics", "phylogenetics",
-                 "molecular biology", "cell biology", "systems programming", "machine learning"];
-  const lately = [["single cell", 1], ["fine mapping", .8], ["snakemake", .65], ["spatial omics", .55], ["rust", .4]];
-  const explore = ["climate", "education", "accessibility"];
-  const nodes = [
-    ...field.map((l, i) => ({ l, ring: 0, a: i / field.length * 6.283, s: 9, col: "#7fd8ff" })),
-    ...lately.map(([l, w], i) => ({ l, ring: 1, a: i / lately.length * 6.283 + .6, s: 6 + 10 * w, col: "#ff6fd8" })),
-    ...explore.map((l, i) => ({ l, ring: 2, a: i / explore.length * 6.283 + 1.1, s: 7, col: "#9b87ff" })),
-  ];
-  const speed = [0.00006, -0.00004, 0.00003];
-  let W = 600, H = 600, R = [0.24, 0.36, 0.46], fs = 15, k = 1;
-  const fit = () => {   // draw at the real on-screen size (sharp on phones), with text that stays readable
-    const css = cv.clientWidth || 600, dpr = Math.min(devicePixelRatio || 1, 2);
-    cv.width = cv.height = Math.round(css * dpr);
-    c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    W = H = css;
-    const small = css < 460;
-    R = small ? [0.17, 0.27, 0.36] : [0.24, 0.36, 0.46];
-    k = small ? 0.7 : 1;
-    fs = Math.max(11, Math.min(15, css / 34));
-  };
-  fit(); addEventListener("resize", fit);
-  const draw = (t) => {
-    const cx = W / 2, cy = H / 2;
-    c.clearRect(0, 0, W, H);
-    R.forEach((r, k) => { c.beginPath(); c.setLineDash(k === 2 ? [6, 8] : []); c.strokeStyle = "rgba(255,255,255,.10)";
-      c.arc(cx, cy, r * W, 0, 6.283); c.stroke(); });
-    c.setLineDash([]);
-    c.font = `500 ${fs}px Inter, sans-serif`; c.textBaseline = "middle";
-    const pos = nodes.map((n) => { const a = n.a + t * speed[n.ring]; return [cx + Math.cos(a) * R[n.ring] * W, cy + Math.sin(a) * R[n.ring] * H]; });
-    nodes.forEach((n, i) => { const [x, y] = pos[i]; c.strokeStyle = n.col + "33"; c.lineWidth = 1.2;
-      c.beginPath(); c.moveTo(cx, cy); c.lineTo(x, y); c.stroke(); });
-    const dots = [];
-    nodes.forEach((n, i) => {
-      const [x, y] = pos[i];
-      const s = (n.ring === 1 ? n.s * (1 + .12 * Math.sin(t / 500 + i)) : n.s) * k;
-      const g = c.createRadialGradient(x, y, 0, x, y, s * 3); g.addColorStop(0, n.col + "77"); g.addColorStop(1, n.col + "00");
-      c.fillStyle = g; c.beginPath(); c.arc(x, y, s * 3, 0, 6.283); c.fill();
-      if (n.ring === 2) { c.setLineDash([4, 4]); c.strokeStyle = n.col; c.lineWidth = 2; c.beginPath(); c.arc(x, y, s, 0, 6.283); c.stroke(); c.setLineDash([]); }
-      else { c.fillStyle = n.col; c.beginPath(); c.arc(x, y, s, 0, 6.283); c.fill(); }
-      dots.push([n, x, y, s]);
-    });
-    const you0 = 30 * k * 1.2;
-    const taken = dots.map(([, x, y, s]) => [x - s, y - s, x + s, y + s]);
-    taken.push([cx - you0, cy - you0, cx + you0, cy + you0]);
-    const hits = (a, b) => a[0] < b[2] + 2 && a[2] > b[0] - 2 && a[1] < b[3] + 1 && a[3] > b[1] - 1;
-    c.textAlign = "left";
-    [...dots].sort((a, b) => [1, 2, 0].indexOf(a[0].ring) - [1, 2, 0].indexOf(b[0].ring)).forEach(([n, x, y, s]) => {
-      const tw = c.measureText(n.l).width, th = fs + 2;
-      const out = x < cx ? x - s - 6 - tw : x + s + 6, inn = x < cx ? x + s + 6 : x - s - 6 - tw;
-      const spots = [[out, y - th / 2], [inn, y - th / 2], [x - tw / 2, y - s - th - 1], [x - tw / 2, y + s + 1]];
-      for (const [sx, sy] of spots) {
-        const r = [sx, sy, sx + tw, sy + th];
-        if (r[0] < 2 || r[2] > W - 2 || r[1] < 0 || r[3] > H) continue;
-        if (taken.some((t) => !(t[0] === x - s && t[1] === y - s) && hits(r, t))) continue;
-        taken.push(r);
-        c.fillStyle = n.ring === 2 ? n.col : "rgba(242,242,247,.9)";
-        c.fillText(n.l, sx, sy + th / 2);
-        break;
+  }
+  function build(w, h) {
+    const shown = w < 600 ? words.slice(0, 16) : words;             // a phone's map: fewer words, each readable
+    const wordNodes = shown.map((f, i) => ({ kind: "word", label: f, size: count[f] || 1, color: palette[i % palette.length] }));
+    const byWord = Object.fromEntries(wordNodes.map((n) => [n.label, n]));
+    const personNodes = people.map((p) => ({ kind: "person", p }));
+    const edges = [];
+    personNodes.forEach((n) => (n.p.fields || []).forEach((f) => byWord[f.toLowerCase()] && edges.push([n, byWord[f.toLowerCase()]])));
+    const nodes = [...wordNodes, ...personNodes];
+    layout(w, h, nodes, edges, 220);
+    if (nodes.length) {                                           // stretch it to fill the frame, whatever its size
+      const xs = nodes.map((n) => n.x), ys = nodes.map((n) => n.y);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+      const mx = Math.min(90, w * 0.18), my = 36;
+      nodes.forEach((n) => { n.x = x1 > x0 ? mx + (n.x - x0) / (x1 - x0) * (w - 2 * mx) : w / 2;
+                             n.y = y1 > y0 ? my + (n.y - y0) / (y1 - y0) * (h - 2 * my) : h / 2; });
+    }
+    const halfW = (n) => n.kind === "word" ? n.label.length * 4.6 + 6 : 18;
+    for (let s = 0; s < 80; s++) {                                // then nothing sits on anything else
+      let moved = false;
+      for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        const ox = halfW(a) + halfW(b) - Math.abs(a.x - b.x), oy = (a.kind === "word" && b.kind === "word" ? 24 : 30) - Math.abs(a.y - b.y);
+        if (ox > 0 && oy > 0) {
+          moved = true;
+          if (oy < ox) { const d = (a.y < b.y ? -1 : 1) * oy / 2; a.y += d; b.y -= d; }
+          else { const d = (a.x < b.x ? -1 : 1) * ox / 2; a.x += d; b.x -= d; }
+          [a, b].forEach((n) => { const half = Math.min(w / 2 - 8, halfW(n) + 2);
+                                  n.x = Math.min(w - half, Math.max(half, n.x)); n.y = Math.min(h - 18, Math.max(18, n.y)); });
+        }
+      }
+      if (!moved) break;
+    }
+    return { nodes, edges };
+  }
+  function draw(cv, g, faint) {
+    const ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    ctx.lineWidth = 1;
+    g.edges.forEach(([a, b]) => { ctx.strokeStyle = "rgba(127,216,255,.22)"; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
+    if (!people.length) {                                         // no people yet: a soft web between nearby words
+      g.nodes.forEach((a, i) => g.nodes.slice(i + 1).forEach((b) => {
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d < 150) { ctx.strokeStyle = `rgba(255,255,255,${(faint ? 0.18 : 0.12) * (1 - d / 150)})`; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      }));
+    }
+    g.nodes.forEach((n) => {
+      if (n.kind === "word") {
+        if (faint) { ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.arc(n.x, n.y, 2.2, 0, Math.PI * 2); ctx.fill(); return; }   // behind the orbit: dots, no words
+        const px = Math.min(30, 13 + n.size * 4);
+        ctx.font = `800 ${px}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = faint ? "rgba(255,255,255,.35)" : n.color; ctx.globalAlpha = faint ? 1 : 0.9; ctx.fillText(n.label, n.x, n.y); ctx.globalAlpha = 1;
+      } else {
+        if (faint) { ctx.fillStyle = "rgba(255,111,216,.45)"; ctx.beginPath(); ctx.arc(n.x, n.y, 3, 0, Math.PI * 2); ctx.fill(); return; }
+        ctx.fillStyle = "#141416"; ctx.strokeStyle = "#ff6fd8"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 15, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.lineWidth = 1;
+        const initials = n.p.name.split(/\s+/).map((s) => s[0] || "").slice(0, 2).join("").toUpperCase();
+        ctx.fillStyle = "#f2f2f7"; ctx.font = "800 11px Inter, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(initials, n.x, n.y);
       }
     });
-    const you = 30 * k;
-    const halo = c.createRadialGradient(cx, cy, 0, cx, cy, you * 2.3); halo.addColorStop(0, "rgba(255,111,216,.5)"); halo.addColorStop(1, "rgba(255,111,216,0)");
-    c.fillStyle = halo; c.beginPath(); c.arc(cx, cy, you * 2.3, 0, 6.283); c.fill();
-    const core = c.createLinearGradient(cx - you, cy - you, cx + you, cy + you); core.addColorStop(0, "#ff6fd8"); core.addColorStop(1, "#7a5cff");
-    c.fillStyle = core; c.beginPath(); c.arc(cx, cy, you, 0, 6.283); c.fill();
-    c.fillStyle = "#fff"; c.font = `800 ${fs + 3}px Inter, sans-serif`; c.textAlign = "center"; c.fillText("you", cx, cy + 1);
-    if (!still) requestAnimationFrame(draw);
+  }
+  const map = $("#map"), net = $("#net");
+  let graph;
+  const render = () => {
+    graph = build(map.clientWidth, map.clientHeight); draw(map, graph, false);
+    $("#empty").hidden = people.length > 0;
+    draw(net, build(net.clientWidth, net.clientHeight), true);      // the same web, faint, behind the orbit
   };
-  requestAnimationFrame(draw);
+  render();
+  let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 200); });
+  $("#empty").hidden = people.length > 0;
 
-  // video: load YouTube only on click
-  const yt = document.getElementById("yt");
-  const play = () => { yt.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/u1qmX5PtMdE?autoplay=1&rel=0" title="myGeeKy video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>'; };
-  yt.addEventListener("click", play, { once: true });
-  yt.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); play(); } });
+  const tip = $("#tip");                                            // a person's card on hover or tap (plain text)
+  const near = (e) => { const r = map.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+                        return graph.nodes.find((n) => n.kind === "person" && Math.hypot(n.x - x, n.y - y) < 18); };
+  const show = (e) => {
+    const n = near(e);
+    if (!n) { tip.style.display = "none"; return; }
+    tip.replaceChildren();
+    const b = document.createElement("b"); b.textContent = n.p.name; tip.append(b);
+    [n.p.role, n.p.place, (n.p.fields || []).join(" · ")].filter(Boolean).forEach((s) => { const d = document.createElement("div"); d.textContent = s; d.style.color = "rgba(242,242,247,.7)"; tip.append(d); });
+    const r = map.getBoundingClientRect();
+    tip.style.left = Math.min(r.width - 270, Math.max(8, e.clientX - r.left + 14)) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px"; tip.style.display = "block";
+  };
+  map.addEventListener("pointermove", show); map.addEventListener("pointerdown", show);
+  map.addEventListener("pointerleave", () => (tip.style.display = "none"));
+
+  const list = $("#people");                                        // the same people as cards: readable without the map
+  people.forEach((p) => {
+    const c = document.createElement(p.link ? "a" : "div"); c.className = "person";
+    if (p.link) { c.href = p.link; c.rel = "noopener"; }
+    const b = document.createElement("b"); b.textContent = p.name;
+    const s = document.createElement("span"); s.textContent = [p.role, p.place].filter(Boolean).join(" · ");
+    const f = document.createElement("span"); f.className = "f"; f.textContent = (p.fields || []).join(" · ");
+    c.append(b, s, f); list.append(c);
+  });
 })();
 </script>
 </body>
