@@ -523,21 +523,33 @@ mygeeky setup</pre>
     if (!document.getElementById(id)) id = "home";
     tabs.forEach((t) => t.setAttribute("aria-selected", String(t.getAttribute("aria-controls") === id)));
     $$(".story").forEach((s) => s.classList.toggle("open", s.id === id));
-    $("#hint").textContent = id === "home" ? "Tap a planet to see what it does" : "Tap GeeKOc to go back";
+    $("#hint").textContent = id === "home" || auto ? "Tap a planet to see what it does" : "Tap GeeKOc to go back";
     if (scroll) $("#stories").scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
   };
+  // until the visitor picks one, the stories take turns (GeeKOc's first, then each planet), while the orbit is on
+  // screen and the pointer isn't resting on a story; any pick stops it for good
+  let auto = !still && !location.hash.slice(1).replace("top", ""), turn = 0, orbitSeen = true, reading = false;
+  const stop = () => { auto = false; };
+  new IntersectionObserver((es) => { orbitSeen = es[0].isIntersecting; }).observe($(".orbit"));
+  $("#stories").addEventListener("pointerenter", () => (reading = true));
+  $("#stories").addEventListener("pointerleave", () => (reading = false));
+  setInterval(() => {
+    if (!auto || !orbitSeen || reading || document.hidden) return;
+    turn = (turn + 1) % tabs.length; open(tabs[turn].getAttribute("aria-controls"), false);
+  }, 4000);
   tabs.forEach((t, i) => {
-    t.addEventListener("click", () => { const id = t.getAttribute("aria-controls"); history.replaceState(null, "", id === "home" ? "#top" : "#" + id); open(id, innerWidth < 900); });
+    t.addEventListener("pointerdown", stop);
+    t.addEventListener("click", () => { stop(); const id = t.getAttribute("aria-controls"); history.replaceState(null, "", id === "home" ? "#top" : "#" + id); open(id, innerWidth < 900); });
     t.addEventListener("keydown", (e) => {                       // arrows move round the orbit
       const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
       if (!k) return;
-      e.preventDefault();
+      e.preventDefault(); stop();
       const n = tabs[(i + k + tabs.length) % tabs.length]; n.focus(); n.click();
     });
   });
-  $$("[data-go]").forEach((b) => b.addEventListener("click", () => { history.replaceState(null, "", "#" + b.dataset.go); open(b.dataset.go, true); }));
+  $$("[data-go]").forEach((b) => b.addEventListener("click", () => { stop(); history.replaceState(null, "", "#" + b.dataset.go); open(b.dataset.go, true); }));
   const OLD = { see: "world", learn: "grow", meet: "circle", catch: "chances", play: "games", phone: "home", tour: "home" };   // the old page's sections
-  const fromHash = () => { let id = location.hash.slice(1); id = OLD[id] || id; if ($$(".story").some((s) => s.id === id)) open(id, true); };
+  const fromHash = () => { let id = location.hash.slice(1); id = OLD[id] || id; if ($$(".story").some((s) => s.id === id)) { stop(); open(id, true); } };
   addEventListener("hashchange", fromHash); fromHash();
 
   // ---- install tabs
