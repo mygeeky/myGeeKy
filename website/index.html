@@ -123,7 +123,7 @@
   .story .more { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
   .story .more button { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 999px;
                         padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
-  .story .more button img { width: 20px; height: 20px; border-radius: 50%; vertical-align: -5px; margin-right: 6px; }
+  .story .more button img { display: inline-block; width: 20px; height: 20px; border-radius: 50%; vertical-align: -5px; margin-right: 6px; }
   .story .more button:hover { color: var(--text); border-color: rgba(255, 255, 255, .3); }
 
   /* scientists: a network and a word map */
@@ -157,6 +157,7 @@
 
   /* install */
   #install { --c: var(--green); scroll-margin-top: 60px; }
+  img.os { display: inline-block; width: 1.4em; height: 1.4em; border-radius: 50%; vertical-align: -0.38em; margin-right: .35em; }   /* a system's picture */
   .tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
   .tabs button { padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--text);
                  font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; }
@@ -247,7 +248,7 @@
 
     <div class="ctas">
       <a class="btn primary" href="https://github.com/mygeeky/myGeeKy/releases/latest/download/MyGeeKySetup-{{VERSION}}.exe">⬇ Download for Windows</a>
-      <a class="btn" href="#install">🐧 Linux · 🍎 macOS · 📱 Android</a>
+      <a class="btn" href="#install"><img class="os" src="img/systems/linux.webp" alt="" width="22" height="22">Linux · <img class="os" src="img/systems/macos.webp" alt="" width="22" height="22">macOS · <img class="os" src="img/systems/android.webp" alt="" width="22" height="22">Android</a>
     </div>
     <div class="meta"><div class="pip"><code id="pip">pip install mygeeky</code><button type="button" id="copy">Copy</button></div></div>
   </div>
@@ -441,19 +442,19 @@
   </div>
   <div class="wrap">
     <div class="tabs" role="tablist" aria-label="Your system">
-      <button role="tab" aria-selected="true" aria-controls="i-win" id="b-win">🪟 Windows</button>
-      <button role="tab" aria-selected="false" aria-controls="i-nix" id="b-nix">🐧 Linux · 🍎 macOS</button>
-      <button role="tab" aria-selected="false" aria-controls="i-phone" id="b-phone">📱 Android</button>
+      <button role="tab" aria-selected="true" aria-controls="i-win" id="b-win"><img class="os" src="img/systems/windows.webp" alt="" width="22" height="22">Windows</button>
+      <button role="tab" aria-selected="false" aria-controls="i-nix" id="b-nix"><img class="os" src="img/systems/linux.webp" alt="" width="22" height="22">Linux · <img class="os" src="img/systems/macos.webp" alt="" width="22" height="22">macOS</button>
+      <button role="tab" aria-selected="false" aria-controls="i-phone" id="b-phone"><img class="os" src="img/systems/android.webp" alt="" width="22" height="22">Android</button>
     </div>
     <div class="panel open" id="i-win" role="tabpanel" aria-labelledby="b-win">
-      <h3>🪟 Windows</h3>
+      <h3><img class="os" src="img/systems/windows.webp" alt="" width="22" height="22">Windows</h3>
       <ol><li>Download <b><a href="https://github.com/mygeeky/myGeeKy/releases/latest/download/MyGeeKySetup-{{VERSION}}.exe">MyGeeKySetup.exe</a></b></li>
         <li><b>Next → Next → Finish</b></li></ol>
       <p>Nothing to install first, no admin rights. If Windows says “Windows protected your PC” (not code-signed yet),
         click <b>More info → Run anyway</b>.</p>
     </div>
     <div class="panel" id="i-nix" role="tabpanel" aria-labelledby="b-nix">
-      <h3>🐧 Linux · 🍎 macOS · anywhere</h3>
+      <h3><img class="os" src="img/systems/linux.webp" alt="" width="22" height="22">Linux · <img class="os" src="img/systems/macos.webp" alt="" width="22" height="22">macOS · anywhere</h3>
       <pre>curl -fsSL https://mygeeky.org/install.sh | sh</pre>
       <p>or with pip:</p>
       <pre>pip install mygeeky
@@ -461,7 +462,7 @@ mygeeky setup</pre>
       <p>Run the one-liner again to update. Macs get <b>myGeeKy.app</b> in Launchpad and Spotlight.</p>
     </div>
     <div class="panel" id="i-phone" role="tabpanel" aria-labelledby="b-phone">
-      <h3>📱 Android</h3>
+      <h3><img class="os" src="img/systems/android.webp" alt="" width="22" height="22">Android</h3>
       <p>Coming to Google Play soon. Meanwhile, the test version is on every
         <a href="https://github.com/mygeeky/myGeeKy/releases/latest">GitHub release</a>.
         Already use myGeeKy on your computer? One scan brings your profile over.</p>

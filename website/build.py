@@ -124,6 +124,7 @@ def main() -> None:
         shutil.copyfile(src, OUT / "img" / name)
     shutil.copytree(ROOT / "website/img/planets", OUT / "img/planets")   # the orbit's six planets
     shutil.copytree(ROOT / "website/img/promises", OUT / "img/promises")   # the five promises
+    shutil.copytree(ROOT / "website/img/systems", OUT / "img/systems")     # Windows, macOS, Linux, Android
     shutil.copytree(ROOT / "website/fonts", OUT / "fonts")      # self-hosted fonts (no request to Google)
     (OUT / "scientists").mkdir()                                # the map's photos (scientists.json), only those in use
     for p in scientists():
