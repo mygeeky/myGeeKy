@@ -508,7 +508,7 @@ mygeeky setup</pre>
 <script src="geekoc/geekoc-canvas.js"></script>
 <script>
 (() => {
-  document.body.classList.replace("no-js", "js");
+  document.body.classList.remove("no-js"); document.body.classList.add("js");
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
