@@ -178,6 +178,36 @@ def pytest_unconfigure(config):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_keyring():
+    """No test ever reaches the system keyring (the maker's tokens and keys live there): every test gets its own empty
+    in-memory keyring, whatever code asks. A locked keyring once hung the whole run waiting for an unlock prompt --
+    WISEP's key lookup, reached by building the settings panel."""
+    import keyring
+    from keyring.backend import KeyringBackend
+
+    class Memory(KeyringBackend):
+        priority = 1
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.kept: dict[tuple[str, str], str] = {}
+
+        def get_password(self, service, username):
+            return self.kept.get((service, username))
+
+        def set_password(self, service, username, password):
+            self.kept[(service, username)] = password
+
+        def delete_password(self, service, username):
+            self.kept.pop((service, username), None)
+
+    real = keyring.get_keyring()
+    keyring.set_keyring(Memory())
+    yield
+    keyring.set_keyring(real)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_deepseek_key(monkeypatch):
     """The maker's real DeepSeek key (system keyring) is never seen by a test: a test that needs a key
     passes a fake one itself, and DeepSeek is always faked."""
