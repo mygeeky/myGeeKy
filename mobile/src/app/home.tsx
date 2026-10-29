@@ -46,6 +46,8 @@ import { fetchNews } from '../lib/news';
 import { checkTokens, SETTINGS_URL, type TokenState } from '../lib/tokens';
 import { reminder, signs as makeSigns, state as signState } from '../lib/signs';
 import { cards as accountCards, todo as accountsTodo } from '../lib/accounts';
+import { KEYS, type NudgeKey } from '../lib/nudges';
+import { NudgeCard } from '../components/nudge-card';
 import { StatusSigns } from '../components/status-signs';
 import { GamesView } from '../components/games-view';
 import { recordInterest, savingLink, type SavingLink } from '../lib/model-repo';
@@ -256,7 +258,7 @@ export default function Home() {
   useEffect(() => { checkTokens().then((t) => { setTokens(t); setTokenWarn(t.find((x) => x.warn) ?? null); }).catch(() => undefined); }, []);
   // the four signs beside the page's name (lib/signs.ts): GitHub, ORCID, saving to your data repo, your beacon
   const dataTok = tokens.find((t) => t.name === 'data'), sigTok = tokens.find((t) => t.name === 'signals');
-  const [savingAt, setSavingAt] = useState<SavingLink | null>(null);      // Google Drive needs no token: ask where
+  const [savingAt, setSavingAt] = useState<SavingLink | null | undefined>(undefined);   // Google Drive needs no token: ask where (undefined: not known yet)
   useEffect(() => { savingLink().then(setSavingAt).catch(() => setSavingAt(null)); }, [tokens, sel]);
   const signItems = makeSigns(signState(!!token), signState(!!settings?.orcid),
                               signState(!!savingAt, savingAt?.where === 'github' && !!dataTok?.warn),
@@ -566,6 +568,9 @@ export default function Home() {
                             tintColor={C.pink} colors={[C.pink]} />
           ) : undefined}
         >
+          {/* what setup skipped, asked again on the pages it would improve (lib/nudges.ts) */}
+          <NudgeCard page={leafId} onGo={() => goTo('you:accounts')}
+                     missing={savingAt === undefined ? null : signItems.filter((x) => x.state === 'off' && (KEYS as string[]).includes(x.key)).map((x) => x.key as NudgeKey)} />
           {sel === 'you' ? (
             <View style={{ marginHorizontal: -4 }}>
               {youPart === 'month' ? <MonthView /> : youPart === 'model' ? <ModelPart /> : youPart === 'cited' ? <CitedByView /> : youPart === 'badges' ? <BadgesPart /> : youPart === 'admin' && admin ? <AdminPart /> : youPart === 'ideas' ? <IdeaForm />

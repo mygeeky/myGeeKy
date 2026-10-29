@@ -3943,6 +3943,10 @@ class MyGeekyPanel(QWidget):
         self.nav_row.setSpacing(1)
         self.tab_bar.hide()
         panel_layout.addWidget(self.tab_bar)
+        # what setup skipped (saving, ORCID, GitHub), asked again on the pages it would improve (nudges.py)
+        from .nudge_ui import NudgeCard
+        self.nudge_card = NudgeCard(lambda: THEMES[self._theme_name()], self._nudge_act)
+        panel_layout.addWidget(self.nudge_card)
 
         self.content_stack = QStackedWidget()
         # the side rail (navrail.py): folded 46px with each group's count, open 128px; over the page unless pinned
@@ -7527,7 +7531,9 @@ class MyGeekyPanel(QWidget):
         items = logic.status_signs(self.cfg, getattr(self, "_token_warnings", []), self._sync_error)
         self.status_signs.set_signs(items, THEMES[self._theme_name()])
         from .. import accounts                          # what needs you, counted on Settings → Accounts' line
-        self._accounts_todo = accounts.todo(accounts.cards({s["key"]: s["state"] for s in items}, "desktop"))
+        self._sign_states = {s["key"]: s["state"] for s in items}
+        self._accounts_todo = accounts.todo(accounts.cards(self._sign_states, "desktop"))
+        self._show_nudge(self._nav_leaf() if hasattr(self, "nav_tree") else None)
         if hasattr(self, "nav_buttons"):
             self._update_group_counts()
         now = datetime.now(timezone.utc)
@@ -8306,6 +8312,37 @@ class MyGeekyPanel(QWidget):
             if hasattr(self, "level_page"):
                 self.level_page.refresh()            # the tiles' counts
 
+    def _show_nudge(self, leaf: dict[str, Any] | None) -> None:
+        """The card for what setup skipped, if this page is one it improves and it's due today (nudges.pick);
+        a day you open myGeeKy counts as a day of use either way."""
+        card = getattr(self, "nudge_card", None)
+        if card is None:
+            return
+        from datetime import date
+        from .. import nudges
+        states = getattr(self, "_sign_states", None)
+        if not leaf or states is None:                    # what's linked isn't known yet: no card
+            card.hide()
+            return
+        state = nudges.load()
+        key = nudges.pick(state, leaf["id"], date.today().isoformat(), [k for k in nudges.KEYS if states.get(k) == "off"])
+        nudges.save(state)
+        if key:
+            card.show_key(key)
+        else:
+            card.hide()
+
+    def _nudge_act(self, key: str, what: str) -> None:
+        """The card's buttons: its action opens Settings → Accounts (and counts as "Not now", so it comes back if
+        nothing gets linked); "Not now"; "Don't ask again"."""
+        from .. import nudges
+        state = nudges.load()
+        (nudges.never if what == "never" else nudges.skip)(state, key)
+        nudges.save(state)
+        self.nudge_card.hide()
+        if what == "go":
+            self._nav_open(navtree.find(self.nav_tree, "settings:accounts"))
+
     def _update_tab_styles(self) -> None:
         theme = THEMES[self._theme_name()]
         self.tab_bar.setStyleSheet(f"QFrame#tabBar {{ background:{theme['card_bg']}; border-radius:10px; }}")
@@ -8317,6 +8354,7 @@ class MyGeekyPanel(QWidget):
                 wisep.opened(leaf["id"])
             except Exception:
                 pass
+            self._show_nudge(leaf)
         on_path = {n["id"] for n in navtree.path(leaf)} if leaf else set()
         planet_bg = QColor("#1c1c2c") if theme["dark"] else QColor("#ffffff")
         for nid, btn in self.nav_buttons.items():

@@ -57,6 +57,7 @@ Each phone file says in its opening comment which desktop file it ports. Keep th
 | `my-github.ts` | `gui/app.py` (`refresh_my_github`, `slim_github_event`) |
 | `whois.ts` (+ `whois-store.ts`, `components/whois-find.tsx`) | `whois.py` (+ `gui/whois_ui.py`, `gui/app.py` `whois_*`) |
 | `notify.ts` (+ `notify-store.ts`, `components/notify-settings.tsx`) | `notify.py` (+ `gui/notify_ui.py`, `gui/app.py` `notify_check`) |
+| `nudges.ts` (+ `components/nudge-card.tsx`, `app/home.tsx`) | `nudges.py` (+ `gui/nudge_ui.py`, `gui/qt_panel.py` `_show_nudge`) |
 | `ai-race.ts` (+ `components/ai-race-view.tsx`) | `airace.py` (+ `gui/airace_ui.py`, `gui/app.py` `ai_race`) |
 | `doc-read.ts` (+ `doc-text.ts`, `components/doc-drop.tsx`) | `docread.py` (+ `text_utils.py`, `gui/docread_ui.py`, `gui/app.py` `doc_*`, `gui/setup_wizard.py` `DropBox`) |
 | `news.ts` | `news.py` |
