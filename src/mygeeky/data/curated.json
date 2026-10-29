@@ -1,5 +1,5 @@
 {
- "version": "2026-10-28T09:40:22Z",
+ "version": "2026-10-29T09:58:50Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -52,59 +52,6 @@
      "rtl": false,
      "title": "统计遗传学博士后 - Casale 组",
      "summary": "Human Technopole 正在招聘一名统计遗传学博士后，开发计算方法，利用群体规模的人类遗传学和多模态分子数据，将人类遗传变异与生物学功能联系起来。"
-    }
-   }
-  },
-  {
-   "id": "ucl-professor-jasmin-fisher-s-laboratory-cancer-institute-se-2026",
-   "title": "(Senior) Research Fellow in Artificial Intelligence for Cancer Digital Twins",
-   "url": "https://www.jobs.ac.uk/job/DTB354/senior-research-fellow-in-artificial-intelligence-for-cancer-digital-twins",
-   "keywords": [
-    "artificial intelligence",
-    "computational biology",
-    "bioinformatics",
-    "genomics",
-    "multi-omics",
-    "cancer",
-    "machine learning",
-    "statistical analysis"
-   ],
-   "summary": "A Senior Research Fellow position in Professor Jasmin Fisher's laboratory at the UCL Cancer Institute, focused on using AI to generate digital tumour twins. The role involves developing transparent, interpretable and trustworthy AI technologies integrating machine learning, mechanistic modelling, formal verification and large-scale biomedical data.",
-   "deadline": "2026-10-28",
-   "org": "UCL - Professor Jasmin Fisher's laboratory / Cancer Institute",
-   "place": "London, United Kingdom",
-   "type": "postdoc",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "زميل باحث (أول) في الذكاء الاصطناعي للتوائم الرقمية للسرطان",
-     "summary": "وظيفة زميل باحث أول في مختبر الأستاذة جاسمين فيشر في معهد UCL للسرطان، تركز على استخدام الذكاء الاصطناعي لتوليد توائم رقمية للأورام. يتضمن الدور تطوير تقنيات ذكاء اصطناعي شفافة وقابلة للتفسير وموثوقة تدمج تعلم الآلة والنمذجة الميكانيكية والتحقق الرسمي والبيانات الطبية الحيوية واسعة النطاق."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Chercheur (senior) en intelligence artificielle pour les jumeaux numériques du cancer",
-     "summary": "Un poste de chercheur senior dans le laboratoire du professeur Jasmin Fisher à l'UCL Cancer Institute, axé sur l'utilisation de l'IA pour générer des jumeaux numériques de tumeurs. Le rôle implique le développement de technologies d'IA transparentes, interprétables et dignes de confiance intégrant l'apprentissage automatique, la modélisation mécaniste, la vérification formelle et les données biomé"
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "(Senior) Research Fellow in Künstlicher Intelligenz für digitale Krebs-Zwillinge",
-     "summary": "Eine Senior Research Fellow-Position im Labor von Professor Jasmin Fisher am UCL Cancer Institute, die sich auf die Nutzung von KI zur Erzeugung digitaler Tumor-Zwillinge konzentriert. Die Rolle umfasst die Entwicklung transparenter, interpretierbarer und vertrauenswürdiger KI-Technologien, die maschinelles Lernen, mechanistische Modellierung, formale Verifikation und groß angelegte biomedizinisch"
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Investigador (sénior) en inteligencia artificial para gemelos digitales del cáncer",
-     "summary": "Un puesto de investigador sénior en el laboratorio del profesor Jasmin Fisher en el UCL Cancer Institute, centrado en el uso de IA para generar gemelos digitales de tumores. El rol implica desarrollar tecnologías de IA transparentes, interpretables y confiables que integran aprendizaje automático, modelado mecanicista, verificación formal y datos biomédicos a gran escala."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "（高级）人工智能癌症数字孪生研究员",
-     "summary": "伦敦大学学院癌症研究所Jasmin Fisher教授实验室的高级研究员职位，专注于使用人工智能生成数字肿瘤孪生。该角色涉及开发透明、可解释且可信的人工智能技术，整合机器学习、机制建模、形式验证和大规模生物医学数据。"
     }
    }
   },
@@ -777,25 +724,6 @@
      "summary": "BIOPOLIS协会启动一项国际选拔程序，招聘一名初级研究员，开展关于鸟类迁徙行为个体发育对环境变化响应的研究活动，合同为12个月固定期限合同。"
     }
    }
-  },
-  {
-   "id": "imperial-college-london-postdoc-in-artificial-intelligence-f-2026",
-   "title": "Postdoc in Artificial Intelligence for Antifungal Drug Discovery",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202609301228-cdd-postdoc-in-artificial-intelligence-for-antifungal-drug-discovery",
-   "keywords": [
-    "artificial intelligence",
-    "drug discovery",
-    "machine learning",
-    "genomics",
-    "chemoproteomics",
-    "bioinformatics"
-   ],
-   "summary": "A 24-month postdoctoral Research Associate position in the Ballester group at Imperial College London, building an integrated AI-driven functional genomic and chemoproteomic platform to improve antifungal drug discovery targeting Candida auris.",
-   "deadline": "2026-10-28",
-   "org": "Imperial College London",
-   "place": "London, United Kingdom",
-   "type": "postdoc",
-   "remote": false
   },
   {
    "id": "inrae-hybrid-mechanistic-ai-modeling-of-microbiomes-2026",
