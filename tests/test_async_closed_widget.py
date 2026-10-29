@@ -26,8 +26,11 @@ def test_a_profile_closed_mid_load_is_skipped_quietly(qapp, monkeypatch, no_save
         release.set()
         for w in list(panel._workers):
             w.wait(5000)
-        _wait(qapp, 0.3)                           # the answer lands: no RuntimeError
-        assert not errors and not panel._workers
+        for _ in range(30):                        # the answer lands (through Qt's event loop: slower on a busy
+            _wait(qapp, 0.1)                       # machine, so wait for it rather than a fixed time)
+            if not panel._workers:
+                break
+        assert not errors and not panel._workers   # no RuntimeError, and the worker let go
     finally:
         _close(panel)
 

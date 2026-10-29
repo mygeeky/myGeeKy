@@ -99,13 +99,16 @@ import { phoneTree, walk } from './lib/nav-tree.ts';
 out(walk(phoneTree(true, true)).map((n) => n.id));
 """) if phone.node_ok() else None
     for page, place in N.PAGE_PLACE.items():
-        assert page in desk or (said is not None and page in said), page
         assert any(place in places for places in N.PLACES.values()), place
+        if said is not None:                                     # (the phone's tree needs Node 22.6+)
+            assert page in desk or page in said, page
     for places in N.PLACES.values():                             # every place has a page on the computer and the phone
         for place in places:
             assert any(N.place_of(p) == place for p in desk), place
             if said is not None:
                 assert any(N.place_of(p) == place for p in said), place
+    # the computer's own ids in the table are real pages on the computer, Node or not
+    assert {p for p in N.PAGE_PLACE if p.startswith(("model:", "market:", "chances:", "grow:"))} <= desk
 
 
 # --------------------------------------------------------------------------- the phone, the same answers
