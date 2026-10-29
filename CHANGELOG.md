@@ -3,8 +3,11 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
-## Unreleased
+## 0.41.0 (2026-10-29): Gentle second asks, GeeKOc feels the games, lighter games, fewer crashes (phone 1.23.0)
 
+- **What setup skipped is asked again, gently** (computer and phone): saving your data (Google Drive recommended, or a GitHub repo), your ORCID and GitHub each get a small card on the pages they'd improve (saving on You → My month and Model; ORCID on Cited by, Researchers, Highlights and Jobs; GitHub on Repos and My month), with **Not now** and **Don't ask again**. Never in your first week: the first card comes after 7 days of use, then 2 days of use after a *Not now*, once a week after the third, and it stops for good two months after it first appeared. At most one kind a day; what it remembers stays on the device. Both apps follow the same rules (`nudges.py`, `lib/nudges.ts`, checked against each other).
+- **README, website and guide** show Play with GeeKOc, with new screenshots.
+- **Game cards' hover box shows what the game is** (computer): it used to appear as an empty dark box; it now shows the game's one line in the theme's colours.
 - **Games redraw only what changed** (phone): a frame is drawn only when what it shows moved, the game screen around the field is no longer redrawn every frame, the parts that never move (the maze's walls, Rise's platforms, the nets) are drawn once, and GeeKOc's feelings are each built once and only shown or hidden. The games where something moves all the time (Flappy, GeeKOc run, Sort the catch, Word Hunter) draw 30 pictures a second instead of 60; the game itself still runs on the real clock, so nothing is slower. On the emulator: Whack-a-bug 60% → 10% CPU, Rise 48% → 7%, GeeKOc run 50% → 25%, Sort the catch 65% → 40%, Flappy about 70% → 44%.
 - **Flappy GeeKOc is fairer** (computer and phone): the surface and the sea floor no longer cost a life. GeeKOc stops at the surface and pushes off the floor; only the coral and a wrong gap take a life. Tapping a little too often used to end a round at the first gate.
 - **The orbit's dotted rings hold still** (phone): they used to turn, which kept the phone redrawing 60 times a second while the orbit or the dock was open (16% CPU on the emulator; 2.5% now).
