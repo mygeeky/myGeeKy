@@ -90,7 +90,11 @@ class GameCard(QFrame):
         self.setObjectName("gameCard")
         self.setCursor(Qt.PointingHandCursor)
         self.setStyleSheet(f"#gameCard {{ background:{t['card_bg']}; border-radius:14px; }} "
-                           f"#gameCard:hover {{ border:1.5px solid {t['accent']}; }}")
+                           f"#gameCard:hover {{ border:1.5px solid {t['accent']}; }} "
+                           # the card's own style sheet takes over its tooltip, which then lost the theme's colours
+                           # and showed as an empty dark box: what the game is, in the theme's colours
+                           f"QToolTip {{ background:{t['solid_bg']}; color:{t['text']}; border:1px solid {t['accent']}; "
+                           "border-radius:6px; padding:5px 7px; font-size:11px; }")
         self.setAccessibleName(game["title"])
         self.setToolTip(game["about"])
         lay = QHBoxLayout(self)
