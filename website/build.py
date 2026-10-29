@@ -75,8 +75,16 @@ def scientists() -> list[dict]:
         fields = p.get("fields", [])
         if not isinstance(fields, list) or not 1 <= len(fields) <= 6 or not all(isinstance(f, str) and 0 < len(f) <= 30 for f in fields):
             raise SystemExit(f"website/scientists.json, entry {i + 1}: 1 to 6 fields, each at most 30 characters")
+        photo = text("photo", 80)
+        if photo:                                              # a file beside the page, never a link to another site
+            path = ROOT / "website" / "scientists" / photo
+            if not re.fullmatch(r"[a-z0-9][a-z0-9-]*\.(jpg|jpeg|png|webp)", photo) or not path.is_file():
+                raise SystemExit(f"website/scientists.json, entry {i + 1}: the photo must be a .jpg, .png or .webp file "
+                                 f"in website/scientists/ (lower case, letters, digits and dashes)")
+            if path.stat().st_size > 400_000:
+                raise SystemExit(f"website/scientists.json, entry {i + 1}: the photo is over 400 KB; make it smaller")
         out.append({"name": text("name", 80, True), "role": text("role", 80), "place": text("place", 80), "link": link,
-                    "fields": [f.strip() for f in fields], "since": text("since", 7)})
+                    "fields": [f.strip() for f in fields], "since": text("since", 7), "photo": photo})
     return out
 
 
@@ -115,6 +123,10 @@ def main() -> None:
     for name, src in IMAGES.items():
         shutil.copyfile(src, OUT / "img" / name)
     shutil.copytree(ROOT / "website/fonts", OUT / "fonts")      # self-hosted fonts (no request to Google)
+    (OUT / "scientists").mkdir()                                # the map's photos (scientists.json), only those in use
+    for p in scientists():
+        if p["photo"]:
+            shutil.copyfile(ROOT / "website/scientists" / p["photo"], OUT / "scientists" / p["photo"])
     (OUT / "geekoc").mkdir()                                    # GeekOc, alive in the hero: the rig and its canvas drawer
     for js in ("geekoc.js", "geekoc-canvas.js"):
         shutil.copyfile(ROOT / "website/geekoc" / js, OUT / "geekoc" / js)

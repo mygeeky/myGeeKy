@@ -41,10 +41,15 @@ body:
       placeholder: GWAS, single cell, R, statistics
     validations:
       required: true
+  - type: textarea
+    id: photo
+    attributes:
+      label: A photo of you (optional)
+      description: Drag a photo here (square works best). It is shown in the map with your name beneath it.
   - type: checkboxes
     id: consent
     attributes:
       label: Consent
       options:
-        - label: I agree that the name, role, institution, link and fields above are shown publicly on mygeeky.org.
+        - label: I agree that the name, role, institution, link, fields and photo above are shown publicly on mygeeky.org.
           required: true

@@ -1,4 +1,4 @@
 {
-  "_about": "Scientists who use and support myGeeKy, shown on mygeeky.org as a network and a word map. Only people who asked to be shown (the 'Join the map' issue form, or an email to support@mygeeky.org) and whom the maker accepted. Each entry: name, role, place, link (https: ORCID, lab or personal page), fields (up to 6 short words), since (YYYY-MM). website/build.py checks every entry; text is shown as plain text.",
+  "_about": "Scientists who use and support myGeeKy, shown on mygeeky.org as a network and a word map. Only people who asked to be shown (the 'Join the map' issue form, or an email to support@mygeeky.org) and whom the maker accepted. Each entry: name, role, place, link (https: ORCID, lab or personal page), fields (up to 6 short words), since (YYYY-MM), photo (optional: a file name in website/scientists/, .jpg/.png/.webp, at most 400 KB; square works best). website/build.py checks every entry; text is shown as plain text.",
   "scientists": []
 }

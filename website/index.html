@@ -131,8 +131,10 @@
                padding: 20px 22px; border-radius: 18px; background: rgba(20, 20, 22, .86); border: 1px solid var(--line); }
   .map-empty b { font-size: 18px; display: block; margin-bottom: 6px; }
   .map-empty p { color: var(--muted); margin: 0 0 14px; font-size: 15px; }
-  .map-tip { position: absolute; pointer-events: none; padding: 10px 12px; border-radius: 12px; background: rgba(20, 20, 22, .94);
-             border: 1px solid var(--line); font-size: 14px; max-width: 260px; display: none; }
+  .spot { min-height: 52px; margin: 14px auto 0; text-align: center; font-size: 15px; }
+  .spot b { font-size: 17px; }
+  .spot span { color: var(--muted); }
+  .spot .f { color: var(--pink); font-size: 14px; }
   .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
   .person { padding: 14px 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
   .person b { display: block; }
@@ -389,13 +391,13 @@
   <div class="wrap">
     <div class="map-card">
       <canvas id="map" role="img" aria-label="A network of the scientists who use myGeeKy, joined through the fields they work in"></canvas>
-      <div class="map-tip" id="tip"></div>
       <div class="map-empty" id="empty" hidden>
         <b>Be the first on the map</b>
         <p>These are the fields myGeeKy covers. Use myGeeKy for your research? Ask to be shown here.</p>
         <a class="btn primary" href="https://github.com/mygeeky/myGeeKy/issues/new?template=join-the-map.yml">Join the map</a>
       </div>
     </div>
+    <p class="spot" id="spot" aria-live="polite"></p>
     <div class="people" id="people"></div>
     <p class="join" id="join">Use myGeeKy for your research? <a href="https://github.com/mygeeky/myGeeKy/issues/new?template=join-the-map.yml">Ask to join the map</a>
       or email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>. Only what you write is shown, and you can leave any time.</p>
@@ -607,76 +609,123 @@ mygeeky setup</pre>
       nodes.forEach((n) => { n.x = x1 > x0 ? mx + (n.x - x0) / (x1 - x0) * (w - 2 * mx) : w / 2;
                              n.y = y1 > y0 ? my + (n.y - y0) / (y1 - y0) * (h - 2 * my) : h / 2; });
     }
-    const halfW = (n) => n.kind === "word" ? n.label.length * 4.6 + 6 : 18;
-    for (let s = 0; s < 80; s++) {                                // then nothing sits on anything else
+    // a person is a photo with the name beneath it: the box they take, and the room between two things
+    const halfW = (n) => n.kind === "word" ? n.label.length * 4.6 + 6 : Math.max(30, n.p.name.length * 3.4 + 6);
+    const gapY = (a, b) => a.kind === "word" && b.kind === "word" ? 24 : a.kind === "person" && b.kind === "person" ? 74 : 46;
+    for (let s = 0; s < 120; s++) {                               // then nothing sits on anything else
       let moved = false;
       for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
         const a = nodes[i], b = nodes[j];
-        const ox = halfW(a) + halfW(b) - Math.abs(a.x - b.x), oy = (a.kind === "word" && b.kind === "word" ? 24 : 30) - Math.abs(a.y - b.y);
+        const ox = halfW(a) + halfW(b) - Math.abs(a.x - b.x), oy = gapY(a, b) - Math.abs(a.y - b.y);
         if (ox > 0 && oy > 0) {
           moved = true;
           if (oy < ox) { const d = (a.y < b.y ? -1 : 1) * oy / 2; a.y += d; b.y -= d; }
           else { const d = (a.x < b.x ? -1 : 1) * ox / 2; a.x += d; b.x -= d; }
-          [a, b].forEach((n) => { const half = Math.min(w / 2 - 8, halfW(n) + 2);
-                                  n.x = Math.min(w - half, Math.max(half, n.x)); n.y = Math.min(h - 18, Math.max(18, n.y)); });
+          [a, b].forEach((n) => { const half = Math.min(w / 2 - 8, halfW(n) + 2), top = n.kind === "person" ? 30 : 18;
+                                  n.x = Math.min(w - half, Math.max(half, n.x)); n.y = Math.min(h - (n.kind === "person" ? 44 : 18), Math.max(top, n.y)); });
         }
       }
       if (!moved) break;
     }
     return { nodes, edges };
   }
+
+  // photos live beside the page (website/scientists/), never fetched from another site
+  const photos = {};
+  people.forEach((p) => { if (!p.photo) return; const im = new Image(); im.onload = () => render(); im.src = "scientists/" + p.photo; photos[p.photo] = im; });
+  const R = () => (map.clientWidth < 600 ? 20 : 24);               // a photo's radius
+
+  let focus = -1;                                                   // the person highlighted now (-1: none)
   function draw(cv, g, faint) {
     const ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
     cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    const who = !faint && focus >= 0 ? people[focus] : null;
+    const lit = new Set(who ? (who.fields || []).map((f) => f.toLowerCase()) : []);
     ctx.lineWidth = 1;
-    g.edges.forEach(([a, b]) => { ctx.strokeStyle = "rgba(127,216,255,.22)"; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
+    g.edges.forEach(([a, b]) => {
+      const on = who && a.p === who;
+      ctx.strokeStyle = on ? "rgba(255,111,216,.85)" : who ? "rgba(127,216,255,.07)" : "rgba(127,216,255,.22)";
+      ctx.lineWidth = on ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    });
+    ctx.lineWidth = 1;
     if (!people.length) {                                         // no people yet: a soft web between nearby words
       g.nodes.forEach((a, i) => g.nodes.slice(i + 1).forEach((b) => {
         const d = Math.hypot(a.x - b.x, a.y - b.y);
         if (d < 150) { ctx.strokeStyle = `rgba(255,255,255,${(faint ? 0.18 : 0.12) * (1 - d / 150)})`; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
       }));
     }
+    const r = R();
     g.nodes.forEach((n) => {
       if (n.kind === "word") {
         if (faint) { ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.arc(n.x, n.y, 2.2, 0, Math.PI * 2); ctx.fill(); return; }   // behind the orbit: dots, no words
-        const px = Math.min(30, 13 + n.size * 4);
+        const on = lit.has(n.label), px = Math.min(30, 13 + n.size * 4) * (on ? 1.18 : 1);
         ctx.font = `800 ${px}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillStyle = faint ? "rgba(255,255,255,.35)" : n.color; ctx.globalAlpha = faint ? 1 : 0.9; ctx.fillText(n.label, n.x, n.y); ctx.globalAlpha = 1;
-      } else {
-        if (faint) { ctx.fillStyle = "rgba(255,111,216,.45)"; ctx.beginPath(); ctx.arc(n.x, n.y, 3, 0, Math.PI * 2); ctx.fill(); return; }
-        ctx.fillStyle = "#141416"; ctx.strokeStyle = "#ff6fd8"; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(n.x, n.y, 15, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.lineWidth = 1;
-        const initials = n.p.name.split(/\s+/).map((s) => s[0] || "").slice(0, 2).join("").toUpperCase();
-        ctx.fillStyle = "#f2f2f7"; ctx.font = "800 11px Inter, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(initials, n.x, n.y);
+        if (on) {                                                 // their fields: lit, on a soft pill
+          const tw = ctx.measureText(n.label).width;
+          ctx.fillStyle = "#3a1d37"; ctx.beginPath(); ctx.roundRect(n.x - tw / 2 - 9, n.y - px * 0.7, tw + 18, px * 1.4, 10); ctx.fill();
+        }
+        ctx.globalAlpha = who && !on ? 0.22 : 0.95; ctx.fillStyle = n.color; ctx.fillText(n.label, n.x, n.y); ctx.globalAlpha = 1;
+        return;
       }
+      if (faint) { ctx.fillStyle = "rgba(255,111,216,.45)"; ctx.beginPath(); ctx.arc(n.x, n.y, 3, 0, Math.PI * 2); ctx.fill(); return; }
+      const on = who === n.p, dim = who && !on;
+      ctx.globalAlpha = dim ? 0.4 : 1;
+      if (on) { ctx.fillStyle = "rgba(255,111,216,.25)"; ctx.beginPath(); ctx.arc(n.x, n.y, r + 9, 0, Math.PI * 2); ctx.fill(); }
+      ctx.save(); ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.closePath(); ctx.fillStyle = "#26262c"; ctx.fill(); ctx.clip();
+      const im = n.p.photo && photos[n.p.photo];
+      if (im && im.complete && im.naturalWidth) {                   // the photo, filling its circle
+        const k = Math.max(2 * r / im.naturalWidth, 2 * r / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
+        ctx.drawImage(im, n.x - iw / 2, n.y - ih / 2, iw, ih);
+      } else {                                                       // no photo: initials
+        const initials = n.p.name.split(/\s+/).map((s) => s[0] || "").slice(0, 2).join("").toUpperCase();
+        ctx.fillStyle = "#f2f2f7"; ctx.font = `800 ${Math.round(r * 0.7)}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(initials, n.x, n.y + 1);
+      }
+      ctx.restore();
+      ctx.strokeStyle = on ? "#ff6fd8" : "rgba(255,111,216,.7)"; ctx.lineWidth = on ? 3 : 2;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 1;
+      ctx.font = `700 ${r < 24 ? 11 : 12}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";   // the name, small but clear
+      const nw = ctx.measureText(n.p.name).width;
+      ctx.fillStyle = "rgba(20,20,22,.82)"; ctx.beginPath(); ctx.roundRect(n.x - nw / 2 - 6, n.y + r + 4, nw + 12, 18, 6); ctx.fill();
+      ctx.fillStyle = "#f2f2f7"; ctx.fillText(n.p.name, n.x, n.y + r + 7);
+      ctx.globalAlpha = 1;
     });
   }
   const map = $("#map"), net = $("#net");
   let graph;
+  const spot = $("#spot");
+  function say() {                                                  // who is lit, in words (read out by screen readers)
+    spot.replaceChildren();
+    const p = people[focus];
+    if (!p) return;
+    const b = document.createElement("b"); b.textContent = p.name;
+    const rest = document.createElement("span"); rest.textContent = " · " + [p.role, p.place].filter(Boolean).join(" · ");
+    const f = document.createElement("span"); f.className = "f"; f.textContent = (p.fields || []).join(" · ");
+    spot.append(b, rest, document.createElement("br"), f);
+  }
   const render = () => {
     graph = build(map.clientWidth, map.clientHeight); draw(map, graph, false);
     $("#empty").hidden = people.length > 0;
     draw(net, build(net.clientWidth, net.clientHeight), true);      // the same web, faint, behind the orbit
   };
+  const light = (i) => { focus = i; draw(map, graph, false); say(); };
   render();
   let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 200); });
-  $("#empty").hidden = people.length > 0;
 
-  const tip = $("#tip");                                            // a person's card on hover or tap (plain text)
-  const near = (e) => { const r = map.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-                        return graph.nodes.find((n) => n.kind === "person" && Math.hypot(n.x - x, n.y - y) < 18); };
-  const show = (e) => {
-    const n = near(e);
-    if (!n) { tip.style.display = "none"; return; }
-    tip.replaceChildren();
-    const b = document.createElement("b"); b.textContent = n.p.name; tip.append(b);
-    [n.p.role, n.p.place, (n.p.fields || []).join(" · ")].filter(Boolean).forEach((s) => { const d = document.createElement("div"); d.textContent = s; d.style.color = "rgba(242,242,247,.7)"; tip.append(d); });
-    const r = map.getBoundingClientRect();
-    tip.style.left = Math.min(r.width - 270, Math.max(8, e.clientX - r.left + 14)) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px"; tip.style.display = "block";
-  };
-  map.addEventListener("pointermove", show); map.addEventListener("pointerdown", show);
-  map.addEventListener("pointerleave", () => (tip.style.display = "none"));
+  // one person at a time, every few seconds, while the map is on screen; a hover or a tap holds one
+  let seen = false, held = 0;
+  new IntersectionObserver((es) => { seen = es[0].isIntersecting; }).observe(map);
+  if (people.length) {
+    light(0);
+    if (!still) setInterval(() => { if (seen && Date.now() > held && !document.hidden) light((focus + 1) % people.length); }, 3500);
+  }
+  const near = (e) => { const b = map.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+                        return graph.nodes.find((n) => n.kind === "person" && Math.hypot(n.x - x, n.y - y) < R() + 6); };
+  const pick = (e, hold) => { const n = near(e); if (!n) return; held = Date.now() + hold; const i = people.indexOf(n.p); if (i !== focus) light(i); };
+  map.addEventListener("pointermove", (e) => pick(e, 4000));
+  map.addEventListener("pointerdown", (e) => pick(e, 10000));
+  map.addEventListener("pointerleave", () => (held = 0));
 
   const list = $("#people");                                        // the same people as cards: readable without the map
   people.forEach((p) => {

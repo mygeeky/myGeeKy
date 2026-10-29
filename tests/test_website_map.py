@@ -54,8 +54,22 @@ def test_a_good_entry_passes_and_text_cannot_close_the_script(tmp_path, monkeypa
     {**GOOD, "name": ""},                                   # a name
     {**GOOD, "name": "x" * 81},
     {**GOOD, "role": 5},
+    {**GOOD, "photo": "https://example.org/me.jpg"},        # never a link to another site
+    {**GOOD, "photo": "../secret.png"},
+    {**GOOD, "photo": "missing.jpg"},                       # must be in website/scientists/
 ])
 def test_a_wrong_entry_stops_the_build(tmp_path, monkeypatch, bad):
     mod = _build(tmp_path, monkeypatch, [bad])
     with pytest.raises(SystemExit):
         mod.scientists()
+
+
+def test_a_photo_beside_the_page_passes_and_a_big_one_does_not(tmp_path, monkeypatch):
+    mod = _build(tmp_path, monkeypatch, [{**GOOD, "photo": "ada-example.png"}])
+    (tmp_path / "website" / "scientists").mkdir()
+    (tmp_path / "website" / "scientists" / "ada-example.png").write_bytes(b"x" * 1000)
+    assert mod.scientists()[0]["photo"] == "ada-example.png"
+    (tmp_path / "website" / "scientists" / "ada-example.png").write_bytes(b"x" * 400_001)
+    with pytest.raises(SystemExit):
+        mod.scientists()
+
