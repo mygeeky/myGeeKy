@@ -140,6 +140,13 @@
   .person b { display: block; }
   .person span { color: var(--muted); font-size: 14px; display: block; }
   .person .f { margin-top: 6px; color: var(--cyan); font-size: 13px; }
+  .find { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: center; margin-top: 22px; }
+  .find input { width: min(100%, 420px); padding: 11px 18px; border-radius: 999px; border: 1px solid var(--line);
+                background: var(--card); color: var(--text); font: inherit; font-size: 15px; }
+  .find span { color: var(--muted); font-size: 14px; }
+  .more-people { display: block; margin: 16px auto 0; background: transparent; border: 1px solid var(--line); color: var(--text);
+                 border-radius: 999px; padding: 9px 18px; font: inherit; font-size: 15px; cursor: pointer; }
+  .more-people:hover { border-color: rgba(255, 255, 255, .3); }
   .join { margin-top: 18px; text-align: center; color: var(--muted); }
 
   /* promises */
@@ -191,6 +198,7 @@
     .shots { gap: 10px; }
     .sticky-get { display: flex; position: fixed; left: 16px; right: 16px; bottom: 14px; z-index: 40; }
     .map-empty { position: static; transform: none; margin: 0 auto 16px; }
+    #map { height: 440px; }
     .sticky-get .btn { flex: 1; padding: 14px; font-size: 16px; }
     footer .links { margin-left: 0; }
   }
@@ -385,8 +393,8 @@
   <div class="wrap center">
     <div class="eyebrow">Scientists</div>
     <h2>The scientists who use and support myGeeKy</h2>
-    <p class="sub">Each dot is a scientist who asked to be shown; each word is a field they work in. Scientists who share
-      a field are joined through it.</p>
+    <p class="sub">Each photo is a scientist who asked to be shown; each word is a field they work in. Point at a word
+      to see everyone who works in it.</p>
   </div>
   <div class="wrap">
     <div class="map-card">
@@ -398,7 +406,12 @@
       </div>
     </div>
     <p class="spot" id="spot" aria-live="polite"></p>
+    <div class="find" id="find-row" hidden>
+      <input id="find" type="search" placeholder="Find a scientist, a place or a field" aria-label="Find a scientist, a place or a field">
+      <span id="found" aria-live="polite"></span>
+    </div>
     <div class="people" id="people"></div>
+    <button class="more-people" id="more" type="button" hidden></button>
     <p class="join" id="join">Use myGeeKy for your research? <a href="https://github.com/mygeeky/myGeeKy/issues/new?template=join-the-map.yml">Ask to join the map</a>
       or email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>. Only what you write is shown, and you can leave any time.</p>
   </div>
@@ -573,10 +586,16 @@ mygeeky setup</pre>
   // ---- the scientists: a network (people joined through shared fields) and a word map (fields sized by people)
   const data = JSON.parse($("#map-data").textContent);
   const people = data.scientists || [], fieldsCovered = data.fields || [];
+  const fieldsOf = (p) => (p.fields || []).map((f) => f.toLowerCase());
   const count = {};
-  people.forEach((p) => (p.fields || []).forEach((f) => (count[f.toLowerCase()] = (count[f.toLowerCase()] || 0) + 1)));
-  const words = people.length ? Object.keys(count) : fieldsCovered.map((f) => f.toLowerCase());
+  people.forEach((p) => fieldsOf(p).forEach((f) => (count[f] = (count[f] || 0) + 1)));
+  const words = people.length ? Object.keys(count).sort((a, b) => count[b] - count[a]) : fieldsCovered.map((f) => f.toLowerCase());
   const palette = ["#7fd8ff", "#ff6fd8", "#4ade80", "#ffc457", "#a873f5", "#f472b6", "#eab308"];
+  // a few scientists: each a photo with the name beneath it; a crowd: small photos gathered round their fields,
+  // a name shown only for the one lit
+  const crowd = (w) => people.length > (w < 600 ? 8 : 16);
+  const R = (w) => (w < 600 ? 20 : 24);                             // a photo's radius
+  const dot = (w) => (w < 600 ? 7 : 9);                             // a photo's radius in a crowd
 
   function layout(w, h, nodes, edges, steps) {                    // a small force layout, run once (no animation needed)
     nodes.forEach((n, i) => { const a = i * 2.39996; const r = 0.35 * Math.min(w, h) * Math.sqrt((i + 0.5) / nodes.length);
@@ -594,58 +613,98 @@ mygeeky setup</pre>
     }
   }
   function build(w, h) {
-    const shown = w < 600 ? words.slice(0, 16) : words;             // a phone's map: fewer words, each readable
-    const wordNodes = shown.map((f, i) => ({ kind: "word", label: f, size: count[f] || 1, color: palette[i % palette.length] }));
+    const many = crowd(w);
+    const shown = words.slice(0, many ? (w < 600 ? 14 : 30) : w < 600 ? 16 : words.length);   // a crowd: its biggest fields
+    const wordNodes = shown.map((f, i) => ({ kind: "word", label: f, color: palette[i % palette.length],
+                                             px: Math.min(30, many ? 12 + Math.sqrt(count[f] || 1) * 3 : 13 + (count[f] || 1) * 4) }));
     const byWord = Object.fromEntries(wordNodes.map((n) => [n.label, n]));
     const personNodes = people.map((p) => ({ kind: "person", p }));
     const edges = [];
-    personNodes.forEach((n) => (n.p.fields || []).forEach((f) => byWord[f.toLowerCase()] && edges.push([n, byWord[f.toLowerCase()]])));
-    const nodes = [...wordNodes, ...personNodes];
-    layout(w, h, nodes, edges, 220);
-    if (nodes.length) {                                           // stretch it to fill the frame, whatever its size
+    personNodes.forEach((n) => fieldsOf(n.p).forEach((f) => byWord[f] && edges.push([n, byWord[f]])));
+    // a person is a photo with the name beneath it: the box they take, and the room between two things
+    const halfW = (n) => n.kind === "word" ? n.label.length * n.px * 0.3 + 6 : Math.max(30, n.p.name.length * 3.4 + 6);
+    const gapY = (a, b) => a.kind === "word" && b.kind === "word" ? 24 : a.kind === "person" && b.kind === "person" ? 74 : 46;
+    wordNodes.forEach((n) => (n.hw = halfW(n)));
+    const stretch = (nodes) => {                                  // stretch it to fill the frame, whatever its size
+      if (!nodes.length) return;
       const xs = nodes.map((n) => n.x), ys = nodes.map((n) => n.y);
       const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
       const mx = Math.min(90, w * 0.18), my = 36;
       nodes.forEach((n) => { n.x = x1 > x0 ? mx + (n.x - x0) / (x1 - x0) * (w - 2 * mx) : w / 2;
                              n.y = y1 > y0 ? my + (n.y - y0) / (y1 - y0) * (h - 2 * my) : h / 2; });
-    }
-    // a person is a photo with the name beneath it: the box they take, and the room between two things
-    const halfW = (n) => n.kind === "word" ? n.label.length * 4.6 + 6 : Math.max(30, n.p.name.length * 3.4 + 6);
-    const gapY = (a, b) => a.kind === "word" && b.kind === "word" ? 24 : a.kind === "person" && b.kind === "person" ? 74 : 46;
-    for (let s = 0; s < 120; s++) {                               // then nothing sits on anything else
-      let moved = false;
-      for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i], b = nodes[j];
-        const ox = halfW(a) + halfW(b) - Math.abs(a.x - b.x), oy = gapY(a, b) - Math.abs(a.y - b.y);
-        if (ox > 0 && oy > 0) {
-          moved = true;
-          if (oy < ox) { const d = (a.y < b.y ? -1 : 1) * oy / 2; a.y += d; b.y -= d; }
-          else { const d = (a.x < b.x ? -1 : 1) * ox / 2; a.x += d; b.x -= d; }
-          [a, b].forEach((n) => { const half = Math.min(w / 2 - 8, halfW(n) + 2), top = n.kind === "person" ? 30 : 18;
-                                  n.x = Math.min(w - half, Math.max(half, n.x)); n.y = Math.min(h - (n.kind === "person" ? 44 : 18), Math.max(top, n.y)); });
+    };
+    const apart = (nodes) => {                                    // then nothing sits on anything else
+      for (let s = 0; s < 120; s++) {
+        let moved = false;
+        for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          const ox = halfW(a) + halfW(b) - Math.abs(a.x - b.x), oy = gapY(a, b) - Math.abs(a.y - b.y);
+          if (ox > 0 && oy > 0) {
+            moved = true;
+            if (oy < ox) { const d = (a.y < b.y ? -1 : 1) * oy / 2; a.y += d; b.y -= d; }
+            else { const d = (a.x < b.x ? -1 : 1) * ox / 2; a.x += d; b.x -= d; }
+            [a, b].forEach((n) => { const half = Math.min(w / 2 - 8, halfW(n) + 2), top = n.kind === "person" ? 30 : 18;
+                                    n.x = Math.min(w - half, Math.max(half, n.x)); n.y = Math.min(h - (n.kind === "person" ? 44 : 18), Math.max(top, n.y)); });
+          }
         }
+        if (!moved) break;
       }
+    };
+    if (!many) {
+      const nodes = [...wordNodes, ...personNodes];
+      layout(w, h, nodes, edges, 220); stretch(nodes); apart(nodes);
+      return { nodes, edges, many };
+    }
+    // a crowd: the words are laid out alone (joined where one person works in both), then each person goes among
+    // their own fields, and the photos are spread so none covers another or a word
+    const seen = new Set(), wordEdges = [];
+    people.forEach((p) => { const fs = fieldsOf(p).filter((f) => byWord[f]);
+      fs.forEach((a, i) => fs.slice(i + 1).forEach((b) => { const k = a < b ? a + "|" + b : b + "|" + a;
+        if (!seen.has(k)) { seen.add(k); wordEdges.push([byWord[a], byWord[b]]); } })); });
+    layout(w, h, wordNodes, wordEdges, 220); stretch(wordNodes); apart(wordNodes);
+    const r = dot(w);
+    personNodes.forEach((n, i) => {
+      const ws = fieldsOf(n.p).map((f) => byWord[f]).filter(Boolean), a = i * 2.39996, k = 18 + (i % 7) * 6;
+      const at = (v) => ws.length ? 0.6 * v(ws[0]) + 0.4 * ws.reduce((s, u) => s + v(u), 0) / ws.length : NaN;   // nearest their first field
+      n.x = (at((u) => u.x) || w / 2) + Math.cos(a) * k; n.y = (at((u) => u.y) || h / 2) + Math.sin(a) * k;
+    });
+    for (let s = 0; s < 100; s++) {
+      let moved = false;
+      const last = s >= 90;                                         // the last steps only keep the words clear
+      for (let i = 0; i < personNodes.length; i++) {
+        const a = personNodes[i];
+        if (!last) for (let j = i + 1; j < personNodes.length; j++) {
+          const b = personNodes[j], dx = a.x - b.x, dy = a.y - b.y, d = Math.hypot(dx, dy), need = 2 * r + 3 - d;
+          if (need > 0) { moved = true; const ux = d ? dx / d : Math.cos(i), uy = d ? dy / d : Math.sin(i);
+                          a.x += ux * need / 2; a.y += uy * need / 2; b.x -= ux * need / 2; b.y -= uy * need / 2; }
+        }
+        wordNodes.forEach((t) => {
+          const ox = t.hw + r - Math.abs(a.x - t.x), oy = t.px * 0.6 + r - Math.abs(a.y - t.y);
+          if (ox > 0 && oy > 0) { moved = true; if (oy < ox) a.y += (a.y < t.y ? -1 : 1) * oy; else a.x += (a.x < t.x ? -1 : 1) * ox; }
+        });
+      }
+      personNodes.forEach((n) => { n.x = Math.min(w - r - 4, Math.max(r + 4, n.x)); n.y = Math.min(h - r - 4, Math.max(r + 4, n.y)); });
       if (!moved) break;
     }
-    return { nodes, edges };
+    return { nodes: [...personNodes, ...wordNodes], edges, many };
   }
 
   // photos live beside the page (website/scientists/), never fetched from another site
   const photos = {};
-  people.forEach((p) => { if (!p.photo) return; const im = new Image(); im.onload = () => render(); im.src = "scientists/" + p.photo; photos[p.photo] = im; });
-  const R = () => (map.clientWidth < 600 ? 20 : 24);               // a photo's radius
+  people.forEach((p) => { if (!p.photo || photos[p.photo]) return; const im = new Image(); im.onload = () => graph && draw(map, graph, false); im.src = "scientists/" + p.photo; photos[p.photo] = im; });
 
-  let focus = -1;                                                   // the person highlighted now (-1: none)
+  let focus = -1, field = null;                                     // the person lit now (-1: none), or the field lit now
   function draw(cv, g, faint) {
     const ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
     cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
-    const who = !faint && focus >= 0 ? people[focus] : null;
-    const lit = new Set(who ? (who.fields || []).map((f) => f.toLowerCase()) : []);
-    ctx.lineWidth = 1;
+    const who = !faint && focus >= 0 ? people[focus] : null, inField = !faint && !who && field;
+    const lit = new Set(who ? fieldsOf(who) : inField ? [field] : []);
+    const any = who || inField;
     g.edges.forEach(([a, b]) => {
-      const on = who && a.p === who;
-      ctx.strokeStyle = on ? "rgba(255,111,216,.85)" : who ? "rgba(127,216,255,.07)" : "rgba(127,216,255,.22)";
-      ctx.lineWidth = on ? 2 : 1;
+      const on = who ? a.p === who : inField && b.label === field;
+      if (g.many && !on) return;                                    // a crowd: only the lit lines, or it is a blur
+      ctx.strokeStyle = on ? (who ? "rgba(255,111,216,.85)" : "rgba(255,111,216,.4)") : any ? "rgba(127,216,255,.07)" : "rgba(127,216,255,.22)";
+      ctx.lineWidth = on && who ? 2 : 1;
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     });
     ctx.lineWidth = 1;
@@ -655,42 +714,51 @@ mygeeky setup</pre>
         if (d < 150) { ctx.strokeStyle = `rgba(255,255,255,${(faint ? 0.18 : 0.12) * (1 - d / 150)})`; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
       }));
     }
-    const r = R();
-    g.nodes.forEach((n) => {
-      if (n.kind === "word") {
-        if (faint) { ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.arc(n.x, n.y, 2.2, 0, Math.PI * 2); ctx.fill(); return; }   // behind the orbit: dots, no words
-        const on = lit.has(n.label), px = Math.min(30, 13 + n.size * 4) * (on ? 1.18 : 1);
-        ctx.font = `800 ${px}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        if (on) {                                                 // their fields: lit, on a soft pill
-          const tw = ctx.measureText(n.label).width;
-          ctx.fillStyle = "#3a1d37"; ctx.beginPath(); ctx.roundRect(n.x - tw / 2 - 9, n.y - px * 0.7, tw + 18, px * 1.4, 10); ctx.fill();
-        }
-        ctx.globalAlpha = who && !on ? 0.22 : 0.95; ctx.fillStyle = n.color; ctx.fillText(n.label, n.x, n.y); ctx.globalAlpha = 1;
-        return;
-      }
-      if (faint) { ctx.fillStyle = "rgba(255,111,216,.45)"; ctx.beginPath(); ctx.arc(n.x, n.y, 3, 0, Math.PI * 2); ctx.fill(); return; }
-      const on = who === n.p, dim = who && !on;
-      ctx.globalAlpha = dim ? 0.4 : 1;
-      if (on) { ctx.fillStyle = "rgba(255,111,216,.25)"; ctx.beginPath(); ctx.arc(n.x, n.y, r + 9, 0, Math.PI * 2); ctx.fill(); }
+    const word = (n) => {
+      if (faint) { ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.arc(n.x, n.y, 2.2, 0, Math.PI * 2); ctx.fill(); return; }   // behind the orbit: dots, no words
+      const on = lit.has(n.label), px = n.px * (on ? 1.18 : 1);
+      ctx.font = `800 ${px}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      if (on) {                                                   // their fields: lit, on a soft pill
+        const tw = ctx.measureText(n.label).width;
+        ctx.fillStyle = "#3a1d37"; ctx.beginPath(); ctx.roundRect(n.x - tw / 2 - 9, n.y - px * 0.7, tw + 18, px * 1.4, 10); ctx.fill();
+      } else { ctx.strokeStyle = "rgba(14,14,16,.8)"; ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.strokeText(n.label, n.x, n.y); ctx.lineWidth = 1; }
+      ctx.globalAlpha = any && !on ? (g.many ? 0.45 : 0.22) : 0.95; ctx.fillStyle = n.color; ctx.fillText(n.label, n.x, n.y); ctx.globalAlpha = 1;
+    };
+    const person = (n, r, on, dim, named) => {
+      if (faint) { ctx.fillStyle = "rgba(255,111,216,.45)"; ctx.beginPath(); ctx.arc(n.x, n.y, g.many ? 2 : 3, 0, Math.PI * 2); ctx.fill(); return; }
+      ctx.globalAlpha = dim ? (g.many ? 0.28 : 0.4) : 1;
+      if (on && named) { ctx.fillStyle = "rgba(255,111,216,.25)"; ctx.beginPath(); ctx.arc(n.x, n.y, r + 9, 0, Math.PI * 2); ctx.fill(); }
       ctx.save(); ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.closePath(); ctx.fillStyle = "#26262c"; ctx.fill(); ctx.clip();
       const im = n.p.photo && photos[n.p.photo];
       if (im && im.complete && im.naturalWidth) {                   // the photo, filling its circle
         const k = Math.max(2 * r / im.naturalWidth, 2 * r / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
         ctx.drawImage(im, n.x - iw / 2, n.y - ih / 2, iw, ih);
-      } else {                                                       // no photo: initials
+      } else if (r >= 14) {                                          // no photo: initials (too small in a crowd)
         const initials = n.p.name.split(/\s+/).map((s) => s[0] || "").slice(0, 2).join("").toUpperCase();
         ctx.fillStyle = "#f2f2f7"; ctx.font = `800 ${Math.round(r * 0.7)}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(initials, n.x, n.y + 1);
       }
       ctx.restore();
-      ctx.strokeStyle = on ? "#ff6fd8" : "rgba(255,111,216,.7)"; ctx.lineWidth = on ? 3 : 2;
+      ctx.strokeStyle = on ? "#ff6fd8" : "rgba(255,111,216,.7)"; ctx.lineWidth = on ? (r < 14 ? 2.5 : 3) : r < 14 ? 1.5 : 2;
       ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 1;
-      ctx.font = `700 ${r < 24 ? 11 : 12}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";   // the name, small but clear
-      const nw = ctx.measureText(n.p.name).width;
-      ctx.fillStyle = "rgba(20,20,22,.82)"; ctx.beginPath(); ctx.roundRect(n.x - nw / 2 - 6, n.y + r + 4, nw + 12, 18, 6); ctx.fill();
-      ctx.fillStyle = "#f2f2f7"; ctx.fillText(n.p.name, n.x, n.y + r + 7);
+      if (named) {
+        ctx.font = `700 ${r < 24 ? 11 : 12}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";   // the name, small but clear
+        const nw = ctx.measureText(n.p.name).width, x = Math.min(w - nw / 2 - 8, Math.max(nw / 2 + 8, n.x));
+        ctx.fillStyle = "rgba(20,20,22,.82)"; ctx.beginPath(); ctx.roundRect(x - nw / 2 - 6, n.y + r + 4, nw + 12, 18, 6); ctx.fill();
+        ctx.fillStyle = "#f2f2f7"; ctx.fillText(n.p.name, x, n.y + r + 7);
+      }
       ctx.globalAlpha = 1;
-    });
+    };
+    const big = R(w), small = dot(w);
+    const of = (n) => (inField ? fieldsOf(n.p).includes(field) : who === n.p);
+    if (!g.many) {
+      g.nodes.forEach((n) => (n.kind === "word" ? word(n) : person(n, big, of(n), any && !of(n), true)));
+      return;
+    }
+    let top = null;                                                 // a crowd: the photos, the words over them, then the lit one on top
+    g.nodes.forEach((n) => { if (n.kind !== "person") return; if (who === n.p) top = n; else person(n, small, of(n), any && !of(n), false); });
+    g.nodes.forEach((n) => n.kind === "word" && word(n));
+    if (top) person(top, big, true, false, true);
   }
   const map = $("#map"), net = $("#net");
   let graph;
@@ -698,44 +766,84 @@ mygeeky setup</pre>
   function say() {                                                  // who is lit, in words (read out by screen readers)
     spot.replaceChildren();
     const p = people[focus];
-    if (!p) return;
-    const b = document.createElement("b"); b.textContent = p.name;
-    const rest = document.createElement("span"); rest.textContent = " · " + [p.role, p.place].filter(Boolean).join(" · ");
-    const f = document.createElement("span"); f.className = "f"; f.textContent = (p.fields || []).join(" · ");
-    spot.append(b, rest, document.createElement("br"), f);
+    const line = (cls, text) => { const s = document.createElement("span"); if (cls) s.className = cls; s.textContent = text; return s; };
+    if (p) {
+      const b = document.createElement("b"); b.textContent = p.name;
+      spot.append(b, line("", " · " + [p.role, p.place].filter(Boolean).join(" · ")), document.createElement("br"), line("f", (p.fields || []).join(" · ")));
+    } else if (field) {                                             // a field: how many work in it, and who
+      const them = people.filter((q) => fieldsOf(q).includes(field)), names = them.slice(0, 8).map((q) => q.name);
+      const b = document.createElement("b"); b.textContent = field;
+      spot.append(b, line("", ` · ${them.length} ${them.length === 1 ? "scientist" : "scientists"}`), document.createElement("br"),
+                  line("f", names.join(" · ") + (them.length > names.length ? ` and ${them.length - names.length} more` : "")));
+    }
   }
   const render = () => {
     graph = build(map.clientWidth, map.clientHeight); draw(map, graph, false);
     $("#empty").hidden = people.length > 0;
     draw(net, build(net.clientWidth, net.clientHeight), true);      // the same web, faint, behind the orbit
   };
-  const light = (i) => { focus = i; draw(map, graph, false); say(); };
+  const light = (i) => { focus = i; field = null; draw(map, graph, false); say(); };
+  const lightField = (f) => { focus = -1; field = f; draw(map, graph, false); say(); };
   render();
   let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 200); });
 
-  // one person at a time, every few seconds, while the map is on screen; a hover or a tap holds one
-  let seen = false, held = 0;
-  new IntersectionObserver((es) => { seen = es[0].isIntersecting; }).observe(map);
+  // one person at a time, in a shuffled order, every few seconds while the map is on screen; pointing at a photo
+  // holds that person, pointing at a word lights everyone in that field
+  let onScreen = false, held = 0;
+  new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(map);
+  const order = people.map((_, i) => i).sort(() => Math.random() - 0.5);
+  let next = 0;
   if (people.length) {
-    light(0);
-    if (!still) setInterval(() => { if (seen && Date.now() > held && !document.hidden) light((focus + 1) % people.length); }, 3500);
+    light(order[0]);
+    if (!still) setInterval(() => { if (onScreen && Date.now() > held && !document.hidden) light(order[next = (next + 1) % order.length]); }, 3500);
   }
-  const near = (e) => { const b = map.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
-                        return graph.nodes.find((n) => n.kind === "person" && Math.hypot(n.x - x, n.y - y) < R() + 6); };
-  const pick = (e, hold) => { const n = near(e); if (!n) return; held = Date.now() + hold; const i = people.indexOf(n.p); if (i !== focus) light(i); };
+  const hit = (e) => {
+    const b = map.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top, w = map.clientWidth;
+    const lit = focus >= 0 && graph.nodes.find((n) => n.p === people[focus]);
+    if (lit && Math.hypot(lit.x - x, lit.y - y) < R(w) + 6) return lit;
+    const r = graph.many ? dot(w) + 4 : R(w) + 6;
+    return graph.nodes.find((n) => n.kind === "person" && Math.hypot(n.x - x, n.y - y) < r)
+        || graph.nodes.find((n) => n.kind === "word" && Math.abs(n.x - x) < n.hw && Math.abs(n.y - y) < n.px * 0.7);
+  };
+  const pick = (e, hold) => {
+    const n = hit(e); map.style.cursor = n ? "pointer" : "";
+    if (!n) return;
+    held = Date.now() + hold;
+    if (n.kind === "word") { if (n.label !== field) lightField(n.label); if (hold > 4000 && find) { find.value = n.label; filter(); } return; }
+    const i = people.indexOf(n.p); if (i !== focus) light(i);
+  };
   map.addEventListener("pointermove", (e) => pick(e, 4000));
   map.addEventListener("pointerdown", (e) => pick(e, 10000));
   map.addEventListener("pointerleave", () => (held = 0));
 
-  const list = $("#people");                                        // the same people as cards: readable without the map
-  people.forEach((p) => {
+  // the same people as cards, readable without the map; a crowd gets a search and shows the first few
+  const list = $("#people"), find = $("#find"), more = $("#more"), FIRST = 8;
+  let all = false;
+  const cards = people.map((p) => {
     const c = document.createElement(p.link ? "a" : "div"); c.className = "person";
     if (p.link) { c.href = p.link; c.rel = "noopener"; }
     const b = document.createElement("b"); b.textContent = p.name;
     const s = document.createElement("span"); s.textContent = [p.role, p.place].filter(Boolean).join(" · ");
     const f = document.createElement("span"); f.className = "f"; f.textContent = (p.fields || []).join(" · ");
     c.append(b, s, f); list.append(c);
+    return { c, p, text: [p.name, p.role, p.place, ...(p.fields || [])].join(" ").toLowerCase() };
   });
+  function filter() {
+    const q = find.value.trim().toLowerCase();
+    let n = 0;
+    cards.forEach(({ c, p, text }) => {
+      const match = !q || (count[q] ? fieldsOf(p).includes(q) : text.includes(q));   // a field's name: the people in it
+      if (match) n++;
+      c.hidden = !match || (!q && !all && n > FIRST);
+    });
+    more.hidden = !!q || all || people.length <= FIRST;
+    more.textContent = `Show all ${people.length} scientists`;
+    $("#found").textContent = q ? `${n} of ${people.length}` : "";
+  }
+  $("#find-row").hidden = people.length <= FIRST;
+  find.addEventListener("input", filter);
+  more.addEventListener("click", () => { all = true; filter(); });
+  filter();
 })();
 </script>
 </body>
