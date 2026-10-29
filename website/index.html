@@ -148,7 +148,9 @@
   /* promises */
   #never { --c: var(--pink); }
   .promises { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 30px; }
-  .promise { padding: 18px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
+  .promise { padding: 20px 16px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); text-align: center; }
+  .promise img { display: block; width: 96px; height: 96px; margin: 0 auto 14px; border-radius: 50%; padding: 3px;
+                 border: 2px solid var(--r); box-shadow: 0 0 22px color-mix(in srgb, var(--r) 40%, transparent); background: #0b0b0d; }
   .promise b { display: block; font-size: 17px; margin-bottom: 6px; }
   .promise b em { font-style: normal; color: var(--pink); }
   .promise p { margin: 0; color: var(--muted); font-size: 14.5px; }
@@ -191,6 +193,8 @@
   }
   @media (max-width: 560px) {
     .promises { grid-template-columns: minmax(0, 1fr); }
+    .promise { display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 14px; align-items: center; text-align: left; padding: 14px; }
+    .promise img { grid-row: span 2; width: 64px; height: 64px; margin: 0; }
     .shots { gap: 10px; }
     .sticky-get { display: flex; position: fixed; left: 16px; right: 16px; bottom: 14px; z-index: 40; }
     .map-empty { position: static; transform: none; margin: 0 auto 16px; }
@@ -420,11 +424,11 @@
       <a href="privacy.html">The privacy policy</a>.</p>
   </div>
   <div class="wrap promises">
-    <div class="promise"><b><em>Never</em> acts as you</b><p>It never follows, stars, posts or comments. There is no code for it.</p></div>
-    <div class="promise"><b><em>Never</em> leaves your device</b><p>The model runs on your computer or phone. No server, no telemetry.</p></div>
-    <div class="promise"><b><em>Never</em> holds your keys</b><p>Tokens stay in your system's keyring, checked for least privilege.</p></div>
-    <div class="promise"><b><em>Never</em> takes your data</b><p>Shared only through your own Google Drive or a private repo, if you want.</p></div>
-    <div class="promise"><b><em>Never</em> sends behind your back</b><p>If it breaks, you read the whole report first, and you decide.</p></div>
+    <div class="promise" style="--r:#fb923c"><img src="img/promises/acts.webp" alt="" width="96" height="96"><b><em>Never</em> acts as you</b><p>It never follows, stars, posts or comments. There is no code for it.</p></div>
+    <div class="promise" style="--r:#2dd4bf"><img src="img/promises/device.webp" alt="" width="96" height="96"><b><em>Never</em> leaves your device</b><p>The model runs on your computer or phone. No server, no telemetry.</p></div>
+    <div class="promise" style="--r:#c6e63a"><img src="img/promises/keys.webp" alt="" width="96" height="96"><b><em>Never</em> holds your keys</b><p>Tokens stay in your system's keyring, checked for least privilege.</p></div>
+    <div class="promise" style="--r:#ff6a4d"><img src="img/promises/data.webp" alt="" width="96" height="96"><b><em>Never</em> takes your data</b><p>Shared only through your own Google Drive or a private repo, if you want.</p></div>
+    <div class="promise" style="--r:#d946ef"><img src="img/promises/sends.webp" alt="" width="96" height="96"><b><em>Never</em> sends behind your back</b><p>If it breaks, you read the whole report first, and you decide.</p></div>
   </div>
 </section>
 
