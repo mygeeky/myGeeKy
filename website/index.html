@@ -106,7 +106,7 @@
                 border-radius: 99px; padding: 5px 12px; }
 
   /* the four promises, under the hero */
-  .four { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 44px; }
+  .four { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 44px; }
   .four a { display: grid; gap: 6px; align-content: start; padding: 20px; border-radius: var(--radius); color: var(--text);
             background: var(--card); border: 1px solid var(--line); position: relative; overflow: hidden;
             transition: transform .3s, border-color .3s, background .3s; }
@@ -282,6 +282,7 @@
     .ctas { justify-content: center; }
     .geek { max-width: 340px; grid-row: 1; }
     .four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .four a:last-child:nth-child(odd) { grid-column: 1 / -1; }   /* five pillars: the last one takes the row */
     .show, .feature, .why { grid-template-columns: minmax(0, 1fr); gap: 34px; }
     .show .frame { max-width: 400px; width: 100%; margin: 0 auto; }
     .feature.flip .copy { order: 0; }
@@ -346,6 +347,7 @@
       <a href="#learn">Learn</a>
       <a href="#meet">Meet</a>
       <a href="#catch">Catch</a>
+      <a href="#play">Play</a>
       <a href="#never">Privacy</a>
       <a href="https://github.com/mygeeky/myGeeKy">GitHub</a>
       <a class="btn primary" href="#install">Get it</a>
@@ -386,6 +388,7 @@
       <a href="#learn" style="--c:var(--green)" class="reveal"><span class="ico">🌱</span><b>Learn</b><span>what comes next, as a road map that skips what you know</span><i>Rising skills · Protocols · Quizzes →</i></a>
       <a href="#meet" style="--c:var(--pink)" class="reveal"><span class="ico">👥</span><b>Meet</b><span>the people working on the same problems</span><i>People · Live · Signals →</i></a>
       <a href="#catch" style="--c:var(--amber)" class="reveal"><span class="ico">🎯</span><b>Catch</b><span>jobs, funding and conferences while they are open</span><i>Chances · Seasons →</i></a>
+      <a href="#play" style="--c:var(--violet)" class="reveal"><span class="ico">🎮</span><b>Play</b><span>fourteen short games made from your own field</span><i>Play with GeeKOc →</i></a>
     </div>
   </div>
 </header>
@@ -643,6 +646,35 @@
         </ul>
       </div>
       <div class="pic reveal"><img src="img/chances-seasons.png" alt="Seasons: a scholarship that comes back every year, with the weeks of preparation it needs" loading="lazy"><span class="where">🖥 On your desktop</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================= PLAY -->
+<section id="play" class="pillar" style="--c:var(--violet)">
+  <div class="wrap">
+    <div class="pillar-head reveal">
+      <div class="big" aria-hidden="true">🎮</div>
+      <div>
+        <div class="eyebrow">Play</div>
+        <h2>Play your field, with GeeKOc</h2>
+        <p class="quote">“Real tool or made up? Snakemake, yes. Bioflux, no. And now you know why.”</p>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="copy reveal">
+        <h3>Fourteen short games made from your own field</h3>
+        <p class="sub">Jump the bugs in GeeKOc run, steer names into the right net, climb a pipeline in Rise, find the
+          way home through doors that ask questions, whack the bugs and spare the good practices.</p>
+        <ul class="ticks">
+          <li>Every question has a <b>level, field terms and a source</b></li>
+          <li>A mistake <b>always says why</b></li>
+          <li>What you play teaches your Model; GeeKOc jumps, cheers and sulks along with you</li>
+          <li>On your computer and your phone, the same games and the same answers</li>
+        </ul>
+      </div>
+      <div class="pic reveal"><img src="img/games-run.png" alt="GeeKOc run: GeeKOc jumping a bug, with a gate ahead asking a question" loading="lazy"><span class="where">🖥 On your desktop</span></div>
     </div>
   </div>
 </section>
@@ -932,6 +964,7 @@ mygeeky setup</pre>
     ["chances-jobs", "Chances", "Verified jobs, funding and conferences, matched to you."],
     ["chances-seasons", "Seasons", "The scholarships that come back every year, months ahead."],
     ["model", "Model", "What myGeeKy knows about you, drawn as a living map."],
+    ["games", "Games", "Fourteen short games from your own field, with GeeKOc."],
   ];
   const tabs = document.getElementById("tabs"), frameEl = document.getElementById("frame");
   let cur = 0, timer;

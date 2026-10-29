@@ -26,6 +26,8 @@ IMAGES = {
     "model.png": ROOT / "docs/screenshots/model.png",
     "research.png": ROOT / "docs/screenshots/research.png",
     "news.png": ROOT / "docs/screenshots/news.png",
+    "games.png": ROOT / "docs/screenshots/games.png",
+    "games-run.png": ROOT / "docs/screenshots/games-run.png",
     "phone.png": ROOT / "docs/screenshots/phone/hero-phone-grow.png",
     "phone-home.png": ROOT / "google-play/screenshots/1-home.png",
     "phone-protocols.png": ROOT / "google-play/screenshots/2-protocols.png",

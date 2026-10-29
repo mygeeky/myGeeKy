@@ -727,6 +727,22 @@ The last main on both apps (⚙ at the top of the panel on the computer opens it
   Uninstall and Quit).
 - **Help**: GeeKOc's tours and the questions and answers.
 
+**Skipped something in setup?** myGeeKy asks again, gently, on the pages it would improve, never in your first week:
+saving your data on You → My month and Model; ORCID on Cited by, Researchers, Highlights and Jobs; GitHub on Repos and
+My month. A small card says what you'd gain, with **Not now** and **Don't ask again**. It first appears after 7 days of
+use (days you opened myGeeKy), comes back 2 days of use after a *Not now*, then once a week of use after the third,
+and stops for good two months after it first appeared. At most one kind of card a day. What it remembers stays on that
+device. Accounts always offers all three, whatever the cards do.
+
+## 🎮 Play with GeeKOc
+
+Fourteen short games made from your field, on the computer and the phone: Word Hunter, Rise, GeeKOc goes home,
+GeeKOc run, Flappy GeeKOc, Whack-a-bug, Real tool or made up?, Gene or Pokémon?, Reviewer 2 attacks, Debug reef, Sort
+the catch, Fix the figure, Which came first? and Terminal typing. Every question has a level, field terms and a
+source; a mistake always says why; your answers teach your Model, and each game keeps your level and best score.
+GeeKOc plays along: he jumps, is happy for a moment after a right answer and sad after a wrong one or a fall. How the
+games are built and checked: [docs/GEMS.md](GEMS.md).
+
 ## ☁️ Where your data is saved
 
 Your settings and progress (your profile, what you open and like, your badges, history and, from a computer, your CV

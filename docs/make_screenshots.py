@@ -40,6 +40,7 @@ TABS = [  # (file, tab, market mode)
     ("chances-seasons", "chances", "seasons"),
     ("chances-jobs", "chances", "jobs"), ("chances-funding", "chances", "funding"),
     ("chances-conferences", "chances", "conferences"),
+    ("games", "games", None), ("games-run", "games", "run"),     # Play with GeeKOc: every game, and one being played
 ]
 
 
@@ -146,6 +147,7 @@ def render() -> dict[str, Path]:
     # one size for every picture, whatever this computer's screen: a share of a small laptop screen at 2x
     # is too short to show anything, and your own width setting shouldn't change the README
     size = (500, 700 if TALL else 520)
+    MyGeekyPanel._show_nudge = lambda self, leaf: None   # the cards asking for what setup skipped stay out (and your nudges.json untouched)
     docked = MyGeekyPanel._docked_geometry
     MyGeekyPanel._docked_geometry = lambda self, folded, screen: (docked(self, folded, screen) if folded
                                                                   else QRect(0, 0, *size))
@@ -180,6 +182,26 @@ def render() -> dict[str, Path]:
                 panel._quiz_pick(drawn.questions[0].answer)      # answered, so the reason and source show
                 pump(0.6)
                 panel._grow_scroll.verticalScrollBar().setValue(0)   # start the picture at the question
+        elif tab == "games" and mode:                   # a round being played: GeeKOc mid-jump, a gate coming
+            panel.games_page.open(mode)
+            pump(0.8)
+            game = panel.games_page.game_widget
+            game.go()
+            for _ in range(60):                         # two seconds of the real frame loop: the ground moves
+                game.last = time.monotonic() - 0.033
+                game._frame()
+                app.processEvents()
+            # then the picture: no bug in the way, a gate just ahead, GeeKOc jumping for its top answer
+            game.obs = [{"gate": game.gates[0], "x": 205.0, "w": 22, "top": True}]
+            game.gi, game.next_obs, game.next_gate, game.hurt, game.lives = 1, 9.0, 9.0, 0.0, 3
+            game.message_t = 0.0
+            game.jump()
+            for _ in range(9):
+                game.last = time.monotonic() - 0.033
+                game._frame()
+                app.processEvents()
+            game.paused = True                          # hold it there while the picture is taken
+            pump(0.3)
         elif tab == "grow":
             panel._set_grow_mode(mode)
         elif tab == "chances":

@@ -192,6 +192,24 @@ It never pretends to know next year's date: a window it read on a page says **op
 
 ---
 
+## 🎮 Helps you play your field
+
+> *“Real tool or made up? Snakemake, yes. Bioflux, no. And now you know why.”*
+
+**Play with GeeKOc: fourteen short games made from your own field.** Jump the bugs in GeeKOc run, steer names into
+the right net, climb a pipeline in Rise, find the way home through doors that ask questions, whack the bugs and
+spare the good practices. Every question has a **level, field terms and a source**, a mistake **always says why**,
+and what you play teaches your Model. GeeKOc jumps, cheers and sulks along with you.
+
+<table>
+<tr>
+<td align="center" width="50%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/games.png" width="330" alt="Play with GeeKOc: the fourteen games, each with your level and best score"><br><sub><b>Fourteen games</b><br>your level and best in each</sub></td>
+<td align="center" width="50%"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/screenshots/games-run.png" width="330" alt="GeeKOc run: GeeKOc jumping a bug, with a gate ahead asking a question"><br><sub><b>GeeKOc run</b><br>jump high for the top answer, stay low for the bottom one</sub></td>
+</tr>
+</table>
+
+---
+
 <a name="install"></a>
 ## 🚀 Install
 
