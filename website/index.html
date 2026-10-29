@@ -135,18 +135,10 @@
   .spot b { font-size: 17px; }
   .spot span { color: var(--muted); }
   .spot .f { color: var(--pink); font-size: 14px; }
-  .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
-  .person { padding: 14px 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
-  .person b { display: block; }
-  .person span { color: var(--muted); font-size: 14px; display: block; }
-  .person .f { margin-top: 6px; color: var(--cyan); font-size: 13px; }
   .find { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: center; margin-top: 22px; }
   .find input { width: min(100%, 420px); padding: 11px 18px; border-radius: 999px; border: 1px solid var(--line);
                 background: var(--card); color: var(--text); font: inherit; font-size: 15px; }
   .find span { color: var(--muted); font-size: 14px; }
-  .more-people { display: block; margin: 16px auto 0; background: transparent; border: 1px solid var(--line); color: var(--text);
-                 border-radius: 999px; padding: 9px 18px; font: inherit; font-size: 15px; cursor: pointer; }
-  .more-people:hover { border-color: rgba(255, 255, 255, .3); }
   .join { margin-top: 18px; text-align: center; color: var(--muted); }
 
   /* promises */
@@ -407,11 +399,9 @@
     </div>
     <p class="spot" id="spot" aria-live="polite"></p>
     <div class="find" id="find-row" hidden>
-      <input id="find" type="search" placeholder="Find a scientist, a place or a field" aria-label="Find a scientist, a place or a field">
+      <input id="find" type="search" placeholder="Find a scientist, a place or a field" aria-label="Find a scientist, a place or a field on the map">
       <span id="found" aria-live="polite"></span>
     </div>
-    <div class="people" id="people"></div>
-    <button class="more-people" id="more" type="button" hidden></button>
     <p class="join" id="join">Use myGeeKy for your research? <a href="https://github.com/mygeeky/myGeeKy/issues/new?template=join-the-map.yml">Ask to join the map</a>
       or email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>. Only what you write is shown, and you can leave any time.</p>
   </div>
@@ -809,41 +799,34 @@ mygeeky setup</pre>
     const n = hit(e); map.style.cursor = n ? "pointer" : "";
     if (!n) return;
     held = Date.now() + hold;
-    if (n.kind === "word") { if (n.label !== field) lightField(n.label); if (hold > 4000 && find) { find.value = n.label; filter(); } return; }
+    if (n.kind === "word") { if (n.label !== field) lightField(n.label); return; }
     const i = people.indexOf(n.p); if (i !== focus) light(i);
   };
   map.addEventListener("pointermove", (e) => pick(e, 4000));
   map.addEventListener("pointerdown", (e) => pick(e, 10000));
   map.addEventListener("pointerleave", () => (held = 0));
 
-  // the same people as cards, readable without the map; a crowd gets a search and shows the first few
-  const list = $("#people"), find = $("#find"), more = $("#more"), FIRST = 8;
-  let all = false;
-  const cards = people.map((p) => {
-    const c = document.createElement(p.link ? "a" : "div"); c.className = "person";
-    if (p.link) { c.href = p.link; c.rel = "noopener"; }
-    const b = document.createElement("b"); b.textContent = p.name;
-    const s = document.createElement("span"); s.textContent = [p.role, p.place].filter(Boolean).join(" · ");
-    const f = document.createElement("span"); f.className = "f"; f.textContent = (p.fields || []).join(" · ");
-    c.append(b, s, f); list.append(c);
-    return { c, p, text: [p.name, p.role, p.place, ...(p.fields || [])].join(" ").toLowerCase() };
-  });
-  function filter() {
+  // a crowd gets a search: a name, a place or a field lights them on the map (and the line beneath says who)
+  const find = $("#find"), found = $("#found");
+  $("#find-row").hidden = people.length <= 8;
+  find.addEventListener("input", () => {
     const q = find.value.trim().toLowerCase();
-    let n = 0;
-    cards.forEach(({ c, p, text }) => {
-      const match = !q || (count[q] ? fieldsOf(p).includes(q) : text.includes(q));   // a field's name: the people in it
-      if (match) n++;
-      c.hidden = !match || (!q && !all && n > FIRST);
-    });
-    more.hidden = !!q || all || people.length <= FIRST;
-    more.textContent = `Show all ${people.length} scientists`;
-    $("#found").textContent = q ? `${n} of ${people.length}` : "";
-  }
-  $("#find-row").hidden = people.length <= FIRST;
-  find.addEventListener("input", filter);
-  more.addEventListener("click", () => { all = true; filter(); });
-  filter();
+    found.textContent = "";
+    if (!q) { held = 0; return; }
+    held = Date.now() + 15000;
+    if (count[q]) { lightField(q); return; }                        // a field's name: everyone in it
+    const them = people.map((p, i) => [p, i]).filter(([p]) => [p.name, p.role, p.place, ...(p.fields || [])].join(" ").toLowerCase().includes(q));
+    if (!them.length) { found.textContent = "No one yet"; return; }
+    if (them.length > 1) found.textContent = `${them.length} found`;
+    light(them[0][1]);
+  });
+  find.addEventListener("keydown", (e) => {                       // Enter: the next one found
+    if (e.key !== "Enter") return;
+    const q = find.value.trim().toLowerCase(); if (!q || count[q]) return;
+    const them = people.map((p, i) => [p, i]).filter(([p]) => [p.name, p.role, p.place, ...(p.fields || [])].join(" ").toLowerCase().includes(q));
+    if (them.length < 2) return;
+    const at = them.findIndex(([, i]) => i === focus); held = Date.now() + 15000; light(them[(at + 1) % them.length][1]);
+  });
 })();
 </script>
 </body>
