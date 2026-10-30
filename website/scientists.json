@@ -6,7 +6,14 @@
       "role": "Postdoctoral Researcher",
       "place": "Oklahoma Medical Research Foundation, United States",
       "link": "https://github.com/AlsammanAlsamman",
-      "fields": ["GWAS", "genomic prediction", "plant genomics", "transcriptomics", "machine learning", "R"],
+      "fields": [
+        "GWAS",
+        "genomic prediction",
+        "plant genomics",
+        "transcriptomics",
+        "machine learning",
+        "R"
+      ],
       "since": "2026-10",
       "photo": "alsamman-alsamman.webp"
     },
@@ -15,7 +22,14 @@
       "role": "Postdoctoral Research Associate in Bioinformatics",
       "place": "Oklahoma Medical Research Foundation, United States",
       "link": "https://github.com/Adeel3Dgenomics",
-      "fields": ["gene regulation", "transposable elements", "3D genome", "Hi-C", "zebrafish", "bioinformatics"],
+      "fields": [
+        "gene regulation",
+        "transposable elements",
+        "3D genome",
+        "Hi-C",
+        "zebrafish",
+        "bioinformatics"
+      ],
       "since": "2026-10",
       "photo": "muhammad-adeel.webp"
     },
@@ -24,16 +38,40 @@
       "role": "Associate Staff Scientist",
       "place": "Oklahoma Medical Research Foundation, United States",
       "link": "",
-      "fields": ["vascular biology", "thrombosis", "endothelial cells", "inflammation", "clinical immunology"],
+      "fields": [
+        "vascular biology",
+        "thrombosis",
+        "endothelial cells",
+        "inflammation",
+        "clinical immunology"
+      ],
       "since": "2026-10",
       "photo": "hemant-giri.webp"
+    },
+    {
+      "name": "M P Manjunath",
+      "role": "Student Researcher (MSc by Research in Life Science)",
+      "place": "Oklahoma Medical Research Foundation, United States",
+      "link": "",
+      "fields": [
+        "life sciences"
+      ],
+      "since": "2026-10",
+      "photo": "m-p-manjunath.webp"
     },
     {
       "name": "Hatem Zayed",
       "role": "Associate Professor",
       "place": "Qatar University, Doha, Qatar",
       "link": "",
-      "fields": ["human genetics", "rare diseases", "genomic medicine", "molecular dynamics", "cancer", "bioinformatics"],
+      "fields": [
+        "human genetics",
+        "rare diseases",
+        "genomic medicine",
+        "molecular dynamics",
+        "cancer",
+        "bioinformatics"
+      ],
       "since": "2026-10",
       "photo": "hatem-zayed.webp"
     },
@@ -42,7 +80,13 @@
       "role": "Assistant Professor",
       "place": "Mohammed VI Polytechnic University, Ben Guerir, Morocco",
       "link": "",
-      "fields": ["transposable elements", "plant genomics", "metagenomics", "machine learning", "bioinformatics"],
+      "fields": [
+        "transposable elements",
+        "plant genomics",
+        "metagenomics",
+        "machine learning",
+        "bioinformatics"
+      ],
       "since": "2026-10",
       "photo": "morad-mokhtar.webp"
     },
@@ -51,7 +95,13 @@
       "role": "Postdoctoral Researcher",
       "place": "Mohammed VI Polytechnic University, Ben Guerir, Morocco",
       "link": "",
-      "fields": ["metagenomics", "gene expression", "single cell", "cephalopods", "animal genetics"],
+      "fields": [
+        "metagenomics",
+        "gene expression",
+        "single cell",
+        "cephalopods",
+        "animal genetics"
+      ],
       "since": "2026-10",
       "photo": "al-sayed-al-soudy.webp"
     },
@@ -60,7 +110,12 @@
       "role": "Researcher",
       "place": "ICARDA, Addis Ababa, Ethiopia",
       "link": "",
-      "fields": ["chickpea", "grass pea", "GWAS", "plant breeding"],
+      "fields": [
+        "chickpea",
+        "grass pea",
+        "GWAS",
+        "plant breeding"
+      ],
       "since": "2026-10",
       "photo": "tawffiq-istanbuli.webp"
     },
@@ -69,7 +124,14 @@
       "role": "Researcher",
       "place": "ICARDA, Giza, Egypt",
       "link": "",
-      "fields": ["chickpea", "grass pea", "gene families", "GWAS", "transcriptomics", "population genetics"],
+      "fields": [
+        "chickpea",
+        "grass pea",
+        "gene families",
+        "GWAS",
+        "transcriptomics",
+        "population genetics"
+      ],
       "since": "2026-10",
       "photo": "khaled-mousa.webp"
     },
@@ -78,7 +140,13 @@
       "role": "Assistant Professor",
       "place": "ICARDA, Giza, Egypt",
       "link": "",
-      "fields": ["chickpea", "sesame", "genome sequencing", "transcriptomics", "plant genomics"],
+      "fields": [
+        "chickpea",
+        "sesame",
+        "genome sequencing",
+        "transcriptomics",
+        "plant genomics"
+      ],
       "since": "2026-10",
       "photo": "anas-saedwi.webp"
     },
@@ -87,7 +155,11 @@
       "role": "Student / Intern",
       "place": "ICARDA, Giza, Egypt",
       "link": "",
-      "fields": ["chickpea", "transcriptomics", "RNA-seq"],
+      "fields": [
+        "chickpea",
+        "transcriptomics",
+        "RNA-seq"
+      ],
       "since": "2026-10",
       "photo": "doaa-korkar.webp"
     },
@@ -96,7 +168,11 @@
       "role": "Research Intern",
       "place": "ICARDA and AGERI, Giza, Egypt",
       "link": "",
-      "fields": ["chickpea", "transcriptomics", "RNA-seq"],
+      "fields": [
+        "chickpea",
+        "transcriptomics",
+        "RNA-seq"
+      ],
       "since": "2026-10",
       "photo": "asmaa-abd-el-haq.webp"
     }
