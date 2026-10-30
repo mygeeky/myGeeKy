@@ -165,6 +165,8 @@
   .panel { max-width: 720px; margin: 18px auto 0; padding: 24px; border-radius: var(--radius); background: var(--card);
            border: 1px solid var(--line); }
   .js .panel:not(.open) { display: none; }
+  .js .panel.open, .js .story.open { animation: fade-in .5s ease; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   .panel h3 { margin-bottom: 10px; font-size: 20px; }
   .panel ol { margin: 0; padding-left: 20px; }
   .panel pre { background: rgba(0, 0, 0, .4); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; overflow-x: auto;
@@ -203,7 +205,7 @@
     .sticky-get .btn { flex: 1; padding: 14px; font-size: 16px; }
     footer .links { margin-left: 0; }
   }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
 <body class="no-js">
@@ -545,7 +547,7 @@ mygeeky setup</pre>
   setInterval(() => {
     if (!auto || !orbitSeen || reading || document.hidden) return;
     turn = (turn + 1) % tabs.length; open(tabs[turn].getAttribute("aria-controls"), false);
-  }, 4000);
+  }, 1000);
   tabs.forEach((t, i) => {
     t.addEventListener("pointerdown", stop);
     t.addEventListener("click", () => { stop(); const id = t.getAttribute("aria-controls"); history.replaceState(null, "", id === "home" ? "#top" : "#" + id); open(id, innerWidth < 900); });
@@ -561,14 +563,32 @@ mygeeky setup</pre>
   const fromHash = () => { let id = location.hash.slice(1); id = OLD[id] || id; if ($$(".story").some((s) => s.id === id)) { stop(); open(id, true); } };
   addEventListener("hashchange", fromHash); fromHash();
 
-  // ---- install tabs
+  // ---- install tabs: Windows first, then each system in turn every second while on screen, until the visitor
+  // picks one or rests the pointer on the instructions (with reduced motion: the visitor's own system, still)
   const itabs = $$(".tabs [role=tab]");
-  itabs.forEach((t) => t.addEventListener("click", () => {
+  const show = (t) => {
     itabs.forEach((x) => x.setAttribute("aria-selected", String(x === t)));
     $$(".panel").forEach((p) => p.classList.toggle("open", p.id === t.getAttribute("aria-controls")));
-  }));
-  if (/Mac|Linux|X11/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent)) $("#b-nix").click();
-  if (/Android/.test(navigator.userAgent)) $("#b-phone").click();
+  };
+  let iauto = !still, iturn = 0, installSeen = false, iread = false;
+  itabs.forEach((t) => {
+    t.addEventListener("pointerdown", () => (iauto = false));
+    t.addEventListener("click", () => { iauto = false; show(t); });
+  });
+  const install = $(".tabs").parentElement;
+  new IntersectionObserver((es) => {                          // each time it comes into view, Windows first again
+    if (es[0].isIntersecting && !installSeen && iauto) { iturn = 0; show(itabs[0]); }
+    installSeen = es[0].isIntersecting;
+  }).observe(install);
+  install.addEventListener("pointerenter", () => (iread = true));
+  install.addEventListener("pointerleave", () => (iread = false));
+  install.addEventListener("focusin", () => (iauto = false));
+  setInterval(() => {
+    if (!iauto || !installSeen || iread || document.hidden) return;
+    iturn = (iturn + 1) % itabs.length; show(itabs[iturn]);
+  }, 1000);
+  if (still && /Mac|Linux|X11/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent)) show($("#b-nix"));
+  if (still && /Android/.test(navigator.userAgent)) show($("#b-phone"));
 
   $("#copy").addEventListener("click", async (e) => {
     try { await navigator.clipboard.writeText($("#pip").textContent); e.target.textContent = "Copied"; setTimeout(() => (e.target.textContent = "Copy"), 1500); } catch (_) {}
