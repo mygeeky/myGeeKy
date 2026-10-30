@@ -129,6 +129,9 @@
   .zoom img { display: block; max-width: 96vw; max-height: 86vh; width: auto; height: auto; border-radius: 16px;
               border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); cursor: zoom-out; }
   .zoom p { color: var(--muted); text-align: center; margin: 10px 0 0; font-size: 14px; }
+  .zoom .x { position: fixed; top: max(14px, env(safe-area-inset-top, 0px)); right: max(14px, env(safe-area-inset-right, 0px));
+             width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: rgba(20, 20, 24, .85);
+             color: #f2f2f7; font-size: 26px; line-height: 1; cursor: pointer; }
   .zoom[open] { animation: fade-in .25s ease; }
   .story .more { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
   .story .more button { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 999px;
@@ -488,10 +491,10 @@ mygeeky setup</pre>
 <section id="video" style="--c:var(--cyan)">
   <div class="wrap center">
     <div class="eyebrow">Watch</div>
-    <h2>Every feature, install, and a tour</h2>
+    <h2>A three-minute tour: phone, computer and the games</h2>
   </div>
   <div class="wrap">
-    <a class="video-link" href="https://youtu.be/u1qmX5PtMdE" aria-label="Watch the myGeeKy video on YouTube"><img src="img/video-thumbnail.png" alt="" loading="lazy"></a>
+    <a class="video-link" href="https://youtu.be/AFBHC0ZNPbo" aria-label="Watch the myGeeKy video on YouTube"><img src="img/video-thumbnail.png" alt="" loading="lazy"></a>
     <p class="then">Got an idea or a problem? Click 💡 in the app, or email <a href="mailto:support@mygeeky.org">support@mygeeky.org</a>.</p>
   </div>
 </section>
@@ -602,7 +605,9 @@ mygeeky setup</pre>
 
   // ---- screenshots: tap one to see it big (a dialog: Esc, a tap or Back closes it)
   const zoom = document.createElement("dialog"), zimg = document.createElement("img"), zcap = document.createElement("p");
-  zoom.className = "zoom"; zoom.setAttribute("aria-label", "Screenshot, enlarged"); zoom.append(zimg, zcap); document.body.append(zoom);
+  const zx = document.createElement("button");
+  zx.type = "button"; zx.className = "x"; zx.textContent = "×"; zx.setAttribute("aria-label", "Close");
+  zoom.className = "zoom"; zoom.setAttribute("aria-label", "Screenshot, enlarged"); zoom.append(zx, zimg, zcap); document.body.append(zoom);
   zoom.addEventListener("click", () => zoom.close());
   $$(".shots img").forEach((im) => {
     im.tabIndex = 0; im.setAttribute("role", "button");

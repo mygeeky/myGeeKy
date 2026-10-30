@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/mygeeky/myGeeKy/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/%E2%AC%87%20Download%20for%20Windows-MyGeeKySetup.exe-ff6fd8?style=for-the-badge&logo=windows&logoColor=white" height="38"></a>
   <a href="https://pypi.org/project/mygeeky/"><img alt="pip install mygeeky" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-pip%20install%20mygeeky-7a5cff?style=for-the-badge&logo=python&logoColor=white" height="38"></a>
-  <a href="https://youtu.be/u1qmX5PtMdE"><img alt="Watch the video" src="https://img.shields.io/badge/%E2%96%B6%20watch-the%20video-35e0c1?style=for-the-badge" height="38"></a>
+  <a href="https://youtu.be/AFBHC0ZNPbo"><img alt="Watch the video" src="https://img.shields.io/badge/%E2%96%B6%20watch-the%20video-35e0c1?style=for-the-badge" height="38"></a>
 </p>
 
 <p align="center">
@@ -32,8 +32,8 @@
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/u1qmX5PtMdE"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/video-play.png" width="640" alt="Watch the myGeeKy video on YouTube: your geeky friend who helps you grow, quietly"></a><br>
-  <sub><b>▶ Watch the video</b> (2½ minutes, opens on YouTube)</sub>
+  <a href="https://youtu.be/AFBHC0ZNPbo"><img src="https://raw.githubusercontent.com/mygeeky/myGeeKy/main/docs/video-play.png" width="640" alt="Watch the myGeeKy video on YouTube: your geeky friend who helps you grow, quietly"></a><br>
+  <sub><b>▶ Watch the video</b> (3 minutes, opens on YouTube)</sub>
 </p>
 
 <p align="center">

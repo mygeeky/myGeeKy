@@ -1,7 +1,6 @@
 # YouTube upload
 
-**Published:** https://youtu.be/u1qmX5PtMdE (the 2026-10-22 cut; replaces https://youtu.be/DP7KeKYiuf0, https://youtu.be/fPQHOnYs8sA, https://youtu.be/NTYDY7IGufw, https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY).
-The 2026-10-29 cut (phone 1.23.0: Play with GeeKOc, new screens, the website's promises) is rendered but not uploaded yet: when it is, put its link here and in README.md, website/index.html and docs/GUIDE.md.
+**Published:** https://youtu.be/AFBHC0ZNPbo (the 2026-10-29 cut: phone 1.23.0, Play with GeeKOc, the website's promises; replaces https://youtu.be/u1qmX5PtMdE, https://youtu.be/DP7KeKYiuf0, https://youtu.be/fPQHOnYs8sA, https://youtu.be/NTYDY7IGufw, https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY)
 
 **File:** `launch/video/falling.mp4` (re-render: `python launch/video/make_falling.py`, then `python launch/video/make_soundtrack.py` for the sound). Everything in it, the soundtrack included, is made in the repo, so it is free to use anywhere.
 **Thumbnail:** `launch/video/youtube-thumbnail.png` (1280×720)

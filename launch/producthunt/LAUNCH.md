@@ -16,7 +16,7 @@ The people, projects & pulse of your field on GitHub
 - Windows installer: https://github.com/mygeeky/myGeeKy/releases/latest
 
 ## Video (the "YouTube video" field on the media step)
-https://youtu.be/NTYDY7IGufw
+https://youtu.be/AFBHC0ZNPbo
 
 ## Description (≤ 260)
 myGeeKy reads your CV, repos and ORCID/Scholar papers, then shows who in your field to follow, repos you could contribute to, what's rising, and emoji signals from fellow users, in one small desktop panel. It only suggests; it never acts for you.
