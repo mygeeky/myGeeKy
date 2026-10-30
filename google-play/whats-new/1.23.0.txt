@@ -1,0 +1,6 @@
+• Gentle reminders for what setup skipped (saving your data, ORCID, GitHub), never in your first week
+• Games use far less battery: they redraw only what moves, and rest between rounds
+• GeeKOc jumps, smiles and frowns in the games
+• Flappy GeeKOc is fairer: the surface and sea floor no longer cost a life
+• Fewer crashes: a page that fails now offers "Try again" instead of closing the app
+• Only one Home screen in memory after setup or a notification
