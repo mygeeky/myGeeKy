@@ -623,10 +623,12 @@ def layout_phrases() -> list[dict]:
 # The phone's screens are taken for this, not the Play store's: on those the app's dock covers the lower third of
 # the page. Here every page is shot with the dock fully folded (only the small ^ handle showing), so the page
 # fills the phone; Home is shown once with the orbit open, as the first screen, because the orbit is how you get
-# around. How they were taken: the myGeeKy release app (1.17.1) on the Android emulator (Pixel 2 AVD, 1080x2400)
-# with test data, the status bar in demo mode (12:00, full battery, no notifications); each page opened from the
-# dock and left alone a few seconds until the dock folds by itself, then `adb exec-out screencap -p`. They live in
-# launch/video/intro/phone/ (git-ignored). Retake them the same way after a big change to the app.
+# around. How they were taken: the myGeeKy app (1.23.0) on the Android emulator (Pixel 2 AVD, 1080x2400) with the
+# maker's ORCID linked, the status bar in demo mode (12:00, full battery, no notifications); each page opened from a
+# mygeeky:///home?sel=<page>&fold=1 link or the dock, left alone until the dock folds by itself, then
+# `adb exec-out screencap -p`. My month and Badges are still the 1.17.1 shots (a profile with a full month behind
+# it; the pages look the same). They live in launch/video/intro/phone/ (git-ignored). Retake them the same way
+# after a big change to the app. (Gene or Pokémon? is left out: Pokémon is another company's brand.)
 #
 # Pages full of other people's names and faces (People, Live) or other companies' brands (the AI race) are left
 # out, and so is the GitHub badges row on Badges (GitHub's artwork): the crop starts below it.
@@ -638,27 +640,31 @@ GOLD = (156, 112, 24)                           # dark gold: readable on the pal
 # (screen, name, what it offers, [(file, crop box in the file's pixels, caption), ...])
 TOUR = [
     ("home-orbit.png", "On your phone", "your world in orbit, learning what you enjoy", [
-        ("home.png", (40, 405, 1040, 1165), "Each card says why it's there"),
+        ("home.png", (40, 630, 1040, 1490), "Each card says why it's there"),
     ]),
     ("protocols.png", "Protocols", "a step-by-step road map for any skill", [
-        ("protocols.png", (40, 850, 1040, 1420), "Road maps reviewed for your field"),
-        ("protocols-step.png", (40, 590, 1040, 1580), "Each step: what to read, watch and try"),
+        ("protocols.png", (40, 960, 1040, 1250), "Road maps reviewed for your field"),
+        ("protocols-step.png", (40, 790, 1040, 2080), "Each step: what to read, watch and try"),
     ]),
     ("quiz.png", "Quiz", "every answer quotes the source that proves it", [
-        ("quiz-question.png", (50, 600, 1030, 1500), "Ten questions from its own sources"),
-        ("quiz.png", (50, 1500, 1030, 2225), "Each answer shows the line that proves it"),
+        ("quiz-question.png", (50, 580, 1030, 1630), "Ten questions from its own sources"),
+        ("quiz.png", (50, 1490, 1030, 2120), "Each answer shows the line that proves it"),
     ]),
     ("jobs.png", "Jobs", "verified positions that match your work", [
-        ("jobs.png", (50, 660, 1030, 1460), "Checked by hand, matched to your work"),
-        ("seasons.png", (50, 905, 1030, 1830), "Yearly calls, before they open"),
+        ("jobs.png", (50, 660, 1030, 1420), "Checked by hand, matched to your work"),
+        ("seasons.png", (50, 900, 1030, 1960), "Yearly calls, before they open"),
     ]),
     ("skills.png", "Rising Skills", "what to learn next, before everyone else", [
-        ("skills.png", (40, 520, 1040, 1450), "Each rocket launches from a skill you have"),
-        ("skills-more.png", (60, 590, 1020, 1150), "How far each one is from you"),
-        ("skills.png", (60, 1545, 1020, 2040), "Which of your skills leads where"),
+        ("skills.png", (40, 500, 1040, 1400), "Each rocket launches from a skill you have"),
+        ("skills-more.png", (60, 990, 1020, 1490), "How far each one is from you"),
+        ("skills.png", (60, 1480, 1020, 2080), "Which of your skills leads where"),
     ]),
     ("papers.png", "Papers", "rising in your field, gaining citations fastest", [
-        ("papers-open.png", (40, 450, 1040, 1310), "Who wrote it, what it found, and its code"),
+        ("papers-open.png", (40, 450, 1040, 1300), "Who wrote it, what it found, and its code"),
+    ]),
+    ("games.png", "Play with GeeKOc", "short games made from your own field", [
+        ("games.png", (40, 315, 1040, 1010), "Fourteen games, each from your field"),
+        ("game-rise.png", (50, 1380, 1030, 1880), "A wrong step sinks, and says why"),
     ]),
     ("month.png", "My month", "your month, your rank, your card to share", [
         ("month.png", (30, 390, 1050, 850), "A rank that climbs with what you do"),
@@ -671,19 +677,19 @@ TOUR = [
 # mostly other people's faces and names.)
 DESK = [
     ("grow-protocols.png", "On your desktop", "a panel beside your work, with even more", [
-        ("grow-protocols.png", (20, 560, 690, 1190), "The same road maps, beside your code"),
+        ("grow-protocols.png", (20, 260, 940, 1180), "The same road maps, beside your code"),
     ]),
     ("grow-learn.png", "Learn", "courses, books and tutorials for your skills", [
-        ("grow-learn.png", (20, 595, 690, 955), "What each one teaches, and why it's yours"),
+        ("grow-learn.png", (20, 400, 940, 960), "What each one teaches, and why it's yours"),
     ]),
     ("research.png", "Research", "the papers behind the code, and who wrote them", [
-        ("research.png", (30, 480, 690, 1240), "Rising papers, with the code that uses them"),
+        ("research.png", (20, 560, 940, 1240), "Rising papers, with the code that uses them"),
     ]),
     ("signals.png", "Signals", "a private thank-you, no reply needed", [
-        ("signals.png", (30, 240, 690, 1010), "Your field, and who would welcome a word"),
+        ("signals.png", (20, 250, 940, 1070), "Your field, and who would welcome a word"),
     ]),
     ("model.png", "Your Model", "see what myGeeKy knows about you", [
-        ("model.png", (20, 540, 690, 1320), "Your field, and what you're into lately"),
+        ("model.png", (20, 560, 940, 1340), "Your field, and what you're into lately"),
     ]),
 ]
 
@@ -735,14 +741,16 @@ TERM_SCRIPT = [               # (at, kind, text): typed after a prompt, or print
 ]
 LEAVE_AT, LEAVE = TERM_AT + TERM_DUR - 0.6, 3.0   # GeekOc swims off to the right
 
-# The promises, one at a time, each with its icon (Lucide, ISC licence: launch/video/promise-icons/).
+# The promises, one at a time, each with the website's picture for it (website/img/promises/) and its words.
 PROMISES = [
-    ("hand.svg", "Never acts as you.", "You look, you decide, you act."),
-    ("laptop.svg", "Never leaves your machine.", "No server, no account, no telemetry."),
-    ("key-round.svg", "Never holds your keys.", "They stay in your system's keyring."),
-    ("package-check.svg", "Never takes your data.", "It stays on your computer."),
-    ("mail-check.svg", "Never sends anything behind your back.", "You read every report before it goes."),
+    ("acts.webp", "Never acts as you.", "It never follows, stars, posts or comments."),
+    ("device.webp", "Never leaves your device.", "The model runs on your computer or phone."),
+    ("keys.webp", "Never holds your keys.", "Tokens stay in your system's keyring."),
+    ("data.webp", "Never takes your data.", "Only your own Google Drive or a private repo, if you want."),
+    ("sends.webp", "Never sends behind your back.", "If it breaks, you read the whole report first."),
 ]
+PROMISE_RING = {"acts.webp": (251, 146, 60), "device.webp": (45, 212, 191), "keys.webp": (198, 230, 58),
+                "data.webp": (255, 106, 77), "sends.webp": (217, 70, 239)}   # the website's colour for each
 PROMISE_AT, PROMISE_EACH = LEAVE_AT + 1.6, 3.8
 FINALE_AT = PROMISE_AT + len(PROMISES) * PROMISE_EACH + 0.4
 FINALE_TEXT = "Your geeky friend who helps you *grow, quietly.*"
@@ -993,7 +1001,21 @@ _badges: dict[str, Image.Image] = {}
 
 
 def badge(icon: str, size: int = 220) -> Image.Image:
-    """A promise's icon: the line drawing in white on a round violet-to-pink badge, with a soft glow."""
+    """A promise's icon: the website's round picture in a ring of its colour, with a soft glow (or, for an old
+    .svg line drawing, white on a violet-to-pink badge)."""
+    if icon not in _badges and icon.endswith(".webp"):
+        pad, ring = 60, PROMISE_RING.get(icon, (214, 72, 170))
+        out = Image.new("RGBA", (size + 2 * pad, size + 2 * pad), (0, 0, 0, 0))
+        glow = Image.new("RGBA", out.size, (0, 0, 0, 0))
+        ImageDraw.Draw(glow).ellipse((pad - 6, pad + 4, pad + size + 6, pad + size + 16), fill=ring + (110,))
+        out.alpha_composite(glow.filter(ImageFilter.GaussianBlur(26)))
+        ImageDraw.Draw(out).ellipse((pad - 7, pad - 7, pad + size + 7, pad + size + 7), fill=ring + (255,))
+        pic = Image.open(ROOT / "website" / "img" / "promises" / icon).convert("RGBA").resize((size, size), Image.LANCZOS)
+        mask = Image.new("L", (size, size), 0)
+        ImageDraw.Draw(mask).ellipse((0, 0, size - 1, size - 1), fill=255)
+        pic.putalpha(Image.fromarray(np.minimum(np.array(pic.getchannel("A")), np.array(mask))))
+        out.alpha_composite(pic, (pad, pad))
+        _badges[icon] = out
     if icon not in _badges:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         from PySide6.QtCore import QByteArray, Qt

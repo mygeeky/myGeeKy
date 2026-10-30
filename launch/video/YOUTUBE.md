@@ -1,50 +1,59 @@
 # YouTube upload
 
-**Published:** https://youtu.be/u1qmX5PtMdE (current; replaces https://youtu.be/DP7KeKYiuf0, https://youtu.be/fPQHOnYs8sA, https://youtu.be/NTYDY7IGufw, https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY)
+**Published:** https://youtu.be/u1qmX5PtMdE (the 2026-10-22 cut; replaces https://youtu.be/DP7KeKYiuf0, https://youtu.be/fPQHOnYs8sA, https://youtu.be/NTYDY7IGufw, https://youtu.be/QCOSKe494oE, https://youtu.be/VeaHkWyzLK4 and https://youtu.be/64uug0YHVUY).
+The 2026-10-29 cut (phone 1.23.0: Play with GeeKOc, new screens, the website's promises) is rendered but not uploaded yet: when it is, put its link here and in README.md, website/index.html and docs/GUIDE.md.
 
 **File:** `launch/video/falling.mp4` (re-render: `python launch/video/make_falling.py`, then `python launch/video/make_soundtrack.py` for the sound). Everything in it, the soundtrack included, is made in the repo, so it is free to use anywhere.
 **Thumbnail:** `launch/video/youtube-thumbnail.png` (1280×720)
 
 ## Title (≤ 100)
-myGeeKy: find your people, projects and the pulse of your field on GitHub (install in 2 minutes)
+myGeeKy: your geeky friend who helps you grow, quietly (phone and computer, free)
 
 ## Description
-GitHub has over 100 million developers. The few who share your research are buried under accounts that will never notice you. myGeeKy finds them.
+myGeeKy reads your field (your ORCID, your papers, your GitHub, or just a few keywords) and shows you what matters, quietly, on your phone and in a small panel on your computer.
 
-myGeeKy reads your CV, your repos, and your ORCID & Google Scholar papers, then shows you:
-👥 People in your field who are likely to follow you back
-🛠️ Projects that welcome your pull requests
-📈 What's rising in your field, every day
-📰 What your people are building right now
-👋 Signals: emoji-only hellos between myGeeKy users
-🧠 A model that learns who actually follows you back
+📈 Rising Skills: what to learn next, before everyone else
+🧭 Protocols: a step-by-step road map for any skill, reviewed for your field
+🏆 Quiz: every answer quotes the source that proves it
+💼 Jobs and Seasons: verified positions and yearly calls, checked by hand
+📄 Papers: rising in your field, with the code behind them
+🎮 Play with GeeKOc: fourteen short games made from your own field
+🗓 My month: your rank, your badges and a card to share
+🙏 Signals: a private thank-you between myGeeKy users, no reply needed
 
-It only suggests; it never follows, stars or forks anything for you. Free and open source (MIT).
+It only suggests: it never follows, stars, posts or comments for you. No server, no telemetry; your data stays on your device, or in your own Google Drive or private repo if you want. Free and open source (MIT).
 
 ⏱ Chapters
 0:00 Intro
-0:06 The problem
-0:19 Meet myGeeKy
-0:25 Every feature, one by one (including Rising Skills, Protocols and Chances)
-0:48 Step 1: Install
-1:12 Step 2: Configure
-1:33 Step 3: Join Signals (optional)
-1:49 Step 4: Your panel (Grow, Protocols and Chances at 2:13)
-2:48 On your phone
-2:59 Get it
+0:31 Meet myGeeKy
+0:36 On your phone
+0:42 Protocols
+0:51 Quiz
+1:01 Jobs
+1:10 Rising Skills
+1:22 Papers
+1:28 Play with GeeKOc
+1:37 My month
+1:49 On your desktop
+2:02 Research
+2:08 Signals
+2:14 Your model
+2:21 Install
+2:41 Five promises
+3:01 Get it
 
 🔗 Links
+Website: https://mygeeky.org
 GitHub: https://github.com/mygeeky/myGeeKy
 Windows installer: https://github.com/mygeeky/myGeeKy/releases/latest
 PyPI: https://pypi.org/project/mygeeky/
-Website: https://mygeeky.org
 
-Install: pip install mygeeky   →   mygeeky init   →   mygeeky gui
+Install on a computer: pip install mygeeky   →   mygeeky gui
 
-#bioinformatics #github #opensource #research #python
+#research #science #bioinformatics #opensource #learning
 
 ## Tags
-mygeeky, github, open source, bioinformatics, research software, developer tools, python, GWAS, genomics, find collaborators, github followers, academic
+mygeeky, research, science, scientists, bioinformatics, learn new skills, research jobs, open source, phd, postdoc, python, genomics, games for scientists
 
 ## Settings
 - Category: Science & Technology
