@@ -728,6 +728,8 @@ mygeeky setup</pre>
   people.forEach((p) => { if (!p.photo || photos[p.photo]) return; const im = new Image(); im.onload = () => graph && draw(map, graph, false); im.src = "scientists/" + p.photo; photos[p.photo] = im; });
 
   let group = [], field = null;                                     // the people lit now (indexes), or the field lit now
+  let popAt = 0;                                                    // when they were lit: they grow, a little too big, then settle
+  const POP = 700, pop = (t) => { const c = 1.9, u = t - 1; return 1 + (c + 1) * u * u * u + c * u * u; };   // ease-out-back
   function draw(cv, g, faint) {
     const ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
     cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
@@ -782,6 +784,7 @@ mygeeky setup</pre>
       ctx.strokeStyle = on ? "#ff6fd8" : "rgba(255,111,216,.7)"; ctx.lineWidth = on ? (r < 14 ? 2.5 : 3) : r < 14 ? 1.5 : 2;
       ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 1;
       if (named && sub) {                                           // a lit one: the name, and the main affiliation under it
+        ctx.globalAlpha = Math.min(1, grow * 1.6);                  // fading in as the photo grows
         ctx.textAlign = "center"; ctx.textBaseline = "top";
         const nf = `800 ${w < 600 ? 12 : 14}px Inter, system-ui, sans-serif`, af = `600 ${w < 600 ? 10 : 11.5}px Inter, system-ui, sans-serif`;
         ctx.font = nf; const nw = ctx.measureText(n.p.name).width; ctx.font = af; const aw = sub === true ? 0 : ctx.measureText(sub).width;
@@ -804,7 +807,8 @@ mygeeky setup</pre>
     g.nodes.forEach((n) => { if (n.kind !== "person") return; n.at = null; if (who.has(n.p)) tops.push(n);
                              else person(n, g.many ? small : big, of(n), any && !of(n), !g.many && (!any || of(n))); });
     g.nodes.forEach((n) => n.kind === "word" && word(n));
-    if (!faint) tops.forEach((n) => person(n, BIG(w), true, false, true, home(n.p) || true));
+    const grow = still ? 1 : Math.min(1, (performance.now() - popAt) / POP), from = (g.many ? small : big) / BIG(w);
+    if (!faint) tops.forEach((n) => person(n, BIG(w) * (from + (1 - from) * pop(grow)), true, false, true, home(n.p) || true));
   }
   const map = $("#map"), net = $("#net");
   let graph;
@@ -832,7 +836,9 @@ mygeeky setup</pre>
     $("#empty").hidden = people.length > 0;
     draw(net, build(net.clientWidth, net.clientHeight), true);      // the same web, faint, behind the orbit
   };
-  const lightAll = (is) => { group = is; field = null; draw(map, graph, false); say(); };
+  const animate = () => { draw(map, graph, false); if (performance.now() - popAt < POP) requestAnimationFrame(animate); };
+  const lightAll = (is) => { const fresh = is.join() !== group.join(); group = is; field = null; say();
+                             if (fresh && !still) { popAt = performance.now(); requestAnimationFrame(animate); } else draw(map, graph, false); };
   const light = (i) => lightAll([i]);
   const lightField = (f) => { group = []; field = f; draw(map, graph, false); say(); };
   render();
