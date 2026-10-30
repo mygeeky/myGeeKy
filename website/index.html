@@ -120,6 +120,16 @@
   .shots figure { margin: 0; }
   .shots img { border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
   .shots figcaption { color: var(--muted); font-size: 13px; text-align: center; margin-top: 8px; }
+  .js .shots img { cursor: zoom-in; transition: transform .2s; }
+  .js .shots img:hover { transform: scale(1.02); }
+  /* a screenshot, big: tap or Esc closes it */
+  .zoom { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 94vh; overflow: visible; }
+  .zoom::backdrop { background: rgba(6, 6, 10, .88); }
+  .zoom:focus, .zoom:focus-visible { outline: none; }
+  .zoom img { display: block; max-width: 96vw; max-height: 86vh; width: auto; height: auto; border-radius: 16px;
+              border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); cursor: zoom-out; }
+  .zoom p { color: var(--muted); text-align: center; margin: 10px 0 0; font-size: 14px; }
+  .zoom[open] { animation: fade-in .25s ease; }
   .story .more { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
   .story .more button { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 999px;
                         padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
@@ -589,6 +599,18 @@ mygeeky setup</pre>
   }, 1000);
   if (still && /Mac|Linux|X11/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent)) show($("#b-nix"));
   if (still && /Android/.test(navigator.userAgent)) show($("#b-phone"));
+
+  // ---- screenshots: tap one to see it big (a dialog: Esc, a tap or Back closes it)
+  const zoom = document.createElement("dialog"), zimg = document.createElement("img"), zcap = document.createElement("p");
+  zoom.className = "zoom"; zoom.setAttribute("aria-label", "Screenshot, enlarged"); zoom.append(zimg, zcap); document.body.append(zoom);
+  zoom.addEventListener("click", () => zoom.close());
+  $$(".shots img").forEach((im) => {
+    im.tabIndex = 0; im.setAttribute("role", "button");
+    const show = () => { zimg.src = im.currentSrc || im.src; zimg.alt = im.alt;
+                         zcap.textContent = im.closest("figure")?.querySelector("figcaption")?.textContent || ""; zoom.showModal(); };
+    im.addEventListener("click", show);
+    im.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(); } });
+  });
 
   $("#copy").addEventListener("click", async (e) => {
     try { await navigator.clipboard.writeText($("#pip").textContent); e.target.textContent = "Copied"; setTimeout(() => (e.target.textContent = "Copy"), 1500); } catch (_) {}
