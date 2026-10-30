@@ -627,6 +627,9 @@ mygeeky setup</pre>
   const crowd = (w) => people.length > (w < 600 ? 8 : 16);
   const R = (w) => (w < 600 ? 20 : 24);                             // a photo's radius
   const dot = (w) => (w < 600 ? 7 : 9);                             // a photo's radius in a crowd
+  const BIG = (w) => (w < 600 ? 34 : 46);                           // a lit photo's radius
+  const per = (w) => (w < 600 ? 2 : 3);                             // how many are lit together
+  const home = (p) => (p.place || "").split(",")[0].trim();         // the main affiliation: the place's first part
 
   function layout(w, h, nodes, edges, steps) {                    // a small force layout, run once (no animation needed)
     nodes.forEach((n, i) => { const a = i * 2.39996; const r = 0.35 * Math.min(w, h) * Math.sqrt((i + 0.5) / nodes.length);
@@ -724,18 +727,19 @@ mygeeky setup</pre>
   const photos = {};
   people.forEach((p) => { if (!p.photo || photos[p.photo]) return; const im = new Image(); im.onload = () => graph && draw(map, graph, false); im.src = "scientists/" + p.photo; photos[p.photo] = im; });
 
-  let focus = -1, field = null;                                     // the person lit now (-1: none), or the field lit now
+  let group = [], field = null;                                     // the people lit now (indexes), or the field lit now
   function draw(cv, g, faint) {
     const ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
     cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
-    const who = !faint && focus >= 0 ? people[focus] : null, inField = !faint && !who && field;
-    const lit = new Set(who ? fieldsOf(who) : inField ? [field] : []);
-    const any = who || inField;
+    const who = new Set(faint ? [] : group.map((i) => people[i])), inField = !faint && !who.size && field;
+    const lit = new Set(who.size ? [...who].flatMap(fieldsOf) : inField ? [field] : []);
+    const any = who.size || inField;
     g.edges.forEach(([a, b]) => {
-      const on = who ? a.p === who : inField && b.label === field;
+      const on = who.size ? who.has(a.p) : inField && b.label === field;
       if (g.many && !on) return;                                    // a crowd: only the lit lines, or it is a blur
-      ctx.strokeStyle = on ? (who ? "rgba(255,111,216,.85)" : "rgba(255,111,216,.4)") : any ? "rgba(127,216,255,.07)" : "rgba(127,216,255,.22)";
-      ctx.lineWidth = on && who ? 2 : 1;
+      // the rest of the web steps far back, so the people lit stand out
+      ctx.strokeStyle = on ? (who.size ? "rgba(255,111,216,.75)" : "rgba(255,111,216,.4)") : any ? "rgba(127,216,255,.03)" : "rgba(127,216,255,.22)";
+      ctx.lineWidth = on && who.size ? 2 : 1;
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     });
     ctx.lineWidth = 1;
@@ -747,18 +751,23 @@ mygeeky setup</pre>
     }
     const word = (n) => {
       if (faint) { ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.arc(n.x, n.y, 2.2, 0, Math.PI * 2); ctx.fill(); return; }   // behind the orbit: dots, no words
-      const on = lit.has(n.label), px = n.px * (on ? 1.18 : 1);
+      const on = lit.has(n.label), pill = on && who.size < 2, px = n.px * (pill ? 1.18 : 1);   // a few lit: their words bright, no pills
       ctx.font = `800 ${px}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      if (on) {                                                   // their fields: lit, on a soft pill
+      if (pill) {                                                 // their fields: lit, on a soft pill
         const tw = ctx.measureText(n.label).width;
         ctx.fillStyle = "#3a1d37"; ctx.beginPath(); ctx.roundRect(n.x - tw / 2 - 9, n.y - px * 0.7, tw + 18, px * 1.4, 10); ctx.fill();
       } else { ctx.strokeStyle = "rgba(14,14,16,.8)"; ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.strokeText(n.label, n.x, n.y); ctx.lineWidth = 1; }
-      ctx.globalAlpha = any && !on ? (g.many ? 0.45 : 0.22) : 0.95; ctx.fillStyle = n.color; ctx.fillText(n.label, n.x, n.y); ctx.globalAlpha = 1;
+      ctx.globalAlpha = any && !on ? (g.many ? 0.2 : 0.12) : 0.95; ctx.fillStyle = n.color; ctx.fillText(n.label, n.x, n.y); ctx.globalAlpha = 1;
     };
-    const person = (n, r, on, dim, named) => {
+    const person = (n, r, on, dim, named, sub) => {
       if (faint) { ctx.fillStyle = "rgba(255,111,216,.45)"; ctx.beginPath(); ctx.arc(n.x, n.y, g.many ? 2 : 3, 0, Math.PI * 2); ctx.fill(); return; }
-      ctx.globalAlpha = dim ? (g.many ? 0.28 : 0.4) : 1;
-      if (on && named) { ctx.fillStyle = "rgba(255,111,216,.25)"; ctx.beginPath(); ctx.arc(n.x, n.y, r + 9, 0, Math.PI * 2); ctx.fill(); }
+      ctx.globalAlpha = dim ? (g.many ? 0.14 : 0.16) : 1;
+      if (sub) {                                                    // a lit one: big, kept whole inside the frame (hit() reads n.at)
+        const x = Math.min(w - r - 8, Math.max(r + 8, n.x)), y = Math.min(h - r - 46, Math.max(r + 8, n.y));
+        n.at = { x, y }; n = { ...n, x, y };
+        ctx.fillStyle = "rgba(14,14,16,.7)"; ctx.beginPath(); ctx.arc(x, y, r + 16, 0, Math.PI * 2); ctx.fill();
+      }
+      if (on && named) { ctx.fillStyle = "rgba(255,111,216,.25)"; ctx.beginPath(); ctx.arc(n.x, n.y, r + (sub ? 6 : 9), 0, Math.PI * 2); ctx.fill(); }
       ctx.save(); ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.closePath(); ctx.fillStyle = "#26262c"; ctx.fill(); ctx.clip();
       const im = n.p.photo && photos[n.p.photo];
       if (im && im.complete && im.naturalWidth) {                   // the photo, filling its circle
@@ -772,7 +781,15 @@ mygeeky setup</pre>
       ctx.restore();
       ctx.strokeStyle = on ? "#ff6fd8" : "rgba(255,111,216,.7)"; ctx.lineWidth = on ? (r < 14 ? 2.5 : 3) : r < 14 ? 1.5 : 2;
       ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 1;
-      if (named) {
+      if (named && sub) {                                           // a lit one: the name, and the main affiliation under it
+        ctx.textAlign = "center"; ctx.textBaseline = "top";
+        const nf = `800 ${w < 600 ? 12 : 14}px Inter, system-ui, sans-serif`, af = `600 ${w < 600 ? 10 : 11.5}px Inter, system-ui, sans-serif`;
+        ctx.font = nf; const nw = ctx.measureText(n.p.name).width; ctx.font = af; const aw = sub === true ? 0 : ctx.measureText(sub).width;
+        const bw = Math.min(w - 16, Math.max(nw, aw) + 16), x = Math.min(w - bw / 2 - 8, Math.max(bw / 2 + 8, n.x)), y = n.y + r + 6;
+        ctx.fillStyle = "rgba(20,20,22,.92)"; ctx.beginPath(); ctx.roundRect(x - bw / 2, y, bw, aw ? 38 : 22, 8); ctx.fill();
+        ctx.font = nf; ctx.fillStyle = "#f2f2f7"; ctx.fillText(n.p.name, x, y + 4, bw - 12);
+        if (aw) { ctx.font = af; ctx.fillStyle = "#c9b8ff"; ctx.fillText(sub, x, y + 22, bw - 12); }
+      } else if (named) {
         ctx.font = `700 ${r < 24 ? 11 : 12}px Inter, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";   // the name, small but clear
         const nw = ctx.measureText(n.p.name).width, x = Math.min(w - nw / 2 - 8, Math.max(nw / 2 + 8, n.x));
         ctx.fillStyle = "rgba(20,20,22,.82)"; ctx.beginPath(); ctx.roundRect(x - nw / 2 - 6, n.y + r + 4, nw + 12, 18, 6); ctx.fill();
@@ -781,24 +798,26 @@ mygeeky setup</pre>
       ctx.globalAlpha = 1;
     };
     const big = R(w), small = dot(w);
-    const of = (n) => (inField ? fieldsOf(n.p).includes(field) : who === n.p);
-    if (!g.many) {
-      g.nodes.forEach((n) => (n.kind === "word" ? word(n) : person(n, big, of(n), any && !of(n), true)));
-      return;
-    }
-    let top = null;                                                 // a crowd: the photos, the words over them, then the lit one on top
-    g.nodes.forEach((n) => { if (n.kind !== "person") return; if (who === n.p) top = n; else person(n, small, of(n), any && !of(n), false); });
+    const of = (n) => (inField ? fieldsOf(n.p).includes(field) : who.has(n.p));
+    // the others (faint, unnamed while someone is lit), the words, then the people lit, big and on top
+    const tops = [];
+    g.nodes.forEach((n) => { if (n.kind !== "person") return; n.at = null; if (who.has(n.p)) tops.push(n);
+                             else person(n, g.many ? small : big, of(n), any && !of(n), !g.many && (!any || of(n))); });
     g.nodes.forEach((n) => n.kind === "word" && word(n));
-    if (top) person(top, big, true, false, true);
+    if (!faint) tops.forEach((n) => person(n, BIG(w), true, false, true, home(n.p) || true));
   }
   const map = $("#map"), net = $("#net");
   let graph;
   const spot = $("#spot");
   function say() {                                                  // who is lit, in words (read out by screen readers)
     spot.replaceChildren();
-    const p = people[focus];
+    const p = group.length === 1 && people[group[0]];
     const line = (cls, text) => { const s = document.createElement("span"); if (cls) s.className = cls; s.textContent = text; return s; };
-    if (p) {
+    if (group.length > 1) {                                         // a few at once: one line each
+      group.forEach((i, k) => { const q = people[i], b = document.createElement("b"); b.textContent = q.name;
+        if (k) spot.append(document.createElement("br"));
+        spot.append(b, line("", " · " + [q.role, q.place].filter(Boolean).join(" · "))); });
+    } else if (p) {
       const b = document.createElement("b"); b.textContent = p.name;
       spot.append(b, line("", " · " + [p.role, p.place].filter(Boolean).join(" · ")), document.createElement("br"), line("f", (p.fields || []).join(" · ")));
     } else if (field) {                                             // a field: how many work in it, and who
@@ -813,25 +832,38 @@ mygeeky setup</pre>
     $("#empty").hidden = people.length > 0;
     draw(net, build(net.clientWidth, net.clientHeight), true);      // the same web, faint, behind the orbit
   };
-  const light = (i) => { focus = i; field = null; draw(map, graph, false); say(); };
-  const lightField = (f) => { focus = -1; field = f; draw(map, graph, false); say(); };
+  const lightAll = (is) => { group = is; field = null; draw(map, graph, false); say(); };
+  const light = (i) => lightAll([i]);
+  const lightField = (f) => { group = []; field = f; draw(map, graph, false); say(); };
   render();
   let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 200); });
 
-  // one person at a time, in a shuffled order, every few seconds while the map is on screen; pointing at a photo
-  // holds that person, pointing at a word lights everyone in that field
-  let onScreen = false, held = 0;
+  // two or three at a time (two on a phone), every few seconds while the map is on screen: each turn takes people
+  // not yet shown, as far apart on the map as it can, so everyone comes round soon and the photos don't cover each
+  // other. Pointing at a photo holds that person; pointing at a word lights everyone in that field
+  let onScreen = false, held = 0, unseen = [];
   new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(map);
-  const order = people.map((_, i) => i).sort(() => Math.random() - 0.5);
-  let next = 0;
+  const nodeOf = (i) => graph.nodes.find((n) => n.p === people[i]);
+  const nextGroup = () => {
+    const out = [], k = Math.min(per(map.clientWidth), people.length);
+    while (out.length < k) {
+      if (!unseen.length) unseen = people.map((_, i) => i).filter((i) => !out.includes(i)).sort(() => Math.random() - 0.5);
+      let best = 0, far = -1;
+      if (out.length) unseen.forEach((i, j) => { const a = nodeOf(i);
+        const d = Math.min(...out.map((o) => { const b = nodeOf(o); return Math.hypot(a.x - b.x, a.y - b.y); }));
+        if (d > far) { far = d; best = j; } });
+      out.push(unseen.splice(best, 1)[0]);
+    }
+    return out;
+  };
   if (people.length) {
-    light(order[0]);
-    if (!still) setInterval(() => { if (onScreen && Date.now() > held && !document.hidden) light(order[next = (next + 1) % order.length]); }, 3500);
+    lightAll(nextGroup());
+    if (!still) setInterval(() => { if (onScreen && Date.now() > held && !document.hidden) lightAll(nextGroup()); }, 3500);
   }
   const hit = (e) => {
     const b = map.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top, w = map.clientWidth;
-    const lit = focus >= 0 && graph.nodes.find((n) => n.p === people[focus]);
-    if (lit && Math.hypot(lit.x - x, lit.y - y) < R(w) + 6) return lit;
+    const lit = graph.nodes.find((n) => n.at && Math.hypot(n.at.x - x, n.at.y - y) < BIG(w) + 6);
+    if (lit) return lit;
     const r = graph.many ? dot(w) + 4 : R(w) + 6;
     return graph.nodes.find((n) => n.kind === "person" && Math.hypot(n.x - x, n.y - y) < r)
         || graph.nodes.find((n) => n.kind === "word" && Math.abs(n.x - x) < n.hw && Math.abs(n.y - y) < n.px * 0.7);
@@ -841,7 +873,7 @@ mygeeky setup</pre>
     if (!n) return;
     held = Date.now() + hold;
     if (n.kind === "word") { if (n.label !== field) lightField(n.label); return; }
-    const i = people.indexOf(n.p); if (i !== focus) light(i);
+    const i = people.indexOf(n.p); if (group.length !== 1 || group[0] !== i) light(i);
   };
   map.addEventListener("pointermove", (e) => pick(e, 4000));
   map.addEventListener("pointerdown", (e) => pick(e, 10000));
@@ -866,7 +898,7 @@ mygeeky setup</pre>
     const q = find.value.trim().toLowerCase(); if (!q || count[q]) return;
     const them = people.map((p, i) => [p, i]).filter(([p]) => [p.name, p.role, p.place, ...(p.fields || [])].join(" ").toLowerCase().includes(q));
     if (them.length < 2) return;
-    const at = them.findIndex(([, i]) => i === focus); held = Date.now() + 15000; light(them[(at + 1) % them.length][1]);
+    const at = them.findIndex(([, i]) => i === group[0]); held = Date.now() + 15000; light(them[(at + 1) % them.length][1]);
   });
 })();
 </script>
