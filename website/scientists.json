@@ -1,4 +1,104 @@
 {
   "_about": "Scientists who use and support myGeeKy, shown on mygeeky.org as a network and a word map. Only people who asked to be shown (the 'Join the map' issue form, or an email to support@mygeeky.org) and whom the maker accepted. Each entry: name, role, place, link (https: ORCID, lab or personal page), fields (up to 6 short words), since (YYYY-MM), photo (optional: a file name in website/scientists/, .jpg/.png/.webp, at most 400 KB; square works best). website/build.py checks every entry; text is shown as plain text.",
-  "scientists": []
+  "scientists": [
+    {
+      "name": "Alsamman M. Alsamman",
+      "role": "Postdoctoral Researcher",
+      "place": "Oklahoma Medical Research Foundation, United States",
+      "link": "https://github.com/AlsammanAlsamman",
+      "fields": ["GWAS", "genomic prediction", "plant genomics", "transcriptomics", "machine learning", "R"],
+      "since": "2026-10",
+      "photo": "alsamman-alsamman.webp"
+    },
+    {
+      "name": "Muhammad M. Adeel",
+      "role": "Postdoctoral Research Associate in Bioinformatics",
+      "place": "Oklahoma Medical Research Foundation, United States",
+      "link": "https://github.com/Adeel3Dgenomics",
+      "fields": ["gene regulation", "transposable elements", "3D genome", "Hi-C", "zebrafish", "bioinformatics"],
+      "since": "2026-10",
+      "photo": "muhammad-adeel.webp"
+    },
+    {
+      "name": "Hemant Giri",
+      "role": "Associate Staff Scientist",
+      "place": "Oklahoma Medical Research Foundation, United States",
+      "link": "",
+      "fields": ["vascular biology", "thrombosis", "endothelial cells", "inflammation", "clinical immunology"],
+      "since": "2026-10",
+      "photo": "hemant-giri.webp"
+    },
+    {
+      "name": "Hatem Zayed",
+      "role": "Associate Professor",
+      "place": "Qatar University, Doha, Qatar",
+      "link": "",
+      "fields": ["human genetics", "rare diseases", "genomic medicine", "molecular dynamics", "cancer", "bioinformatics"],
+      "since": "2026-10",
+      "photo": "hatem-zayed.webp"
+    },
+    {
+      "name": "Morad M. Mokhtar",
+      "role": "Assistant Professor",
+      "place": "Mohammed VI Polytechnic University, Ben Guerir, Morocco",
+      "link": "",
+      "fields": ["transposable elements", "plant genomics", "metagenomics", "machine learning", "bioinformatics"],
+      "since": "2026-10",
+      "photo": "morad-mokhtar.webp"
+    },
+    {
+      "name": "Al-Sayed Al-Soudy",
+      "role": "Postdoctoral Researcher",
+      "place": "Mohammed VI Polytechnic University, Ben Guerir, Morocco",
+      "link": "",
+      "fields": ["metagenomics", "gene expression", "single cell", "cephalopods", "animal genetics"],
+      "since": "2026-10",
+      "photo": "al-sayed-al-soudy.webp"
+    },
+    {
+      "name": "Tawffiq Istanbuli",
+      "role": "Researcher",
+      "place": "ICARDA, Addis Ababa, Ethiopia",
+      "link": "",
+      "fields": ["chickpea", "grass pea", "GWAS", "plant breeding"],
+      "since": "2026-10",
+      "photo": "tawffiq-istanbuli.webp"
+    },
+    {
+      "name": "Khaled H. Mousa",
+      "role": "Researcher",
+      "place": "ICARDA, Giza, Egypt",
+      "link": "",
+      "fields": ["chickpea", "grass pea", "gene families", "GWAS", "transcriptomics", "population genetics"],
+      "since": "2026-10",
+      "photo": "khaled-mousa.webp"
+    },
+    {
+      "name": "Anas M. Saedwi",
+      "role": "Assistant Professor",
+      "place": "ICARDA, Giza, Egypt",
+      "link": "",
+      "fields": ["chickpea", "sesame", "genome sequencing", "transcriptomics", "plant genomics"],
+      "since": "2026-10",
+      "photo": "anas-saedwi.webp"
+    },
+    {
+      "name": "Doaa A. Korkar",
+      "role": "Student / Intern",
+      "place": "ICARDA, Giza, Egypt",
+      "link": "",
+      "fields": ["chickpea", "transcriptomics", "RNA-seq"],
+      "since": "2026-10",
+      "photo": "doaa-korkar.webp"
+    },
+    {
+      "name": "Asmaa E. Abd El-Haq",
+      "role": "Research Intern",
+      "place": "ICARDA and AGERI, Giza, Egypt",
+      "link": "",
+      "fields": ["chickpea", "transcriptomics", "RNA-seq"],
+      "since": "2026-10",
+      "photo": "asmaa-abd-el-haq.webp"
+    }
+  ]
 }
