@@ -1,5 +1,5 @@
 {
- "version": "2026-10-29T09:58:50Z",
+ "version": "2026-10-30T10:01:46Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -52,59 +52,6 @@
      "rtl": false,
      "title": "统计遗传学博士后 - Casale 组",
      "summary": "Human Technopole 正在招聘一名统计遗传学博士后，开发计算方法，利用群体规模的人类遗传学和多模态分子数据，将人类遗传变异与生物学功能联系起来。"
-    }
-   }
-  },
-  {
-   "id": "university-of-oxford-big-data-institute-li-ka-shing-centre-f-2026",
-   "title": "Postdoctoral Scientist",
-   "url": "https://www.jobs.ac.uk/job/DTC975/postdoctoral-scientist",
-   "keywords": [
-    "genomics",
-    "bioinformatics",
-    "biostatistics",
-    "transcriptomics",
-    "rare disease",
-    "statistical analysis",
-    "r",
-    "python"
-   ],
-   "summary": "A Postdoctoral Scientist position at the University of Oxford's Big Data Institute to lead research into biomarkers and disease mechanisms for RNUopathies, including ReNU syndrome, analysing large-scale genomic and transcriptomic datasets.",
-   "deadline": "2026-10-29",
-   "org": "University of Oxford - Big Data Institute - Li Ka Shing Centre for Health and Information Discovery",
-   "place": "Oxford, United Kingdom",
-   "type": "postdoc",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "عالم ما بعد الدكتوراه",
-     "summary": "وظيفة عالم ما بعد الدكتوراه في معهد البيانات الضخمة بجامعة أكسفورد لقيادة البحث في المؤشرات الحيوية وآليات المرض لـ RNUopathies، بما في ذلك متلازمة ReNU، وتحليل مجموعات البيانات الجينومية والنسخية واسعة النطاق."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Chercheur postdoctoral",
-     "summary": "Un poste de chercheur postdoctoral au Big Data Institute de l'Université d'Oxford pour diriger des recherches sur les biomarqueurs et les mécanismes pathologiques des RNUopathies, y compris le syndrome ReNU, en analysant des ensembles de données génomiques et transcriptomiques à grande échelle."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Postdoktorand",
-     "summary": "Eine Postdoktorandenstelle am Big Data Institute der Universität Oxford zur Leitung der Forschung über Biomarker und Krankheitsmechanismen von RNUopathien, einschließlich des ReNU-Syndroms, unter Analyse großer genomischer und transkriptomischer Datensätze."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Científico postdoctoral",
-     "summary": "Un puesto de científico postdoctoral en el Big Data Institute de la Universidad de Oxford para liderar la investigación sobre biomarcadores y mecanismos de enfermedad de las RNUopathies, incluido el síndrome de ReNU, analizando conjuntos de datos genómicos y transcriptómicos a gran escala."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "博士后科学家",
-     "summary": "牛津大学大数据研究所的博士后科学家职位，领导关于RNUopathies（包括ReNU综合征）的生物标志物和疾病机制的研究，分析大规模基因组和转录组数据集。"
     }
    }
   },
