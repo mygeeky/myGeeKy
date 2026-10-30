@@ -91,15 +91,20 @@ def scientists() -> list[dict]:
 def fields_covered() -> list[str]:
     """What the word map shows until scientists join: the broad fields myGeeKy covers and its most used field words
     (the app's own dictionary, data/keywords.json)."""
-    import json
-    sys.path.insert(0, str(ROOT / "src"))
-    from mygeeky import datasets
-    broad = [label for key, label, _icon, _about in datasets.FIELD_PARTS if key not in ("for-you", "new")]
+    import ast, json
+    # datasets.py's two lists, read as plain values: importing the app would need its packages, which the website's
+    # build (.github/workflows/pages.yml) doesn't install
+    tree = ast.parse((ROOT / "src/mygeeky/datasets.py").read_text(encoding="utf-8"))
+    lists = {(n.targets[0] if isinstance(n, ast.Assign) else n.target).id: ast.literal_eval(n.value)
+             for n in tree.body if isinstance(n, (ast.Assign, ast.AnnAssign)) and n.value is not None
+             and isinstance(n.targets[0] if isinstance(n, ast.Assign) else n.target, ast.Name)
+             and (n.targets[0] if isinstance(n, ast.Assign) else n.target).id in ("FIELD_PARTS", "FIELD_WORDS")}
+    broad = [label for key, label, _icon, _about in lists["FIELD_PARTS"] if key not in ("for-you", "new")]
     terms = json.loads((ROOT / "src/mygeeky/data/keywords.json").read_text(encoding="utf-8"))["terms"]
     labels = sorted({t["label"] for t in terms.values() if 2 < len(t["label"]) <= 18 and not any(c.isdigit() for c in t["label"])},
                     key=lambda w: (-len(terms.get(w.replace(" ", "-"), {}).get("related", [])), w))
     words: list[str] = []
-    for _field, pattern in datasets.FIELD_WORDS:          # about three of the dictionary's words for each field
+    for _field, pattern in lists["FIELD_WORDS"]:          # about three of the dictionary's words for each field
         words += [w for w in labels if re.search(pattern, w, re.I) and w not in words][:3]
     return broad + [w for w in words if w.lower() not in {b.lower() for b in broad}]
 
