@@ -1,5 +1,5 @@
 {
- "version": "2026-10-30T10:01:46Z",
+ "version": "2026-10-31T09:39:43Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -673,26 +673,6 @@
    }
   },
   {
-   "id": "inrae-hybrid-mechanistic-ai-modeling-of-microbiomes-2026",
-   "title": "Hybrid Mechanistic & AI Modeling of Microbiomes",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202610070820-cdd-hybrid-mechanistic-ai-modeling-of-microbiomes",
-   "keywords": [
-    "microbiome",
-    "metabolic modeling",
-    "deep learning",
-    "flux balance analysis",
-    "neural odes",
-    "pinns",
-    "genome-scale metabolic models"
-   ],
-   "summary": "A 24-month postdoc position at INRAE to build a multi-scale modeling framework combining genome-scale metabolic models, flux balance analysis, and hybrid deep-learning models for food-fermentation microbial communities. The role involves constructing GEMs, running flux balance analyses, and embedding metabolic descriptors into compositional Neural ODEs and PINNs.",
-   "deadline": "2026-10-30",
-   "org": "INRAE",
-   "place": "Jouy-en-Josas, France",
-   "type": "postdoc",
-   "remote": false
-  },
-  {
    "id": "inria-d-universit-c-te-d-azur-explainable-ai-for-protein-lan-2026",
    "title": "Explainable AI for Protein Language Models & Physics-Based Generative Folding",
    "url": "https://www.sfbi.fr/en/emplois/offre/202610121128-cdd-explainable-ai-for-protein-language-models-physics-based-generative-folding",
@@ -1013,61 +993,6 @@
      "summary": "EMBO 博士后奖学金支持整个欧洲和世界各地的优秀博士后研究人员，为期最长两年。国际流动性是关键要求。",
      "who": "博士后研究人员",
      "amount": "工资或津贴、搬迁津贴以及用于 fe 的支持"
-    }
-   }
-  },
-  {
-   "id": "embo-maria-leptin-embo-science-journalism-fellowships-2026",
-   "title": "Maria Leptin|EMBO Science Journalism Fellowships",
-   "url": "https://www.embo.org/funding/fellowships-grants-and-career-support/maria-leptin-embo-science-journalism-fellowships/",
-   "keywords": [
-    "science journalism",
-    "life sciences",
-    "fellowship",
-    "placement",
-    "newsroom",
-    "research institutions"
-   ],
-   "summary": "The scheme supports science journalism by providing journalists with funded placements (sabbaticals) at research institutions, and researchers wishing to transition full time to science journalism with funded placements in media newsrooms.",
-   "deadline": "2026-10-30",
-   "org": "EMBO",
-   "who": "life scientists pursuing a career in science journalism and science journalists who wish to further their scientific education",
-   "amount": "",
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "Maria Leptin|EMBO Science Journalism Fellowships",
-     "summary": "يدعم البرنامج الصحافة العلمية من خلال توفير فترات تدريب مدفوعة التكاليف (إجازات دراسية) للصحفيين في مؤسسات البحث، وللباحثين الراغبين في الانتقال بدوام كامل إلى الصحافة العلمية من خلال فترات تدريب مدفوعة التكاليف في غرف الأخبار الإعلامية.",
-     "who": "علماء الحياة الساعون إلى مهنة في الصحافة العلمية والصحفيين العلميين الراغبين في تعزيز تعليمهم العلمي"
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Maria Leptin|EMBO Science Journalism Fellowships",
-     "summary": "Le programme soutient le journalisme scientifique en offrant aux journalistes des placements financés (congés sabbatiques) dans des institutions de recherche, et aux chercheurs souhaitant se reconvertir à plein temps dans le journalisme scientifique des placements financés dans des salles de rédaction médiatiques.",
-     "who": "scientifiques de la vie poursuivant une carrière dans le journalisme scientifique et journalistes scientifiques souhaitant approfondir leur formation scientifiq"
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Maria Leptin|EMBO Science Journalism Fellowships",
-     "summary": "Das Programm unterstützt den Wissenschaftsjournalismus, indem es Journalisten finanzierte Praktika (Sabbaticals) an Forschungseinrichtungen ermöglicht und Forschern, die Vollzeit in den Wissenschaftsjournalismus wechseln möchten, finanzierte Praktika in Medienredaktionen bietet.",
-     "who": "Lebenswissenschaftler, die eine Karriere im Wissenschaftsjournalismus anstreben, und Wissenschaftsjournalisten, die ihre wissenschaftliche Ausbildung vertiefen "
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Maria Leptin|EMBO Science Journalism Fellowships",
-     "summary": "El programa apoya el periodismo científico proporcionando a los periodistas estancias financiadas (sabáticos) en instituciones de investigación, y a los investigadores que desean pasar a tiempo completo al periodismo científico, estancias financiadas en redacciones de medios.",
-     "who": "científicos de la vida que buscan una carrera en el periodismo científico y periodistas científicos que desean ampliar su formación científica"
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "Maria Leptin|EMBO Science Journalism Fellowships",
-     "summary": "该计划通过为记者提供在研究机构的有资金支持的实习（休假），以及为希望全职转向科学新闻的研究人员提供在媒体新闻编辑部的有资金支持的实习，来支持科学新闻。",
-     "who": "追求科学新闻职业的生命科学家和希望进一步深造科学教育的科学记者"
     }
    }
   },
