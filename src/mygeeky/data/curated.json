@@ -1,5 +1,5 @@
 {
- "version": "2026-10-31T09:39:43Z",
+ "version": "2026-11-01T10:28:14Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -52,59 +52,6 @@
      "rtl": false,
      "title": "统计遗传学博士后 - Casale 组",
      "summary": "Human Technopole 正在招聘一名统计遗传学博士后，开发计算方法，利用群体规模的人类遗传学和多模态分子数据，将人类遗传变异与生物学功能联系起来。"
-    }
-   }
-  },
-  {
-   "id": "university-of-cambridge-department-of-applied-mathematics-an-2026",
-   "title": "Postdoctoral Research Associate in Mathematical and Statistical Methods for Genome Privacy (Fixed Term)",
-   "url": "https://www.jobs.ac.uk/job/DTE231/postdoctoral-research-associate-in-mathematical-and-statistical-methods-for-genome-privacy-fixed-term",
-   "keywords": [
-    "genome privacy",
-    "differential privacy",
-    "statistics",
-    "computational genomics",
-    "pangenome",
-    "bioinformatics",
-    "graph algorithms",
-    "optimization"
-   ],
-   "summary": "A postdoctoral research associate position in the Department of Applied Mathematics and Theoretical Physics at the University of Cambridge, working on mathematical and computational methods for privacy-preserving human pangenome references.",
-   "deadline": "2026-10-31",
-   "org": "University of Cambridge - Department of Applied Mathematics and Theoretical Physics",
-   "place": "Cambridge, United Kingdom",
-   "type": "postdoc",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "باحث مشارك في مرحلة ما بعد الدكتوراه في الأساليب الرياضية والإحصائية لخصوصية الجينوم (مدة محددة)",
-     "summary": "وظيفة باحث مشارك في مرحلة ما بعد الدكتوراه في قسم الرياضيات التطبيقية والفيزياء النظرية في جامعة كامبريدج، للعمل على الأساليب الرياضية والحسابية لمراجع الجينوم البشري الشاملة التي تحافظ على الخصوصية."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Chercheur postdoctoral associé en méthodes mathématiques et statistiques pour la confidentialité des génomes (durée déterminée)",
-     "summary": "Un poste de chercheur postdoctoral associé au Département de mathématiques appliquées et de physique théorique de l'Université de Cambridge, travaillant sur des méthodes mathématiques et computationnelles pour des références de pangénome humain préservant la confidentialité."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Postdoktorand in mathematischen und statistischen Methoden für Genom-Privatsphäre (befristet)",
-     "summary": "Eine Postdoktorandenstelle in der Abteilung für Angewandte Mathematik und Theoretische Physik an der University of Cambridge, mit Arbeit an mathematischen und computergestützten Methoden für datenschutzfreundliche menschliche Pangenom-Referenzen."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Investigador postdoctoral asociado en métodos matemáticos y estadísticos para la privacidad del genoma (plazo fijo)",
-     "summary": "Un puesto de investigador postdoctoral asociado en el Departamento de Matemáticas Aplicadas y Física Teórica de la University of Cambridge, trabajando en métodos matemáticos y computacionales para referencias de pangenoma humano que preservan la privacidad."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "基因组隐私数学与统计方法博士后研究助理（固定期限）",
-     "summary": "剑桥大学应用数学与理论物理系的一个博士后研究助理职位，从事保护隐私的人类泛基因组参考的数学与计算方法研究。"
     }
    }
   },
@@ -671,88 +618,6 @@
      "summary": "BIOPOLIS协会启动一项国际选拔程序，招聘一名初级研究员，开展关于鸟类迁徙行为个体发育对环境变化响应的研究活动，合同为12个月固定期限合同。"
     }
    }
-  },
-  {
-   "id": "inria-d-universit-c-te-d-azur-explainable-ai-for-protein-lan-2026",
-   "title": "Explainable AI for Protein Language Models & Physics-Based Generative Folding",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202610121128-cdd-explainable-ai-for-protein-language-models-physics-based-generative-folding",
-   "keywords": [
-    "protein language models",
-    "explainability",
-    "protein structure prediction",
-    "interpretability",
-    "transformers",
-    "protein evolution"
-   ],
-   "summary": "A 12-month postdoc position (renewable) at Inria Sophia Antipolis to lead an explainability study of protein language model failures and contribute to flow-matching-based protein structure predictors. Start date 4 January 2027, salary from 2200€ per month.",
-   "deadline": "2026-10-31",
-   "org": "Inria d'Université Côte d'Azur",
-   "place": "Sophia Antipolis, France",
-   "type": "postdoc",
-   "remote": false
-  },
-  {
-   "id": "toulouse-biotechnology-institute-tbi-18-month-postdoctoral-p-2026",
-   "title": "18-Month Postdoctoral Position in AI/ML & Structural Bioinformatics (Biocomputing) - TBI, Toulouse",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202609050609-cdd-18-month-postdoctoral-position-in-aiml-structural-bioinformatics-biocomputing-tbi-toulouse",
-   "keywords": [
-    "structural bioinformatics",
-    "machine learning",
-    "deep learning",
-    "computational biology",
-    "enzymes",
-    "proteins",
-    "molecular modeling",
-    "biocatalysis"
-   ],
-   "summary": "An 18-month postdoctoral position in AI/ML and structural bioinformatics at Toulouse Biotechnology Institute (TBI), funded by INSA Toulouse, to develop computational approaches combining AI and structural bioinformatics to analyze and predict enzyme synergies in lignocellulosic biomass deconstruction.",
-   "deadline": "2026-10-31",
-   "org": "Toulouse Biotechnology Institute (TBI)",
-   "place": "Toulouse, France",
-   "type": "postdoc",
-   "remote": false
-  },
-  {
-   "id": "tagc-inserm-u1090-aix-marseille-universit-postdoctorat-en-bi-2026",
-   "title": "Postdoctorat en bioinformatique et génomique régulatrice",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202609110221-concours-postdoctorat-en-bioinformatique-et-genomique-regulatrice",
-   "keywords": [
-    "bioinformatics",
-    "regulatory genomics",
-    "transcriptomics",
-    "non-coding rna",
-    "omics data integration",
-    "statistics",
-    "dimensionality reduction",
-    "gene regulation"
-   ],
-   "summary": "A postdoctoral position in bioinformatics and regulatory genomics at TAGC, Inserm U1090 / Aix-Marseille Université, funded by the A*Midex 'Post-Doc Handicap' call specifically for scientists with disabilities. The project concerns integrative characterization of RNAPII-occupied intergenic regions, based on large-scale transcriptomics and functional genomics data analysis.",
-   "deadline": "2026-10-31",
-   "org": "TAGC, Inserm U1090 / Aix-Marseille Université",
-   "place": "Marseille 09, France",
-   "type": "postdoc",
-   "remote": false
-  },
-  {
-   "id": "umr1107-neuro-dol-inserm-universit-clermont-auvergne-post-do-2026",
-   "title": "Post-doctorant en bioinformatique et intelligence artificielle appliquées aux données multi-omiques",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202607231147-cdd-post-doctorant-en-bioinformatique-et-intelligence-artificielle-appliquees-aux-donnees-multi-omiques",
-   "keywords": [
-    "bioinformatics",
-    "machine learning",
-    "multi-omics",
-    "microbiome",
-    "metagenomics",
-    "biostatistics",
-    "biomarkers",
-    "translational research"
-   ],
-   "summary": "A 36-month postdoctoral position in bioinformatics and artificial intelligence applied to multi-omics data (microbiota, metagenomics, transcriptomics, metabolomics, lipidomics) at UMR1107 Neuro-Dol in Clermont-Ferrand, starting October/November 2026. The project focuses on identifying microbial and metabolic biomarkers of chronic pain, including chemotherapy-induced peripheral neuropathies.",
-   "deadline": "2026-10-31",
-   "org": "UMR1107 Neuro-Dol INSERM/Université Clermont Auvergne",
-   "place": "Clermont-Ferrand, France",
-   "type": "postdoc",
-   "remote": false
   },
   {
    "id": "laboratoire-de-biom-trie-et-biologie-evolutive-ing-nieur-de-2026",
