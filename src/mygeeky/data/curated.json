@@ -1,5 +1,5 @@
 {
- "version": "2026-11-01T10:28:14Z",
+ "version": "2026-11-02T11:08:04Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -52,108 +52,6 @@
      "rtl": false,
      "title": "统计遗传学博士后 - Casale 组",
      "summary": "Human Technopole 正在招聘一名统计遗传学博士后，开发计算方法，利用群体规模的人类遗传学和多模态分子数据，将人类遗传变异与生物学功能联系起来。"
-    }
-   }
-  },
-  {
-   "id": "aarhus-university-department-of-animal-and-veterinary-scienc-2026",
-   "title": "PhD Position: Tracking Microbes Across Borders using Genomics to Uncover Biomass-to-Biogas Transmission Pathways",
-   "url": "https://www.jobs.ac.uk/job/DTD392/phd-position-tracking-microbes-across-borders-using-genomics-to-uncover-biomass-to-biogas-transmission-pathways",
-   "keywords": [
-    "genomics",
-    "metagenomics",
-    "bioinformatics",
-    "microbiology",
-    "biogas",
-    "biosecurity"
-   ],
-   "summary": "A PhD fellowship at Aarhus University within the Animal and Veterinary Sciences programme, combining targeted PCR/RT-qPCR surveillance with long-read shotgun metagenomics to track microbial transmission pathways in the Danish biogas sector. The position is available from 1st January 2027 or later.",
-   "deadline": "2026-11-01",
-   "org": "Aarhus University - Department of Animal and Veterinary Sciences",
-   "place": "Aarhus, Denmark",
-   "type": "phd",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "وظيفة PhD: تتبع الميكروبات عبر الحدود باستخدام Genomics للكشف عن مسارات انتقال الكتلة الحيوية إلى الغاز الحيوي",
-     "summary": "زمالة PhD في جامعة آرهوس ضمن برنامج علوم الحيوان والطب البيطري، تجمع بين مراقبة PCR/RT-qPCR المستهدفة و long-read shotgun metagenomics لتتبع مسارات انتقال الميكروبات في قطاع الغاز الحيوي الدنماركي. الوظيفة متاحة اعتبارًا من 1 يناير 2027 أو بعد ذلك."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Poste de PhD : Suivi des microbes à travers les frontières grâce à la génomique pour découvrir les voies de transmission de la biomasse au b",
-     "summary": "Une bourse de PhD à l'Université d'Aarhus dans le cadre du programme des sciences animales et vétérinaires, combinant la surveillance ciblée par PCR/RT-qPCR avec la long-read shotgun metagenomics pour suivre les voies de transmission microbienne dans le secteur danois du biogaz. Le poste est disponible à partir du 1er janvier 2027 ou plus tard."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "PhD-Stelle: Verfolgung von Mikroben über Grenzen hinweg mithilfe von Genomik zur Aufdeckung von Übertragungswegen von Biomasse zu Biogas",
-     "summary": "Ein PhD-Stipendium an der Universität Aarhus im Rahmen des Programms für Tier- und Veterinärwissenschaften, das gezielte PCR/RT-qPCR-Überwachung mit long-read shotgun metagenomics kombiniert, um mikrobielle Übertragungswege im dänischen Biogassektor zu verfolgen. Die Stelle ist ab dem 1. Januar 2027 oder später verfügbar."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Puesto de PhD: Rastreo de microbios a través de fronteras utilizando genómica para descubrir las vías de transmisión de biomasa a biogás",
-     "summary": "Una beca de PhD en la Universidad de Aarhus dentro del programa de Ciencias Animales y Veterinarias, que combina la vigilancia dirigida por PCR/RT-qPCR con long-read shotgun metagenomics para rastrear las vías de transmisión microbiana en el sector danés de biogás. El puesto está disponible a partir del 1 de enero de 2027 o más tarde."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "PhD职位：利用基因组学追踪跨境微生物以揭示生物质到沼气的传播途径",
-     "summary": "奥胡斯大学动物与兽医科学项目下的PhD奖学金，结合靶向PCR/RT-qPCR监测与长读长鸟枪法宏基因组学，以追踪丹麦沼气行业中的微生物传播途径。该职位可从2027年1月1日或之后开始。"
-    }
-   }
-  },
-  {
-   "id": "aithyra-gmbh-research-institute-for-biomedical-artificial-in-2026",
-   "title": "The AITHYRA International PhD Program Call in AI for Biomedicine (all genders)",
-   "url": "https://www.nature.com/naturecareers/job/12864324/the-aithyra-international-phd-program-call-in-ai-for-biomedicine-all-genders-/?LinkSource=PromotedJob",
-   "keywords": [
-    "machine learning",
-    "biomedicine",
-    "life sciences",
-    "artificial intelligence",
-    "phd",
-    "bioinformatics"
-   ],
-   "summary": "Fully funded PhD positions at AITHYRA in Vienna at the intersection of machine learning, experimental biology, chemistry, and medicine, starting September 2027. The program is run with TU Wien, Uni Wien and Meduni Wien.",
-   "deadline": "2026-11-01",
-   "org": "AITHYRA GmbH - Research Institute for Biomedical Artificial Intelligence of the Austrian Academy of",
-   "place": "Vienna, Austria",
-   "type": "phd",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "برنامج AITHYRA الدولي للدكتوراه في الذكاء الاصطناعي للطب الحيوي (جميع الأجناس)",
-     "summary": "مناصب PhD ممولة بالكامل في AITHYRA في فيينا عند تقاطع تعلم الآلة، والبيولوجيا التجريبية، والكيمياء، والطب، بدءًا من سبتمبر 2027. يُدار البرنامج بالتعاون مع TU Wien و Uni Wien و Meduni Wien."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Appel du programme international de PhD AITHYRA en IA pour la biomédecine (tous genres)",
-     "summary": "Postes de PhD entièrement financés à AITHYRA à Vienne à l'intersection de l'apprentissage automatique, de la biologie expérimentale, de la chimie et de la médecine, débutant en septembre 2027. Le programme est organisé avec TU Wien, Uni Wien et Meduni Wien."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "AITHYRA Internationales PhD-Programm Call in KI für Biomedizin (alle Geschlechter)",
-     "summary": "Voll finanzierte PhD-Stellen bei AITHYRA in Wien an der Schnittstelle von maschinellem Lernen, experimenteller Biologie, Chemie und Medizin, beginnend im September 2027. Das Programm wird mit TU Wien, Uni Wien und Meduni Wien durchgeführt."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Convocatoria del Programa Internacional de PhD de AITHYRA en IA para Biomedicina (todos los géneros)",
-     "summary": "Posiciones de PhD totalmente financiadas en AITHYRA en Viena en la intersección de aprendizaje automático, biología experimental, química y medicina, comenzando en septiembre de 2027. El programa se lleva a cabo con TU Wien, Uni Wien y Meduni Wien."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "AITHYRA 国际 PhD 项目：生物医学人工智能（所有性别）",
-     "summary": "在维也纳 AITHYRA 提供全额资助的 PhD 职位，位于机器学习、实验生物学、化学和医学的交叉领域，起始于 2027 年 9 月。该项目与 TU Wien、Uni Wien 和 Meduni Wien 合作开展。"
     }
    }
   },
@@ -983,58 +881,6 @@
   }
  ],
  "conferences": [
-  {
-   "id": "elixir-3d-bioinfo-community-and-iscb-3dsig-cosi-locally-orga-2026",
-   "title": "The ELIXIR 3D-BioInfo Annual General Meeting (AGM) | ISCB 3DSig 2026",
-   "url": "https://www.iscb.org/3dbioinfo2026/home",
-   "keywords": [
-    "structural bioinformatics",
-    "computational biology",
-    "machine learning",
-    "ai",
-    "cryo-electron microscopy",
-    "3d-bioinfo",
-    "3dsig"
-   ],
-   "summary": "The ELIXIR 3D-BioInfo Annual General Meeting (AGM) | ISCB 3DSig 2026 is a joint conference of the ELIXIR 3D-BioInfo and ISCB 3DSIG Communities, held 25-27 November 2026 in Rome, Italy. It brings together structural bioinformatics researchers for networking and to exchange ideas on workflows and resources for new developments in data and methods.",
-   "deadline": "2026-11-01",
-   "place": "Rome, Italy",
-   "starts": "2026-11-25",
-   "ends": "2026-11-27",
-   "student": "",
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "الاجتماع العام السنوي (AGM) لـ ELIXIR 3D-BioInfo | ISCB 3DSig 2026",
-     "summary": "الاجتماع العام السنوي (AGM) لـ ELIXIR 3D-BioInfo | ISCB 3DSig 2026 هو مؤتمر مشترك بين مجتمعات ELIXIR 3D-BioInfo و ISCB 3DSIG، يُعقد في الفترة من 25 إلى 27 نوفمبر 2026 في روما، إيطاليا. يجمع باحثي bioinformatics الهيكلية للتواصل وتبادل الأفكار حول workflows والموارد للتطورات الجديدة في البيانات والأساليب."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "L'Assemblée Générale Annuelle (AGM) d'ELIXIR 3D-BioInfo | ISCB 3DSig 2026",
-     "summary": "L'Assemblée Générale Annuelle (AGM) d'ELIXIR 3D-BioInfo | ISCB 3DSig 2026 est une conférence conjointe des communautés ELIXIR 3D-BioInfo et ISCB 3DSIG, qui se tiendra du 25 au 27 novembre 2026 à Rome, en Italie. Elle rassemble des chercheurs en bioinformatics structurale pour le réseautage et l'échange d'idées sur les workflows et les ressources pour de nouveaux développements dans les données et "
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Das ELIXIR 3D-BioInfo Annual General Meeting (AGM) | ISCB 3DSig 2026",
-     "summary": "Das ELIXIR 3D-BioInfo Annual General Meeting (AGM) | ISCB 3DSig 2026 ist eine gemeinsame Konferenz der ELIXIR 3D-BioInfo- und ISCB 3DSIG-Communities, die vom 25. bis 27. November 2026 in Rom, Italien, stattfindet. Es bringt Forscher aus dem Bereich der strukturellen bioinformatics zusammen, um sich zu vernetzen und Ideen über workflows und Ressourcen für neue Entwicklungen in Daten und Methoden au"
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "La Reunión General Anual (AGM) de ELIXIR 3D-BioInfo | ISCB 3DSig 2026",
-     "summary": "La Reunión General Anual (AGM) de ELIXIR 3D-BioInfo | ISCB 3DSig 2026 es una conferencia conjunta de las comunidades ELIXIR 3D-BioInfo e ISCB 3DSIG, que se celebrará del 25 al 27 de noviembre de 2026 en Roma, Italia. Reúne a investigadores en bioinformatics estructural para establecer contactos e intercambiar ideas sobre workflows y recursos para nuevos desarrollos en datos y métodos."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "ELIXIR 3D-BioInfo 年度大会 (AGM) | ISCB 3DSig 2026",
-     "summary": "ELIXIR 3D-BioInfo 年度大会 (AGM) | ISCB 3DSig 2026 是 ELIXIR 3D-BioInfo 和 ISCB 3DSIG 社区的联合会议，于 2026 年 11 月 25 日至 27 日在意大利罗马举行。它汇集了结构 bioinformatics 研究人员，进行交流，并就 workflows 和资源交换想法，以促进数据和方法的新发展。"
-    }
-   }
-  },
   {
    "id": "embl-ebi-training-introduction-to-rna-seq-and-functional-int-2026",
    "title": "Introduction to RNA-seq and functional interpretation 2027",
