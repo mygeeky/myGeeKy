@@ -1,5 +1,5 @@
 {
- "version": "2026-11-02T11:08:04Z",
+ "version": "2026-11-03T10:53:11Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -516,25 +516,6 @@
      "summary": "BIOPOLIS协会启动一项国际选拔程序，招聘一名初级研究员，开展关于鸟类迁徙行为个体发育对环境变化响应的研究活动，合同为12个月固定期限合同。"
     }
    }
-  },
-  {
-   "id": "laboratoire-de-biom-trie-et-biologie-evolutive-ing-nieur-de-2026",
-   "title": "Ingénieur de recherche en bioinformatique au LBBE (Lyon): génomique comparative",
-   "url": "https://www.sfbi.fr/en/emplois/offre/202610121100-cdd-ingenieur-de-recherche-en-bioinformatique-au-lbbe-lyon-genomique-comparative",
-   "keywords": [
-    "bioinformatics",
-    "comparative genomics",
-    "population genetics",
-    "polymorphism",
-    "transposable elements",
-    "nematodes"
-   ],
-   "summary": "A 2-year fixed-term research engineer position in bioinformatics is available at the LBBE (université Lyon 1) to work on population genetics and comparative genomics of nematodes undergoing programmed DNA elimination.",
-   "deadline": "2026-11-02",
-   "org": "Laboratoire de Biométrie et Biologie Evolutive",
-   "place": "Villeurbanne, France",
-   "type": "engineer",
-   "remote": false
   },
   {
    "id": "imperial-college-london-national-heart-lung-institute-bioinf-2026",
