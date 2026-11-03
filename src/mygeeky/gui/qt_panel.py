@@ -8062,8 +8062,15 @@ class MyGeekyPanel(QWidget):
         if app is not None:
             app.setPalette(pal)                    # dialogs, menus and tooltips too
             font = app.font()
-            font.setFamilies(list(theme.get("font") or []) + font.families())
-            app.setFont(font)
+            # the theme's fonts, then the system's own (kept from the first time): built afresh each time, never on
+            # top of the last list. It was: every sync re-applied the theme, the list grew by 8 names each time, and
+            # after a few hundred Qt stopped finding ⚙ and ⟩ (empty boxes in the header, on Windows and Linux)
+            if not hasattr(self, "_system_font_families"):
+                self._system_font_families = list(font.families())
+            families = list(dict.fromkeys([*(theme.get("font") or []), *self._system_font_families]))
+            if font.families() != families:
+                font.setFamilies(families)
+                app.setFont(font)
         self.setPalette(pal)
         self.logo_label.setStyleSheet(f"color:{theme['title']}; font-weight:700; font-size:15px; background:transparent;")
         self._render_signs()
