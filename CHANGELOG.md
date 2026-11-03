@@ -3,6 +3,13 @@
 What changed in each myGeeKy release. Versions before 0.20.0 are described in
 [GitHub Releases](https://github.com/mygeeky/myGeeKy/releases).
 
+## 0.41.1 (2026-11-03): Two fixes for the computer app
+
+- **Saving no longer stops the panel on Windows** ([#8](https://github.com/mygeeky/myGeeKy/issues/8), [#9](https://github.com/mygeeky/myGeeKy/issues/9)): when another program (an antivirus, the search indexer, a second myGeeKy) held a data file such as your games progress, the datasets' 🆕 list or the support settings, Windows refused to replace it ("Access is denied") and the crash window opened. Now the save is retried for longer, a read-only file is made writable, and if Windows still refuses, the text is written into the file directly, so nothing is lost.
+- **⚙ and ⟩ no longer turn into empty boxes after a while** (Windows, macOS and Linux): each sync re-applied the theme and added its fonts to the app's font list again, until the list held hundreds of names and Qt stopped finding the Settings and fold symbols. The list is now built afresh each time.
+
+The phone app needs neither fix (it saves in its own storage and has no such font list), so it stays at 1.23.0.
+
 ## 0.41.0 (2026-10-29): Gentle second asks, GeeKOc feels the games, lighter games, fewer crashes (phone 1.23.0)
 
 - **What setup skipped is asked again, gently** (computer and phone): saving your data (Google Drive recommended, or a GitHub repo), your ORCID and GitHub each get a small card on the pages they'd improve (saving on You → My month and Model; ORCID on Cited by, Researchers, Highlights and Jobs; GitHub on Repos and My month), with **Not now** and **Don't ask again**. Never in your first week: the first card comes after 7 days of use, then 2 days of use after a *Not now*, once a week after the third, and it stops for good two months after it first appeared. At most one kind a day; what it remembers stays on the device. Both apps follow the same rules (`nudges.py`, `lib/nudges.ts`, checked against each other).
