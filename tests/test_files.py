@@ -27,3 +27,46 @@ def test_saves_of_one_file_from_many_threads_never_fail(tmp_path):
     assert set(read_json(path, {})) == {"by", "k"}
     assert json.loads(path.read_text(encoding="utf-8"))["k"] == 29
     assert not list(tmp_path.glob(".*.tmp"))  # no temporary file left behind
+
+
+def test_a_save_lands_even_when_windows_refuses_the_swap(tmp_path, monkeypatch):
+    """Issues #8 and #9: another program held the file, os.replace kept saying 'Access is denied' and the panel
+    stopped. Now the text is written into the file directly, and no temporary file is left behind."""
+    import mygeeky.files as files
+
+    path = tmp_path / "games_progress.json"
+    write_json(path, {"old": 1})
+    calls = []
+
+    def refuse(src, dst):
+        calls.append(dst)
+        raise PermissionError(5, "Access is denied")
+
+    monkeypatch.setattr(files.os, "replace", refuse)
+    monkeypatch.setattr(files.time, "sleep", lambda s: None)
+    write_json(path, {"new": 2})
+    assert read_json(path, {}) == {"new": 2}
+    assert len(calls) == 6                    # it did retry first
+    assert not list(tmp_path.glob(".*.tmp"))
+
+
+def test_a_read_only_file_is_made_writable_before_retrying(tmp_path, monkeypatch):
+    import os
+    import stat
+
+    import mygeeky.files as files
+
+    path = tmp_path / "support.json"
+    write_json(path, {"old": 1})
+    os.chmod(path, stat.S_IREAD)
+    real = os.replace
+
+    def windows_like(src, dst):               # Windows won't replace a read-only file
+        if not os.access(dst, os.W_OK):
+            raise PermissionError(5, "Access is denied")
+        real(src, dst)
+
+    monkeypatch.setattr(files.os, "replace", windows_like)
+    monkeypatch.setattr(files.time, "sleep", lambda s: None)
+    write_json(path, {"new": 2})
+    assert read_json(path, {}) == {"new": 2}

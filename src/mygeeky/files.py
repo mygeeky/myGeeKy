@@ -3,7 +3,8 @@
 * A save never leaves a half-written file: the text goes to a temporary file
   next to it first, which then replaces the real one in one step (a crash, a
   power cut or a full disk leaves the old file, not a broken one). Windows'
-  antivirus/indexer can hold a file for a moment, so the swap is retried.
+  antivirus/indexer can hold a file for a moment, so the swap is retried; if
+  it is still refused, the text is written into the file directly.
 * Reading tolerates what really happens to files on people's computers: a
   byte-order mark added by a text editor, a half-written last line, a file
   damaged some other way. A damaged file is kept aside (`<name>.broken-<time>`)
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import threading
 import time
 from datetime import datetime
@@ -38,13 +40,29 @@ def write_text_atomic(path: Path, text: str, retries: int = 6) -> None:
             os.replace(tmp, path)
             return
         except PermissionError:
-            if attempt == retries - 1:
-                try:
-                    tmp.unlink()
-                except OSError:
-                    pass
-                raise
-            time.sleep(0.05 * (attempt + 1))
+            if attempt == 0:
+                _make_writable(path)                       # a read-only file can't be replaced on Windows
+            if attempt < retries - 1:
+                time.sleep(0.1 * (attempt + 1))            # about 1.5 s in all: a virus scan can take that long
+    # Still refused (issues #8, #9: another program, such as an antivirus or a second myGeeKy reading the file, holds it
+    # without letting it be replaced). Such a holder usually still lets it be written, so write into it directly: not
+    # in one step, but far better than losing the save and stopping the panel.
+    try:
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(text)
+    finally:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+
+
+def _make_writable(path: Path) -> None:
+    try:
+        if path.exists() and not os.access(path, os.W_OK):
+            os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
+    except OSError:
+        pass
 
 
 def write_json(path: Path, data: Any, **dumps: Any) -> None:
