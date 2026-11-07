@@ -1,5 +1,5 @@
 {
- "version": "2026-11-05T10:56:34Z",
+ "version": "2026-11-07T10:10:00Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -454,66 +454,6 @@
   }
  ],
  "funding": [
-  {
-   "id": "maynooth-university-maynooth-university-phd-scholarship-depa-2026",
-   "title": "Maynooth University PhD Scholarship - Department of Biology & Kathleen Lonsdale Institute for Human Health Research",
-   "url": "https://euraxess.ec.europa.eu/jobs/funding/maynooth-university-phd-scholarship-department-biology-kathleen-lonsdale-institute",
-   "keywords": [
-    "antimicrobial resistance",
-    "genomics",
-    "microbiology",
-    "data analysis",
-    "one health",
-    "bacteriology"
-   ],
-   "summary": "A fully funded four-year PhD scholarship at Maynooth University's Department of Biology & Kathleen Lonsdale Institute for Human Health Research, commencing January 2027. The project investigates antimicrobial resistance (AMR) across the animal-environmental nexus within One Health research.",
-   "deadline": "2026-11-06",
-   "org": "Maynooth University",
-   "who": "Applicants with minimum first class or 2.1 honours in their BSc degree in microbiology, molecular biology or related subject or an MSc in microbiology, molecula",
-   "amount": "A student stipend of €25,000 per annum. Paid Annual Tuition ",
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "منحة PhD من جامعة Maynooth - قسم الأحياء ومعهد Kathleen Lonsdale لأبحاث صحة الإنسان",
-     "summary": "منحة PhD ممولة بالكامل لمدة أربع سنوات في قسم الأحياء ومعهد Kathleen Lonsdale لأبحاث صحة الإنسان بجامعة Maynooth، تبدأ في يناير 2027. يبحث المشروع في مقاومة مضادات الميكروبات (AMR) عبر الترابط بين الحيوان والبيئة ضمن أبحاث One Health.",
-     "who": "المتقدمون الحاصلون على درجة أولى أو 2.1 honours كحد أدنى في درجة BSc في علم الأحياء الدقيقة أو البيولوجيا الجزيئية أو موضوع ذي صلة أو MSc في علم الأحياء الدقيقة",
-     "amount": "بدل طالب قدره €25,000 سنويًا. رسوم دراسية سنوية مدفوعة"
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Bourse de doctorat de l'Université Maynooth - Département de biologie et Institut Kathleen Lonsdale pour la recherche sur la santé humaine",
-     "summary": "Une bourse de doctorat entièrement financée de quatre ans au Département de biologie et à l'Institut Kathleen Lonsdale pour la recherche sur la santé humaine de l'Université Maynooth, débutant en janvier 2027. Le projet étudie la résistance aux antimicrobiens (AMR) à travers le nexus animal-environnemental dans le cadre de la recherche One Health.",
-     "who": "Candidats avec un minimum de first class ou 2.1 honours dans leur diplôme BSc en microbiologie, biologie moléculaire ou sujet connexe ou un MSc en microbiologie",
-     "amount": "Une allocation étudiante de €25,000 par an. Frais de scolari"
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "PhD-Stipendium der Maynooth University - Fachbereich Biologie & Kathleen Lonsdale Institute for Human Health Research",
-     "summary": "Ein voll finanziertes vierjähriges PhD-Stipendium am Fachbereich Biologie & Kathleen Lonsdale Institute for Human Health Research der Maynooth University, beginnend im Januar 2027. Das Projekt untersucht antimikrobielle Resistenz (AMR) über den Tier-Umwelt-Nexus innerhalb der One Health-Forschung.",
-     "who": "Bewerber mit mindestens first class oder 2.1 honours in ihrem BSc-Abschluss in Mikrobiologie, Molekularbiologie oder verwandtem Fach oder einem MSc in Mikrobiol",
-     "amount": "Ein Studentenstipendium von €25,000 pro Jahr. Bezahlte jährl"
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Beca de PhD de la Universidad Maynooth - Departamento de Biología e Instituto Kathleen Lonsdale para la Investigación en Salud Humana",
-     "summary": "Una beca de PhD totalmente financiada de cuatro años en el Departamento de Biología e Instituto Kathleen Lonsdale para la Investigación en Salud Humana de la Universidad Maynooth, que comienza en enero de 2027. El proyecto investiga la resistencia a los antimicrobianos (AMR) a través del nexo animal-ambiental dentro de la investigación One Health.",
-     "who": "Solicitantes con un mínimo de first class o 2.1 honours en su título de BSc en microbiología, biología molecular o materia relacionada o un MSc en microbiología",
-     "amount": "Una asignación estudiantil de €25,000 por año. Matrícula anu"
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "Maynooth大学PhD奖学金 - 生物学系与Kathleen Lonsdale人类健康研究所",
-     "summary": "Maynooth大学生物学系与Kathleen Lonsdale人类健康研究所提供全额资助的四年制PhD奖学金，于2027年1月开始。该项目在One Health研究中调查动物-环境交叉领域的抗菌素耐药性（AMR）。",
-     "who": "申请者需在其微生物学、分子生物学或相关学科的BSc学位中至少获得first class或2.1 honours，或拥有微生物学、molecula的MSc",
-     "amount": "每年€25,000的学生津贴。支付年度学费"
-    }
-   }
-  },
   {
    "id": "kungliga-vetenskapsakademien-kva-the-royal-swedish-academy-o-2026",
    "title": "JSPS international fellowships for research in Japan (short-term | social science, natural science, humanities | Sweden)",
