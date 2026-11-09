@@ -278,7 +278,7 @@ the desktop panel.
 (GitHub, ORCID, both, a CV or just keywords), in English, French, Arabic or Chinese. **Help** has every tour again, one
 for Settings and one for each part, and the answers to how and why myGeeKy works. Same on the desktop.
 
-<sub>On Android, coming to Google Play soon.</sub>
+**On Android: [get it on Google Play](https://play.google.com/store/apps/details?id=org.mygeeky.app)**, free and without ads.
 
 <br clear="right">
 
