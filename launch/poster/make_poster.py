@@ -4,8 +4,8 @@
 
 Drawn from the repo's own screenshots and icon, so it can be re-made whenever
 the app changes (run docs/make_screenshots.py first for fresh screenshots).
-The QR code points at the GitHub page: it opens everywhere, including networks
-that block young domains.
+Two QR codes: Google Play for the phone app, and the GitHub page for the computer
+(it opens everywhere, including networks that block young domains).
 """
 
 from __future__ import annotations
@@ -22,6 +22,8 @@ SHOTS = ROOT / "docs" / "screenshots"
 OUT = Path(__file__).parent
 W, H = 3508, 4961                      # A3 at 300 dpi
 QR_URL = "https://github.com/mygeeky/myGeeKy"
+PLAY_URL = "https://play.google.com/store/apps/details?id=org.mygeeky.app"
+PHONE_SHOTS = SHOTS / "phone"
 
 TEXT = (244, 244, 250)
 MUTED = (182, 184, 204)
@@ -29,16 +31,39 @@ PINK, VIOLET, CYAN = (255, 111, 216), (122, 92, 255), (127, 216, 255)
 GREEN, AMBER = (52, 211, 153), (255, 196, 87)
 
 
+WEB_FONTS = ROOT / "website" / "fonts"
+WEIGHTS = {"regular": 400, "semi": 600, "bold": 700, "black": 900, "light": 300}
+
+
 def font(size: int, weight: str = "regular") -> ImageFont.FreeTypeFont:
+    """Segoe UI on Windows; elsewhere the website's own fonts (Inter, JetBrains Mono), so it looks the same anywhere."""
     name = {"regular": "segoeui.ttf", "bold": "segoeuib.ttf", "semi": "seguisb.ttf", "black": "seguibl.ttf",
             "light": "segoeuil.ttf", "mono": "consola.ttf"}[weight]
     try:
         return ImageFont.truetype(f"C:/Windows/Fonts/{name}", size)
     except OSError:
-        return ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", size)
+        pass
+    if weight == "mono":
+        return ImageFont.truetype(str(WEB_FONTS / "JetBrainsMono-latin.woff2"), size)
+    f = ImageFont.truetype(str(WEB_FONTS / "Inter-latin.woff2"), size)
+    try:
+        f.set_variation_by_axes([WEIGHTS[weight]])
+    except OSError:
+        pass
+    return f
 
 
-EMOJI = ImageFont.truetype("C:/Windows/Fonts/seguiemj.ttf", 109)
+def _emoji_font() -> ImageFont.FreeTypeFont:
+    for path in ("C:/Windows/Fonts/seguiemj.ttf", "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",
+                 "/System/Library/Fonts/Apple Color Emoji.ttc"):
+        try:
+            return ImageFont.truetype(path, 109)      # 109: the one size a colour-bitmap emoji font takes
+        except OSError:
+            continue
+    raise SystemExit("no colour emoji font found")
+
+
+EMOJI = _emoji_font()
 
 
 def emoji(im: Image.Image, chars: str, xy, size: int) -> None:
@@ -148,12 +173,12 @@ def qr(url: str, size: int) -> Image.Image:
 
 
 FEATURES = [
-    ("📰", "Headlines for your field", "AI labs, journals and the tech press, ranked by what you work on", PINK),
-    ("🔬", "Research that's rising", "papers gaining citations fastest, with their code", GREEN),
-    ("🤗", "Models in your field", "trending on Hugging Face, in your field and everywhere", AMBER),
-    ("👥", "Your people on GitHub", "researchers who share your work and will follow back", CYAN),
-    ("🛠️", "Projects that want you", "repos in your field with starter issues", VIOLET),
-    ("🔤", "Keywords with meaning", "add \u201cAI\u201d and it also finds LLMs and deep learning", PINK),
+    ("📈", "Rising skills", "what your field is starting to use, before everyone else", GREEN),
+    ("🧭", "Protocols", "a step-by-step road map for any skill, reviewed for your field", CYAN),
+    ("🏆", "Quiz", "every answer quotes the source that proves it", AMBER),
+    ("💼", "Jobs and scholarships", "verified positions and funding, checked by hand", PINK),
+    ("🗓️", "Seasons", "the yearly calls: conferences, scholarships, schools", VIOLET),
+    ("🎮", "Play with GeeKOc", "fourteen short games made from your own field", PINK),
 ]
 
 
@@ -181,24 +206,25 @@ def main() -> None:
     y = top + 390
     gradient_text(im, "myGeeKy", (rx, y), font(250, "black"))
     y += 360
-    for line in ("Find friends.", "Collaborate.", "Away from noise."):
-        text(im, line, (rx, y), font(150, "black"), TEXT)
-        y += 185
-    y += 30
-    for line in wrap("The people, papers and projects of your field, picked from your own work, in one quiet panel "
-                     "on your screen.", font(66), W - M - rx):
-        text(im, line, (rx, y), font(66), MUTED)
-        y += 90
+    for line in ("Your geeky friend", "who helps you"):
+        text(im, line, (rx, y), font(132, "black"), TEXT)
+        y += 165
+    gradient_text(im, "grow, quietly.", (rx, y), font(132, "black"))
+    y += 195
+    for line in wrap("On your phone and as a small panel on your computer. It reads your field, shows you what "
+                     "matters, and only suggests: it never acts for you.", font(62), W - M - rx):
+        text(im, line, (rx, y), font(62), MUTED)
+        y += 86
     y = max(y, top + art.height) + 80
 
-    # ---- the panel, three views
-    y_shots = y + 730
-    shot(im, SHOTS / "models.png", (W * 0.215, y_shots + 60), 1240, angle=6)
-    shot(im, SHOTS / "research.png", (W * 0.785, y_shots + 60), 1240, angle=-6)
-    shot(im, SHOTS / "news.png", (W * 0.5, y_shots), 1440)
+    # ---- the phone on each side, the computer's panel in the middle
+    y_shots = y + 760
+    shot(im, PHONE_SHOTS / "protocols.png", (W * 0.165, y_shots + 70), 1420, angle=6)
+    shot(im, PHONE_SHOTS / "chances.png", (W * 0.835, y_shots + 70), 1420, angle=-6)
+    shot(im, SHOTS / "grow-skills.png", (W * 0.5, y_shots), 1300)
 
     # ---- what you get, every day
-    y = y_shots + 770
+    y = y_shots + 820
     cols, gap = 3, 50
     cw = (W - 2 * M - gap * (cols - 1)) // cols
     ch = 300
@@ -219,28 +245,36 @@ def main() -> None:
     # ---- get it
     band_top = y
     card(im, [M, band_top, W - M, H - 200], radius=70, fill=(255, 255, 255, 26), outline=(255, 255, 255, 70))
-    q = qr(QR_URL, 470)
-    frame = Image.new("RGBA", (q.width + 60, q.height + 60), (255, 255, 255, 255))
-    fm = Image.new("L", frame.size, 0)
-    ImageDraw.Draw(fm).rounded_rectangle([0, 0, frame.width - 1, frame.height - 1], 40, fill=255)
-    frame.putalpha(fm)
-    frame.alpha_composite(q, (30, 30))
-    qx, qy = W - M - 110 - frame.width, band_top + (H - 200 - band_top - frame.height) // 2
-    im.alpha_composite(frame, (qx, qy))
+    qs = 400
+    band_bottom = H - 200
+    qx = W - M - 100
+    for url, label in ((QR_URL, "Computer"), (PLAY_URL, "Android")):   # right to left: GitHub, then Google Play
+        q = qr(url, qs)
+        frame = Image.new("RGBA", (q.width + 50, q.height + 50), (255, 255, 255, 255))
+        fm = Image.new("L", frame.size, 0)
+        ImageDraw.Draw(fm).rounded_rectangle([0, 0, frame.width - 1, frame.height - 1], 36, fill=255)
+        frame.putalpha(fm)
+        frame.alpha_composite(q, (25, 25))
+        qx -= frame.width
+        qy = band_top + (band_bottom - band_top - frame.height - 90) // 2
+        im.alpha_composite(frame, (qx, qy))
+        text(im, label, (qx + frame.width // 2, qy + frame.height + 22), font(56, "bold"), CYAN, center=True)
+        qx -= 70
     tx = M + 110
     ty = band_top + 70
     gradient_text(im, "Scan me to get it", (tx, ty), font(112, "black"))
     ty += 165
     text(im, "Free and open source.", (tx, ty), font(60, "semi"), TEXT)
     ty += 100
-    for label, value in (("Windows", "the installer: Next \u2192 Next \u2192 Finish"),
+    for label, value in (("Android", "myGeeKy on Google Play"),
+                         ("Windows", "the installer: Next, Next, Finish"),
                          ("Anywhere", "pip install mygeeky"),
                          ("Website", "mygeeky.org")):
         text(im, label, (tx, ty), font(52, "bold"), CYAN)
         text(im, value, (tx + 290, ty), font(52, "mono" if value.startswith("pip") else "regular"), TEXT)
         ty += 78
 
-    text(im, "It only suggests. It never follows, stars or posts for you.   \u00b7   github.com/mygeeky/myGeeKy",
+    text(im, "Free, no ads, no account needed. Your data stays yours.   \u00b7   mygeeky.org",
          (W // 2, H - 150), font(50, "semi"), MUTED, center=True)
 
     rgb = im.convert("RGB")

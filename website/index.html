@@ -182,6 +182,11 @@
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   .panel h3 { margin-bottom: 10px; font-size: 20px; }
   .panel ol { margin: 0; padding-left: 20px; }
+  .play { display: flex; gap: 22px; align-items: center; }
+  .play > div { flex: 1; min-width: 0; }
+  .play .qr { flex: none; display: block; padding: 8px; border-radius: 14px; background: #fff; line-height: 0; }
+  .play .qr img { display: block; width: 148px; height: 148px; image-rendering: pixelated; }
+  @media (max-width: 560px) { .play .qr { display: none; } }   /* already on a phone: the link is the way */
   .panel pre { background: rgba(0, 0, 0, .4); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; overflow-x: auto;
                font-size: 14px; margin: 8px 0; }
   .panel p { color: var(--muted); margin: 10px 0 0; }
@@ -479,9 +484,14 @@ mygeeky setup</pre>
     </div>
     <div class="panel" id="i-phone" role="tabpanel" aria-labelledby="b-phone">
       <h3><img class="os" src="img/systems/android.webp" alt="" width="22" height="22">Android</h3>
-      <ol><li>Open <b><a href="https://play.google.com/store/apps/details?id=org.mygeeky.app">myGeeKy on Google Play</a></b></li>
-        <li><b>Install</b>, free and without ads</li></ol>
-      <p>Already use myGeeKy on your computer? One scan brings your profile over.</p>
+      <div class="play">
+        <div>
+          <ol><li>Open <b><a href="https://play.google.com/store/apps/details?id=org.mygeeky.app">myGeeKy on Google Play</a></b>, or scan the code with your phone's camera</li>
+            <li><b>Install</b>, free and without ads</li></ol>
+          <p>Already use myGeeKy on your computer? One scan brings your profile over.</p>
+        </div>
+        <a class="qr" href="https://play.google.com/store/apps/details?id=org.mygeeky.app" aria-label="myGeeKy on Google Play"><img src="img/systems/play-qr.svg" alt="QR code for myGeeKy on Google Play" width="148" height="148"></a>
+      </div>
     </div>
     <p class="then"><b>Then type what you work on, or nothing at all.</b> No ORCID, no GitHub? No account needed: myGeeKy
       learns your field from what you open and like, and you can link GitHub, ORCID or Google Drive any time later.</p>

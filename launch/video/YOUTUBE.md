@@ -43,10 +43,12 @@ It only suggests: it never follows, stars, posts or comments for you. No server,
 
 🔗 Links
 Website: https://mygeeky.org
+Google Play (Android): https://play.google.com/store/apps/details?id=org.mygeeky.app
 GitHub: https://github.com/mygeeky/myGeeKy
 Windows installer: https://github.com/mygeeky/myGeeKy/releases/latest
 PyPI: https://pypi.org/project/mygeeky/
 
+On your phone: scan the code at the end, or search myGeeKy on Google Play
 Install on a computer: pip install mygeeky   →   mygeeky gui
 
 #research #science #bioinformatics #opensource #learning

@@ -755,7 +755,8 @@ PROMISE_AT, PROMISE_EACH = LEAVE_AT + 1.6, 3.8
 FINALE_AT = PROMISE_AT + len(PROMISES) * PROMISE_EACH + 0.4
 FINALE_TEXT = "Your geeky friend who helps you *grow, quietly.*"
 PLATFORMS_AT = FINALE_AT + 3.4                   # Google Play, Windows, macOS appear under it
-DUR = FINALE_AT + 7.5                            # the whole scene
+QR_AT = PLATFORMS_AT + 1.2                       # then the code to scan for Google Play, beside the icon
+DUR = FINALE_AT + 10.0                           # the whole scene: a few seconds to scan it
 
 SHOT_H, SHOT_X, SHOT_TOP = 800, W // 2, 245      # a screen's height, centre and top
 SMALL = 0.3                                      # ...its size while its details show...
@@ -1128,6 +1129,41 @@ def finale(im: Image.Image, t: float) -> None:
     im.alpha_composite(glow.filter(ImageFilter.GaussianBlur(50)))
     im.alpha_composite(faded(pic, ease(k)), (W // 2 - size // 2, cy - size // 2))
     platforms(im, t)
+    play_qr(im, t)
+
+
+PLAY_URL = "https://play.google.com/store/apps/details?id=org.mygeeky.app"
+QR_SIZE, QR_CX, QR_CY = 250, 1590, 330           # the code's size and centre: right of the icon, level with it
+QR_CAP = _font("PlayfairDisplay.ttf", 34, 700)
+_qr: list[Image.Image] = []
+
+
+def play_qr(im: Image.Image, t: float) -> None:
+    """The QR code for myGeeKy on Google Play, on a white card, with what it is under it."""
+    k = (t - QR_AT) / 0.6
+    if k <= 0:
+        return
+    if not _qr:
+        import qrcode
+        q = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=0, box_size=10)
+        q.add_data(PLAY_URL)
+        q.make(fit=True)
+        code = q.make_image(fill_color=INK, back_color="white").convert("RGBA").resize((QR_SIZE, QR_SIZE), Image.NEAREST)
+        pad = 22
+        cardim = Image.new("RGBA", (QR_SIZE + 2 * pad, QR_SIZE + 2 * pad), (0, 0, 0, 0))
+        ImageDraw.Draw(cardim).rounded_rectangle((0, 0, cardim.width - 1, cardim.height - 1), 26,
+                                                 fill=(255, 255, 255, 255), outline=(214, 72, 170, 255), width=4)
+        cardim.alpha_composite(code, (pad, pad))
+        _qr.append(cardim)
+    a, s = ease(k), max(0.3, pop(k))
+    c = _qr[0].resize((int(_qr[0].width * s), int(_qr[0].height * s)), Image.NEAREST)
+    im.alpha_composite(faded(c, a), (QR_CX - c.width // 2, QR_CY - c.height // 2))
+    layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    for i, line in enumerate(("Scan to get it", "on Google Play")):
+        lw = d.textlength(line, font=QR_CAP)
+        d.text((QR_CX - lw / 2, QR_CY + _qr[0].height / 2 + 14 + i * 42), line, font=QR_CAP, fill=SUBTLE + (int(255 * a),))
+    im.alpha_composite(layer)
 
 
 # Where it runs, drawn here rather than taken from anyone's artwork: Google Play's four-colour triangle,
