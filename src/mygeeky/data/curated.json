@@ -1,5 +1,5 @@
 {
- "version": "2026-11-07T10:10:00Z",
+ "version": "2026-11-11T10:58:08Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -411,26 +411,6 @@
      "summary": "BIOPOLIS协会启动一项国际选拔程序，招聘一名初级研究员，开展关于鸟类迁徙行为个体发育对环境变化响应的研究活动，合同为12个月固定期限合同。"
     }
    }
-  },
-  {
-   "id": "imperial-college-london-national-heart-lung-institute-bioinf-2026",
-   "title": "Bioinformatics Research Associate",
-   "url": "https://www.jobs.ac.uk/job/DTG666/bioinformatics-research-associate",
-   "keywords": [
-    "bioinformatics",
-    "multi-omics",
-    "single-cell",
-    "genomics",
-    "computational biology",
-    "immunology",
-    "machine learning"
-   ],
-   "summary": "A Bioinformatics Research Associate position at Imperial College London's National Heart & Lung Institute, supporting the ARIA-funded M2M programme by integrating and analysing large-scale multi-omics datasets to uncover innate immune mechanisms against respiratory viral infections.",
-   "deadline": "2026-11-10",
-   "org": "Imperial College London - National Heart & Lung Institute",
-   "place": "London, United Kingdom",
-   "type": "postdoc",
-   "remote": false
   },
   {
    "id": "university-of-oxford-nuffield-department-of-medicine-postdoc-2026",
