@@ -1,5 +1,5 @@
 {
- "version": "2026-11-11T10:58:08Z",
+ "version": "2026-11-12T11:10:50Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -411,26 +411,6 @@
      "summary": "BIOPOLIS协会启动一项国际选拔程序，招聘一名初级研究员，开展关于鸟类迁徙行为个体发育对环境变化响应的研究活动，合同为12个月固定期限合同。"
     }
    }
-  },
-  {
-   "id": "university-of-oxford-nuffield-department-of-medicine-postdoc-2026",
-   "title": "Postdoctoral Research Scientist – Epitranscriptomics",
-   "url": "https://www.jobs.ac.uk/job/DTG782/postdoctoral-research-scientist-epitranscriptomics",
-   "keywords": [
-    "epitranscriptomics",
-    "rna biology",
-    "pseudouridine",
-    "next-generation sequencing",
-    "bioinformatics",
-    "cancer diagnostics",
-    "cell-free rna"
-   ],
-   "summary": "Two Postdoctoral Research Scientists in Epitranscriptomics are sought to join Dr Chunxiao Song's research group at the Target Discovery Institute, Nuffield Department of Medicine, investigating the role of pseudouridine and pseudouridine synthases in cancer and clinical applications of pseudouridine in circulating cell-free RNA for cancer diagnostics.",
-   "deadline": "2026-11-11",
-   "org": "University of Oxford - Nuffield Department of Medicine",
-   "place": "Oxford, United Kingdom",
-   "type": "postdoc",
-   "remote": false
   }
  ],
  "funding": [
