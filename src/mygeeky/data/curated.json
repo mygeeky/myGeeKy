@@ -1,5 +1,5 @@
 {
- "version": "2026-11-12T11:10:50Z",
+ "version": "2026-11-13T10:58:55Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -255,57 +255,6 @@
      "rtl": false,
      "title": "博士后研究员，计算免疫肿瘤学与免疫相关不良事件",
      "summary": "MSK计算肿瘤学服务部Reznik实验室的博士后研究员职位，利用大规模多模态数据集（包括临床文本、种系遗传学和结局）研究癌症免疫治疗的免疫相关不良事件。"
-    }
-   }
-  },
-  {
-   "id": "institute-for-research-in-biomedicine-bellinzona-bioimage-an-2026",
-   "title": "Bioimage Analyst (100%) for Microscopy Facility",
-   "url": "https://euraxess.ec.europa.eu/jobs/472460",
-   "keywords": [
-    "bioimage analysis",
-    "computer vision",
-    "deep learning",
-    "microscopy",
-    "python",
-    "image analysis"
-   ],
-   "summary": "A Bioimage Analyst position is available in the Microscopy Facility at the Institute for Research in Biomedicine (IRB), Bellinzona Institutes of Science (Bios+), in Bellinzona, Switzerland, to develop custom, state-of-the-art image analysis solutions for our research community spanning immunology, oncology, and translational research.",
-   "deadline": "2026-11-12",
-   "org": "Institute for Research in Biomedicine (Bellinzona)",
-   "place": "Bellinzona, Switzerland",
-   "type": "job",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "محلل صور حيوية (100%) لمنشأة المجهر",
-     "summary": "يتوفر منصب محلل صور حيوية في منشأة المجهر في معهد البحوث في الطب الحيوي (IRB)، معاهد بيلينزونا للعلوم (Bios+)، في بيلينزونا، سويسرا، لتطوير حلول تحليل صور مخصصة ومتطورة لمجتمعنا البحثي الذي يشمل علم المناعة، وعلم الأورام، والبحوث الانتقالية."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Analyste en bio-imagerie (100%) pour la plateforme de microscopie",
-     "summary": "Un poste d'Analyste en bio-imagerie est disponible dans la plateforme de microscopie à l'Institut de recherche en biomédecine (IRB), Instituts des sciences de Bellinzona (Bios+), à Bellinzona, Suisse, pour développer des solutions d'analyse d'images personnalisées et de pointe pour notre communauté de recherche couvrant l'immunologie, l'oncologie et la recherche translationnelle."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Bioimage-Analyst (100%) für Mikroskopie-Einrichtung",
-     "summary": "Eine Stelle als Bioimage-Analyst ist in der Mikroskopie-Einrichtung am Institut für Biomedizinische Forschung (IRB), Bellinzona Institutes of Science (Bios+), in Bellinzona, Schweiz, verfügbar, um maßgeschneiderte, hochmoderne Bildanalyse-Lösungen für unsere Forschungsgemeinschaft zu entwickeln, die Immunologie, Onkologie und translationale Forschung umfasst."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Analista de Bioimagen (100%) para la Instalación de Microscopía",
-     "summary": "Un puesto de Analista de Bioimagen está disponible en la Instalación de Microscopía del Instituto de Investigación en Biomedicina (IRB), Bellinzona Institutes of Science (Bios+), en Bellinzona, Suiza, para desarrollar soluciones personalizadas de análisis de imágenes de vanguardia para nuestra comunidad investigadora que abarca inmunología, oncología e investigación traslacional."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "生物图像分析师（100%）用于显微镜设施",
-     "summary": "生物图像分析师职位现已在生物医学研究所（IRB）的显微镜设施中开放，该研究所隶属于瑞士贝林佐纳的贝林佐纳科学研究所（Bios+），旨在为我们的研究社区开发定制的、最先进的图像分析解决方案，涵盖免疫学、肿瘤学和转化研究。"
     }
    }
   },
