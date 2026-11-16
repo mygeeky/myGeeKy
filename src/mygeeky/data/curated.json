@@ -1,5 +1,5 @@
 {
- "version": "2026-11-14T10:26:31Z",
+ "version": "2026-11-16T11:18:14Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -255,58 +255,6 @@
      "rtl": false,
      "title": "中国国家生物信息中心宣布全球招聘高层次人才",
      "summary": "中国国家生物信息中心（CNCB）正在全球招聘生物大数据、工具和算法以及人工智能领域的高层次专业人才。职位包括杰出研究员/资深科学家、青年科学家、博士后研究员，以及数据科学家和高级工程师等其他职位。"
-    }
-   }
-  },
-  {
-   "id": "associa-o-biopolis-junior-researcher-2026",
-   "title": "Junior Researcher",
-   "url": "https://euraxess.ec.europa.eu/jobs/472457",
-   "keywords": [
-    "biology",
-    "ornithology",
-    "data analysis",
-    "r",
-    "gis",
-    "tracking",
-    "fieldwork"
-   ],
-   "summary": "BIOPOLIS Association opens an international selection procedure for a Junior Researcher to carry out research activities on the ontogeny of migratory behavior of birds in response to environmental change, under a 12-month fixed-term contract.",
-   "deadline": "2026-11-15",
-   "org": "ASSOCIAÇÃO BIOPOLIS",
-   "place": "Lisboa, Portugal",
-   "type": "postdoc",
-   "remote": false,
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "باحث مبتدئ",
-     "summary": "تفتح جمعية BIOPOLIS إجراء اختيار دولي لباحث مبتدئ لتنفيذ أنشطة بحثية حول تطور السلوك الهجري للطيور استجابةً للتغير البيئي، بموجب عقد محدد المدة لمدة 12 شهرًا."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Chercheur junior",
-     "summary": "L'Association BIOPOLIS ouvre une procédure de sélection internationale pour un Chercheur junior afin de mener des activités de recherche sur l'ontogenèse du comportement migratoire des oiseaux en réponse au changement environnemental, dans le cadre d'un contrat à durée déterminée de 12 mois."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Junior-Forscher",
-     "summary": "Die BIOPOLIS Association eröffnet ein internationales Auswahlverfahren für einen Junior-Forscher zur Durchführung von Forschungsaktivitäten zur Ontogenese des Zugverhaltens von Vögeln als Reaktion auf Umweltveränderungen, im Rahmen eines 12-monatigen befristeten Vertrags."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Investigador junior",
-     "summary": "La Asociación BIOPOLIS abre un procedimiento de selección internacional para un Investigador junior para llevar a cabo actividades de investigación sobre la ontogenia del comportamiento migratorio de las aves en respuesta al cambio ambiental, bajo un contrato de duración determinada de 12 meses."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "初级研究员",
-     "summary": "BIOPOLIS协会启动一项国际选拔程序，招聘一名初级研究员，开展关于鸟类迁徙行为个体发育对环境变化响应的研究活动，合同为12个月固定期限合同。"
     }
    }
   }
