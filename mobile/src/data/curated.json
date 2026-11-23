@@ -1,5 +1,5 @@
 {
- "version": "2026-11-16T11:18:14Z",
+ "version": "2026-11-23T12:41:34Z",
  "about": "Lists curated by myGeeKy's maker. Each myGeeKy matches them to you on your own computer. Anything with a deadline disappears after it. See curated-README.md next to this file.",
  "jobs": [
   {
@@ -503,121 +503,6 @@
   }
  ],
  "conferences": [
-  {
-   "id": "embl-ebi-training-introduction-to-rna-seq-and-functional-int-2026",
-   "title": "Introduction to RNA-seq and functional interpretation 2027",
-   "url": "https://www.ebi.ac.uk/training/events/introduction-rna-seq-and-functional-interpretation-2027/",
-   "keywords": [
-    "rna-seq",
-    "transcriptomics",
-    "bioinformatics",
-    "gene expression",
-    "nextflow",
-    "long read",
-    "functional interpretation"
-   ],
-   "summary": "A five-day virtual course guiding participants through the core technology, data analysis approaches, tools, and resources used in RNA sequencing (RNA-seq) and transcriptomics. It combines pre-recorded lectures, live presentations, trainer Q&A sessions, and computational practicals.",
-   "deadline": "2026-11-22",
-   "place": "online",
-   "starts": "2027-02-22",
-   "ends": "2027-02-26",
-   "student": "Financial assistance is available to a limited number of participants attending this course.",
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "مقدمة إلى RNA-seq والتفسير الوظيفي 2027",
-     "summary": "دورة افتراضية لمدة خمسة أيام ترشد المشاركين عبر التقنية الأساسية، وأساليب تحليل البيانات، والأدوات، والموارد المستخدمة في تسلسل RNA (RNA-seq) وعلم النسخ. وهي تجمع بين محاضرات مسجلة مسبقًا، وعروض حية، وجلسات أسئلة وأجوبة مع المدربين، وتطبيقات حاسوبية عملية.",
-     "student": "المساعدة المالية متاحة لعدد محدود من المشاركين الذين يحضرون هذه الدورة."
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Introduction à RNA-seq et à l'interprétation fonctionnelle 2027",
-     "summary": "Un cours virtuel de cinq jours guidant les participants à travers la technologie de base, les approches d'analyse de données, les outils et les ressources utilisés dans le séquençage d'ARN (RNA-seq) et la transcriptomique. Il combine des conférences préenregistrées, des présentations en direct, des sessions de questions-réponses avec les formateurs et des travaux pratiques computationnels.",
-     "student": "Une aide financière est disponible pour un nombre limité de participants assistant à ce cours."
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Einführung in RNA-seq und funktionale Interpretation 2027",
-     "summary": "Ein fünftägiger virtueller Kurs, der die Teilnehmer durch die Kerntechnologie, Datenanalyseansätze, Werkzeuge und Ressourcen führt, die in der RNA-Sequenzierung (RNA-seq) und Transkriptomik verwendet werden. Er kombiniert vorab aufgezeichnete Vorlesungen, Live-Präsentationen, Frage-und-Antwort-Sitzungen mit Trainern und computergestützte Praktika.",
-     "student": "Finanzielle Unterstützung ist für eine begrenzte Anzahl von Teilnehmern verfügbar, die an diesem Kurs teilnehmen."
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Introducción a RNA-seq e interpretación funcional 2027",
-     "summary": "Un curso virtual de cinco días que guía a los participantes a través de la tecnología central, los enfoques de análisis de datos, las herramientas y los recursos utilizados en la secuenciación de ARN (RNA-seq) y la transcriptómica. Combina conferencias pregrabadas, presentaciones en vivo, sesiones de preguntas y respuestas con los formadores y prácticas computacionales.",
-     "student": "La asistencia financiera está disponible para un número limitado de participantes que asistan a este curso."
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "RNA-seq与功能解读入门 2027",
-     "summary": "为期五天的虚拟课程，引导参与者了解RNA测序（RNA-seq）和转录组学中使用的核心技术、数据分析方法、工具和资源。它结合了预先录制的讲座、现场演示、培训师问答环节和计算实践。",
-     "student": "参加本课程的有限数量参与者可获得经济援助。"
-    }
-   }
-  },
-  {
-   "id": "embl-ebi-training-introduction-to-multi-omics-data-integrati-2026",
-   "title": "Introduction to multi-omics data integration and visualisation 2027",
-   "url": "https://www.ebi.ac.uk/training/events/introduction-multi-omics-data-integration-and-visualisation-2027/",
-   "keywords": [
-    "multi-omics",
-    "data integration",
-    "visualisation",
-    "bioinformatics",
-    "cytoscape",
-    "mofa",
-    "cosmos",
-    "omnipath"
-   ],
-   "summary": "This introductory course will highlight the challenges that researchers face in integrating multi-omics datasets. The course will focus on biological examples in a practice oriented way, using public data resources and open access tools, with an emphasis on visualisation.",
-   "deadline": "2026-11-22",
-   "place": "Hinxton, United Kingdom",
-   "starts": "2027-03-08",
-   "ends": "2027-03-12",
-   "student": "Financial assistance is available to a limited number of participants attending this course. For full details, please refer to our dedicated support page for in",
-   "translations": {
-    "ar": {
-     "name": "العربية",
-     "rtl": true,
-     "title": "مقدمة في تكامل البيانات متعددة الأوميات وتصورها 2027",
-     "summary": "ستسلط هذه الدورة التمهيدية الضوء على التحديات التي يواجهها الباحثون في تكامل مجموعات البيانات متعددة الأوميات. ستركز الدورة على أمثلة بيولوجية بطريقة عملية، باستخدام موارد البيانات العامة والأدوات مفتوحة الوصول، مع التركيز على التصور.",
-     "student": "المساعدة المالية متاحة لعدد محدود من المشاركين الذين يحضرون هذه الدورة. للحصول على التفاصيل الكاملة، يرجى الرجوع إلى صفحة الدعم المخصصة لدينا لـ in"
-    },
-    "fr": {
-     "name": "Français",
-     "rtl": false,
-     "title": "Introduction à l'intégration et à la visualisation de données multi-omiques 2027",
-     "summary": "Ce cours d'introduction mettra en évidence les défis auxquels les chercheurs sont confrontés dans l'intégration d'ensembles de données multi-omiques. Le cours se concentrera sur des exemples biologiques de manière pratique, en utilisant des ressources de données publiques et des outils en accès libre, avec un accent sur la visualisation.",
-     "student": "Une aide financière est disponible pour un nombre limité de participants assistant à ce cours. Pour tous les détails, veuillez consulter notre page de support d"
-    },
-    "de": {
-     "name": "Deutsch",
-     "rtl": false,
-     "title": "Einführung in die Integration und Visualisierung multi-omischer Daten 2027",
-     "summary": "Dieser Einführungskurs wird die Herausforderungen hervorheben, denen Forscher bei der Integration multi-omischer Datensätze gegenüberstehen. Der Kurs konzentriert sich auf biologische Beispiele in einer praxisorientierten Weise, unter Verwendung öffentlicher Datenressourcen und Open-Access-Tools, mit Schwerpunkt auf Visualisierung.",
-     "student": "Finanzielle Unterstützung ist für eine begrenzte Anzahl von Teilnehmern verfügbar, die an diesem Kurs teilnehmen. Für vollständige Details verweisen wir auf uns"
-    },
-    "es": {
-     "name": "Español",
-     "rtl": false,
-     "title": "Introducción a la integración y visualización de datos multi-ómicos 2027",
-     "summary": "Este curso introductorio destacará los desafíos que enfrentan los investigadores al integrar conjuntos de datos multi-ómicos. El curso se centrará en ejemplos biológicos de manera práctica, utilizando recursos de datos públicos y herramientas de acceso abierto, con énfasis en la visualización.",
-     "student": "La asistencia financiera está disponible para un número limitado de participantes que asistan a este curso. Para obtener todos los detalles, consulte nuestra pá"
-    },
-    "zh": {
-     "name": "中文",
-     "rtl": false,
-     "title": "多组学数据整合与可视化入门 2027",
-     "summary": "本入门课程将强调研究人员在整合多组学数据集时面临的挑战。课程将以实践为导向，聚焦生物学示例，使用公共数据资源和开放获取工具，并着重于可视化。",
-     "student": "参加本课程的有限数量参与者可获得经济援助。有关完整详情，请参阅我们专门的 support 页面 for in"
-    }
-   }
-  },
   {
    "id": "embl-ebi-training-single-cell-rna-seq-analysis-with-python-2-2027",
    "title": "Single-cell RNA-seq analysis with Python 2027",
